@@ -1,5 +1,6 @@
 using AppManager.Core;
 using AppManager.Utils;
+using Gee;
 
 namespace AppManager {
     public class DropWindow : Adw.Window {
@@ -14,6 +15,7 @@ namespace AppManager {
         private Gtk.Image drag_ghost;
         private Gtk.Label app_name_label;
         private Gtk.Label folder_name_label;
+        private Adw.Banner version_banner;
         private Gtk.Box drag_box;
         private string appimage_path;
         private bool installing = false;
@@ -22,6 +24,7 @@ namespace AppManager {
         private string resolved_app_name;
         private string? resolved_app_version = null;
         private const double DRAG_VISUAL_RANGE = 240.0;
+        private uint version_banner_timeout_id = 0;
 
         private Settings settings;
 
@@ -62,7 +65,20 @@ namespace AppManager {
             clamp.margin_bottom = 24;
             clamp.margin_start = 24;
             clamp.margin_end = 24;
-            toolbar_view.content = clamp;
+
+            var content_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            toolbar_view.content = content_box;
+
+            version_banner = new Adw.Banner("");
+            version_banner.use_markup = true;
+            version_banner.set_revealed(false);
+            version_banner.button_label = null;
+            version_banner.hexpand = true;
+            version_banner.halign = Gtk.Align.FILL;
+            version_banner.add_css_class("accent-fg-color");
+            content_box.append(version_banner);
+
+            content_box.append(clamp);
 
             var outer = new Gtk.Box(Gtk.Orientation.VERTICAL, 18);
             clamp.child = outer;
@@ -154,8 +170,8 @@ namespace AppManager {
 
             var existing = detect_existing_installation();
             if (existing != null) {
-                if (versions_match(existing)) {
-                    present_up_to_date_dialog(existing);
+                if (is_version_same_or_newer(existing)) {
+                    notify_up_to_date(existing);
                 } else {
                     present_upgrade_dialog(existing);
                 }
@@ -164,11 +180,11 @@ namespace AppManager {
             }
         }
 
-        private bool versions_match(InstallationRecord record) {
+        private bool is_version_same_or_newer(InstallationRecord record) {
             if (record.version == null || resolved_app_version == null) {
                 return false;
             }
-            return record.version.strip().down() == resolved_app_version.strip().down();
+            return compare_version_strings(record.version, resolved_app_version) >= 0;
         }
 
         private void present_install_warning_dialog() {
@@ -186,22 +202,18 @@ namespace AppManager {
             warning_icon.halign = Gtk.Align.CENTER;
             content.append(warning_icon);
 
-            var body = new Gtk.Label(I18n.tr("%s is not from the official app repositories. Are you sure you want to open it?").printf(resolved_app_name));
+            var warning_text = I18n.tr("%s is not from the official app repositories. Are you sure you want to open it?").printf(resolved_app_name);
+            var body = new Gtk.Label(null);
             body.wrap = true;
             body.halign = Gtk.Align.CENTER;
             body.justify = Gtk.Justification.CENTER;
+            body.use_markup = true;
+            body.set_markup("<b>%s</b>".printf(GLib.Markup.escape_text(warning_text, -1)));
             content.append(body);
 
             var button_column = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
             button_column.halign = Gtk.Align.FILL;
             button_column.hexpand = true;
-
-            var cancel_button = new Gtk.Button.with_label(I18n.tr("Cancel"));
-            cancel_button.hexpand = true;
-            cancel_button.halign = Gtk.Align.FILL;
-            cancel_button.add_css_class("suggested-action");
-            cancel_button.receives_default = true;
-            button_column.append(cancel_button);
 
             var install_button = new Gtk.Button.with_label(I18n.tr("Install"));
             install_button.hexpand = true;
@@ -212,6 +224,13 @@ namespace AppManager {
             extract_button.hexpand = true;
             extract_button.halign = Gtk.Align.FILL;
             button_column.append(extract_button);
+
+            var cancel_button = new Gtk.Button.with_label(I18n.tr("Cancel"));
+            cancel_button.hexpand = true;
+            cancel_button.halign = Gtk.Align.FILL;
+            cancel_button.add_css_class("suggested-action");
+            cancel_button.receives_default = true;
+            button_column.append(cancel_button);
 
             content.append(button_column);
             dialog.set_child(content);
@@ -263,17 +282,105 @@ namespace AppManager {
             dialog.present(this);
         }
 
-        private void present_up_to_date_dialog(InstallationRecord record) {
+        private void notify_up_to_date(InstallationRecord record) {
             var installed_version = record.version ?? I18n.tr("Unknown version");
             var target_version = resolved_app_version ?? installed_version;
-            var dialog = new Adw.AlertDialog(
-                I18n.tr("%s is up to date").printf(record.name),
-                I18n.tr("Version %s is already installed (requested %s).").printf(installed_version, target_version)
-            );
-            dialog.add_response("close", I18n.tr("OK"));
-            dialog.set_default_response("close");
-            dialog.set_close_response("close");
-            dialog.present(this);
+            var title_markup = "<b>%s</b>".printf(GLib.Markup.escape_text(I18n.tr("%s is up to date").printf(record.name), -1));
+            var body_markup = GLib.Markup.escape_text(I18n.tr("Installed version %s is newer or the same as %s.").printf(installed_version, target_version), -1);
+            show_version_banner("%s\n%s".printf(title_markup, body_markup));
+        }
+
+        private int compare_version_strings(string installed, string candidate) {
+            var installed_segments = extract_numeric_segments(installed);
+            var candidate_segments = extract_numeric_segments(candidate);
+            var max_len = installed_segments.size > candidate_segments.size ? installed_segments.size : candidate_segments.size;
+            for (int i = 0; i < max_len; i++) {
+                int lhs = i < installed_segments.size ? installed_segments.get(i) : 0;
+                int rhs = i < candidate_segments.size ? candidate_segments.get(i) : 0;
+                if (lhs == rhs) {
+                    continue;
+                }
+                return lhs > rhs ? 1 : -1;
+            }
+            return installed.down().collate(candidate.down());
+        }
+
+        private ArrayList<int> extract_numeric_segments(string value) {
+            var segments = new ArrayList<int>();
+            var current = new StringBuilder();
+            for (int i = 0; i < value.length; i++) {
+                char ch = value[i];
+                if (ch >= '0' && ch <= '9') {
+                    current.append_c(ch);
+                } else if (current.len > 0) {
+                    segments.add(int.parse(current.str));
+                    current.erase(0, current.len);
+                }
+            }
+            if (current.len > 0) {
+                segments.add(int.parse(current.str));
+                current.erase(0, current.len);
+            }
+            if (segments.size == 0) {
+                segments.add(0);
+            }
+            return segments;
+        }
+
+        private bool prepare_staging_copy(out string staged_path, out string staged_dir, out string? error_message) {
+            string? temp_dir = null;
+            try {
+                temp_dir = Utils.FileUtils.create_temp_dir("appmgr-stage-");
+                var destination = Path.build_filename(temp_dir, Path.get_basename(appimage_path));
+                Utils.FileUtils.file_copy(appimage_path, destination);
+                staged_dir = temp_dir;
+                staged_path = destination;
+                error_message = null;
+                return true;
+            } catch (Error e) {
+                staged_path = "";
+                staged_dir = temp_dir ?? "";
+                error_message = e.message;
+                if (temp_dir != null) {
+                    Utils.FileUtils.remove_dir_recursive(temp_dir);
+                }
+                return false;
+            }
+        }
+
+        private void cleanup_staging_dir(string? directory) {
+            if (directory == null || directory.strip() == "") {
+                return;
+            }
+            Utils.FileUtils.remove_dir_recursive(directory);
+        }
+
+        private void remove_source_appimage() {
+            try {
+                var source = File.new_for_path(appimage_path);
+                if (source.query_exists()) {
+                    source.delete(null);
+                }
+            } catch (Error e) {
+                warning("Failed to delete original AppImage: %s", e.message);
+            }
+        }
+
+        private void show_version_banner(string markup) {
+            if (version_banner == null) {
+                return;
+            }
+            if (version_banner_timeout_id != 0) {
+                GLib.Source.remove(version_banner_timeout_id);
+                version_banner_timeout_id = 0;
+            }
+            version_banner.set_title(markup);
+            version_banner.set_revealed(true);
+            version_banner_timeout_id = GLib.Timeout.add(5000, () => {
+                version_banner.set_revealed(false);
+                version_banner_timeout_id = 0;
+                return GLib.Source.REMOVE;
+            });
         }
 
         private Gtk.Widget build_upgrade_dialog_content(InstallationRecord record) {
@@ -338,36 +445,50 @@ namespace AppManager {
                 return;
             }
             installing = true;
+
+            string staged_path;
+            string staged_dir;
+            string? stage_error;
+            if (!prepare_staging_copy(out staged_path, out staged_dir, out stage_error)) {
+                handle_install_failure(stage_error ?? I18n.tr("Unable to prepare AppImage for installation"));
+                return;
+            }
+
+            var staged_copy = staged_path;
+            var staged_dir_capture = staged_dir;
             new Thread<void>("appmgr-install", () => {
                 try {
                     if (upgrade_target != null) {
                         installer.uninstall(upgrade_target);
                     }
-                    var record = installer.install(appimage_path, mode);
+                    var record = installer.install(staged_copy, mode);
                     Idle.add(() => {
-                        handle_install_success(record, upgrade_target != null);
+                        handle_install_success(record, upgrade_target != null, staged_dir_capture);
                         return GLib.Source.REMOVE;
                     });
                 } catch (Error e) {
                     var message = e.message;
                     Idle.add(() => {
-                        handle_install_failure(message);
+                        handle_install_failure(message, staged_dir_capture);
                         return GLib.Source.REMOVE;
                     });
                 }
             });
         }
 
-        private void handle_install_success(InstallationRecord record, bool upgraded) {
+        private void handle_install_success(InstallationRecord record, bool upgraded, string? staging_dir) {
             installing = false;
+            cleanup_staging_dir(staging_dir);
+            remove_source_appimage();
             var title = upgraded ? I18n.tr("Upgraded %s").printf(record.name) : I18n.tr("Installed %s").printf(record.name);
             var version_text = record.version ?? I18n.tr("Unknown version");
             send_install_notification(title, I18n.tr("Version %s available in Applications").printf(version_text));
             this.close();
         }
 
-        private void handle_install_failure(string message) {
+        private void handle_install_failure(string message, string? staging_dir = null) {
             installing = false;
+            cleanup_staging_dir(staging_dir);
             send_install_notification(I18n.tr("Installation failed"), message, GLib.NotificationPriority.HIGH);
         }
 
