@@ -3,6 +3,7 @@ using AppManager.Utils;
 
 namespace AppManager {
     public class DropWindow : Adw.Window {
+        private Application app_ref;
         private InstallationRegistry registry;
         private Installer installer;
         private AppImageMetadata metadata;
@@ -13,12 +14,13 @@ namespace AppManager {
         private Gtk.Image drag_ghost;
         private Gtk.Label app_name_label;
         private Gtk.Label folder_name_label;
-        private Adw.ToastOverlay toast_overlay;
         private Gtk.Box drag_box;
         private string appimage_path;
         private bool installing = false;
-        private bool install_blocked = false;
+        private bool install_prompt_visible = false;
         private InstallMode install_mode = InstallMode.PORTABLE;
+        private string resolved_app_name;
+        private string? resolved_app_version = null;
         private const double DRAG_VISUAL_RANGE = 240.0;
 
         private Settings settings;
@@ -30,14 +32,15 @@ namespace AppManager {
                 default_width: 520,
                 default_height: 320,
                 destroy_with_parent: true);
+            this.app_ref = app;
             this.registry = registry;
             this.installer = installer;
             this.settings = settings;
             this.appimage_path = path;
             metadata = new AppImageMetadata(File.new_for_path(path));
             install_mode = determine_install_mode();
+            resolved_app_name = extract_app_name();
             build_ui();
-            check_existing();
             load_icons_async();
         }
 
@@ -54,15 +57,12 @@ namespace AppManager {
             header.set_title_widget(title_widget);
             toolbar_view.add_top_bar(header);
 
-            toast_overlay = new Adw.ToastOverlay();
-            toolbar_view.content = toast_overlay;
-
             var clamp = new Adw.Clamp();
             clamp.margin_top = 24;
             clamp.margin_bottom = 24;
             clamp.margin_start = 24;
             clamp.margin_end = 24;
-            toast_overlay.child = clamp;
+            toolbar_view.content = clamp;
 
             var outer = new Gtk.Box(Gtk.Orientation.VERTICAL, 18);
             clamp.child = outer;
@@ -84,8 +84,7 @@ namespace AppManager {
             app_icon = new Gtk.Image();
             app_icon.set_pixel_size(96);
             app_icon.set_from_icon_name("application-x-executable");
-            var app_name = extract_app_name();
-            var app_column = build_icon_column(app_icon, out app_name_label, app_name, true);
+            var app_column = build_icon_column(app_icon, out app_name_label, resolved_app_name, true);
             drag_box.append(app_column);
 
             arrow_icon = new Gtk.Image.from_icon_name("pan-end-symbolic");
@@ -123,11 +122,25 @@ namespace AppManager {
 
         }
 
-        private void check_existing() {
-            if (registry.lookup_by_source(appimage_path) != null || registry.lookup_by_checksum(metadata.checksum) != null) {
-                show_toast(I18n.tr("Already installed"));
-                install_blocked = true;
+        private InstallationRecord? detect_existing_installation() {
+            var by_source = registry.lookup_by_source(appimage_path);
+            if (by_source != null) {
+                return by_source;
             }
+
+            var by_checksum = registry.lookup_by_checksum(metadata.checksum);
+            if (by_checksum != null) {
+                return by_checksum;
+            }
+
+            var target = resolved_app_name.down();
+            foreach (var record in registry.list()) {
+                if (record.name != null && record.name.strip().down() == target) {
+                    return record;
+                }
+            }
+
+            return null;
         }
 
         private InstallMode selected_mode() {
@@ -135,31 +148,178 @@ namespace AppManager {
         }
 
         private void start_install() {
-            if (installing || install_blocked) {
+            if (installing || install_prompt_visible) {
+                return;
+            }
+
+            var existing = detect_existing_installation();
+            if (existing != null) {
+                present_upgrade_dialog(existing);
+            } else {
+                present_install_warning_dialog();
+            }
+        }
+
+        private void present_install_warning_dialog() {
+            var dialog = new Adw.AlertDialog(
+                I18n.tr("Install %s?").printf(resolved_app_name),
+                I18n.tr("%s cannot be verified. Choose how to continue.").printf(resolved_app_name)
+            );
+            dialog.add_response("portable", I18n.tr("Install"));
+            dialog.add_response("extracted", I18n.tr("Extract & Install"));
+            dialog.add_response("cancel", I18n.tr("Cancel"));
+            dialog.set_default_response("portable");
+            dialog.set_response_appearance("portable", Adw.ResponseAppearance.SUGGESTED);
+            dialog.set_close_response("cancel");
+
+            install_prompt_visible = true;
+            dialog.response.connect((response) => {
+                install_prompt_visible = false;
+                switch (response) {
+                    case "portable":
+                        run_installation(selected_mode(), null);
+                        break;
+                    case "extracted":
+                        run_installation(InstallMode.EXTRACTED, null);
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            dialog.present(this);
+        }
+
+        private void present_upgrade_dialog(InstallationRecord record) {
+            var dialog = new Adw.AlertDialog(
+                I18n.tr("Upgrade %s?").printf(record.name),
+                I18n.tr("%s is already installed.").printf(record.name)
+            );
+            dialog.add_response("upgrade", I18n.tr("Upgrade"));
+            dialog.add_response("cancel", I18n.tr("Cancel"));
+            dialog.set_default_response("upgrade");
+            dialog.set_response_appearance("upgrade", Adw.ResponseAppearance.SUGGESTED);
+            dialog.set_close_response("cancel");
+            dialog.set_extra_child(build_upgrade_dialog_content(record));
+
+            install_prompt_visible = true;
+            dialog.response.connect((response) => {
+                install_prompt_visible = false;
+                if (response == "upgrade") {
+                    run_installation(record.mode, record);
+                }
+            });
+
+            dialog.present(this);
+        }
+
+        private Gtk.Widget build_upgrade_dialog_content(InstallationRecord record) {
+            var layout = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 16);
+            layout.margin_top = 12;
+            layout.margin_bottom = 0;
+
+            var image = new Gtk.Image();
+            image.set_pixel_size(64);
+            var record_icon = load_record_icon(record);
+            if (record_icon != null) {
+                image.set_from_paintable(record_icon);
+            } else {
+                image.set_from_icon_name("application-x-executable");
+            }
+            layout.append(image);
+
+            var column = new Gtk.Box(Gtk.Orientation.VERTICAL, 6);
+            column.hexpand = true;
+
+            var name_label = new Gtk.Label(null);
+            name_label.use_markup = true;
+            name_label.set_markup("<b>%s</b>".printf(GLib.Markup.escape_text(record.name, -1)));
+            name_label.halign = Gtk.Align.START;
+            name_label.wrap = true;
+            column.append(name_label);
+
+            var version_text = record.version ?? I18n.tr("Version unknown");
+            var current_label = new Gtk.Label(version_text);
+            current_label.add_css_class("dim-label");
+            current_label.halign = Gtk.Align.START;
+            current_label.wrap = true;
+            column.append(current_label);
+
+            var new_version_label = resolved_app_version ?? I18n.tr("Unknown version");
+            var upgrade_label = new Gtk.Label(I18n.tr("Will upgrade to version %s").printf(new_version_label));
+            upgrade_label.halign = Gtk.Align.START;
+            upgrade_label.wrap = true;
+            column.append(upgrade_label);
+
+            layout.append(column);
+            return layout;
+        }
+
+        private Gdk.Paintable? load_record_icon(InstallationRecord record) {
+            if (record.icon_path == null || record.icon_path.strip() == "") {
+                return null;
+            }
+            try {
+                var file = File.new_for_path(record.icon_path);
+                if (file.query_exists()) {
+                    return Gdk.Texture.from_file(file);
+                }
+            } catch (Error e) {
+                warning("Failed to load existing icon: %s", e.message);
+            }
+            return null;
+        }
+
+        private void run_installation(InstallMode mode, InstallationRecord? upgrade_target) {
+            if (installing) {
                 return;
             }
             installing = true;
-            show_toast(I18n.tr("Installing…"));
             new Thread<void>("appmgr-install", () => {
                 try {
-                    var record = installer.install(appimage_path, selected_mode());
+                    if (upgrade_target != null) {
+                        installer.uninstall(upgrade_target);
+                    }
+                    var record = installer.install(appimage_path, mode);
                     Idle.add(() => {
-                        show_toast(I18n.tr("Installed %s").printf(record.name));
-                        GLib.Timeout.add(1500, () => {
-                            this.close();
-                            return GLib.Source.REMOVE;
-                        });
+                        handle_install_success(record, upgrade_target != null);
                         return GLib.Source.REMOVE;
                     });
                 } catch (Error e) {
                     var message = e.message;
                     Idle.add(() => {
-                        show_toast(I18n.tr("Failed: %s").printf(message));
-                        installing = false;
+                        handle_install_failure(message);
                         return GLib.Source.REMOVE;
                     });
                 }
             });
+        }
+
+        private void handle_install_success(InstallationRecord record, bool upgraded) {
+            installing = false;
+            var title = upgraded ? I18n.tr("Upgraded %s").printf(record.name) : I18n.tr("Installed %s").printf(record.name);
+            var version_text = record.version ?? I18n.tr("Unknown version");
+            send_install_notification(title, I18n.tr("Version %s available in Applications").printf(version_text));
+            this.close();
+        }
+
+        private void handle_install_failure(string message) {
+            installing = false;
+            send_install_notification(I18n.tr("Installation failed"), message, GLib.NotificationPriority.HIGH);
+        }
+
+        private void send_install_notification(string title, string body, GLib.NotificationPriority priority = GLib.NotificationPriority.NORMAL) {
+            if (app_ref == null) {
+                return;
+            }
+            var notification = new GLib.Notification(title);
+            if (body != null && body.strip() != "") {
+                notification.set_body(body);
+            }
+            notification.set_priority(priority);
+            var timestamp = GLib.get_real_time();
+            var notification_id = "drop-window-" + timestamp.to_string();
+            app_ref.send_notification(notification_id, notification);
         }
 
         private void load_icons_async() {
@@ -313,15 +473,31 @@ namespace AppManager {
         }
 
         private string extract_app_name() {
-            var temp_dir = Utils.FileUtils.create_temp_dir("appmgr-name-");
+            var resolved = metadata.display_name;
+            resolved_app_version = null;
+            string temp_dir;
+            try {
+                temp_dir = Utils.FileUtils.create_temp_dir("appmgr-name-");
+            } catch (Error e) {
+                warning("Temp dir creation failed: %s", e.message);
+                return resolved;
+            }
             try {
                 run_7z({"x", appimage_path, "-o" + temp_dir, "*.desktop", "-r", "-y"});
                 var desktop_file = find_desktop_file(temp_dir);
                 if (desktop_file != null) {
                     var key_file = new KeyFile();
                     key_file.load_from_file(desktop_file, KeyFileFlags.NONE);
-                    if (key_file.has_group("Desktop Entry") && key_file.has_key("Desktop Entry", "Name")) {
-                        return key_file.get_string("Desktop Entry", "Name");
+                    if (key_file.has_group("Desktop Entry")) {
+                        if (key_file.has_key("Desktop Entry", "Name")) {
+                            resolved = key_file.get_string("Desktop Entry", "Name");
+                        }
+                        if (key_file.has_key("Desktop Entry", "X-AppImage-Version")) {
+                            var candidate = key_file.get_string("Desktop Entry", "X-AppImage-Version").strip();
+                            if (candidate.length > 0) {
+                                resolved_app_version = candidate;
+                            }
+                        }
                     }
                 }
             } catch (Error e) {
@@ -329,7 +505,7 @@ namespace AppManager {
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
-            return metadata.display_name;
+            return resolved;
         }
 
         private string? find_desktop_file(string directory) {
@@ -522,12 +698,5 @@ namespace AppManager {
             return column;
         }
 
-        private void show_toast(string message) {
-            if (toast_overlay == null) {
-                return;
-            }
-            var toast = new Adw.Toast(message);
-            toast_overlay.add_toast(toast);
-        }
     }
 }
