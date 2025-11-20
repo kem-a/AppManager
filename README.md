@@ -1,6 +1,17 @@
-# AppManager
+<!-- Core project info -->
+![Release](https://img.shields.io/badge/Release-Alpha-red)
+[![License](https://img.shields.io/github/license/kem-a/AppManager)](https://github.com/kem-a/AppManager/blob/main/LICENSE)
+![GNOME 40+](https://img.shields.io/badge/GNOME-40%2B-blue?logo=gnome)
+![GTK 4](https://img.shields.io/badge/GTK-4-blue?logo=gtk)
+![Vala](https://img.shields.io/badge/Vala-compiler-blue?logo=vala)
+[![Stars](https://img.shields.io/github/stars/kem-a/AppManager?style=social)](https://github.com/kem-a/AppManager/stargazers)
+
+# <img width="48" height="48" alt="org github AppManager" src="https://github.com/user-attachments/assets/57e52017-df9e-49ac-8490-bc0db6e6a00e" /> AppManager
 
 AppManager is a Libadwaita-powered desktop utility that makes installing and uninstalling AppImages on GNOME 45–49 painless. Double-click any `.AppImage` to open a macOS-style drag-and-drop sheet, pick between portable or extracted modes, and AppManager will move/extract the payload, wire up desktop entries, copy icons, and keep Nautilus context menus in sync.
+
+<img width="493" height="320" alt="Screenshot From 2025-11-20 10-44-56" src="https://github.com/user-attachments/assets/69d2ff59-b816-46fb-a581-851f0c3c7921" />
+
 
 ## Features
 
