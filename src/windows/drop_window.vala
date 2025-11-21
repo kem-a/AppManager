@@ -19,9 +19,12 @@ namespace AppManager {
         private Gtk.Label folder_name_label;
         private Gtk.Box drag_box;
         private Gtk.Spinner drag_spinner;
+        private Adw.Banner up_to_date_banner;
+        private Gtk.Label subtitle;
         private string appimage_path;
         private bool installing = false;
         private bool install_prompt_visible = false;
+        private bool is_up_to_date = false;
         private InstallMode install_mode = InstallMode.PORTABLE;
         private string resolved_app_name;
         private string? resolved_app_version = null;
@@ -60,6 +63,16 @@ namespace AppManager {
             header.set_show_end_title_buttons(true);
             toolbar_view.add_top_bar(header);
 
+            up_to_date_banner = new Adw.Banner("");
+            up_to_date_banner.button_label = I18n.tr("Close");
+            up_to_date_banner.button_style = Adw.BannerButtonStyle.SUGGESTED;
+            up_to_date_banner.use_markup = false;
+            up_to_date_banner.revealed = false;
+            up_to_date_banner.button_clicked.connect(() => {
+                this.close();
+            });
+            toolbar_view.add_top_bar(up_to_date_banner);
+
             var clamp = new Adw.Clamp();
             clamp.margin_top = 24;
             clamp.margin_bottom = 24;
@@ -70,7 +83,7 @@ namespace AppManager {
             var outer = new Gtk.Box(Gtk.Orientation.VERTICAL, 18);
             clamp.child = outer;
 
-            var subtitle = new Gtk.Label(I18n.tr("Drag and drop to install into Applications"));
+            subtitle = new Gtk.Label(I18n.tr("Drag and drop to install into Applications"));
             subtitle.add_css_class("dim-label");
             subtitle.halign = Gtk.Align.CENTER;
             subtitle.wrap = true;
@@ -216,7 +229,7 @@ namespace AppManager {
             var existing = detect_existing_installation();
             if (existing != null) {
                 if (is_version_same_or_newer(existing)) {
-                    notify_up_to_date(existing);
+                    return;
                 } else {
                     present_upgrade_dialog(existing);
                 }
@@ -232,32 +245,15 @@ namespace AppManager {
             return compare_version_strings(record.version, resolved_app_version) >= 0;
         }
 
-        private void notify_up_to_date(InstallationRecord record) {
-            var installed_version = record.version ?? I18n.tr("Unknown version");
-            var target_version = resolved_app_version ?? installed_version;
-            var title = I18n.tr("App is up to date");
-            
-            var image = new Gtk.Image();
-            image.set_pixel_size(64);
-            image.halign = Gtk.Align.CENTER;
-            var record_icon = load_record_icon(record);
-            if (record_icon != null) {
-                image.set_from_paintable(record_icon);
-            } else {
-                image.set_from_icon_name("application-x-executable");
+        private void check_if_up_to_date() {
+            var existing = detect_existing_installation();
+            if (existing != null && is_version_same_or_newer(existing)) {
+                is_up_to_date = true;
+                up_to_date_banner.title = I18n.tr("This app is already installed and up to date");
+                up_to_date_banner.revealed = true;
+                subtitle.set_text(I18n.tr("This app is already installed"));
+                drag_box.set_sensitive(false);
             }
-
-            var dialog = new DialogWindow(app_ref, this, title, image);
-            
-            var app_name_markup = "<b>%s</b>".printf(GLib.Markup.escape_text(record.name, -1));
-            dialog.append_body(create_wrapped_label(app_name_markup, true));
-            
-            var version_label = create_wrapped_label(I18n.tr("Installed version %s is newer or the same as %s.").printf(installed_version, target_version), false);
-            version_label.add_css_class("dim-label");
-            dialog.append_body(version_label);
-            
-            dialog.add_option("close", I18n.tr("Close"));
-            dialog.present();
         }
 
         private int compare_version_strings(string installed, string candidate) {
@@ -568,6 +564,7 @@ namespace AppManager {
                             app_icon.set_from_paintable(texture);
                             sync_drag_ghost();
                             set_drag_spinner_icon_active(false);
+                            check_if_up_to_date();
                             return GLib.Source.REMOVE;
                         });
                     } else {
@@ -575,6 +572,7 @@ namespace AppManager {
                             app_icon.set_from_icon_name("application-x-executable");
                             sync_drag_ghost();
                             set_drag_spinner_icon_active(false);
+                            check_if_up_to_date();
                             return GLib.Source.REMOVE;
                         });
                     }
@@ -582,6 +580,7 @@ namespace AppManager {
                     warning("Icon preview failed: %s", e.message);
                     Idle.add(() => {
                         set_drag_spinner_icon_active(false);
+                        check_if_up_to_date();
                         return GLib.Source.REMOVE;
                     });
                 }
@@ -591,6 +590,9 @@ namespace AppManager {
         private void setup_drag_install(Gtk.Box drag_container) {
             var gesture = new Gtk.GestureDrag();
             gesture.drag_begin.connect((start_x, start_y) => {
+                if (is_up_to_date) {
+                    return;
+                }
                 drag_container.add_css_class("drag-active");
                 show_drag_ghost(0);
             });
