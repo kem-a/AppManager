@@ -13,7 +13,8 @@ namespace AppManager {
                 modal: true,
                 resizable: false,
                 destroy_with_parent: true,
-                width_request: 200);
+                width_request: 220,
+                default_width: 280);
 
             if (parent != null) {
                 set_transient_for(parent);
@@ -36,7 +37,7 @@ namespace AppManager {
             clamp.margin_bottom = 20;
             clamp.margin_start = 20;
             clamp.margin_end = 20;
-            clamp.maximum_size = 240;
+            clamp.maximum_size = 280;
             clamp.tightening_threshold = 220;
             toolbar_view.content = clamp;
 
