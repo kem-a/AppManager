@@ -3,6 +3,8 @@ project('app-manager', ['vala', 'c'],
   meson_version: '>=0.64.0'
 )
 
+gnome = import('gnome')
+
 adw_dep = dependency('libadwaita-1', version: '>=1.4')
 gio_dep = dependency('gio-2.0')
 gio_unix_dep = dependency('gio-unix-2.0')

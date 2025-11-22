@@ -10,47 +10,7 @@ namespace AppManager {
             private Gtk.ShortcutsWindow? shortcuts_window;
             private Adw.AboutDialog? about_dialog;
             private Gtk.MenuButton? header_menu_button;
-                private const string SHORTCUTS_UI = """
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-    <object class="GtkShortcutsWindow" id="shortcuts_window">
-        <property name="modal">True</property>
-        <property name="hide-on-close">True</property>
-        <child>
-            <object class="GtkShortcutsSection" id="general_section">
-                <child>
-                    <object class="GtkShortcutsGroup" id="navigation_group">
-                        <child>
-                            <object class="GtkShortcutsShortcut" id="shortcut_show_overlay">
-                                <property name="accelerator">&lt;Primary&gt;question</property>
-                            </object>
-                        </child>
-                        <child>
-                            <object class="GtkShortcutsShortcut" id="shortcut_about">
-                                <property name="accelerator">F1</property>
-                            </object>
-                        </child>
-                    </object>
-                </child>
-                <child>
-                    <object class="GtkShortcutsGroup" id="window_group">
-                        <child>
-                            <object class="GtkShortcutsShortcut" id="shortcut_close_window">
-                                <property name="accelerator">&lt;Primary&gt;w</property>
-                            </object>
-                        </child>
-                        <child>
-                            <object class="GtkShortcutsShortcut" id="shortcut_quit">
-                                <property name="accelerator">&lt;Primary&gt;q</property>
-                            </object>
-                        </child>
-                    </object>
-                </child>
-            </object>
-        </child>
-    </object>
-</interface>
-""";
+            private const string SHORTCUTS_RESOURCE = "/com/github/AppManager/ui/main-window-shortcuts.ui";
 
         public MainWindow(Application app, InstallationRegistry registry, Installer installer, Settings settings) {
             Object(application: app,
@@ -229,7 +189,7 @@ namespace AppManager {
             }
             try {
                 var builder = new Gtk.Builder();
-                builder.add_from_string(SHORTCUTS_UI, -1);
+                builder.add_from_resource(SHORTCUTS_RESOURCE);
                 shortcuts_window = builder.get_object("shortcuts_window") as Gtk.ShortcutsWindow;
                 if (shortcuts_window == null) {
                     warning("Failed to create shortcuts window");
