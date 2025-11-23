@@ -26,13 +26,24 @@ namespace AppManager.Core {
         }
 
         public InstallationRecord install(string file_path, InstallMode override_mode = InstallMode.PORTABLE) throws Error {
-            return install_sync(file_path, override_mode);
+            return install_sync(file_path, override_mode, null);
         }
 
-        private InstallationRecord install_sync(string file_path, InstallMode override_mode) throws Error {
+        public InstallationRecord upgrade(string file_path, InstallationRecord old_record) throws Error {
+            // Preserve custom desktop file properties before upgrade
+            var preserved_props = preserve_desktop_properties(old_record.desktop_file);
+            
+            // Uninstall old version
+            uninstall(old_record);
+            
+            // Install new version with preserved properties
+            return install_sync(file_path, old_record.mode, preserved_props);
+        }
+
+        private InstallationRecord install_sync(string file_path, InstallMode override_mode, HashTable<string, string>? preserved_props) throws Error {
             var file = File.new_for_path(file_path);
             var metadata = new AppImageMetadata(file);
-            if (registry.is_installed_checksum(metadata.checksum)) {
+            if (preserved_props == null && registry.is_installed_checksum(metadata.checksum)) {
                 throw new InstallerError.ALREADY_INSTALLED("AppImage already installed");
             }
 
@@ -44,9 +55,9 @@ namespace AppManager.Core {
 
             try {
                 if (mode == InstallMode.PORTABLE) {
-                    install_portable(metadata, record);
+                    install_portable(metadata, record, preserved_props);
                 } else {
-                    install_extracted(metadata, record);
+                    install_extracted(metadata, record, preserved_props);
                 }
 
                 // Only delete source after successful installation
@@ -63,17 +74,17 @@ namespace AppManager.Core {
             }
         }
 
-        private void install_portable(AppImageMetadata metadata, InstallationRecord record) throws Error {
+        private void install_portable(AppImageMetadata metadata, InstallationRecord record, HashTable<string, string>? preserved_props) throws Error {
             progress("Preparing Applications folder…");
             var dest_path = Utils.FileUtils.unique_path(Path.build_filename(AppPaths.applications_dir, metadata.basename));
             var dest = File.new_for_path(dest_path);
             metadata.file.copy(dest, FileCopyFlags.OVERWRITE, null, null);
             ensure_executable(dest_path);
             record.installed_path = dest_path;
-            finalize_desktop_and_icon(record, metadata, dest_path, dest_path);
+            finalize_desktop_and_icon(record, metadata, dest_path, dest_path, preserved_props);
         }
 
-        private void install_extracted(AppImageMetadata metadata, InstallationRecord record) throws Error {
+        private void install_extracted(AppImageMetadata metadata, InstallationRecord record, HashTable<string, string>? preserved_props) throws Error {
             progress("Extracting AppImage…");
             var base_name = metadata.sanitized_basename();
             DirUtils.create_with_parents(AppPaths.extracted_root, 0755);
@@ -109,10 +120,10 @@ namespace AppManager.Core {
                 ensure_executable(app_run);
             }
             record.installed_path = dest_dir;
-            finalize_desktop_and_icon(record, metadata, app_run, dest_appimage);
+            finalize_desktop_and_icon(record, metadata, app_run, dest_appimage, preserved_props);
         }
 
-        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets) throws Error {
+        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, HashTable<string, string>? preserved_props) throws Error {
             owned string exec_path = exec_target.dup();
             owned string assets_path = appimage_for_assets.dup();
             progress("Extracting desktop entry…");
@@ -206,7 +217,7 @@ namespace AppManager.Core {
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
-                var desktop_contents = rewrite_desktop(desktop_path, exec_path, icon_name_for_desktop, record.installed_path, is_terminal_app, record.mode);
+                var desktop_contents = rewrite_desktop(desktop_path, exec_path, icon_name_for_desktop, record.installed_path, is_terminal_app, record.mode, preserved_props);
                 var desktop_filename = "%s-%s.desktop".printf("appmanager", final_slug);
                 var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
                 Utils.FileUtils.ensure_parent(desktop_destination);
@@ -224,6 +235,49 @@ namespace AppManager.Core {
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
+        }
+
+        private HashTable<string, string>? preserve_desktop_properties(string? desktop_file_path) {
+            if (desktop_file_path == null || desktop_file_path == "") {
+                return null;
+            }
+
+            var props = new HashTable<string, string>(str_hash, str_equal);
+            var fields_to_preserve = new string[] {
+                "X-AppImage-Homepage",
+                "X-AppImage-UpdateURL",
+                "Keywords",
+                "StartupWMClass",
+                "NoDisplay",
+                "Terminal"
+            };
+
+            try {
+                var keyfile = new KeyFile();
+                keyfile.load_from_file(desktop_file_path, KeyFileFlags.NONE);
+
+                foreach (var field in fields_to_preserve) {
+                    try {
+                        var value = keyfile.get_string("Desktop Entry", field);
+                        if (value != null && value.strip() != "") {
+                            props.set(field, value);
+                        }
+                    } catch (Error e) {
+                        // Field doesn't exist, that's okay
+                    }
+                }
+            } catch (Error e) {
+                warning("Failed to preserve desktop file properties from %s: %s", desktop_file_path, e.message);
+                return null;
+            }
+
+            // Check if we actually preserved any properties
+            bool has_props = false;
+            props.foreach((key, val) => {
+                has_props = true;
+            });
+
+            return has_props ? props : null;
         }
 
         public void uninstall(InstallationRecord record) throws Error {
@@ -281,11 +335,15 @@ namespace AppManager.Core {
             }
         }
 
-        private string rewrite_desktop(string desktop_path, string exec_target, string icon_name, string installed_path, bool is_terminal, InstallMode mode) throws Error {
+        private string rewrite_desktop(string desktop_path, string exec_target, string icon_name, string installed_path, bool is_terminal, InstallMode mode, HashTable<string, string>? preserved_props) throws Error {
             string contents;
             if (!GLib.FileUtils.get_contents(desktop_path, out contents)) {
                 throw new InstallerError.DESKTOP_MISSING("Failed to read desktop file");
             }
+
+            // Track which preserved properties we've seen/applied
+            var applied_preserved = new Gee.HashSet<string>();
+            var custom_fields = new string[] {"X-AppImage-Homepage", "X-AppImage-UpdateURL", "Keywords", "StartupWMClass", "NoDisplay", "Terminal"};
 
             var output_lines = new Gee.ArrayList<string>();
             bool actions_handled = false;
@@ -344,15 +402,66 @@ namespace AppManager.Core {
                 // Handle StartupWMClass
                 if (trimmed.has_prefix("StartupWMClass=")) {
                     startup_wm_class_handled = true;
-                    output_lines.add(line);
+                    if (preserved_props != null && preserved_props.contains("StartupWMClass")) {
+                        output_lines.add("StartupWMClass=%s".printf(preserved_props.get("StartupWMClass")));
+                        applied_preserved.add("StartupWMClass");
+                    } else {
+                        output_lines.add(line);
+                    }
+                    continue;
+                }
+
+                // Handle Keywords
+                if (trimmed.has_prefix("Keywords=")) {
+                    if (preserved_props != null && preserved_props.contains("Keywords")) {
+                        output_lines.add("Keywords=%s".printf(preserved_props.get("Keywords")));
+                        applied_preserved.add("Keywords");
+                    } else {
+                        output_lines.add(line);
+                    }
                     continue;
                 }
 
                 // Handle NoDisplay for terminal apps
                 if (trimmed.has_prefix("NoDisplay=")) {
                     no_display_handled = true;
-                    if (is_terminal) {
+                    if (preserved_props != null && preserved_props.contains("NoDisplay")) {
+                        output_lines.add("NoDisplay=%s".printf(preserved_props.get("NoDisplay")));
+                        applied_preserved.add("NoDisplay");
+                    } else if (is_terminal) {
                         output_lines.add("NoDisplay=true");
+                    } else {
+                        output_lines.add(line);
+                    }
+                    continue;
+                }
+
+                // Handle Terminal
+                if (trimmed.has_prefix("Terminal=")) {
+                    if (preserved_props != null && preserved_props.contains("Terminal")) {
+                        output_lines.add("Terminal=%s".printf(preserved_props.get("Terminal")));
+                        applied_preserved.add("Terminal");
+                    } else {
+                        output_lines.add(line);
+                    }
+                    continue;
+                }
+
+                // Handle custom X-AppImage fields
+                if (trimmed.has_prefix("X-AppImage-Homepage=")) {
+                    if (preserved_props != null && preserved_props.contains("X-AppImage-Homepage")) {
+                        output_lines.add("X-AppImage-Homepage=%s".printf(preserved_props.get("X-AppImage-Homepage")));
+                        applied_preserved.add("X-AppImage-Homepage");
+                    } else {
+                        output_lines.add(line);
+                    }
+                    continue;
+                }
+
+                if (trimmed.has_prefix("X-AppImage-UpdateURL=")) {
+                    if (preserved_props != null && preserved_props.contains("X-AppImage-UpdateURL")) {
+                        output_lines.add("X-AppImage-UpdateURL=%s".printf(preserved_props.get("X-AppImage-UpdateURL")));
+                        applied_preserved.add("X-AppImage-UpdateURL");
                     } else {
                         output_lines.add(line);
                     }
@@ -376,6 +485,35 @@ namespace AppManager.Core {
 
                 // Keep all other lines unchanged
                 output_lines.add(line);
+            }
+
+            // Add preserved custom fields that weren't in the new desktop file
+            if (preserved_props != null) {
+                int insert_pos = -1;
+                for (int i = 0; i < output_lines.size; i++) {
+                    var line = output_lines[i].strip();
+                    if (line == "[Desktop Entry]") {
+                        insert_pos = i + 1;
+                    } else if (insert_pos > 0 && line.has_prefix("[") && line.has_suffix("]")) {
+                        break;
+                    } else if (insert_pos > 0) {
+                        insert_pos = i + 1;
+                    }
+                }
+
+                foreach (var field in custom_fields) {
+                    if (preserved_props.contains(field) && !applied_preserved.contains(field)) {
+                        var value = preserved_props.get(field);
+                        if (value != null && value.strip() != "") {
+                            if (insert_pos > 0) {
+                                output_lines.insert(insert_pos, "%s=%s".printf(field, value));
+                                insert_pos++;
+                            } else {
+                                output_lines.add("%s=%s".printf(field, value));
+                            }
+                        }
+                    }
+                }
             }
 
             // Add Actions line if not present

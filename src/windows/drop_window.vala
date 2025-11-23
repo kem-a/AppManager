@@ -460,10 +460,12 @@ namespace AppManager {
             var staged_dir_capture = staged_dir;
             new Thread<void>("appmgr-install", () => {
                 try {
+                    InstallationRecord record;
                     if (upgrade_target != null) {
-                        installer.uninstall(upgrade_target);
+                        record = installer.upgrade(staged_copy, upgrade_target);
+                    } else {
+                        record = installer.install(staged_copy, mode);
                     }
-                    var record = installer.install(staged_copy, mode);
                     Idle.add(() => {
                         handle_install_success(record, upgrade_target != null, staged_dir_capture);
                         return GLib.Source.REMOVE;
