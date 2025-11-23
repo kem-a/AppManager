@@ -378,12 +378,18 @@ namespace AppManager {
             // Load desktop file properties
             var desktop_props = load_desktop_file_properties(record.desktop_file);
             
-            // Exec command
+            // Command line arguments (extracted from Exec field)
             var exec_row = new Adw.EntryRow();
-            exec_row.title = I18n.tr("Command");
-            exec_row.text = desktop_props.get("Exec") ?? "";
+            exec_row.title = I18n.tr("Command line arguments");
+            var full_exec = desktop_props.get("Exec") ?? "";
+            var exec_args = extract_exec_arguments(full_exec);
+            exec_row.text = exec_args;
             exec_row.changed.connect(() => {
-                update_desktop_file_property(record.desktop_file, "Exec", exec_row.text);
+                // Append new arguments to the existing Exec command
+                var base_exec = get_base_exec_command(full_exec);
+                var new_args = exec_row.text.strip();
+                var updated_exec = new_args.length > 0 ? base_exec + " " + new_args : base_exec;
+                update_desktop_file_property(record.desktop_file, "Exec", updated_exec);
             });
             props_group.add(exec_row);
             
@@ -499,6 +505,63 @@ namespace AppManager {
             }
             
             return props;
+        }
+        
+        private string extract_exec_arguments(string exec_command) {
+            // Extract only the arguments from Exec field, not the executable path
+            // The first token (before the first space) is the executable, rest are arguments
+            var trimmed = exec_command.strip();
+            if (trimmed.length == 0) {
+                return "";
+            }
+            
+            // Find first unquoted space
+            int first_space = -1;
+            bool in_quotes = false;
+            for (int i = 0; i < trimmed.length; i++) {
+                if (trimmed[i] == '"') {
+                    in_quotes = !in_quotes;
+                } else if (trimmed[i] == ' ' && !in_quotes) {
+                    first_space = i;
+                    break;
+                }
+            }
+            
+            if (first_space == -1) {
+                // No arguments, just the executable
+                return "";
+            }
+            
+            // Return everything after the first space
+            return trimmed.substring(first_space + 1).strip();
+        }
+        
+        private string get_base_exec_command(string exec_command) {
+            // Extract only the base executable path from Exec field (first token)
+            var trimmed = exec_command.strip();
+            if (trimmed.length == 0) {
+                return "";
+            }
+            
+            // Find first unquoted space
+            int first_space = -1;
+            bool in_quotes = false;
+            for (int i = 0; i < trimmed.length; i++) {
+                if (trimmed[i] == '"') {
+                    in_quotes = !in_quotes;
+                } else if (trimmed[i] == ' ' && !in_quotes) {
+                    first_space = i;
+                    break;
+                }
+            }
+            
+            if (first_space == -1) {
+                // No arguments, return the whole thing
+                return trimmed;
+            }
+            
+            // Return only the executable part
+            return trimmed.substring(0, first_space);
         }
         
         private void update_desktop_file_property(string desktop_file_path, string key, string value) {
