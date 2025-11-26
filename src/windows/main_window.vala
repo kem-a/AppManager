@@ -4,6 +4,9 @@ using AppManager.Utils;
 [CCode (cname = "adw_about_dialog_new_from_appdata")]
 extern Adw.Dialog about_dialog_new_from_appdata_raw(string resource_path, string? release_notes_version);
 
+[CCode (cname = "gtk_style_context_add_provider_for_display")]
+internal extern void gtk_style_context_add_provider_for_display_compat(Gdk.Display display, Gtk.StyleProvider provider, uint priority);
+
 namespace AppManager {
     public class MainWindow : Adw.Window {
         private Application app_ref;
@@ -83,7 +86,20 @@ namespace AppManager {
                 }
             """;
             provider.load_from_string(css);
-            Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+            var style_manager = Adw.StyleManager.get_default();
+            if (style_manager == null) {
+                warning("Custom CSS could not be applied because no StyleManager is available");
+                return;
+            }
+
+            var display = style_manager.get_display();
+            if (display == null) {
+                warning("Custom CSS could not be applied because the StyleManager has no display");
+                return;
+            }
+
+            gtk_style_context_add_provider_for_display_compat(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
         private void build_ui() {
