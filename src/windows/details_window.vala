@@ -128,18 +128,9 @@ namespace AppManager {
             });
             props_group.add(exec_row);
             
-            // Keywords
-            var keywords_row = new Adw.EntryRow();
-            keywords_row.title = I18n.tr("Keywords");
-            keywords_row.text = desktop_props.get("Keywords") ?? "";
-            keywords_row.changed.connect(() => {
-                update_desktop_file_property(record.desktop_file, "Keywords", keywords_row.text);
-            });
-            props_group.add(keywords_row);
-            
             // Web page address
             var webpage_row = new Adw.EntryRow();
-            webpage_row.title = I18n.tr("Web page address");
+            webpage_row.title = I18n.tr("Web Page");
             webpage_row.text = desktop_props.get("X-AppImage-Homepage") ?? "";
             webpage_row.changed.connect(() => {
                 update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", webpage_row.text);
@@ -157,21 +148,34 @@ namespace AppManager {
                 }
             });
             webpage_row.add_suffix(open_web_button);
-            props_group.add(webpage_row);
             
             // Update address (placeholder for future use)
             var update_row = new Adw.EntryRow();
-            update_row.title = I18n.tr("Update address");
+            update_row.title = I18n.tr("Update Link");
             update_row.text = desktop_props.get("X-AppImage-UpdateURL") ?? "";
             update_row.changed.connect(() => {
                 update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", update_row.text);
             });
-            props_group.add(update_row);
+            
+            // Update info group holds links that users might want to copy quickly
+            var update_group = new Adw.PreferencesGroup();
+            update_group.title = I18n.tr("Update info");
+            update_group.add(update_row);
+            update_group.add(webpage_row);
 
             // Advanced
             var advanced_group = new Adw.ExpanderRow();
             advanced_group.title = I18n.tr("Advanced");
             props_group.add(advanced_group);
+
+            // Keywords live in the advanced section to keep the primary view simple
+            var keywords_row = new Adw.EntryRow();
+            keywords_row.title = I18n.tr("Keywords");
+            keywords_row.text = desktop_props.get("Keywords") ?? "";
+            keywords_row.changed.connect(() => {
+                update_desktop_file_property(record.desktop_file, "Keywords", keywords_row.text);
+            });
+            advanced_group.add_row(keywords_row);
 
             // Icon
             var icon_row = new Adw.EntryRow();
@@ -215,6 +219,7 @@ namespace AppManager {
             advanced_group.add_row(nodisplay_row);
             
             detail_page.add(props_group);
+            detail_page.add(update_group);
             
             // Actions group
             var actions_group = new Adw.PreferencesGroup();
