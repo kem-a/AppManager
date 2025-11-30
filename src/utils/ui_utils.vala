@@ -114,7 +114,7 @@ namespace AppManager.Utils {
             }
         }
 
-        public static void open_folder(string path, Gtk.Window parent) {
+        public static void open_folder(string path, Gtk.Window? parent) {
             var file = File.new_for_path(path);
             var launcher = new Gtk.FileLauncher(file);
             launcher.launch.begin(parent, null, (obj, res) => {

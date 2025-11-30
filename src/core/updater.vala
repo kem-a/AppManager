@@ -33,6 +33,23 @@ namespace AppManager.Core {
         }
     }
 
+    public class UpdateProbeResult : Object {
+        public InstallationRecord record { get; private set; }
+        public bool has_update { get; private set; }
+        public string? available_version { get; private set; }
+        public UpdateSkipReason? skip_reason;
+        public string? message { get; private set; }
+
+        public UpdateProbeResult(InstallationRecord record, bool has_update, string? available_version = null, UpdateSkipReason? skip_reason = null, string? message = null) {
+            Object();
+            this.record = record;
+            this.has_update = has_update;
+            this.available_version = available_version;
+            this.skip_reason = skip_reason;
+            this.message = message;
+        }
+    }
+
     public class Updater : Object {
         public signal void record_checking(InstallationRecord record);
         public signal void record_downloading(InstallationRecord record);
@@ -60,12 +77,66 @@ namespace AppManager.Core {
             return read_update_url(record);
         }
 
+        public ArrayList<UpdateProbeResult> probe_updates(GLib.Cancellable? cancellable = null) {
+            var outcomes = new ArrayList<UpdateProbeResult>();
+            foreach (var record in registry.list()) {
+                outcomes.add(probe_record(record, cancellable));
+            }
+            return outcomes;
+        }
+
+        public UpdateProbeResult probe_single(InstallationRecord record, GLib.Cancellable? cancellable = null) {
+            return probe_record(record, cancellable);
+        }
+
         public ArrayList<UpdateResult> update_all(GLib.Cancellable? cancellable = null) {
             var outcomes = new ArrayList<UpdateResult>();
             foreach (var record in registry.list()) {
                 outcomes.add(update_record(record, cancellable));
             }
             return outcomes;
+        }
+
+        public UpdateResult update_single(InstallationRecord record, GLib.Cancellable? cancellable = null) {
+            return update_record(record, cancellable);
+        }
+
+        private UpdateProbeResult probe_record(InstallationRecord record, GLib.Cancellable? cancellable) {
+            var update_url = read_update_url(record);
+            if (update_url == null || update_url.strip() == "") {
+                return new UpdateProbeResult(record, false, null, UpdateSkipReason.NO_UPDATE_URL, I18n.tr("No update address configured"));
+            }
+
+            var source = resolve_update_source(update_url, record.version);
+            if (source == null) {
+                return new UpdateProbeResult(record, false, null, UpdateSkipReason.UNSUPPORTED_SOURCE, I18n.tr("Update source not supported"));
+            }
+
+            try {
+                var release = fetch_release_for_source(source, cancellable);
+                if (release == null) {
+                    return new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, I18n.tr("Unable to read releases"));
+                }
+
+                var asset = source.select_asset(release.assets);
+                if (asset == null) {
+                    return new UpdateProbeResult(record, false, release.normalized_version, UpdateSkipReason.MISSING_ASSET, I18n.tr("Matching AppImage not found in latest release"));
+                }
+
+                var latest_version = release.normalized_version;
+                var current_version = source.current_version;
+                if (latest_version != null && current_version != null) {
+                    if (compare_versions(latest_version, current_version) <= 0) {
+                        return new UpdateProbeResult(record, false, latest_version, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Already up to date"));
+                    }
+                }
+
+                var display_version = release.tag_name ?? asset.name;
+                return new UpdateProbeResult(record, true, latest_version ?? display_version);
+            } catch (Error e) {
+                warning("Failed to check updates for %s: %s", record.name, e.message);
+                return new UpdateProbeResult(record, false, null, null, e.message);
+            }
         }
 
         private UpdateResult update_record(InstallationRecord record, GLib.Cancellable? cancellable) {

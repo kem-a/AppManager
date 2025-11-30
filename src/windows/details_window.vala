@@ -5,16 +5,30 @@ namespace AppManager {
     public class DetailsWindow : Adw.NavigationPage {
         private InstallationRecord record;
         private InstallationRegistry registry;
+        private bool update_available;
+        private Adw.ButtonRow? update_action_row;
         
         public signal void uninstall_requested(InstallationRecord record);
+        public signal void update_requested(InstallationRecord record);
+        public signal void check_update_requested(InstallationRecord record);
 
-        public DetailsWindow(InstallationRecord record, InstallationRegistry registry) {
+        public DetailsWindow(InstallationRecord record, InstallationRegistry registry, bool update_available = false) {
             Object(title: record.name, tag: record.id);
             this.record = record;
             this.registry = registry;
+            this.update_available = update_available;
             this.can_pop = true;
             
             build_ui();
+        }
+
+        public bool matches_record(InstallationRecord other) {
+            return record.id == other.id;
+        }
+
+        public void set_update_available(bool available) {
+            update_available = available;
+            refresh_update_action_row();
         }
 
         private void build_ui() {
@@ -234,6 +248,34 @@ namespace AppManager {
             var actions_group = new Adw.PreferencesGroup();
             actions_group.title = I18n.tr("Actions");
             
+            var actions_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
+            actions_group.add(actions_box);
+
+            // Update Action
+            update_action_row = new Adw.ButtonRow();
+            // Icon will be set in refresh_update_action_row
+            update_action_row.activated.connect(() => {
+                if (update_available) {
+                    update_requested(record);
+                } else {
+                    check_update_requested(record);
+                }
+            });
+            actions_box.append(create_list_box_for_row(update_action_row));
+            refresh_update_action_row();
+
+            if (record.installed_path != null && record.installed_path.strip() != "") {
+                var reveal_row = new Adw.ButtonRow();
+                reveal_row.title = I18n.tr("Show in Files");
+                // No icon for Show in Files
+                reveal_row.activated.connect(() => {
+                    var parent_window = this.get_root() as Gtk.Window;
+                    var target_path = determine_reveal_path();
+                    UiUtils.open_folder(target_path, parent_window);
+                });
+                actions_box.append(create_list_box_for_row(reveal_row));
+            }
+            
             var delete_row = new Adw.ButtonRow();
             delete_row.title = I18n.tr("Move to Trash");
             delete_row.start_icon_name = "user-trash-symbolic";
@@ -242,7 +284,7 @@ namespace AppManager {
                 uninstall_requested(record);
             });
             
-            actions_group.add(delete_row);
+            actions_box.append(create_list_box_for_row(delete_row));
             detail_page.add(actions_group);
             
             var toolbar = new Adw.ToolbarView();
@@ -250,6 +292,47 @@ namespace AppManager {
             toolbar.add_top_bar(header);
             toolbar.set_content(detail_page);
             this.child = toolbar;
+        }
+
+        private void refresh_update_action_row() {
+            if (update_action_row == null) {
+                return;
+            }
+
+            if (update_available) {
+                update_action_row.title = I18n.tr("Update");
+                update_action_row.start_icon_name = "software-update-available-symbolic";
+                update_action_row.add_css_class("suggested-action");
+            } else {
+                update_action_row.title = I18n.tr("Check Update");
+                update_action_row.start_icon_name = null;
+                update_action_row.remove_css_class("suggested-action");
+            }
+        }
+
+        private string determine_reveal_path() {
+            var installed_path = record.installed_path ?? "";
+            if (record.mode == InstallMode.PORTABLE) {
+                return AppPaths.applications_dir;
+            }
+            if (installed_path.strip() == "") {
+                return AppPaths.applications_dir;
+            }
+
+            try {
+                var file = File.new_for_path(installed_path);
+                if (!file.query_exists()) {
+                    return AppPaths.applications_dir;
+                }
+                if (file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                    return installed_path;
+                }
+            } catch (Error e) {
+                warning("Failed to resolve reveal path for %s: %s", installed_path, e.message);
+                return AppPaths.applications_dir;
+            }
+
+            return Path.get_dirname(installed_path);
         }
 
         private Gtk.Box create_info_card(string text) {
@@ -412,6 +495,14 @@ namespace AppManager {
             } catch (Error e) {
                 warning("Failed to update desktop file %s: %s", desktop_file_path, e.message);
             }
+        }
+
+        private Gtk.ListBox create_list_box_for_row(Adw.ButtonRow row) {
+            var list = new Gtk.ListBox();
+            list.add_css_class("boxed-list");
+            list.selection_mode = Gtk.SelectionMode.NONE;
+            list.append(row);
+            return list;
         }
     }
 }
