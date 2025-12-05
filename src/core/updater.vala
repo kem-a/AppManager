@@ -13,7 +13,8 @@ namespace AppManager.Core {
         UNSUPPORTED_SOURCE,
         ALREADY_CURRENT,
         MISSING_ASSET,
-        API_UNAVAILABLE
+        API_UNAVAILABLE,
+        ETAG_MISSING
     }
 
     public class UpdateResult : Object {
@@ -61,6 +62,7 @@ namespace AppManager.Core {
         private Installer installer;
         private Soup.Session session;
         private string user_agent;
+        private string update_log_path;
         private const int GITHUB_RELEASES_PER_PAGE = 20;
         private const int GITHUB_RELEASES_PAGE_LIMIT = 3;
 
@@ -71,6 +73,7 @@ namespace AppManager.Core {
             user_agent = "AppManager/%s".printf(Core.APPLICATION_VERSION);
             session.user_agent = user_agent;
             session.timeout = 60;
+            update_log_path = Path.build_filename(AppPaths.data_dir, "updates.log");
         }
 
         public string? get_update_url(InstallationRecord record) {
@@ -112,19 +115,24 @@ namespace AppManager.Core {
                 return new UpdateProbeResult(record, false, null, UpdateSkipReason.UNSUPPORTED_SOURCE, I18n.tr("Update source not supported"));
             }
 
+            if (source is DirectUrlSource) {
+                return probe_direct(record, source as DirectUrlSource, cancellable);
+            }
+
             try {
-                var release = fetch_release_for_source(source, cancellable);
+                var release_source = source as ReleaseSource;
+                var release = fetch_release_for_source(release_source, cancellable);
                 if (release == null) {
                     return new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, I18n.tr("Unable to read releases"));
                 }
 
-                var asset = source.select_asset(release.assets);
+                var asset = release_source.select_asset(release.assets);
                 if (asset == null) {
                     return new UpdateProbeResult(record, false, release.normalized_version, UpdateSkipReason.MISSING_ASSET, I18n.tr("Matching AppImage not found in latest release"));
                 }
 
                 var latest_version = release.normalized_version;
-                var current_version = source.current_version;
+                var current_version = release_source.current_version;
                 if (latest_version != null && current_version != null) {
                     if (compare_versions(latest_version, current_version) <= 0) {
                         return new UpdateProbeResult(record, false, latest_version, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Already up to date"));
@@ -143,6 +151,7 @@ namespace AppManager.Core {
             var update_url = read_update_url(record);
             if (update_url == null || update_url.strip() == "") {
                 record_skipped(record, UpdateSkipReason.NO_UPDATE_URL);
+                log_update_event(record, "SKIP", "no update url configured");
                 return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("No update address configured"), null, UpdateSkipReason.NO_UPDATE_URL);
             }
 
@@ -151,28 +160,37 @@ namespace AppManager.Core {
             var source = resolve_update_source(update_url, record.version);
             if (source == null) {
                 record_skipped(record, UpdateSkipReason.UNSUPPORTED_SOURCE);
+                log_update_event(record, "SKIP", "unsupported update source");
                 return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Update source not supported"), null, UpdateSkipReason.UNSUPPORTED_SOURCE);
             }
 
+            if (source is DirectUrlSource) {
+                return update_direct(record, source as DirectUrlSource, cancellable);
+            }
+
             try {
-                var release = fetch_release_for_source(source, cancellable);
+                var release_source = source as ReleaseSource;
+                var release = fetch_release_for_source(release_source, cancellable);
                 if (release == null) {
                     record_skipped(record, UpdateSkipReason.API_UNAVAILABLE);
+                    log_update_event(record, "SKIP", "release API unavailable");
                     return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Unable to read releases"), null, UpdateSkipReason.API_UNAVAILABLE);
                 }
 
                 var latest_version = release.normalized_version;
-                var current_version = source.current_version;
+                var current_version = release_source.current_version;
                 if (latest_version != null && current_version != null) {
                     if (compare_versions(latest_version, current_version) <= 0) {
                         record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                        log_update_event(record, "SKIP", "already current (release)");
                         return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Already up to date"), latest_version, UpdateSkipReason.ALREADY_CURRENT);
                     }
                 }
 
-                var asset = source.select_asset(release.assets);
+                var asset = release_source.select_asset(release.assets);
                 if (asset == null) {
                     record_skipped(record, UpdateSkipReason.MISSING_ASSET);
+                    log_update_event(record, "SKIP", "matching asset not found");
                     return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Matching AppImage not found in latest release"), latest_version, UpdateSkipReason.MISSING_ASSET);
                 }
 
@@ -187,15 +205,82 @@ namespace AppManager.Core {
 
                 var display_version = release.tag_name ?? asset.name;
                 record_succeeded(record);
+                log_update_event(record, "UPDATED", "release update to %s".printf(display_version));
                 return new UpdateResult(record, UpdateStatus.UPDATED, I18n.tr("Updated to %s").printf(display_version), release.normalized_version ?? display_version);
             } catch (Error e) {
                 warning("Failed to update %s: %s", record.name, e.message);
                 record_failed(record, e.message);
+                log_update_event(record, "FAILED", e.message);
                 return new UpdateResult(record, UpdateStatus.FAILED, e.message);
             }
         }
 
-        private ReleaseSource? resolve_update_source(string update_url, string? record_version) {
+        private UpdateProbeResult probe_direct(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) {
+            try {
+                var message = send_head(source.url, cancellable);
+                var etag = message.response_headers.get_one("ETag");
+                if (etag == null || etag.strip() == "") {
+                    return new UpdateProbeResult(record, false, null, UpdateSkipReason.ETAG_MISSING, I18n.tr("No ETag returned by server"));
+                }
+
+                var current = etag.strip();
+                if (record.etag == null || record.etag.strip() == "") {
+                    record.etag = current;
+                    registry.persist(false);
+                    return new UpdateProbeResult(record, false, current, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Baseline ETag recorded"));
+                }
+
+                if (record.etag == current) {
+                    return new UpdateProbeResult(record, false, current, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Already up to date"));
+                }
+
+                return new UpdateProbeResult(record, true, current);
+            } catch (Error e) {
+                warning("Failed to check direct update for %s: %s", record.name, e.message);
+                return new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, e.message);
+            }
+        }
+
+        private UpdateResult update_direct(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) {
+            try {
+                var message = send_head(source.url, cancellable);
+                var etag = message.response_headers.get_one("ETag");
+                if (etag == null || etag.strip() == "") {
+                    record_skipped(record, UpdateSkipReason.ETAG_MISSING);
+                    log_update_event(record, "SKIP", "direct url missing etag");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("No ETag returned by server"), null, UpdateSkipReason.ETAG_MISSING);
+                }
+
+                var current = etag.strip();
+                if (record.etag != null && record.etag == current) {
+                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                    log_update_event(record, "SKIP", "direct url already current etag=%s".printf(current));
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Already up to date"), current, UpdateSkipReason.ALREADY_CURRENT);
+                }
+
+                record_downloading(record);
+
+                var download = download_asset(source.url, cancellable);
+                try {
+                    installer.upgrade(download.file_path, record);
+                } finally {
+                    AppManager.Utils.FileUtils.remove_dir_recursive(download.temp_dir);
+                }
+
+                record.etag = current;
+                registry.persist();
+                record_succeeded(record);
+                log_update_event(record, "UPDATED", "direct url etag=%s".printf(current));
+                return new UpdateResult(record, UpdateStatus.UPDATED, I18n.tr("Updated using ETag %s").printf(current), current);
+            } catch (Error e) {
+                warning("Failed to update %s via direct URL: %s", record.name, e.message);
+                record_failed(record, e.message);
+                log_update_event(record, "FAILED", e.message);
+                return new UpdateResult(record, UpdateStatus.FAILED, e.message);
+            }
+        }
+
+        private UpdateSource? resolve_update_source(string update_url, string? record_version) {
             var github_source = GithubSource.parse(update_url, record_version);
             if (github_source != null) {
                 return github_source;
@@ -206,7 +291,7 @@ namespace AppManager.Core {
                 return gitlab_source;
             }
 
-            return null;
+            return DirectUrlSource.parse(update_url);
         }
 
         private string? read_update_url(InstallationRecord record) {
@@ -619,13 +704,27 @@ namespace AppManager.Core {
             return null;
         }
 
-        private abstract class ReleaseSource : Object {
+        private enum UpdateSourceKind {
+            RELEASE,
+            DIRECT
+        }
+
+        private abstract class UpdateSource : Object {
+            public UpdateSourceKind kind { get; private set; }
+
+            protected UpdateSource(UpdateSourceKind kind) {
+                Object();
+                this.kind = kind;
+            }
+        }
+
+        private abstract class ReleaseSource : UpdateSource {
             public string? current_version { get; protected set; }
             protected string asset_prefix;
             protected string asset_suffix;
 
             protected ReleaseSource(string asset_prefix, string asset_suffix, string? current_version) {
-                Object();
+                base(UpdateSourceKind.RELEASE);
                 this.asset_prefix = asset_prefix ?? "";
                 this.asset_suffix = asset_suffix ?? "";
                 this.current_version = current_version;
@@ -656,6 +755,33 @@ namespace AppManager.Core {
                 bool prefix_ok = asset_prefix == "" || candidate.has_prefix(asset_prefix);
                 bool suffix_ok = asset_suffix == "" || candidate.has_suffix(asset_suffix);
                 return prefix_ok && suffix_ok;
+            }
+        }
+
+        private class DirectUrlSource : UpdateSource {
+            public string url { get; private set; }
+
+            private DirectUrlSource(string url) {
+                base(UpdateSourceKind.DIRECT);
+                this.url = url;
+            }
+
+            public static DirectUrlSource? parse(string url) {
+                try {
+                    var uri = GLib.Uri.parse(url, GLib.UriFlags.NONE);
+                    var scheme = uri.get_scheme();
+                    if (scheme == null) {
+                        return null;
+                    }
+                    var normalized = scheme.down();
+                    if (normalized != "http" && normalized != "https") {
+                        return null;
+                    }
+                    return new DirectUrlSource(url);
+                } catch (Error e) {
+                    warning("Failed to parse direct update URL %s: %s", url, e.message);
+                    return null;
+                }
             }
         }
 
@@ -909,6 +1035,30 @@ namespace AppManager.Core {
                 Object();
                 this.temp_dir = temp_dir;
                 this.file_path = file_path;
+            }
+        }
+
+        private Soup.Message send_head(string url, GLib.Cancellable? cancellable) throws Error {
+            var message = new Soup.Message("HEAD", url);
+            message.request_headers.replace("User-Agent", user_agent);
+            session.send_and_read(message, cancellable);
+            var status = message.get_status();
+            if (status < 200 || status >= 300) {
+                throw new GLib.IOError.FAILED("HEAD request failed (%u)".printf(status));
+            }
+            return message;
+        }
+
+        private void log_update_event(InstallationRecord record, string status, string detail) {
+            try {
+                var file = File.new_for_path(update_log_path);
+                var stream = file.append_to(FileCreateFlags.NONE);
+                var timestamp = new GLib.DateTime.now_local();
+                var line = "%s [%s] %s: %s\n".printf(timestamp.format("%Y-%m-%dT%H:%M:%S%z"), status, record.name, detail);
+                stream.write(line.data);
+                stream.close(null);
+            } catch (Error e) {
+                warning("Failed to write update log: %s", e.message);
             }
         }
     }

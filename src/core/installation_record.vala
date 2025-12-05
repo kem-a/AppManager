@@ -16,6 +16,7 @@ namespace AppManager.Core {
         public string? bin_symlink { get; set; }
         public int64 installed_at { get; set; }
         public string? version { get; set; }
+        public string? etag { get; set; }
 
         public InstallationRecord(string id, string name, InstallMode mode) {
             Object(id: id, name: name, mode: mode, installed_at: (int64)GLib.get_real_time());
@@ -46,6 +47,8 @@ namespace AppManager.Core {
             builder.add_int_value(installed_at);
             builder.set_member_name("version");
             builder.add_string_value(version ?? "");
+            builder.set_member_name("etag");
+            builder.add_string_value(etag ?? "");
             builder.end_object();
             return builder.get_root();
         }
@@ -66,6 +69,8 @@ namespace AppManager.Core {
             record.installed_at = (int64)obj.get_int_member("installed_at");
             var version = obj.get_string_member_with_default("version", "");
             record.version = version == "" ? null : version;
+            var etag = obj.get_string_member_with_default("etag", "");
+            record.etag = etag == "" ? null : etag;
             return record;
         }
 

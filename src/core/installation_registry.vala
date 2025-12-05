@@ -63,6 +63,13 @@ namespace AppManager.Core {
             notify_changed();
         }
 
+        public void persist(bool notify = true) {
+            save();
+            if (notify) {
+                notify_changed();
+            }
+        }
+
         private void load() {
             if (!registry_file.query_exists(null)) {
                 return;
