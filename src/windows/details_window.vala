@@ -11,6 +11,7 @@ namespace AppManager {
         public signal void uninstall_requested(InstallationRecord record);
         public signal void update_requested(InstallationRecord record);
         public signal void check_update_requested(InstallationRecord record);
+        public signal void extract_requested(InstallationRecord record);
 
         public DetailsWindow(InstallationRecord record, InstallationRegistry registry, bool update_available = false) {
             Object(title: record.name, tag: record.id);
@@ -81,28 +82,33 @@ namespace AppManager {
             cards_box.set_halign(Gtk.Align.CENTER);
             
             // Install mode card
-            var mode_card = create_info_card(
-                record.mode == InstallMode.PORTABLE ? I18n.tr("Portable") : I18n.tr("Extracted")
-            );
+            var mode_button = new Gtk.Button();
+            mode_button.add_css_class("card");
             if (record.mode == InstallMode.EXTRACTED) {
-                mode_card.add_css_class("accent");
+                mode_button.add_css_class("accent");
             }
-            cards_box.append(mode_card);
+            mode_button.set_valign(Gtk.Align.CENTER);
+            mode_button.set_tooltip_text(I18n.tr("Show in Files"));
+
+            var mode_label = new Gtk.Label(record.mode == InstallMode.PORTABLE ? I18n.tr("Portable") : I18n.tr("Extracted"));
+            mode_label.add_css_class("caption");
+            mode_label.set_margin_start(8);
+            mode_label.set_margin_end(8);
+            mode_label.set_margin_top(6);
+            mode_label.set_margin_bottom(6);
+            mode_button.set_child(mode_label);
+
+            mode_button.clicked.connect(() => {
+                var parent_window = this.get_root() as Gtk.Window;
+                var target_path = determine_reveal_path();
+                UiUtils.open_folder(target_path, parent_window);
+            });
+            cards_box.append(mode_button);
             
             // Size on disk card
             var size = calculate_installation_size(record);
             var size_card = create_info_card(UiUtils.format_size(size));
             cards_box.append(size_card);
-            
-            // Installation location card
-            var is_user_install = record.installed_path.has_prefix(Environment.get_home_dir());
-            var location_card = create_info_card(
-                is_user_install ? I18n.tr("User") : I18n.tr("System")
-            );
-            if (!is_user_install) {
-                location_card.add_css_class("destructive");
-            }
-            cards_box.append(location_card);
             
             // Terminal app card (only show if Terminal=true)
             var terminal_value = desktop_props.get("Terminal") ?? "false";
@@ -118,7 +124,7 @@ namespace AppManager {
                 var hidden_card = create_info_card(I18n.tr("Hidden"));
                 cards_box.append(hidden_card);
             }
-            
+
             // Add the box directly - it will be added to a separate box without the list background
             cards_group.add(cards_box);
             detail_page.add(cards_group);
@@ -264,17 +270,15 @@ namespace AppManager {
             actions_box.append(create_list_box_for_row(update_action_row));
             refresh_update_action_row();
 
-            if (record.installed_path != null && record.installed_path.strip() != "") {
-                var reveal_row = new Adw.ButtonRow();
-                reveal_row.title = I18n.tr("Show in Files");
-                // No icon for Show in Files
-                reveal_row.activated.connect(() => {
-                    var parent_window = this.get_root() as Gtk.Window;
-                    var target_path = determine_reveal_path();
-                    UiUtils.open_folder(target_path, parent_window);
-                });
-                actions_box.append(create_list_box_for_row(reveal_row));
-            }
+            var extract_row = new Adw.ButtonRow();
+            extract_row.title = I18n.tr("Extract AppImage");
+            extract_row.sensitive = record.mode == InstallMode.PORTABLE;
+            extract_row.activated.connect(() => {
+                if (extract_row.get_sensitive()) {
+                    present_extract_warning();
+                }
+            });
+            actions_box.append(create_list_box_for_row(extract_row));
             
             var delete_row = new Adw.ButtonRow();
             delete_row.title = I18n.tr("Move to Trash");
@@ -503,6 +507,22 @@ namespace AppManager {
             list.selection_mode = Gtk.SelectionMode.NONE;
             list.append(row);
             return list;
+        }
+
+        private void present_extract_warning() {
+            var body = I18n.tr("Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically.");
+            var dialog = new Adw.AlertDialog(I18n.tr("Extract application?"), body);
+            dialog.add_response("cancel", I18n.tr("Cancel"));
+            dialog.add_response("extract", I18n.tr("Extract"));
+            dialog.set_response_appearance("extract", Adw.ResponseAppearance.DESTRUCTIVE);
+            dialog.set_close_response("cancel");
+            dialog.set_default_response("cancel");
+            dialog.response.connect((response) => {
+                if (response == "extract") {
+                    extract_requested(record);
+                }
+            });
+            dialog.present(this);
         }
     }
 }

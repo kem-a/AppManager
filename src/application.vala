@@ -204,6 +204,72 @@ namespace AppManager {
             });
         }
 
+        public void extract_installation(InstallationRecord record, Gtk.Window? parent_window) {
+            var source_path = record.installed_path ?? "";
+            if (record.mode != InstallMode.PORTABLE || source_path.strip() == "") {
+                present_extract_error(parent_window, record, I18n.tr("Extraction is only available for portable installations."));
+                return;
+            }
+
+            new Thread<void>("appmgr-extract", () => {
+                string? staging_dir = null;
+                string staged_path = "";
+                try {
+                    staging_dir = Utils.FileUtils.create_temp_dir("appmgr-extract-");
+                    staged_path = Path.build_filename(staging_dir, Path.get_basename(source_path));
+                    Utils.FileUtils.file_copy(source_path, staged_path);
+                } catch (Error e) {
+                    var message = e.message;
+                    Idle.add(() => {
+                        present_extract_error(parent_window, record, message);
+                        return GLib.Source.REMOVE;
+                    });
+                    if (staging_dir != null) {
+                        Utils.FileUtils.remove_dir_recursive(staging_dir);
+                    }
+                    return;
+                }
+
+                try {
+                    var new_record = installer.reinstall(staged_path, record, InstallMode.EXTRACTED);
+                    Idle.add(() => {
+                        if (parent_window != null && parent_window is MainWindow) {
+                            ((MainWindow)parent_window).add_toast(I18n.tr("Extracted for faster launch"));
+                        } else {
+                            var dialog = new Adw.AlertDialog(
+                                I18n.tr("Extraction complete"),
+                                I18n.tr("%s was extracted and will open faster.").printf(new_record.name)
+                            );
+                            dialog.add_response("close", I18n.tr("Close"));
+                            dialog.set_close_response("close");
+                            dialog.present(parent_window ?? main_window);
+                        }
+                        return GLib.Source.REMOVE;
+                    });
+                } catch (Error e) {
+                    var message = e.message;
+                    Idle.add(() => {
+                        present_extract_error(parent_window, record, message);
+                        return GLib.Source.REMOVE;
+                    });
+                } finally {
+                    if (staging_dir != null) {
+                        Utils.FileUtils.remove_dir_recursive(staging_dir);
+                    }
+                }
+            });
+        }
+
+        private void present_extract_error(Gtk.Window? parent_window, InstallationRecord record, string message) {
+            var dialog = new Adw.AlertDialog(
+                I18n.tr("Extraction failed"),
+                I18n.tr("%s could not be extracted: %s").printf(record.name, message)
+            );
+            dialog.add_response("close", I18n.tr("Close"));
+            dialog.set_close_response("close");
+            dialog.present(parent_window ?? main_window);
+        }
+
         private Icon? load_record_icon(InstallationRecord record) {
             if (record.icon_path != null && File.new_for_path(record.icon_path).query_exists()) {
                 try {

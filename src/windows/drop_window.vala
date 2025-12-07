@@ -19,14 +19,11 @@ namespace AppManager {
         private Gtk.Label folder_name_label;
         private Gtk.Box drag_box;
         private Gtk.Spinner drag_spinner;
-        private Adw.Banner up_to_date_banner;
         private Adw.Banner incompatibility_banner;
         private Gtk.Label subtitle;
         private string appimage_path;
         private bool installing = false;
         private bool install_prompt_visible = false;
-        private bool is_up_to_date = false;
-        private InstallMode install_mode = InstallMode.PORTABLE;
         private string resolved_app_name;
         private string? resolved_app_version = null;
         private bool is_terminal_app = false;
@@ -65,16 +62,6 @@ namespace AppManager {
             header.set_show_start_title_buttons(true);
             header.set_show_end_title_buttons(true);
             toolbar_view.add_top_bar(header);
-
-            up_to_date_banner = new Adw.Banner("");
-            up_to_date_banner.button_label = I18n.tr("Close");
-            up_to_date_banner.button_style = Adw.BannerButtonStyle.SUGGESTED;
-            up_to_date_banner.use_markup = false;
-            up_to_date_banner.revealed = false;
-            up_to_date_banner.button_clicked.connect(() => {
-                this.close();
-            });
-            toolbar_view.add_top_bar(up_to_date_banner);
 
             incompatibility_banner = new Adw.Banner("");
             incompatibility_banner.button_label = I18n.tr("Close");
@@ -183,13 +170,10 @@ namespace AppManager {
             if (is_terminal_app) {
                 dialog.append_body(create_wrapped_label(I18n.tr("This is a terminal application and will be installed in portable mode."), false, true));
             } else {
-                dialog.append_body(create_wrapped_label(I18n.tr("You can install the AppImage directly or extract it for faster opening."), false, true));
+                dialog.append_body(create_wrapped_label(I18n.tr("Install the AppImage to add it to your applications."), false, true));
             }
 
             dialog.add_option("install", I18n.tr("Install"));
-            if (!is_terminal_app) {
-                dialog.add_option("extract", I18n.tr("Extract & Install"));
-            }
             dialog.add_option("cancel", I18n.tr("Cancel"), true);
 
             install_prompt_visible = true;
@@ -202,10 +186,7 @@ namespace AppManager {
                 install_prompt_visible = false;
                 switch (response) {
                     case "install":
-                        run_installation(selected_mode(), null);
-                        break;
-                    case "extract":
-                        run_installation(InstallMode.EXTRACTED, null);
+                        run_installation(InstallMode.PORTABLE, null, InstallIntent.NEW_INSTALL);
                         break;
                     default:
                         break;
@@ -236,10 +217,6 @@ namespace AppManager {
             return null;
         }
 
-        private InstallMode selected_mode() {
-            return install_mode;
-        }
-
         private void start_install() {
             if (installing || install_prompt_visible) {
                 return;
@@ -247,21 +224,36 @@ namespace AppManager {
 
             var existing = detect_existing_installation();
             if (existing != null) {
-                if (is_version_same_or_newer(existing)) {
-                    return;
+                var relation = determine_version_relation(existing);
+                if (relation == VersionRelation.CANDIDATE_NEWER) {
+                    present_update_dialog(existing);
                 } else {
-                    present_upgrade_dialog(existing);
+                    present_replace_dialog(existing, relation == VersionRelation.INSTALLED_NEWER);
                 }
             } else {
                 present_install_warning_dialog();
             }
         }
 
-        private bool is_version_same_or_newer(InstallationRecord record) {
+        private enum VersionRelation {
+            UNKNOWN,
+            SAME,
+            CANDIDATE_NEWER,
+            INSTALLED_NEWER
+        }
+
+        private VersionRelation determine_version_relation(InstallationRecord record) {
             if (record.version == null || resolved_app_version == null) {
-                return false;
+                return VersionRelation.UNKNOWN;
             }
-            return compare_version_strings(record.version, resolved_app_version) >= 0;
+            var comparison = compare_version_strings(record.version, resolved_app_version);
+            if (comparison < 0) {
+                return VersionRelation.CANDIDATE_NEWER;
+            }
+            if (comparison > 0) {
+                return VersionRelation.INSTALLED_NEWER;
+            }
+            return VersionRelation.SAME;
         }
 
         private void check_compatibility() {
@@ -269,17 +261,6 @@ namespace AppManager {
                 incompatibility_banner.title = I18n.tr("This AppImage is incompatible or corrupted");
                 incompatibility_banner.revealed = true;
                 subtitle.set_text(I18n.tr("Missing required files (AppRun, .desktop, or icon)"));
-                drag_box.set_sensitive(false);
-            }
-        }
-
-        private void check_if_up_to_date() {
-            var existing = detect_existing_installation();
-            if (existing != null && is_version_same_or_newer(existing)) {
-                is_up_to_date = true;
-                up_to_date_banner.title = I18n.tr("This app is already installed and up to date");
-                up_to_date_banner.revealed = true;
-                subtitle.set_text(I18n.tr("This app is already installed"));
                 drag_box.set_sensitive(false);
             }
         }
@@ -360,7 +341,7 @@ namespace AppManager {
             }
         }
 
-        private Gtk.Widget build_upgrade_dialog_content(InstallationRecord record) {
+        private Gtk.Widget build_update_dialog_content(InstallationRecord record) {
             var column = new Gtk.Box(Gtk.Orientation.VERTICAL, 10);
             column.margin_top = 0;
             column.margin_bottom = 8;
@@ -384,15 +365,15 @@ namespace AppManager {
             column.append(current_label);
 
             var new_version_label = resolved_app_version ?? I18n.tr("Unknown version");
-            var upgrade_label = new Gtk.Label(I18n.tr("Will upgrade to version %s").printf(new_version_label));
-            upgrade_label.halign = Gtk.Align.CENTER;
-            upgrade_label.wrap = true;
-            column.append(upgrade_label);
+            var update_label = new Gtk.Label(I18n.tr("Will update to version %s").printf(new_version_label));
+            update_label.halign = Gtk.Align.CENTER;
+            update_label.wrap = true;
+            column.append(update_label);
 
             return column;
         }
 
-        private void present_upgrade_dialog(InstallationRecord record) {
+        private void present_update_dialog(InstallationRecord record) {
             if (install_prompt_visible) {
                 return;
             }
@@ -407,9 +388,9 @@ namespace AppManager {
                 image.set_from_icon_name("application-x-executable");
             }
 
-            var dialog = new DialogWindow(app_ref, this, I18n.tr("Upgrade %s?").printf(record.name), image);
-            dialog.append_body(build_upgrade_dialog_content(record));
-            dialog.add_option("upgrade", I18n.tr("Upgrade"), true);
+            var dialog = new DialogWindow(app_ref, this, I18n.tr("Update %s?").printf(record.name), image);
+            dialog.append_body(build_update_dialog_content(record));
+            dialog.add_option("update", I18n.tr("Update"), true);
             dialog.add_option("cancel", I18n.tr("Cancel"));
 
             install_prompt_visible = true;
@@ -420,8 +401,59 @@ namespace AppManager {
 
             dialog.option_selected.connect((response) => {
                 install_prompt_visible = false;
-                if (response == "upgrade") {
-                    run_installation(record.mode, record);
+                if (response == "update") {
+                    run_installation(record.mode, record, InstallIntent.UPDATE);
+                }
+            });
+
+            dialog.present();
+        }
+
+        private void present_replace_dialog(InstallationRecord record, bool installed_newer) {
+            if (install_prompt_visible) {
+                return;
+            }
+
+            var image = new Gtk.Image();
+            image.set_pixel_size(64);
+            image.halign = Gtk.Align.CENTER;
+            var record_icon = load_record_icon(record);
+            if (record_icon != null) {
+                image.set_from_paintable(record_icon);
+            } else {
+                image.set_from_icon_name("application-x-executable");
+            }
+
+            var dialog = new DialogWindow(app_ref, this, I18n.tr("Replace %s?").printf(record.name), image);
+            string replace_text;
+            if (installed_newer) {
+                replace_text = I18n.tr("A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?").printf(record.name);
+                var warning_icon = new Gtk.Image.from_icon_name("dialog-warning-symbolic");
+                warning_icon.set_pixel_size(32);
+                warning_icon.halign = Gtk.Align.CENTER;
+                dialog.append_body(warning_icon);
+                if (record.version != null && resolved_app_version != null) {
+                    var versions = I18n.tr("Installed: %s | Incoming: %s").printf(record.version, resolved_app_version);
+                    dialog.append_body(create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
+                }
+            } else {
+                replace_text = I18n.tr("An item named %s already exists in this location. Do you want to replace it with one you're copying?").printf(record.name);
+            }
+            dialog.append_body(create_wrapped_label(GLib.Markup.escape_text(replace_text, -1), true));
+            var stop_is_default = installed_newer;
+            dialog.add_option("stop", I18n.tr("Stop"), stop_is_default);
+            dialog.add_option("replace", I18n.tr("Replace"), !stop_is_default);
+
+            install_prompt_visible = true;
+            dialog.close_request.connect(() => {
+                install_prompt_visible = false;
+                return false;
+            });
+
+            dialog.option_selected.connect((response) => {
+                install_prompt_visible = false;
+                if (response == "replace") {
+                    run_installation(record.mode, record, InstallIntent.REPLACE);
                 }
             });
 
@@ -461,7 +493,13 @@ namespace AppManager {
             return null;
         }
 
-        private void run_installation(InstallMode mode, InstallationRecord? upgrade_target) {
+        private enum InstallIntent {
+            NEW_INSTALL,
+            UPDATE,
+            REPLACE
+        }
+
+        private void run_installation(InstallMode mode, InstallationRecord? existing_target, InstallIntent intent) {
             if (installing) {
                 return;
             }
@@ -481,13 +519,13 @@ namespace AppManager {
             new Thread<void>("appmgr-install", () => {
                 try {
                     InstallationRecord record;
-                    if (upgrade_target != null) {
-                        record = installer.upgrade(staged_copy, upgrade_target);
+                    if (existing_target != null) {
+                        record = installer.upgrade(staged_copy, existing_target);
                     } else {
                         record = installer.install(staged_copy, mode);
                     }
                     Idle.add(() => {
-                        handle_install_success(record, upgrade_target != null, staged_dir_capture);
+                        handle_install_success(record, existing_target != null, intent, staged_dir_capture);
                         return GLib.Source.REMOVE;
                     });
                 } catch (Error e) {
@@ -500,12 +538,15 @@ namespace AppManager {
             });
         }
 
-        private void handle_install_success(InstallationRecord record, bool upgraded, string? staging_dir) {
+        private void handle_install_success(InstallationRecord record, bool upgraded, InstallIntent intent, string? staging_dir) {
             installing = false;
             set_drag_spinner_install_active(false);
             cleanup_staging_dir(staging_dir);
             remove_source_appimage();
-            var title = upgraded ? I18n.tr("Successfully Upgraded") : I18n.tr("Successfully Installed");
+            var title = I18n.tr("Successfully Installed");
+            if (upgraded) {
+                title = intent == InstallIntent.UPDATE ? I18n.tr("Successfully Updated") : I18n.tr("Successfully Replaced");
+            }
             
             var image = new Gtk.Image();
             image.set_pixel_size(64);
@@ -594,7 +635,6 @@ namespace AppManager {
                             app_icon.set_from_paintable(texture);
                             sync_drag_ghost();
                             set_drag_spinner_icon_active(false);
-                            check_if_up_to_date();
                             return GLib.Source.REMOVE;
                         });
                     } else {
@@ -602,7 +642,6 @@ namespace AppManager {
                             app_icon.set_from_icon_name("application-x-executable");
                             sync_drag_ghost();
                             set_drag_spinner_icon_active(false);
-                            check_if_up_to_date();
                             return GLib.Source.REMOVE;
                         });
                     }
@@ -610,7 +649,6 @@ namespace AppManager {
                     warning("Icon preview failed: %s", e.message);
                     Idle.add(() => {
                         set_drag_spinner_icon_active(false);
-                        check_if_up_to_date();
                         return GLib.Source.REMOVE;
                     });
                 }
@@ -620,9 +658,6 @@ namespace AppManager {
         private void setup_drag_install(Gtk.Box drag_container) {
             var gesture = new Gtk.GestureDrag();
             gesture.drag_begin.connect((start_x, start_y) => {
-                if (is_up_to_date) {
-                    return;
-                }
                 drag_container.add_css_class("drag-active");
                 show_drag_ghost(0);
             });

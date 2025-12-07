@@ -948,6 +948,13 @@ namespace AppManager {
             details_window.check_update_requested.connect((r) => {
                 start_single_probe(r, details_window);
             });
+            details_window.extract_requested.connect((r) => {
+                navigation_view.pop();
+                if (active_details_window == details_window) {
+                    active_details_window = null;
+                }
+                app_ref.extract_installation(r, this);
+            });
             details_window.destroy.connect(() => {
                 if (active_details_window == details_window) {
                     active_details_window = null;

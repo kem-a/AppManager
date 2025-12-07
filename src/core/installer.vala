@@ -30,14 +30,13 @@ namespace AppManager.Core {
         }
 
         public InstallationRecord upgrade(string file_path, InstallationRecord old_record) throws Error {
-            // Preserve custom desktop file properties before upgrade
+            return reinstall(file_path, old_record, old_record.mode);
+        }
+
+        public InstallationRecord reinstall(string file_path, InstallationRecord old_record, InstallMode mode) throws Error {
             var preserved_props = preserve_desktop_properties(old_record.desktop_file);
-            
-            // Uninstall old version
             uninstall(old_record);
-            
-            // Install new version with preserved properties
-            return install_sync(file_path, old_record.mode, preserved_props);
+            return install_sync(file_path, mode, preserved_props);
         }
 
         private InstallationRecord install_sync(string file_path, InstallMode override_mode, HashTable<string, string>? preserved_props) throws Error {
