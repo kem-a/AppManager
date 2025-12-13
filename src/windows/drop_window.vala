@@ -908,7 +908,7 @@ namespace AppManager {
         private Gtk.Box build_icon_column(Gtk.Widget icon_widget, out Gtk.Label label, string text, bool emphasize = false) {
             var column = new Gtk.Box(Gtk.Orientation.VERTICAL, 6);
             column.halign = Gtk.Align.CENTER;
-            column.valign = Gtk.Align.CENTER;
+            column.valign = Gtk.Align.START; // Keep icons aligned even if labels wrap to multiple lines
             column.append(icon_widget);
 
             label = new Gtk.Label(text);

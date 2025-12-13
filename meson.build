@@ -18,6 +18,25 @@ libportal_gtk_dep = dependency('libportal-gtk4', version: '>= 0.6')
 
 add_project_arguments(['--target-glib=2.74', '--pkg=posix'], language: 'vala')
 
+# DwarFS tools bundling (mirrors appimage-thumbnailer approach)
+dwarfs_version = '0.14.1'
+dwarfs_tools_dir = get_option('prefix') / get_option('libdir') / 'app-manager' / 'dwarfs'
+
+host_cpu = host_machine.cpu_family()
+dwarfs_arch_map = {
+  'x86_64': 'x86_64',
+  'aarch64': 'aarch64',
+  'arm': 'arm',
+  'x86': 'i386',
+  'ppc64': 'ppc64',
+  'ppc64le': 'ppc64le',
+  'riscv64': 'riscv64',
+  's390x': 's390x',
+}
+
+dwarfs_arch = dwarfs_arch_map.get(host_cpu, '')
+bundle_dwarfs = get_option('bundle_dwarfs')
+
 core_sources = files(
   'src/core/app_constants.vala',
   'src/core/app_paths.vala',
@@ -34,6 +53,7 @@ core_sources = files(
 
 build_info_conf = configuration_data()
 build_info_conf.set('VERSION', meson.project_version())
+build_info_conf.set('DWARFS_BUNDLE_DIR', dwarfs_tools_dir)
 build_info = configure_file(
   input: 'src/core/build_info.vala.in',
   output: 'build_info.vala',
@@ -41,6 +61,20 @@ build_info = configure_file(
 )
 
 core_sources += build_info
+
+# Fetch and install DwarFS tools if requested and supported
+if bundle_dwarfs and dwarfs_arch != ''
+  fetch_script = files('scripts/fetch-dwarfs-tools.sh')
+  dwarfs_tools = custom_target('dwarfs-tools',
+    output: ['dwarfsextract', 'dwarfsck'],
+    build_by_default: bundle_dwarfs,
+    command: ['sh', fetch_script, dwarfs_version, dwarfs_arch, meson.current_build_dir()],
+    install: true,
+    install_dir: dwarfs_tools_dir
+  )
+elif bundle_dwarfs and dwarfs_arch == ''
+  warning('DwarFS tools bundling requested but architecture "@0@" is not supported'.format(host_cpu))
+endif
 
 subdir('data')
 subdir('src')

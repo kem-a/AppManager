@@ -20,6 +20,212 @@ namespace AppManager.Core {
         }
     }
 
+    internal class DwarfsTools : Object {
+        private static bool checked_tools = false;
+        private static bool available_cache = false;
+        private static string? extract_path = null;
+        private static string? check_path = null;
+        private static bool missing_logged = false;
+
+        private static void init_tool_paths() {
+            if (checked_tools) {
+                return;
+            }
+
+            string? env_dir = Environment.get_variable("APP_MANAGER_DWARFS_DIR");
+            var candidates = new Gee.ArrayList<string>();
+            if (env_dir != null && env_dir.strip() != "") {
+                candidates.add(env_dir.strip());
+            }
+
+            // Build-time bundle dir (e.g., /usr/lib/app-manager/dwarfs)
+            if (DWARFS_BUNDLE_DIR != null && DWARFS_BUNDLE_DIR.strip() != "") {
+                candidates.add(DWARFS_BUNDLE_DIR.strip());
+            }
+
+            // System-wide bundle locations
+            candidates.add("/usr/lib/app-manager");
+            candidates.add("/usr/lib/appimage-thumbnailer");
+
+            // Per-user bundle locations
+            var xdg_data_home = Environment.get_variable("XDG_DATA_HOME");
+            if (xdg_data_home == null || xdg_data_home.strip() == "") {
+                xdg_data_home = Path.build_filename(Environment.get_home_dir(), ".local", "share");
+            }
+            candidates.add(Path.build_filename(xdg_data_home, "app-manager", "dwarfs"));
+            candidates.add(Path.build_filename(Environment.get_home_dir(), ".local", "share", "app-manager", "dwarfs"));
+
+            foreach (var base_dir in candidates) {
+                var extract_candidate = Path.build_filename(base_dir, "dwarfsextract");
+                var check_candidate = Path.build_filename(base_dir, "dwarfsck");
+                if (FileUtils.test(extract_candidate, FileTest.IS_EXECUTABLE) &&
+                    FileUtils.test(check_candidate, FileTest.IS_EXECUTABLE)) {
+                    extract_path = extract_candidate;
+                    check_path = check_candidate;
+                    break;
+                }
+            }
+
+            if (extract_path == null || check_path == null) {
+                var extract_found = Environment.find_program_in_path("dwarfsextract");
+                var check_found = Environment.find_program_in_path("dwarfsck");
+                if (extract_found != null && extract_found.strip() != "") {
+                    extract_path = extract_found;
+                }
+                if (check_found != null && check_found.strip() != "") {
+                    check_path = check_found;
+                }
+            }
+
+            available_cache = extract_path != null && check_path != null;
+            checked_tools = true;
+        }
+
+        public static bool available() {
+            init_tool_paths();
+            return available_cache;
+        }
+
+        public static void log_missing_once() {
+            if (available_cache || missing_logged) {
+                return;
+            }
+            missing_logged = true;
+            warning("DwarFS tools not found. Install or place dwarfsextract/dwarfsck in PATH, APP_MANAGER_DWARFS_DIR, /usr/lib/app-manager, or ~/.local/share/app-manager/dwarfs for DwarFS AppImages.");
+        }
+
+        public static bool extract_entry(string archive, string output_dir, string pattern) {
+            if (!available()) {
+                return false;
+            }
+
+            try {
+                string? stdout_str;
+                string? stderr_str;
+                var cleaned = strip_leading_slashes(pattern);
+                var cmd = new string[] {
+                    extract_path ?? "dwarfsextract",
+                    "-i", archive,
+                    "-O", "auto",
+                    "--pattern", cleaned,
+                    "-o", output_dir,
+                    "--log-level=error"
+                };
+                int exit_status = execute(cmd, out stdout_str, out stderr_str);
+                if (exit_status != 0) {
+                    debug("dwarfsextract failed (%d): %s", exit_status, stderr_str ?? "");
+                }
+                return exit_status == 0;
+            } catch (Error e) {
+                debug("Failed to run dwarfsextract: %s", e.message);
+                return false;
+            }
+        }
+
+        public static bool extract_all(string archive, string output_dir) {
+            return extract_entry(archive, output_dir, "*");
+        }
+
+        public static Gee.ArrayList<string>? list_paths(string archive) {
+            if (!available()) {
+                return null;
+            }
+
+            try {
+                string? stdout_str;
+                string? stderr_str;
+                var cmd = new string[] {check_path ?? "dwarfsck", "-l", "--no-check", "-O", "auto", archive};
+                int exit_status = execute(cmd, out stdout_str, out stderr_str);
+                if (exit_status != 0) {
+                    debug("dwarfsck list failed (%d): %s", exit_status, stderr_str ?? "");
+                    return null;
+                }
+
+                var paths = new Gee.ArrayList<string>();
+                if (stdout_str == null) {
+                    return null;
+                }
+
+                foreach (var raw_line in stdout_str.split("\n")) {
+                    var line = raw_line.strip();
+                    if (line == "") {
+                        continue;
+                    }
+
+                    // DwarFS uses ls-like output; extract the first token that looks like a path and keep the rest (supports spaces).
+                    var tokens = new Gee.ArrayList<string>();
+                    foreach (var part in raw_line.replace("\t", " ").split(" ")) {
+                        var trimmed = part.strip();
+                        if (trimmed != "") {
+                            tokens.add(trimmed);
+                        }
+                    }
+
+                    if (tokens.size == 0) {
+                        continue;
+                    }
+
+                    int path_index = -1;
+                    for (int i = 0; i < tokens.size; i++) {
+                        if (looks_like_path_token(tokens.get(i))) {
+                            path_index = i;
+                            break;
+                        }
+                    }
+
+                    if (path_index < 0) {
+                        path_index = tokens.size - 1;
+                    }
+
+                    var builder = new StringBuilder();
+                    for (int i = path_index; i < tokens.size; i++) {
+                        if (tokens.get(i) == "->") {
+                            break; // stop before symlink target
+                        }
+                        if (builder.len > 0) {
+                            builder.append(" ");
+                        }
+                        builder.append(tokens.get(i));
+                    }
+
+                    var path = strip_leading_slashes(builder.str.strip());
+                    if (path != "") {
+                        paths.add(path);
+                    }
+                }
+
+                return paths.size > 0 ? paths : null;
+            } catch (Error e) {
+                debug("Failed to list DwarFS paths: %s", e.message);
+                return null;
+            }
+        }
+
+        private static int execute(string[] arguments, out string? stdout_str, out string? stderr_str) throws Error {
+            int exit_status;
+            Process.spawn_sync(null, arguments, null, SpawnFlags.SEARCH_PATH, null, out stdout_str, out stderr_str, out exit_status);
+            return exit_status;
+        }
+
+        private static string strip_leading_slashes(string value) {
+            var result = value ?? "";
+            while (result.has_prefix("/")) {
+                result = result.substring(1);
+            }
+            return result;
+        }
+
+        private static bool looks_like_path_token(string token) {
+            return token.contains("/") ||
+                token == "AppRun" ||
+                token.has_suffix(".desktop") ||
+                token.has_suffix(".png") ||
+                token.has_suffix(".svg") ||
+                token.has_suffix(".DirIcon") ||
+                token == ".DirIcon";
+        }
+    }
+
     public class AppImageAssets : Object {
         private const string DIRICON_NAME = ".DirIcon";
         private const int MAX_SYMLINK_ITERATIONS = 5;
@@ -48,7 +254,9 @@ namespace AppManager.Core {
             DirUtils.create_with_parents(desktop_root, 0755);
             
             // Extract only root-level .desktop files
-            run_7z({"x", appimage_path, "-o" + desktop_root, "*.desktop", "-y"});
+            if (!try_extract_entry(appimage_path, desktop_root, "*.desktop")) {
+                throw new AppImageAssetsError.DESKTOP_FILE_MISSING("No .desktop file found in AppImage root");
+            }
             
             // Find .desktop file in root
             string? desktop_path = find_file_in_root(desktop_root, "*.desktop");
@@ -75,7 +283,7 @@ namespace AppManager.Core {
             }
             
             // Fall back to .DirIcon
-            if (try_run_7z({"x", appimage_path, "-o" + icon_root, DIRICON_NAME, "-y"})) {
+            if (try_extract_entry(appimage_path, icon_root, DIRICON_NAME)) {
                 var diricon_path = Path.build_filename(icon_root, DIRICON_NAME);
                 if (File.new_for_path(diricon_path).query_exists()) {
                     return resolve_symlink(diricon_path, appimage_path, icon_root);
@@ -99,21 +307,23 @@ namespace AppManager.Core {
         }
 
         public static bool check_compatibility(string appimage_path) {
-            // Check for desktop file
-            if (!try_run_7z({"l", appimage_path, "*.desktop"})) {
+            var paths = list_archive_paths(appimage_path);
+            if (paths == null) {
                 return false;
             }
 
-            // Check for icon files
-            bool has_icon = try_run_7z({"l", appimage_path, "*.png"}) ||
-                           try_run_7z({"l", appimage_path, "*.svg"}) ||
-                           try_run_7z({"l", appimage_path, DIRICON_NAME});
+            if (!archive_has_pattern(paths, "*.desktop")) {
+                return false;
+            }
+
+            bool has_icon = archive_has_pattern(paths, "*.png") ||
+                           archive_has_pattern(paths, "*.svg") ||
+                           archive_has_pattern(paths, DIRICON_NAME);
             if (!has_icon) {
                 return false;
             }
 
-            // Check for AppRun
-            if (!try_run_7z({"l", appimage_path, "AppRun"})) {
+            if (!archive_has_pattern(paths, "AppRun")) {
                 return false;
             }
 
@@ -186,7 +396,7 @@ namespace AppManager.Core {
                 visited.add(normalized);
 
                 // Extract the symlink target from AppImage
-                run_7z({"x", appimage_path, "-o" + extract_root, normalized, "-y"});
+                extract_entry_or_fail(appimage_path, extract_root, normalized);
 
                 current_path = Path.build_filename(extract_root, normalized);
                 var current_file = File.new_for_path(current_path);
@@ -205,15 +415,112 @@ namespace AppManager.Core {
             throw new AppImageAssetsError.SYMLINK_LIMIT_EXCEEDED("Symlink chain exceeded limit of %d iterations".printf(MAX_SYMLINK_ITERATIONS));
         }
 
-        private static void run_7z(string[] arguments) throws Error {
-            string? stdout_str;
-            string? stderr_str;
-            int exit_status = execute_7z(arguments, out stdout_str, out stderr_str);
-            if (exit_status != 0) {
-                warning("7z stdout: %s", stdout_str ?? "");
-                warning("7z stderr: %s", stderr_str ?? "");
-                throw new AppImageAssetsError.EXTRACTION_FAILED("7z failed to extract payload");
+        private static void extract_entry_or_fail(string appimage_path, string output_dir, string pattern) throws Error {
+            if (try_extract_entry(appimage_path, output_dir, pattern)) {
+                return;
             }
+            throw new AppImageAssetsError.EXTRACTION_FAILED("Failed to extract %s from AppImage".printf(pattern));
+        }
+
+        private static bool try_extract_entry(string appimage_path, string output_dir, string pattern) {
+            if (try_run_7z({"x", appimage_path, "-o" + output_dir, pattern, "-y"}) &&
+                extraction_successful(output_dir, pattern)) {
+                return true;
+            }
+            if (DwarfsTools.extract_entry(appimage_path, output_dir, pattern) &&
+                extraction_successful(output_dir, pattern)) {
+                return true;
+            }
+            if (!DwarfsTools.available()) {
+                DwarfsTools.log_missing_once();
+            }
+            return false;
+        }
+
+        private static bool extraction_successful(string output_dir, string pattern) {
+            var has_wildcard = pattern.index_of_char('*') >= 0 || pattern.index_of_char('?') >= 0;
+            if (has_wildcard && !pattern.contains("/")) {
+                try {
+                    var spec = new GLib.PatternSpec(pattern);
+                    var dir = GLib.Dir.open(output_dir);
+                    string? name;
+                    while ((name = dir.read_name()) != null) {
+                        if (spec.match_string(name)) {
+                            return true;
+                        }
+                    }
+                } catch (Error e) {
+                    debug("Failed to inspect extraction output: %s", e.message);
+                }
+                return false;
+            }
+
+            var target_path = Path.build_filename(output_dir, pattern);
+            return File.new_for_path(target_path).query_exists();
+        }
+
+        private static Gee.ArrayList<string>? list_archive_paths(string appimage_path) {
+            var paths = list_archive_paths_7z(appimage_path);
+            if (paths != null) {
+                return paths;
+            }
+            var dwarfs_paths = DwarfsTools.list_paths(appimage_path);
+            if (dwarfs_paths != null) {
+                return dwarfs_paths;
+            }
+            if (!DwarfsTools.available()) {
+                DwarfsTools.log_missing_once();
+            }
+            return null;
+        }
+
+        private static Gee.ArrayList<string>? list_archive_paths_7z(string appimage_path) {
+            try {
+                string? stdout_str;
+                string? stderr_str;
+                int exit_status = execute_7z({"l", "-slt", "-tSquashFS", appimage_path}, out stdout_str, out stderr_str);
+                if (exit_status != 0) {
+                    debug("7z list failed (%d): %s", exit_status, stderr_str ?? "");
+                    return null;
+                }
+
+                var paths = new Gee.ArrayList<string>();
+                if (stdout_str == null) {
+                    return null;
+                }
+
+                foreach (var raw_line in stdout_str.split("\n")) {
+                    var line = raw_line.strip();
+                    if (line.has_prefix("Path = ")) {
+                        var path = line.substring("Path = ".length).strip();
+                        var normalized = normalize_archive_path(path);
+                        if (normalized != null) {
+                            paths.add(normalized);
+                        }
+                    }
+                }
+
+                return paths.size > 0 ? paths : null;
+            } catch (Error e) {
+                debug("Failed to list archive paths with 7z: %s", e.message);
+                return null;
+            }
+        }
+
+        private static bool archive_has_pattern(Gee.ArrayList<string> paths, string pattern) {
+            var spec = new GLib.PatternSpec(pattern);
+            foreach (var path in paths) {
+                if (spec.match_string(path)) {
+                    return true;
+                }
+                // Allow basename match for plain patterns (e.g., "AppRun")
+                if (!pattern.contains("*") && !pattern.contains("?")) {
+                    if (Path.get_basename(path) == pattern) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static bool try_run_7z(string[] arguments) {
@@ -279,7 +586,7 @@ namespace AppManager.Core {
         }
 
         private static string? try_extract_icon_pattern(string appimage_path, string icon_root, string pattern) {
-            if (!try_run_7z({"x", appimage_path, "-o" + icon_root, pattern, "-y"})) {
+            if (!try_extract_entry(appimage_path, icon_root, pattern)) {
                 return null;
             }
             return find_file_in_root(icon_root, pattern);

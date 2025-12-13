@@ -1,3 +1,4 @@
 namespace AppManager.Core {
     public const string APPLICATION_VERSION = "@VERSION@";
+    public const string DWARFS_BUNDLE_DIR = "@DWARFS_BUNDLE_DIR@";
 }

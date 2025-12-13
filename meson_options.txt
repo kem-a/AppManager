@@ -1,0 +1,5 @@
+option('bundle_dwarfs',
+  type: 'boolean',
+  value: true,
+  description: 'Bundle DwarFS tools (dwarfsextract, dwarfsck) during build'
+)

@@ -454,6 +454,11 @@ namespace AppManager.Core {
                     output_lines.add(line);
                     continue;
                 }
+
+                // Drop TryExec to avoid GNOME misreporting installed apps
+                if (trimmed.has_prefix("TryExec=")) {
+                    continue;
+                }
                 // Replace Exec in Desktop Entry section
                 if (trimmed.has_prefix("Exec=")) {
                     // For both PORTABLE and EXTRACTED modes: preserve command-line arguments from original desktop file
@@ -872,6 +877,12 @@ namespace AppManager.Core {
             if (exit_status != 0) {
                 warning("AppImage extract stdout: %s", stdout_str ?? "");
                 warning("AppImage extract stderr: %s", stderr_str ?? "");
+                // Fallback for DwarFS-based AppImages that the runtime cannot extract
+                var dwarfs_output = Path.build_filename(working_dir, "squashfs-root");
+                DirUtils.create_with_parents(dwarfs_output, 0755);
+                if (DwarfsTools.extract_all(appimage_path, dwarfs_output)) {
+                    return;
+                }
                 throw new InstallerError.EXTRACTION_FAILED("AppImage self-extract failed");
             }
         }
