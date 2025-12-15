@@ -81,13 +81,24 @@ namespace AppManager.Utils {
                 return 0;
             }
             
-            var info = file.query_info(FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NONE);
+            // Use NOFOLLOW_SYMLINKS to avoid counting symlink targets (which may be
+            // counted again at their real location, or point outside the directory).
+            var info = file.query_info(FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+            
+            // Skip symlinks entirely - they're just small pointer files
+            if (info.get_file_type() == FileType.SYMBOLIC_LINK) {
+                return 0;
+            }
             
             if (info.get_file_type() == FileType.DIRECTORY) {
                 int64 size = 0;
-                var enumerator = file.enumerate_children(FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NONE);
+                var enumerator = file.enumerate_children(FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
                 FileInfo child_info;
                 while ((child_info = enumerator.next_file()) != null) {
+                    // Skip symlinks to avoid double-counting
+                    if (child_info.get_file_type() == FileType.SYMBOLIC_LINK) {
+                        continue;
+                    }
                     var child = file.get_child(child_info.get_name());
                     if (child_info.get_file_type() == FileType.DIRECTORY) {
                         size += get_path_size(child.get_path());

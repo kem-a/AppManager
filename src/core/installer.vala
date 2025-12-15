@@ -139,9 +139,33 @@ namespace AppManager.Core {
                 run_appimage_extract(metadata.path, staging_dir);
                 var extracted_root = Path.build_filename(staging_dir, "squashfs-root");
                 var extracted_file = File.new_for_path(extracted_root);
-                if (!extracted_file.query_exists() || extracted_file.query_file_type(FileQueryInfoFlags.NONE) != FileType.DIRECTORY) {
+                if (!extracted_file.query_exists()) {
                     throw new InstallerError.EXTRACTION_FAILED("AppImage extraction did not produce squashfs-root");
                 }
+                
+                // Some AppImages create squashfs-root as a symlink (e.g., to AppDir).
+                // Resolve the symlink to get the actual directory to move.
+                var file_type = extracted_file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+                if (file_type == FileType.SYMBOLIC_LINK) {
+                    try {
+                        var link_target = GLib.FileUtils.read_link(extracted_root);
+                        string resolved_path;
+                        if (Path.is_absolute(link_target)) {
+                            resolved_path = link_target;
+                        } else {
+                            resolved_path = Path.build_filename(staging_dir, link_target);
+                        }
+                        extracted_file = File.new_for_path(resolved_path);
+                        debug("squashfs-root is a symlink, resolved to: %s", resolved_path);
+                    } catch (Error e) {
+                        throw new InstallerError.EXTRACTION_FAILED("Failed to resolve squashfs-root symlink: %s".printf(e.message));
+                    }
+                }
+                
+                if (extracted_file.query_file_type(FileQueryInfoFlags.NONE) != FileType.DIRECTORY) {
+                    throw new InstallerError.EXTRACTION_FAILED("AppImage extraction did not produce a valid directory");
+                }
+                
                 extracted_file.move(File.new_for_path(dest_dir), FileCopyFlags.NONE, null, null);
             } catch (Error e) {
                 Utils.FileUtils.remove_dir_recursive(dest_dir);
