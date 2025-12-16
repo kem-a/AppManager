@@ -4,9 +4,6 @@ using AppManager.Utils;
 [CCode (cname = "adw_about_dialog_new_from_appdata")]
 extern Adw.Dialog about_dialog_new_from_appdata_raw(string resource_path, string? release_notes_version);
 
-[CCode (cname = "gtk_style_context_add_provider_for_display")]
-internal extern void gtk_style_context_add_provider_for_display_compat(Gdk.Display display, Gtk.StyleProvider provider, uint priority);
-
 namespace AppManager {
     public class MainWindow : Adw.Window {
         private Application app_ref;
@@ -30,7 +27,6 @@ namespace AppManager {
         private UpdateWorkflowState update_state = UpdateWorkflowState.READY_TO_CHECK;
         private Gee.HashSet<string> pending_update_keys;
         private Gee.HashMap<string, string> record_size_cache;
-        private Gee.HashSet<string> updating_records;
         private DetailsWindow? active_details_window;
         private const string SHORTCUTS_RESOURCE = "/com/github/AppManager/ui/main-window-shortcuts.ui";
         private const string APPDATA_RESOURCE = "/com/github/AppManager/com.github.AppManager.metainfo.xml";
@@ -55,7 +51,6 @@ namespace AppManager {
             this.updater = new Updater(registry, installer);
             this.pending_update_keys = new Gee.HashSet<string>();
             this.record_size_cache = new Gee.HashMap<string, string>();
-            this.updating_records = new Gee.HashSet<string>();
             this.active_details_window = null;
             this.app_rows = new Gee.ArrayList<Adw.PreferencesRow>();
             add_css_class("devel");
@@ -100,35 +95,19 @@ namespace AppManager {
                     color: @accent_color;
                     font-weight: bold;
                 }
+                .update-indicator {
+                    color: @accent_color;
+                    font-size: 10px;
+                }
             """;
             provider.load_from_string(css);
 
-            var style_manager = Adw.StyleManager.get_default();
-            if (style_manager == null) {
-                warning("Custom CSS could not be applied because no StyleManager is available");
-                return;
-            }
-
-            void apply_provider(Gdk.Display display) {
-                gtk_style_context_add_provider_for_display_compat(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-            }
-
-            var display = style_manager.get_display();
+            var display = Gdk.Display.get_default();
             if (display != null) {
-                apply_provider(display);
-                return;
+                Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+            } else {
+                warning("Custom CSS could not be applied because no display is available");
             }
-
-            // Wait for the StyleManager to gain a display before applying CSS to avoid startup warnings.
-            ulong handler_id = 0;
-            handler_id = style_manager.notify["display"].connect(() => {
-                var new_display = style_manager.get_display();
-                if (new_display == null) {
-                    return;
-                }
-                style_manager.disconnect(handler_id);
-                apply_provider(new_display);
-            });
         }
 
         private void build_ui() {
@@ -361,8 +340,11 @@ namespace AppManager {
 
                 var state_key = record_state_key(record);
                 if (pending_update_keys.contains(state_key)) {
-                    var update_widget = create_update_widget(record, state_key);
-                    suffix_box.append(update_widget);
+                    var update_dot = new Gtk.Label("●");
+                    update_dot.add_css_class("update-indicator");
+                    update_dot.set_valign(Gtk.Align.CENTER);
+                    update_dot.set_tooltip_text(I18n.tr("Update available"));
+                    suffix_box.append(update_dot);
                 }
 
                 suffix_box.append(arrow);
@@ -465,31 +447,7 @@ namespace AppManager {
             return is_updated ? I18n.tr("Updated %d days ago").printf(days) : I18n.tr("Installed %d days ago").printf(days);
         }
 
-        private Gtk.Widget create_update_widget(InstallationRecord record, string state_key) {
-            bool is_updating = updating_records.contains(state_key);
-            if (is_updating) {
-                var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-                box.set_valign(Gtk.Align.CENTER);
 
-                var spinner = new Gtk.Spinner();
-                spinner.start();
-                box.append(spinner);
-
-                var label = new Gtk.Label(I18n.tr("Updating"));
-                label.add_css_class("dim-label");
-                label.set_valign(Gtk.Align.CENTER);
-                box.append(label);
-
-                return box;
-            }
-
-            var button = new Gtk.Button.with_label(I18n.tr("Update"));
-            button.add_css_class("suggested-action");
-            button.clicked.connect(() => {
-                trigger_single_update(record);
-            });
-            return button;
-        }
 
         public void present_shortcuts_dialog() {
             ensure_shortcuts_window();
@@ -739,7 +697,6 @@ namespace AppManager {
                 return;
             }
 
-            mark_pending_updates_as_in_progress();
             refresh_installations();
             set_update_button_state(UpdateWorkflowState.UPDATING);
             new Thread<void>("appmgr-update", () => {
@@ -752,21 +709,7 @@ namespace AppManager {
             });
         }
 
-        private void mark_pending_updates_as_in_progress() {
-            foreach (var key in pending_update_keys) {
-                updating_records.add(key);
-            }
-        }
-
         private void trigger_single_update(InstallationRecord record) {
-            var key = record_state_key(record);
-            if (updating_records.contains(key)) {
-                return;
-            }
-
-            updating_records.add(key);
-            refresh_installations();
-
             new Thread<void>("appmgr-update-single", () => {
                 var result = updater.update_single(record);
                 var payload = new Gee.ArrayList<UpdateResult>();
@@ -781,7 +724,6 @@ namespace AppManager {
 
         private void finalize_single_update(UpdateResult result) {
             var key = record_state_key(result.record);
-            updating_records.remove(key);
             if (result.status == UpdateStatus.UPDATED) {
                 pending_update_keys.remove(key);
                 record_size_cache.unset(result.record.id);
@@ -795,7 +737,6 @@ namespace AppManager {
             var remaining = new Gee.HashSet<string>();
             foreach (var result in results) {
                 var key = record_state_key(result.record);
-                updating_records.remove(key);
                 if (!pending_update_keys.contains(key)) {
                     continue;
                 }
