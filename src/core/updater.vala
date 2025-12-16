@@ -128,11 +128,10 @@ namespace AppManager.Core {
         private ArrayList<UpdateProbeResult> probe_updates_parallel(InstallationRecord[] records, GLib.Cancellable? cancellable) {
             var slots = new UpdateProbeResult?[records.length];
             Mutex slots_lock = Mutex();
-                ThreadPool<RecordTask>? pool = null;
-                var task_refs = new ArrayList<RecordTask>();
+            ThreadPool<RecordTask>? pool = null;
 
             try {
-                    pool = new ThreadPool<RecordTask>((task) => {
+                pool = new ThreadPool<RecordTask>.with_owned_data((task) => {
                     var outcome = probe_record(task.record, cancellable);
                     slots_lock.lock();
                     slots[task.index] = outcome;
@@ -140,20 +139,17 @@ namespace AppManager.Core {
                 }, MAX_PARALLEL_JOBS, false);
 
                 for (int i = 0; i < records.length; i++) {
-                        var task = new RecordTask(i, records[i]);
-                        task_refs.add(task);
-                        pool.push(task);
+                    var task = new RecordTask(i, records[i]);
+                    pool.add((owned) task);
                 }
 
                 ThreadPool.free((owned) pool, false, true);
                 pool = null;
-                    task_refs.clear();
             } catch (Error e) {
                 if (pool != null) {
                     ThreadPool.free((owned) pool, false, true);
                     pool = null;
                 }
-                    task_refs.clear();
                 warning("Parallel probe failed, filling missing results serially: %s", e.message);
                 return materialize_probe_results(slots, records, cancellable);
             }
@@ -165,10 +161,9 @@ namespace AppManager.Core {
             var slots = new UpdateResult?[records.length];
             Mutex slots_lock = Mutex();
             ThreadPool<RecordTask>? pool = null;
-                var task_refs = new ArrayList<RecordTask>();
 
             try {
-                    pool = new ThreadPool<RecordTask>((task) => {
+                pool = new ThreadPool<RecordTask>.with_owned_data((task) => {
                     var outcome = update_record(task.record, cancellable);
                     slots_lock.lock();
                     slots[task.index] = outcome;
@@ -176,20 +171,17 @@ namespace AppManager.Core {
                 }, MAX_PARALLEL_JOBS, false);
 
                 for (int i = 0; i < records.length; i++) {
-                        var task = new RecordTask(i, records[i]);
-                        task_refs.add(task);
-                        pool.push(task);
+                    var task = new RecordTask(i, records[i]);
+                    pool.add((owned) task);
                 }
 
                 ThreadPool.free((owned) pool, false, true);
                 pool = null;
-                    task_refs.clear();
             } catch (Error e) {
                 if (pool != null) {
                     ThreadPool.free((owned) pool, false, true);
                     pool = null;
                 }
-                    task_refs.clear();
                 warning("Parallel update failed, finishing remaining updates serially: %s", e.message);
                 return materialize_update_results(slots, records, cancellable);
             }

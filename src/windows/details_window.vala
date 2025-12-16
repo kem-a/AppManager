@@ -323,17 +323,12 @@ namespace AppManager {
                 return AppPaths.applications_dir;
             }
 
-            try {
-                var file = File.new_for_path(installed_path);
-                if (!file.query_exists()) {
-                    return AppPaths.applications_dir;
-                }
-                if (file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
-                    return installed_path;
-                }
-            } catch (Error e) {
-                warning("Failed to resolve reveal path for %s: %s", installed_path, e.message);
+            var file = File.new_for_path(installed_path);
+            if (!file.query_exists()) {
                 return AppPaths.applications_dir;
+            }
+            if (file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                return installed_path;
             }
 
             return Path.get_dirname(installed_path);

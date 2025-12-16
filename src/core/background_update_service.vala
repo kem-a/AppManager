@@ -136,17 +136,13 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         private void append_update_log(string message) {
-            try {
-                DirUtils.create_with_parents(AppPaths.data_dir, 0755);
-                var ts = new GLib.DateTime.now_local().format("%FT%T%z");
-                var line = "%s %s\n".printf(ts, message);
-                var file = FileStream.open(update_log_path, "a");
-                if (file != null) {
-                    file.puts(line);
-                    file.flush();
-                }
-            } catch (Error e) {
-                warning("Failed to write update log: %s", e.message);
+            DirUtils.create_with_parents(AppPaths.data_dir, 0755);
+            var ts = new GLib.DateTime.now_local().format("%FT%T%z");
+            var line = "%s %s\n".printf(ts, message);
+            var file = FileStream.open(update_log_path, "a");
+            if (file != null) {
+                file.puts(line);
+                file.flush();
             }
         }
     }

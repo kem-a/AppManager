@@ -295,8 +295,8 @@ namespace AppManager {
         private void sort_records_by_updated(Gee.ArrayList<InstallationRecord> records) {
             records.sort((a, b) => {
                 // Use updated_at if available, otherwise use installed_at
-                int64 a_time = a.updated_at ?? a.installed_at;
-                int64 b_time = b.updated_at ?? b.installed_at;
+                int64 a_time = a.updated_at > 0 ? a.updated_at : a.installed_at;
+                int64 b_time = b.updated_at > 0 ? b.updated_at : b.installed_at;
                 
                 if (a_time == b_time) {
                     return compare_record_names(a, b);
@@ -420,7 +420,7 @@ namespace AppManager {
 
         private string? format_time_label(InstallationRecord record) {
             // Determine label type: if app has been updated, always show "Updated", otherwise "Installed"
-            bool is_updated = record.updated_at != null;
+            bool is_updated = record.updated_at > 0;
             
             // Use updated_at if available, otherwise use installed_at for the timestamp
             int64 timestamp = is_updated ? record.updated_at : record.installed_at;
