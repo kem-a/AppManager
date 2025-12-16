@@ -208,5 +208,48 @@ namespace AppManager.Utils {
 
             file.delete();
         }
+
+        /**
+         * Detect image extension from file content (magic bytes).
+         * Returns ".png", ".svg", or empty string if unknown.
+         */
+        public static string detect_image_extension(string path) {
+            try {
+                var file = File.new_for_path(path);
+                if (!file.query_exists()) {
+                    return "";
+                }
+
+                var stream = file.read();
+                var buffer = new uint8[16];
+                size_t bytes_read;
+                stream.read_all(buffer, out bytes_read);
+                stream.close();
+
+                if (bytes_read < 4) {
+                    return "";
+                }
+
+                // PNG magic bytes: 0x89 0x50 0x4E 0x47 (\x89PNG)
+                if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47) {
+                    return ".png";
+                }
+
+                // SVG detection: look for XML declaration or <svg tag
+                // Read more content for SVG detection
+                string content;
+                size_t length;
+                GLib.FileUtils.get_contents(path, out content, out length);
+                var trimmed = content.strip();
+                if (trimmed.has_prefix("<?xml") || trimmed.has_prefix("<svg") || trimmed.has_prefix("<!DOCTYPE svg")) {
+                    return ".svg";
+                }
+
+            } catch (Error e) {
+                debug("Failed to detect image type for %s: %s", path, e.message);
+            }
+
+            return "";
+        }
     }
 }

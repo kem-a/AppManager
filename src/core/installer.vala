@@ -325,6 +325,9 @@ namespace AppManager.Core {
                     icon_extension = ".svg";
                 } else if (icon_file_basename.has_suffix(".png")) {
                     icon_extension = ".png";
+                } else {
+                    // No extension in filename (e.g., .DirIcon), detect from content
+                    icon_extension = Utils.FileUtils.detect_image_extension(icon_path);
                 }
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
