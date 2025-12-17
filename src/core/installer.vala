@@ -332,7 +332,7 @@ namespace AppManager.Core {
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
-                var desktop_contents = rewrite_desktop(desktop_path, exec_path, icon_name_for_desktop, record.installed_path, is_terminal_app, record.mode, preserved_props);
+                var desktop_contents = rewrite_desktop(desktop_path, exec_path, icon_name_for_desktop, record.installed_path, is_terminal_app, record.mode, preserved_props, final_slug);
                 var desktop_filename = "%s-%s.desktop".printf("appmanager", final_slug);
                 var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
                 Utils.FileUtils.ensure_parent(desktop_destination);
@@ -446,7 +446,7 @@ namespace AppManager.Core {
             }
         }
 
-        private string rewrite_desktop(string desktop_path, string exec_target, string icon_name, string installed_path, bool is_terminal, InstallMode mode, HashTable<string, string>? preserved_props) throws Error {
+        private string rewrite_desktop(string desktop_path, string exec_target, string icon_name, string installed_path, bool is_terminal, InstallMode mode, HashTable<string, string>? preserved_props, string slug) throws Error {
             string contents;
             if (!GLib.FileUtils.get_contents(desktop_path, out contents)) {
                 throw new InstallerError.DESKTOP_MISSING("Failed to read desktop file");
@@ -691,10 +691,11 @@ namespace AppManager.Core {
                         insert_pos = i + 1;
                     }
                 }
+                var desktop_name = "appmanager-%s".printf(slug);
                 if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "StartupWMClass=%s".printf(icon_name));
+                    output_lines.insert(insert_pos, "StartupWMClass=%s".printf(desktop_name));
                 } else {
-                    output_lines.add("StartupWMClass=%s".printf(icon_name));
+                    output_lines.add("StartupWMClass=%s".printf(desktop_name));
                 }
             }
 

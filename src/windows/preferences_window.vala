@@ -1,7 +1,7 @@
 using AppManager.Core;
 
 namespace AppManager {
-    public class PreferencesWindow : Adw.PreferencesWindow {
+    public class PreferencesDialog : Adw.PreferencesDialog {
         private GLib.Settings settings;
         private int[] update_interval_options = { 86400, 604800, 2592000 };
         private bool portal_available = false;
@@ -18,11 +18,11 @@ namespace AppManager {
             "  box-shadow: none;\n" +
             "}\n";
 
-        public PreferencesWindow(GLib.Settings settings) {
+        public PreferencesDialog(GLib.Settings settings) {
             Object();
             this.settings = settings;
             this.set_title(I18n.tr("Preferences"));
-            this.set_default_size(500, 670);
+            this.content_height = 660;
             check_portal_availability.begin();
             build_ui();
         }
@@ -90,11 +90,11 @@ namespace AppManager {
 
             var pkgforge_row = new Adw.ActionRow();
             pkgforge_row.title = "Anylinux AppImages";
-            pkgforge_row.subtitle = "github.com/pkgforge-dev";
+            pkgforge_row.subtitle = "pkgforge-dev.github.io";
             pkgforge_row.activatable = true;
             pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
             pkgforge_row.activated.connect(() => {
-                open_url("https://github.com/pkgforge-dev/Anylinux-AppImages");
+                open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/");
             });
             links_group.add(pkgforge_row);
 

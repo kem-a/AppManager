@@ -229,14 +229,12 @@ namespace AppManager {
                 filtered_list.add(record);
             }
             
-            var records = filtered_list.to_array();
-
-            prune_pending_keys(records);
-            prune_size_cache(records);
-            update_apps_group_title(records.length);
+            prune_pending_keys(filtered_list);
+            prune_size_cache(filtered_list);
+            update_apps_group_title(filtered_list.size);
             update_update_button_sensitive();
 
-            if (records.length == 0) {
+            if (filtered_list.size == 0) {
                 var message = current_search_query != "" ? I18n.tr("No results found") : I18n.tr("No AppImage apps installed");
                 show_empty_state(message);
                 return;
@@ -245,14 +243,12 @@ namespace AppManager {
             show_list_state();
 
             var sorted = new Gee.ArrayList<InstallationRecord>();
-            foreach (var record in records) {
-                sorted.add(record);
-            }
+            sorted.add_all(filtered_list);
             sort_records_by_updated(sorted);
             populate_group(apps_group, sorted);
         }
 
-        private void prune_pending_keys(InstallationRecord[] records) {
+        private void prune_pending_keys(Gee.Collection<InstallationRecord> records) {
             var valid = new Gee.HashSet<string>();
             foreach (var record in records) {
                 valid.add(record_state_key(record));
@@ -268,7 +264,7 @@ namespace AppManager {
             }
         }
 
-        private void prune_size_cache(InstallationRecord[] records) {
+        private void prune_size_cache(Gee.Collection<InstallationRecord> records) {
             var valid = new Gee.HashSet<string>();
             foreach (var record in records) {
                 valid.add(record_state_key(record));
@@ -295,8 +291,8 @@ namespace AppManager {
         private void sort_records_by_updated(Gee.ArrayList<InstallationRecord> records) {
             records.sort((a, b) => {
                 // Use updated_at if available, otherwise use installed_at
-                int64 a_time = a.updated_at ?? a.installed_at;
-                int64 b_time = b.updated_at ?? b.installed_at;
+                int64 a_time = a.updated_at > 0 ? a.updated_at : a.installed_at;
+                int64 b_time = b.updated_at > 0 ? b.updated_at : b.installed_at;
                 
                 if (a_time == b_time) {
                     return compare_record_names(a, b);
@@ -388,7 +384,12 @@ namespace AppManager {
                 parts.add(I18n.tr("extracted"));
             }
 
-            return string.joinv(" ･ ", parts.to_array());
+            // Build native string array to avoid Gee.to_array() void** warning
+            var arr = new string[parts.size];
+            for (int i = 0; i < parts.size; i++) {
+                arr[i] = parts.get(i);
+            }
+            return string.joinv(" ･ ", arr);
         }
 
         private string? format_record_size(InstallationRecord record) {
@@ -420,7 +421,7 @@ namespace AppManager {
 
         private string? format_time_label(InstallationRecord record) {
             // Determine label type: if app has been updated, always show "Updated", otherwise "Installed"
-            bool is_updated = record.updated_at != null;
+            bool is_updated = record.updated_at > 0;
             
             // Use updated_at if available, otherwise use installed_at for the timestamp
             int64 timestamp = is_updated ? record.updated_at : record.installed_at;

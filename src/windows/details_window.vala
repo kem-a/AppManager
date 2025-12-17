@@ -270,15 +270,18 @@ namespace AppManager {
             actions_box.append(create_list_box_for_row(update_action_row));
             refresh_update_action_row();
 
-            var extract_row = new Adw.ButtonRow();
-            extract_row.title = I18n.tr("Extract AppImage");
-            extract_row.sensitive = record.mode == InstallMode.PORTABLE;
-            extract_row.activated.connect(() => {
-                if (extract_row.get_sensitive()) {
-                    present_extract_warning();
-                }
-            });
-            actions_box.append(create_list_box_for_row(extract_row));
+            // Only show extract action for non-terminal, portable installs
+            if (record.mode == InstallMode.PORTABLE && (desktop_props.get("Terminal") ?? "false").down() != "true") {
+                var extract_row = new Adw.ButtonRow();
+                extract_row.title = I18n.tr("Extract AppImage");
+                extract_row.sensitive = true;
+                extract_row.activated.connect(() => {
+                    if (extract_row.get_sensitive()) {
+                        present_extract_warning();
+                    }
+                });
+                actions_box.append(create_list_box_for_row(extract_row));
+            }
             
             var delete_row = new Adw.ButtonRow();
             delete_row.title = I18n.tr("Move to Trash");
@@ -323,17 +326,12 @@ namespace AppManager {
                 return AppPaths.applications_dir;
             }
 
-            try {
-                var file = File.new_for_path(installed_path);
-                if (!file.query_exists()) {
-                    return AppPaths.applications_dir;
-                }
-                if (file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
-                    return installed_path;
-                }
-            } catch (Error e) {
-                warning("Failed to resolve reveal path for %s: %s", installed_path, e.message);
+            var file = File.new_for_path(installed_path);
+            if (!file.query_exists()) {
                 return AppPaths.applications_dir;
+            }
+            if (file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                return installed_path;
             }
 
             return Path.get_dirname(installed_path);

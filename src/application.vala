@@ -11,7 +11,7 @@ namespace AppManager {
         private Settings settings;
         private BackgroundUpdateService? bg_update_service;
         private DirectoryMonitor? directory_monitor;
-        private PreferencesWindow? preferences_window;
+        private PreferencesDialog? preferences_dialog;
         private static bool opt_version = false;
         private static bool opt_help = false;
         private static bool opt_background_update = false;
@@ -391,24 +391,23 @@ Examples:
         }
 
         private void present_preferences() {
-            if (preferences_window == null) {
-                preferences_window = new PreferencesWindow(settings);
-                preferences_window.close_request.connect(() => {
-                    preferences_window = null;
-                    return false;
-                });
-            }
-
-            Gtk.Window? parent = this.get_active_window();
+            Gtk.Widget? parent = this.get_active_window();
             if (parent == null) {
                 parent = main_window;
             }
 
-            if (parent != null) {
-                preferences_window.set_transient_for(parent);
+            if (parent == null) {
+                return;
             }
 
-            preferences_window.present();
+            if (preferences_dialog == null) {
+                preferences_dialog = new PreferencesDialog(settings);
+                preferences_dialog.closed.connect(() => {
+                    preferences_dialog = null;
+                });
+            }
+
+            preferences_dialog.present(parent);
         }
 
         private async void request_background_updates() {

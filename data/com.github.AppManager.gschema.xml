@@ -12,7 +12,7 @@
       <description>Stores the last known width so the preferences window can restore it.</description>
     </key>
     <key name="window-height" type="i">
-      <default>550</default>
+      <default>800</default>
       <summary>Main window height</summary>
       <description>Stores the last known height so the preferences window can restore it.</description>
     </key>
