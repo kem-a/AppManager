@@ -229,14 +229,12 @@ namespace AppManager {
                 filtered_list.add(record);
             }
             
-            var records = filtered_list.to_array();
-
-            prune_pending_keys(records);
-            prune_size_cache(records);
-            update_apps_group_title(records.length);
+            prune_pending_keys(filtered_list);
+            prune_size_cache(filtered_list);
+            update_apps_group_title(filtered_list.size);
             update_update_button_sensitive();
 
-            if (records.length == 0) {
+            if (filtered_list.size == 0) {
                 var message = current_search_query != "" ? I18n.tr("No results found") : I18n.tr("No AppImage apps installed");
                 show_empty_state(message);
                 return;
@@ -245,14 +243,12 @@ namespace AppManager {
             show_list_state();
 
             var sorted = new Gee.ArrayList<InstallationRecord>();
-            foreach (var record in records) {
-                sorted.add(record);
-            }
+            sorted.add_all(filtered_list);
             sort_records_by_updated(sorted);
             populate_group(apps_group, sorted);
         }
 
-        private void prune_pending_keys(InstallationRecord[] records) {
+        private void prune_pending_keys(Gee.Collection<InstallationRecord> records) {
             var valid = new Gee.HashSet<string>();
             foreach (var record in records) {
                 valid.add(record_state_key(record));
@@ -268,7 +264,7 @@ namespace AppManager {
             }
         }
 
-        private void prune_size_cache(InstallationRecord[] records) {
+        private void prune_size_cache(Gee.Collection<InstallationRecord> records) {
             var valid = new Gee.HashSet<string>();
             foreach (var record in records) {
                 valid.add(record_state_key(record));
@@ -388,7 +384,12 @@ namespace AppManager {
                 parts.add(I18n.tr("extracted"));
             }
 
-            return string.joinv(" ･ ", parts.to_array());
+            // Build native string array to avoid Gee.to_array() void** warning
+            var arr = new string[parts.size];
+            for (int i = 0; i < parts.size; i++) {
+                arr[i] = parts.get(i);
+            }
+            return string.joinv(" ･ ", arr);
         }
 
         private string? format_record_size(InstallationRecord record) {

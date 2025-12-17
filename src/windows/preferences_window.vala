@@ -90,11 +90,11 @@ namespace AppManager {
 
             var pkgforge_row = new Adw.ActionRow();
             pkgforge_row.title = "Anylinux AppImages";
-            pkgforge_row.subtitle = "github.com/pkgforge-dev";
+            pkgforge_row.subtitle = "pkgforge-dev.github.io";
             pkgforge_row.activatable = true;
             pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
             pkgforge_row.activated.connect(() => {
-                open_url("https://github.com/pkgforge-dev/Anylinux-AppImages");
+                open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/");
             });
             links_group.add(pkgforge_row);
 
