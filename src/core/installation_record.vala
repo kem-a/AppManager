@@ -1,4 +1,7 @@
 namespace AppManager.Core {
+    // Special value to indicate user explicitly cleared a property
+    public const string CLEARED_VALUE = "__CLEARED__";
+
     public enum InstallMode {
         PORTABLE,
         EXTRACTED
@@ -19,24 +22,70 @@ namespace AppManager.Core {
         public string? version { get; set; }
         public string? etag { get; set; }
         
-        // Fields that don't have original/custom distinction (always stored in registry)
-        public string? update_link { get; set; }
-        public string? web_page { get; set; }
-        
         // Original values captured from AppImage's .desktop during install/update
         public string? original_commandline_args { get; set; }
         public string? original_keywords { get; set; }
         public string? original_icon_name { get; set; }
         public string? original_startup_wm_class { get; set; }
+        public string? original_update_link { get; set; }
+        public string? original_web_page { get; set; }
         
-        // Custom values set by user (null means use original, non-null means user customized)
+        // Custom values set by user (null means use original, CLEARED_VALUE means user cleared it, other means user set custom value)
         public string? custom_commandline_args { get; set; }
         public string? custom_keywords { get; set; }
         public string? custom_icon_name { get; set; }
         public string? custom_startup_wm_class { get; set; }
+        public string? custom_update_link { get; set; }
+        public string? custom_web_page { get; set; }
 
         public InstallationRecord(string id, string name, InstallMode mode) {
             Object(id: id, name: name, mode: mode, installed_at: (int64)GLib.get_real_time());
+        }
+
+        /**
+         * Gets the effective value for a property, considering original and custom values.
+         * Returns custom value if set (CLEARED means null), otherwise returns original.
+         */
+        public string? get_effective_commandline_args() {
+            if (custom_commandline_args == CLEARED_VALUE) return null;
+            return custom_commandline_args ?? original_commandline_args;
+        }
+
+        public string? get_effective_keywords() {
+            if (custom_keywords == CLEARED_VALUE) return null;
+            return custom_keywords ?? original_keywords;
+        }
+
+        public string? get_effective_icon_name() {
+            if (custom_icon_name == CLEARED_VALUE) return null;
+            return custom_icon_name ?? original_icon_name;
+        }
+
+        public string? get_effective_startup_wm_class() {
+            if (custom_startup_wm_class == CLEARED_VALUE) return null;
+            return custom_startup_wm_class ?? original_startup_wm_class;
+        }
+
+        public string? get_effective_update_link() {
+            if (custom_update_link == CLEARED_VALUE) return null;
+            return custom_update_link ?? original_update_link;
+        }
+
+        public string? get_effective_web_page() {
+            if (custom_web_page == CLEARED_VALUE) return null;
+            return custom_web_page ?? original_web_page;
+        }
+
+        /**
+         * Returns true if this record has any custom values worth preserving.
+         */
+        public bool has_custom_values() {
+            return custom_commandline_args != null ||
+                   custom_keywords != null ||
+                   custom_icon_name != null ||
+                   custom_startup_wm_class != null ||
+                   custom_update_link != null ||
+                   custom_web_page != null;
         }
 
         public Json.Node to_json() {
@@ -69,12 +118,6 @@ namespace AppManager.Core {
             builder.set_member_name("etag");
             builder.add_string_value(etag ?? "");
             
-            // Fields stored in registry (no original/custom distinction)
-            builder.set_member_name("update_link");
-            builder.add_string_value(update_link ?? "");
-            builder.set_member_name("web_page");
-            builder.add_string_value(web_page ?? "");
-            
             // Original values from AppImage's .desktop
             builder.set_member_name("original_commandline_args");
             builder.add_string_value(original_commandline_args ?? "");
@@ -84,16 +127,76 @@ namespace AppManager.Core {
             builder.add_string_value(original_icon_name ?? "");
             builder.set_member_name("original_startup_wm_class");
             builder.add_string_value(original_startup_wm_class ?? "");
+            builder.set_member_name("original_update_link");
+            builder.add_string_value(original_update_link ?? "");
+            builder.set_member_name("original_web_page");
+            builder.add_string_value(original_web_page ?? "");
             
-            // Custom values set by user (null means not customized)
-            builder.set_member_name("custom_commandline_args");
-            builder.add_string_value(custom_commandline_args ?? "");
-            builder.set_member_name("custom_keywords");
-            builder.add_string_value(custom_keywords ?? "");
-            builder.set_member_name("custom_icon_name");
-            builder.add_string_value(custom_icon_name ?? "");
-            builder.set_member_name("custom_startup_wm_class");
-            builder.add_string_value(custom_startup_wm_class ?? "");
+            // Custom values set by user - only write if set (not null)
+            if (custom_commandline_args != null) {
+                builder.set_member_name("custom_commandline_args");
+                builder.add_string_value(custom_commandline_args);
+            }
+            if (custom_keywords != null) {
+                builder.set_member_name("custom_keywords");
+                builder.add_string_value(custom_keywords);
+            }
+            if (custom_icon_name != null) {
+                builder.set_member_name("custom_icon_name");
+                builder.add_string_value(custom_icon_name);
+            }
+            if (custom_startup_wm_class != null) {
+                builder.set_member_name("custom_startup_wm_class");
+                builder.add_string_value(custom_startup_wm_class);
+            }
+            if (custom_update_link != null) {
+                builder.set_member_name("custom_update_link");
+                builder.add_string_value(custom_update_link);
+            }
+            if (custom_web_page != null) {
+                builder.set_member_name("custom_web_page");
+                builder.add_string_value(custom_web_page);
+            }
+            
+            builder.end_object();
+            return builder.get_root();
+        }
+
+        /**
+         * Serializes only the name and custom values for uninstalled app history.
+         * Used when app is uninstalled to preserve user customizations.
+         */
+        public Json.Node to_history_json() {
+            var builder = new Json.Builder();
+            builder.begin_object();
+            builder.set_member_name("name");
+            builder.add_string_value(name);
+            
+            // Only write custom values if set
+            if (custom_commandline_args != null) {
+                builder.set_member_name("custom_commandline_args");
+                builder.add_string_value(custom_commandline_args);
+            }
+            if (custom_keywords != null) {
+                builder.set_member_name("custom_keywords");
+                builder.add_string_value(custom_keywords);
+            }
+            if (custom_icon_name != null) {
+                builder.set_member_name("custom_icon_name");
+                builder.add_string_value(custom_icon_name);
+            }
+            if (custom_startup_wm_class != null) {
+                builder.set_member_name("custom_startup_wm_class");
+                builder.add_string_value(custom_startup_wm_class);
+            }
+            if (custom_update_link != null) {
+                builder.set_member_name("custom_update_link");
+                builder.add_string_value(custom_update_link);
+            }
+            if (custom_web_page != null) {
+                builder.set_member_name("custom_web_page");
+                builder.add_string_value(custom_web_page);
+            }
             
             builder.end_object();
             return builder.get_root();
@@ -119,12 +222,6 @@ namespace AppManager.Core {
             var etag = obj.get_string_member_with_default("etag", "");
             record.etag = etag == "" ? null : etag;
             
-            // Fields stored in registry (no original/custom distinction)
-            var update_link = obj.get_string_member_with_default("update_link", "");
-            record.update_link = update_link == "" ? null : update_link;
-            var web_page = obj.get_string_member_with_default("web_page", "");
-            record.web_page = web_page == "" ? null : web_page;
-            
             // Original values from AppImage's .desktop
             var original_commandline_args = obj.get_string_member_with_default("original_commandline_args", "");
             record.original_commandline_args = original_commandline_args == "" ? null : original_commandline_args;
@@ -134,18 +231,67 @@ namespace AppManager.Core {
             record.original_icon_name = original_icon_name == "" ? null : original_icon_name;
             var original_startup_wm_class = obj.get_string_member_with_default("original_startup_wm_class", "");
             record.original_startup_wm_class = original_startup_wm_class == "" ? null : original_startup_wm_class;
+            var original_update_link = obj.get_string_member_with_default("original_update_link", "");
+            record.original_update_link = original_update_link == "" ? null : original_update_link;
+            var original_web_page = obj.get_string_member_with_default("original_web_page", "");
+            record.original_web_page = original_web_page == "" ? null : original_web_page;
             
-            // Custom values set by user (null means not customized)
-            var custom_commandline_args = obj.get_string_member_with_default("custom_commandline_args", "");
-            record.custom_commandline_args = custom_commandline_args == "" ? null : custom_commandline_args;
-            var custom_keywords = obj.get_string_member_with_default("custom_keywords", "");
-            record.custom_keywords = custom_keywords == "" ? null : custom_keywords;
-            var custom_icon_name = obj.get_string_member_with_default("custom_icon_name", "");
-            record.custom_icon_name = custom_icon_name == "" ? null : custom_icon_name;
-            var custom_startup_wm_class = obj.get_string_member_with_default("custom_startup_wm_class", "");
-            record.custom_startup_wm_class = custom_startup_wm_class == "" ? null : custom_startup_wm_class;
+            // Legacy support: migrate old update_link/web_page to original_* fields
+            if (record.original_update_link == null) {
+                var legacy_update_link = obj.get_string_member_with_default("update_link", "");
+                record.original_update_link = legacy_update_link == "" ? null : legacy_update_link;
+            }
+            if (record.original_web_page == null) {
+                var legacy_web_page = obj.get_string_member_with_default("web_page", "");
+                record.original_web_page = legacy_web_page == "" ? null : legacy_web_page;
+            }
+            
+            // Custom values set by user - only present if explicitly set
+            if (obj.has_member("custom_commandline_args")) {
+                record.custom_commandline_args = obj.get_string_member("custom_commandline_args");
+            }
+            if (obj.has_member("custom_keywords")) {
+                record.custom_keywords = obj.get_string_member("custom_keywords");
+            }
+            if (obj.has_member("custom_icon_name")) {
+                record.custom_icon_name = obj.get_string_member("custom_icon_name");
+            }
+            if (obj.has_member("custom_startup_wm_class")) {
+                record.custom_startup_wm_class = obj.get_string_member("custom_startup_wm_class");
+            }
+            if (obj.has_member("custom_update_link")) {
+                record.custom_update_link = obj.get_string_member("custom_update_link");
+            }
+            if (obj.has_member("custom_web_page")) {
+                record.custom_web_page = obj.get_string_member("custom_web_page");
+            }
             
             return record;
+        }
+
+        /**
+         * Loads custom values from a history JSON object (uninstalled app's saved custom values).
+         * Only sets values that are currently null (doesn't overwrite existing custom values).
+         */
+        public void apply_history(Json.Object obj) {
+            if (custom_commandline_args == null && obj.has_member("custom_commandline_args")) {
+                custom_commandline_args = obj.get_string_member("custom_commandline_args");
+            }
+            if (custom_keywords == null && obj.has_member("custom_keywords")) {
+                custom_keywords = obj.get_string_member("custom_keywords");
+            }
+            if (custom_icon_name == null && obj.has_member("custom_icon_name")) {
+                custom_icon_name = obj.get_string_member("custom_icon_name");
+            }
+            if (custom_startup_wm_class == null && obj.has_member("custom_startup_wm_class")) {
+                custom_startup_wm_class = obj.get_string_member("custom_startup_wm_class");
+            }
+            if (custom_update_link == null && obj.has_member("custom_update_link")) {
+                custom_update_link = obj.get_string_member("custom_update_link");
+            }
+            if (custom_web_page == null && obj.has_member("custom_web_page")) {
+                custom_web_page = obj.get_string_member("custom_web_page");
+            }
         }
 
         public static InstallMode parse_mode(string value) {

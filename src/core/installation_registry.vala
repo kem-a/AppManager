@@ -1,98 +1,16 @@
 using Gee;
 
 namespace AppManager.Core {
-    /**
-     * Stores custom user settings for apps that were uninstalled.
-     * Used to restore settings when the same app is reinstalled.
-     */
-    public class AppHistory : Object {
-        public string name { get; set; }
-        public string? update_link { get; set; }
-        public string? web_page { get; set; }
-        public string? custom_commandline_args { get; set; }
-        public string? custom_keywords { get; set; }
-        public string? custom_icon_name { get; set; }
-        public string? custom_startup_wm_class { get; set; }
-        
-        public AppHistory(string name) {
-            this.name = name;
-        }
-        
-        public Json.Node to_json() {
-            var builder = new Json.Builder();
-            builder.begin_object();
-            builder.set_member_name("name");
-            builder.add_string_value(name);
-            builder.set_member_name("update_link");
-            builder.add_string_value(update_link ?? "");
-            builder.set_member_name("web_page");
-            builder.add_string_value(web_page ?? "");
-            builder.set_member_name("custom_commandline_args");
-            builder.add_string_value(custom_commandline_args ?? "");
-            builder.set_member_name("custom_keywords");
-            builder.add_string_value(custom_keywords ?? "");
-            builder.set_member_name("custom_icon_name");
-            builder.add_string_value(custom_icon_name ?? "");
-            builder.set_member_name("custom_startup_wm_class");
-            builder.add_string_value(custom_startup_wm_class ?? "");
-            builder.end_object();
-            return builder.get_root();
-        }
-        
-        public static AppHistory from_json(Json.Object obj) {
-            var name = obj.get_string_member("name");
-            var history = new AppHistory(name);
-            var update_link = obj.get_string_member_with_default("update_link", "");
-            history.update_link = update_link == "" ? null : update_link;
-            var web_page = obj.get_string_member_with_default("web_page", "");
-            history.web_page = web_page == "" ? null : web_page;
-            var custom_commandline_args = obj.get_string_member_with_default("custom_commandline_args", "");
-            history.custom_commandline_args = custom_commandline_args == "" ? null : custom_commandline_args;
-            var custom_keywords = obj.get_string_member_with_default("custom_keywords", "");
-            history.custom_keywords = custom_keywords == "" ? null : custom_keywords;
-            var custom_icon_name = obj.get_string_member_with_default("custom_icon_name", "");
-            history.custom_icon_name = custom_icon_name == "" ? null : custom_icon_name;
-            var custom_startup_wm_class = obj.get_string_member_with_default("custom_startup_wm_class", "");
-            history.custom_startup_wm_class = custom_startup_wm_class == "" ? null : custom_startup_wm_class;
-            return history;
-        }
-        
-        /**
-         * Creates history from an installation record.
-         */
-        public static AppHistory from_record(InstallationRecord record) {
-            var history = new AppHistory(record.name);
-            history.update_link = record.update_link;
-            history.web_page = record.web_page;
-            history.custom_commandline_args = record.custom_commandline_args;
-            history.custom_keywords = record.custom_keywords;
-            history.custom_icon_name = record.custom_icon_name;
-            history.custom_startup_wm_class = record.custom_startup_wm_class;
-            return history;
-        }
-        
-        /**
-         * Returns true if this history has any custom values worth preserving.
-         */
-        public bool has_custom_values() {
-            return update_link != null ||
-                   web_page != null ||
-                   custom_commandline_args != null ||
-                   custom_keywords != null ||
-                   custom_icon_name != null ||
-                   custom_startup_wm_class != null;
-        }
-    }
-
     public class InstallationRegistry : Object {
         private HashTable<string, InstallationRecord> records;
-        private HashTable<string, AppHistory> history;
+        // History stores uninstalled apps' name and custom values as JSON objects
+        private HashTable<string, Json.Object> history;
         private File registry_file;
         public signal void changed();
 
         public InstallationRegistry() {
             records = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
-            history = new HashTable<string, AppHistory>(GLib.str_hash, GLib.str_equal);
+            history = new HashTable<string, Json.Object>(GLib.str_hash, GLib.str_equal);
             registry_file = File.new_for_path(AppPaths.registry_file);
             load();
         }
@@ -138,6 +56,9 @@ namespace AppManager.Core {
 
         public void register(InstallationRecord record) {
             records.insert(record.id, record);
+            // Remove any history entry for this app name since it's now registered
+            // This prevents duplicate entries in the JSON (don't persist yet - we'll save below)
+            remove_history(record.name, false);
             save();
             notify_changed();
         }
@@ -155,11 +76,12 @@ namespace AppManager.Core {
         
         /**
          * Saves custom values from a record to history for later restoration.
+         * Only saves if record has custom values worth preserving.
          */
         private void save_to_history(InstallationRecord record) {
-            var app_history = AppHistory.from_record(record);
-            if (app_history.has_custom_values()) {
-                history.insert(record.name.down(), app_history);
+            if (record.has_custom_values()) {
+                var history_node = record.to_history_json();
+                history.insert(record.name.down(), history_node.get_object());
                 debug("Saved history for %s", record.name);
             }
         }
@@ -168,8 +90,24 @@ namespace AppManager.Core {
          * Looks up historical custom values for an app by name.
          * Returns null if no history exists.
          */
-        public AppHistory? lookup_history(string app_name) {
+        public Json.Object? lookup_history(string app_name) {
             return history.get(app_name.down());
+        }
+        
+        /**
+         * Removes historical custom values for an app by name.
+         * Called after successful registration to prevent duplicate entries.
+         * @param persist If true, saves registry to disk. Set to false when save will happen later.
+         */
+        public void remove_history(string app_name, bool persist = true) {
+            var key = app_name.down();
+            if (history.contains(key)) {
+                history.remove(key);
+                if (persist) {
+                    save();
+                }
+                debug("Removed history for %s", app_name);
+            }
         }
         
         /**
@@ -177,15 +115,10 @@ namespace AppManager.Core {
          * Called during fresh install to restore user's previous settings.
          */
         public void apply_history_to_record(InstallationRecord record) {
-            var app_history = lookup_history(record.name);
-            if (app_history != null) {
+            var history_obj = lookup_history(record.name);
+            if (history_obj != null) {
                 debug("Restoring history for %s", record.name);
-                record.update_link = app_history.update_link ?? record.update_link;
-                record.web_page = app_history.web_page ?? record.web_page;
-                record.custom_commandline_args = app_history.custom_commandline_args;
-                record.custom_keywords = app_history.custom_keywords;
-                record.custom_icon_name = app_history.custom_icon_name;
-                record.custom_startup_wm_class = app_history.custom_startup_wm_class;
+                record.apply_history(history_obj);
             }
         }
 
@@ -202,7 +135,7 @@ namespace AppManager.Core {
          */
         public void reload(bool notify = true) {
             records = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
-            history = new HashTable<string, AppHistory>(GLib.str_hash, GLib.str_equal);
+            history = new HashTable<string, Json.Object>(GLib.str_hash, GLib.str_equal);
             load();
             if (notify) {
                 notify_changed();
@@ -225,6 +158,9 @@ namespace AppManager.Core {
                     debug("Found orphaned record: %s (path: %s)", record.name, record.installed_path);
                     orphaned.add(record);
                     records_to_remove.add(record.id);
+                    
+                    // Save custom values to history before removing (same as unregister)
+                    save_to_history(record);
                     
                     // Clean up associated files
                     cleanup_record_files(record);
@@ -295,7 +231,7 @@ namespace AppManager.Core {
                 parser.load_from_data(contents, contents.length);
                 var root = parser.get_root();
                 if (root != null && root.get_node_type() == Json.NodeType.OBJECT) {
-                    // New format with "installations" and "history" arrays
+                    // New format with "installations" array, history entries stored alongside
                     var root_obj = root.get_object();
                     
                     // Load installations
@@ -304,20 +240,32 @@ namespace AppManager.Core {
                         foreach (var node in installations.get_elements()) {
                             if (node.get_node_type() == Json.NodeType.OBJECT) {
                                 var obj = node.get_object();
-                                var record = InstallationRecord.from_json(obj);
-                                records.insert(record.id, record);
+                                // Check if this is a full installation or just history (no id field)
+                                if (obj.has_member("id")) {
+                                    var record = InstallationRecord.from_json(obj);
+                                    records.insert(record.id, record);
+                                } else if (obj.has_member("name")) {
+                                    // This is a history entry (uninstalled app with custom values)
+                                    var name = obj.get_string_member("name");
+                                    history.insert(name.down(), obj);
+                                }
                             }
                         }
                     }
                     
-                    // Load history
+                    // Legacy history array support (for migration)
                     if (root_obj.has_member("history")) {
                         var history_array = root_obj.get_array_member("history");
                         foreach (var node in history_array.get_elements()) {
                             if (node.get_node_type() == Json.NodeType.OBJECT) {
                                 var obj = node.get_object();
-                                var app_history = AppHistory.from_json(obj);
-                                history.insert(app_history.name.down(), app_history);
+                                if (obj.has_member("name")) {
+                                    var name = obj.get_string_member("name");
+                                    // Only add if not already in history
+                                    if (history.get(name.down()) == null) {
+                                        history.insert(name.down(), obj);
+                                    }
+                                }
                             }
                         }
                     }
@@ -341,20 +289,22 @@ namespace AppManager.Core {
                 var builder = new Json.Builder();
                 builder.begin_object();
                 
-                // Save installations
+                // Save all entries (installations and history) in single "installations" array
                 builder.set_member_name("installations");
                 builder.begin_array();
+                
+                // Add installed apps
                 foreach (var record in records.get_values()) {
                     builder.add_value(record.to_json());
                 }
-                builder.end_array();
                 
-                // Save history
-                builder.set_member_name("history");
-                builder.begin_array();
-                foreach (var app_history in history.get_values()) {
-                    builder.add_value(app_history.to_json());
+                // Add history entries (uninstalled apps with custom values)
+                foreach (var history_obj in history.get_values()) {
+                    var node = new Json.Node(Json.NodeType.OBJECT);
+                    node.set_object(history_obj);
+                    builder.add_value(node);
                 }
+                
                 builder.end_array();
                 
                 builder.end_object();

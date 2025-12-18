@@ -163,9 +163,19 @@ namespace AppManager {
             exec_row.add_suffix(restore_exec_button);
             
             exec_row.changed.connect(() => {
-                var new_val = exec_row.text.strip() == "" ? null : exec_row.text;
-                // Set custom value in registry
-                record.custom_commandline_args = new_val;
+                var new_val = exec_row.text.strip();
+                var original_val = record.original_commandline_args ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_commandline_args = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_commandline_args = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_commandline_args = new_val;
+                }
                 registry.register(record);
                 // Update .desktop file
                 update_desktop_file_property(record.desktop_file, "Exec", build_exec_with_args(exec_from_desktop, exec_row.text));
@@ -173,14 +183,45 @@ namespace AppManager {
             });
             props_group.add(exec_row);
             
-            // Web page address (from registry - no original/custom distinction)
+            // Web page address (with original/custom distinction)
             var webpage_row = new Adw.EntryRow();
             webpage_row.title = I18n.tr("Web Page");
-            webpage_row.text = record.web_page ?? "";
-            webpage_row.changed.connect(() => {
-                record.web_page = webpage_row.text.strip() == "" ? null : webpage_row.text;
+            webpage_row.text = record.get_effective_web_page() ?? "";
+            
+            // Restore defaults button for web page - visible when custom value is set
+            var restore_webpage_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
+            restore_webpage_button.add_css_class("flat");
+            restore_webpage_button.set_valign(Gtk.Align.CENTER);
+            restore_webpage_button.tooltip_text = I18n.tr("Restore default");
+            restore_webpage_button.set_visible(record.custom_web_page != null);
+            restore_webpage_button.clicked.connect(() => {
+                // Undo: clear custom, restore original to .desktop
+                record.custom_web_page = null;
                 registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", record.web_page ?? "");
+                var original_val = record.original_web_page ?? "";
+                webpage_row.text = original_val;
+                update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", original_val);
+                restore_webpage_button.set_visible(false);
+            });
+            webpage_row.add_suffix(restore_webpage_button);
+            
+            webpage_row.changed.connect(() => {
+                var new_val = webpage_row.text.strip();
+                var original_val = record.original_web_page ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_web_page = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_web_page = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_web_page = new_val;
+                }
+                registry.register(record);
+                update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", new_val);
+                restore_webpage_button.set_visible(record.custom_web_page != null);
             });
             
             // Add open button for web page
@@ -196,14 +237,45 @@ namespace AppManager {
             });
             webpage_row.add_suffix(open_web_button);
             
-            // Update link (from registry - no original/custom distinction)
+            // Update link (with original/custom distinction)
             var update_row = new Adw.EntryRow();
             update_row.title = I18n.tr("Update Link");
-            update_row.text = record.update_link ?? "";
-            update_row.changed.connect(() => {
-                record.update_link = update_row.text.strip() == "" ? null : update_row.text;
+            update_row.text = record.get_effective_update_link() ?? "";
+            
+            // Restore defaults button for update link - visible when custom value is set
+            var restore_update_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
+            restore_update_button.add_css_class("flat");
+            restore_update_button.set_valign(Gtk.Align.CENTER);
+            restore_update_button.tooltip_text = I18n.tr("Restore default");
+            restore_update_button.set_visible(record.custom_update_link != null);
+            restore_update_button.clicked.connect(() => {
+                // Undo: clear custom, restore original to .desktop
+                record.custom_update_link = null;
                 registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", record.update_link ?? "");
+                var original_val = record.original_update_link ?? "";
+                update_row.text = original_val;
+                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", original_val);
+                restore_update_button.set_visible(false);
+            });
+            update_row.add_suffix(restore_update_button);
+            
+            update_row.changed.connect(() => {
+                var new_val = update_row.text.strip();
+                var original_val = record.original_update_link ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_update_link = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_update_link = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_update_link = new_val;
+                }
+                registry.register(record);
+                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", new_val);
+                restore_update_button.set_visible(record.custom_update_link != null);
             });
             
             // Update info group holds links that users might want to copy quickly
@@ -249,12 +321,22 @@ namespace AppManager {
             keywords_row.add_suffix(restore_keywords_button);
             
             keywords_row.changed.connect(() => {
-                var new_val = keywords_row.text.strip() == "" ? null : keywords_row.text;
-                // Set custom value in registry
-                record.custom_keywords = new_val;
+                var new_val = keywords_row.text.strip();
+                var original_val = record.original_keywords ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_keywords = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_keywords = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_keywords = new_val;
+                }
                 registry.register(record);
                 // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "Keywords", keywords_row.text);
+                update_desktop_file_property(record.desktop_file, "Keywords", new_val);
                 restore_keywords_button.set_visible(record.custom_keywords != null);
             });
             advanced_group.add_row(keywords_row);
@@ -282,12 +364,22 @@ namespace AppManager {
             icon_row.add_suffix(restore_icon_button);
             
             icon_row.changed.connect(() => {
-                var new_val = icon_row.text.strip() == "" ? null : icon_row.text;
-                // Set custom value in registry
-                record.custom_icon_name = new_val;
+                var new_val = icon_row.text.strip();
+                var original_val = record.original_icon_name ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_icon_name = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_icon_name = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_icon_name = new_val;
+                }
                 registry.register(record);
                 // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "Icon", icon_row.text);
+                update_desktop_file_property(record.desktop_file, "Icon", new_val);
                 restore_icon_button.set_visible(record.custom_icon_name != null);
             });
             advanced_group.add_row(icon_row);
@@ -315,12 +407,22 @@ namespace AppManager {
             wmclass_row.add_suffix(restore_wmclass_button);
             
             wmclass_row.changed.connect(() => {
-                var new_val = wmclass_row.text.strip() == "" ? null : wmclass_row.text;
-                // Set custom value in registry
-                record.custom_startup_wm_class = new_val;
+                var new_val = wmclass_row.text.strip();
+                var original_val = record.original_startup_wm_class ?? "";
+                // Determine if value differs from original
+                if (new_val == original_val) {
+                    // Matches original, clear custom
+                    record.custom_startup_wm_class = null;
+                } else if (new_val == "") {
+                    // User cleared the value, mark as CLEARED
+                    record.custom_startup_wm_class = CLEARED_VALUE;
+                } else {
+                    // Custom value set
+                    record.custom_startup_wm_class = new_val;
+                }
                 registry.register(record);
                 // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "StartupWMClass", wmclass_row.text);
+                update_desktop_file_property(record.desktop_file, "StartupWMClass", new_val);
                 restore_wmclass_button.set_visible(record.custom_startup_wm_class != null);
             });
             advanced_group.add_row(wmclass_row);
@@ -584,10 +686,12 @@ namespace AppManager {
                 keyfile.load_from_file(desktop_file_path, KeyFileFlags.KEEP_COMMENTS | KeyFileFlags.KEEP_TRANSLATIONS);
                 
                 if (value.strip() == "") {
-                    // Remove key if value is empty (except for some keys that should stay)
-                    if (key != "Exec" && key != "Icon" && key != "StartupWMClass") {
+                    // Remove key if value is empty - Linux Desktop treats empty values as values
+                    // Exception: Exec should always be kept (never remove the executable line)
+                    if (key != "Exec") {
                         try {
                             keyfile.remove_key("Desktop Entry", key);
+                            debug("Removed desktop file property %s (value was empty)", key);
                         } catch (Error e) {
                             // Key might not exist, that's fine
                         }

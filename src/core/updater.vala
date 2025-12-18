@@ -463,6 +463,13 @@ namespace AppManager.Core {
         }
 
         private string? read_update_url(InstallationRecord record) {
+            // First, check the record's effective update link (considers custom values)
+            var effective_url = record.get_effective_update_link();
+            if (effective_url != null && effective_url.strip() != "") {
+                return effective_url;
+            }
+            
+            // Fallback: read from desktop file (for legacy support)
             if (record.desktop_file == null || record.desktop_file.strip() == "") {
                 return null;
             }

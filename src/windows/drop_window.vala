@@ -46,6 +46,11 @@ namespace AppManager {
             this.appimage_path = path;
             metadata = new AppImageMetadata(File.new_for_path(path));
             resolved_app_name = extract_app_name();
+            
+            // Clean up orphaned records early (apps deleted outside the manager)
+            // This ensures history is properly saved before we check for existing installations
+            registry.reconcile_with_filesystem();
+            
             build_ui();
             check_compatibility();
             load_icons_async();

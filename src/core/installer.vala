@@ -56,9 +56,7 @@ namespace AppManager.Core {
                 record.installed_at = old_record.installed_at;
                 record.updated_at = (int64)GLib.get_real_time();
                 
-                // Carry over non-property registry fields from old record
-                record.update_link = old_record.update_link;
-                record.web_page = old_record.web_page;
+                // Carry over etag from old record
                 record.etag = old_record.etag;
                 
                 // Carry over custom values from old record (user customizations survive updates)
@@ -66,12 +64,12 @@ namespace AppManager.Core {
                 record.custom_keywords = old_record.custom_keywords;
                 record.custom_icon_name = old_record.custom_icon_name;
                 record.custom_startup_wm_class = old_record.custom_startup_wm_class;
+                record.custom_update_link = old_record.custom_update_link;
+                record.custom_web_page = old_record.custom_web_page;
                 // Note: original_* values will be updated from the new AppImage's .desktop
-            } else {
-                // Fresh install: check if there's history from a previous installation
-                // This restores user's custom settings if they uninstalled and are reinstalling
-                registry.apply_history_to_record(record);
             }
+            // Note: For fresh installs, history is applied in finalize_desktop_and_icon()
+            // after the app name is resolved from the .desktop file
 
             bool is_upgrade = (old_record != null);
 
@@ -263,6 +261,13 @@ namespace AppManager.Core {
                 }
                 record.name = desktop_name;
                 record.version = desktop_version;
+                
+                // For fresh installs or upgrades, apply history now that we have the real app name
+                // This restores user's custom settings if they uninstalled and are reinstalling,
+                // or if for some reason the old_record didn't have custom values
+                // Note: During upgrade, custom values were already copied from old_record in install_sync(),
+                // but apply_history won't overwrite existing custom values (only fills in nulls)
+                registry.apply_history_to_record(record);
 
                 var slug = slugify_app_name(desktop_name);
                 if (slug == "") {
@@ -384,43 +389,36 @@ namespace AppManager.Core {
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
-                // For fresh install with history (reinstall), use custom values if present
-                // Otherwise use original values from the AppImage's .desktop
-                var effective_icon = record.custom_icon_name ?? icon_name_for_desktop;
-                var effective_keywords = record.custom_keywords ?? original_keywords;
-                var effective_wmclass = record.custom_startup_wm_class ?? original_startup_wm_class;
-                var effective_args = record.custom_commandline_args ?? original_exec_args;
-                
-                var desktop_contents = rewrite_desktop(desktop_path, exec_path, record, is_terminal_app, final_slug, is_upgrade, effective_icon, effective_keywords, effective_wmclass, effective_args);
-                var desktop_filename = "%s-%s.desktop".printf("appmanager", final_slug);
-                var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
-                Utils.FileUtils.ensure_parent(desktop_destination);
-                
-                // Only write desktop file on fresh install, not on upgrade (preserve user customizations)
-                if (!is_upgrade) {
-                    if (!GLib.FileUtils.set_contents(desktop_destination, desktop_contents)) {
-                        throw new InstallerError.UNKNOWN("Unable to write desktop file");
-                    }
-                }
-                record.desktop_file = desktop_destination;
-                record.icon_path = stored_icon;
-                
-                // Store original values captured from the AppImage's .desktop file
-                // These are always updated on install/upgrade to reflect the AppImage's embedded metadata
-                // Custom values (user edits) are preserved separately and were carried over in install_sync
+                // Store original values temporarily in record for get_effective_* methods to work
                 record.original_icon_name = icon_name_for_desktop;
                 record.original_keywords = original_keywords;
                 record.original_startup_wm_class = original_startup_wm_class ?? "appmanager-%s".printf(final_slug);
                 record.original_commandline_args = original_exec_args;
+                record.original_update_link = original_update_url;
+                record.original_web_page = original_homepage;
                 
-                // Set web_page and update_link from original desktop file (only if not already set)
-                // These don't have custom variants - they come from the AppImage metadata
-                if (record.web_page == null) {
-                    record.web_page = original_homepage;
+                // For fresh install with history (reinstall), use effective values (considers CLEARED_VALUE)
+                var effective_icon = record.get_effective_icon_name() ?? icon_name_for_desktop;
+                var effective_keywords = record.get_effective_keywords();
+                var effective_wmclass = record.get_effective_startup_wm_class();
+                var effective_args = record.get_effective_commandline_args();
+                var effective_update_link = record.get_effective_update_link();
+                var effective_web_page = record.get_effective_web_page();
+                
+                var desktop_contents = rewrite_desktop(desktop_path, exec_path, record, is_terminal_app, final_slug, is_upgrade, effective_icon, effective_keywords, effective_wmclass, effective_args, effective_update_link, effective_web_page);
+                var desktop_filename = "%s-%s.desktop".printf("appmanager", final_slug);
+                var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
+                Utils.FileUtils.ensure_parent(desktop_destination);
+                
+                // Always write desktop file - custom values from JSON are applied via get_effective_*()
+                // The old desktop file is deleted during uninstall, so we must write the new one
+                if (!GLib.FileUtils.set_contents(desktop_destination, desktop_contents)) {
+                    throw new InstallerError.UNKNOWN("Unable to write desktop file");
                 }
-                if (record.update_link == null) {
-                    record.update_link = original_update_url;
-                }
+                record.desktop_file = desktop_destination;
+                record.icon_path = stored_icon;
+                
+                // original_* values were already set above before get_effective_* calls
 
                 // Create symlink for terminal applications
                 if (is_terminal_app) {
@@ -487,7 +485,7 @@ namespace AppManager.Core {
             }
         }
 
-        private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? original_icon_name, string? original_keywords, string? original_startup_wm_class, string? original_commandline_args) throws Error {
+        private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page) throws Error {
             string contents;
             if (!GLib.FileUtils.get_contents(desktop_path, out contents)) {
                 throw new InstallerError.DESKTOP_MISSING("Failed to read desktop file");
@@ -500,6 +498,7 @@ namespace AppManager.Core {
             bool keywords_handled = false;
             bool homepage_handled = false;
             bool update_url_handled = false;
+            bool icon_handled = false;
             bool skipping_uninstall_block = false;
             bool in_desktop_entry = false;
 
@@ -522,9 +521,7 @@ namespace AppManager.Core {
                 // Skip existing uninstall action block
                 if (skipping_uninstall_block) {
                     continue;
-                }
-
-                // Pass through non-Desktop Entry sections unchanged
+                }                // Pass through non-Desktop Entry sections unchanged
                 if (!in_desktop_entry) {
                     output_lines.add(line);
                     continue;
@@ -536,8 +533,8 @@ namespace AppManager.Core {
                 }
                 // Replace Exec in Desktop Entry section
                 if (trimmed.has_prefix("Exec=")) {
-                    // Use original command line args for fresh install
-                    var args = original_commandline_args ?? "";
+                    // Use effective command line args (considers custom and CLEARED values)
+                    var args = effective_commandline_args ?? "";
                     if (args.strip() != "") {
                         output_lines.add("Exec=\"%s\" %s".printf(exec_target, args));
                     } else {
@@ -548,22 +545,31 @@ namespace AppManager.Core {
 
                 // Replace Icon in Desktop Entry section
                 if (trimmed.has_prefix("Icon=")) {
-                    output_lines.add("Icon=%s".printf(original_icon_name ?? slug));
+                    icon_handled = true;
+                    // If icon is null/empty (CLEARED), remove the line entirely
+                    if (effective_icon_name != null && effective_icon_name.strip() != "") {
+                        output_lines.add("Icon=%s".printf(effective_icon_name));
+                    }
+                    // Otherwise drop the line
                     continue;
                 }
 
                 // Handle StartupWMClass
                 if (trimmed.has_prefix("StartupWMClass=")) {
                     startup_wm_class_handled = true;
-                    output_lines.add("StartupWMClass=%s".printf(original_startup_wm_class ?? "appmanager-%s".printf(slug)));
+                    // If wmclass is null/empty (CLEARED), remove the line entirely
+                    if (effective_startup_wm_class != null && effective_startup_wm_class.strip() != "") {
+                        output_lines.add("StartupWMClass=%s".printf(effective_startup_wm_class));
+                    }
+                    // Otherwise drop the line
                     continue;
                 }
 
                 // Handle Keywords
                 if (trimmed.has_prefix("Keywords=")) {
                     keywords_handled = true;
-                    if (original_keywords != null && original_keywords.strip() != "") {
-                        output_lines.add("Keywords=%s".printf(original_keywords));
+                    if (effective_keywords != null && effective_keywords.strip() != "") {
+                        output_lines.add("Keywords=%s".printf(effective_keywords));
                     }
                     // If keywords is null/empty, drop the line
                     continue;
@@ -589,8 +595,8 @@ namespace AppManager.Core {
                 // Handle custom X-AppImage fields
                 if (trimmed.has_prefix("X-AppImage-Homepage=")) {
                     homepage_handled = true;
-                    if (record.web_page != null && record.web_page.strip() != "") {
-                        output_lines.add("X-AppImage-Homepage=%s".printf(record.web_page));
+                    if (effective_web_page != null && effective_web_page.strip() != "") {
+                        output_lines.add("X-AppImage-Homepage=%s".printf(effective_web_page));
                     }
                     // If web_page is null/empty, drop the line
                     continue;
@@ -598,14 +604,12 @@ namespace AppManager.Core {
 
                 if (trimmed.has_prefix("X-AppImage-UpdateURL=")) {
                     update_url_handled = true;
-                    if (record.update_link != null && record.update_link.strip() != "") {
-                        output_lines.add("X-AppImage-UpdateURL=%s".printf(record.update_link));
+                    if (effective_update_link != null && effective_update_link.strip() != "") {
+                        output_lines.add("X-AppImage-UpdateURL=%s".printf(effective_update_link));
                     }
                     // If update_link is null/empty, drop the line
                     continue;
-                }
-
-                if (trimmed.has_prefix("Actions=")) {
+                }                if (trimmed.has_prefix("Actions=")) {
                     actions_handled = true;
                     var value = trimmed.substring("Actions=".length);
                     var actions = new Gee.ArrayList<string>();
@@ -647,26 +651,34 @@ namespace AppManager.Core {
                 }
             }
             
-            // Add Keywords if not handled and has value
-            if (!keywords_handled && original_keywords != null && original_keywords.strip() != "") {
+            // Add Icon if not handled and has value
+            if (!icon_handled && effective_icon_name != null && effective_icon_name.strip() != "") {
                 if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "Keywords=%s".printf(original_keywords));
+                    output_lines.insert(insert_pos, "Icon=%s".printf(effective_icon_name));
+                    insert_pos++;
+                }
+            }
+            
+            // Add Keywords if not handled and has value
+            if (!keywords_handled && effective_keywords != null && effective_keywords.strip() != "") {
+                if (insert_pos > 0) {
+                    output_lines.insert(insert_pos, "Keywords=%s".printf(effective_keywords));
                     insert_pos++;
                 }
             }
             
             // Add Homepage if not handled and has value
-            if (!homepage_handled && record.web_page != null && record.web_page.strip() != "") {
+            if (!homepage_handled && effective_web_page != null && effective_web_page.strip() != "") {
                 if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "X-AppImage-Homepage=%s".printf(record.web_page));
+                    output_lines.insert(insert_pos, "X-AppImage-Homepage=%s".printf(effective_web_page));
                     insert_pos++;
                 }
             }
             
             // Add UpdateURL if not handled and has value
-            if (!update_url_handled && record.update_link != null && record.update_link.strip() != "") {
+            if (!update_url_handled && effective_update_link != null && effective_update_link.strip() != "") {
                 if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "X-AppImage-UpdateURL=%s".printf(record.update_link));
+                    output_lines.insert(insert_pos, "X-AppImage-UpdateURL=%s".printf(effective_update_link));
                     insert_pos++;
                 }
             }
@@ -691,12 +703,12 @@ namespace AppManager.Core {
                 }
             }
 
-            // Add StartupWMClass if not present
-            if (!startup_wm_class_handled) {
+            // Add StartupWMClass if not present and has value
+            if (!startup_wm_class_handled && effective_startup_wm_class != null && effective_startup_wm_class.strip() != "") {
                 if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "StartupWMClass=%s".printf(original_startup_wm_class ?? "appmanager-%s".printf(slug)));
+                    output_lines.insert(insert_pos, "StartupWMClass=%s".printf(effective_startup_wm_class));
                 } else {
-                    output_lines.add("StartupWMClass=%s".printf(original_startup_wm_class ?? "appmanager-%s".printf(slug)));
+                    output_lines.add("StartupWMClass=%s".printf(effective_startup_wm_class));
                 }
             }
 
