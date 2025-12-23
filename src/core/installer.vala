@@ -872,9 +872,9 @@ namespace AppManager.Core {
                     }
                 }
             }
-            string? resolved = Environment.find_program_in_path("app-manager");
+            string? resolved = current_executable_path();
             if (resolved == null || resolved.strip() == "") {
-                resolved = current_executable_path();
+                resolved = Environment.find_program_in_path("app-manager");
             }
             if (resolved == null || resolved.strip() == "") {
                 resolved = "app-manager";

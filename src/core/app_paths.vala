@@ -54,6 +54,12 @@ namespace AppManager.Core {
 
         public static string? current_executable_path {
             owned get {
+                // If running as an AppImage, use the original AppImage path
+                var appimage_path = Environment.get_variable("APPIMAGE");
+                if (appimage_path != null && appimage_path.strip() != "") {
+                    return appimage_path;
+                }
+
                 try {
                     var path = GLib.FileUtils.read_link("/proc/self/exe");
                     if (path != null && path.strip() != "") {
