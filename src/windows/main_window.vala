@@ -732,12 +732,18 @@ namespace AppManager {
         private void trigger_single_update(InstallationRecord record) {
             var key = record_state_key(record);
             updating_records.add(key);
+            if (active_details_window != null && active_details_window.matches_record(record)) {
+                active_details_window.set_update_loading(true);
+            }
             refresh_installations();
             new Thread<void>("appmgr-update-single", () => {
                 var result = updater.update_single(record);
                 var payload = new Gee.ArrayList<UpdateResult>();
                 payload.add(result);
                 Idle.add(() => {
+                    if (active_details_window != null && active_details_window.matches_record(record)) {
+                        active_details_window.set_update_loading(false);
+                    }
                     handle_update_results(payload);
                     finalize_single_update(result);
                     return GLib.Source.REMOVE;
@@ -921,9 +927,15 @@ namespace AppManager {
         }
 
         private void start_single_probe(InstallationRecord record, DetailsWindow? source = null) {
+            if (source != null) {
+                source.set_update_loading(true);
+            }
             new Thread<void>("appmgr-probe-single", () => {
                 var result = updater.probe_single(record);
                 Idle.add(() => {
+                    if (source != null) {
+                        source.set_update_loading(false);
+                    }
                     handle_single_probe_result(result, source);
                     return GLib.Source.REMOVE;
                 });
@@ -1026,8 +1038,13 @@ namespace AppManager {
         }
 
         private void show_detail_page(InstallationRecord record) {
-            var has_update = pending_update_keys.contains(record_state_key(record));
+            var key = record_state_key(record);
+            var has_update = pending_update_keys.contains(key);
+            var is_updating = updating_records.contains(key);
             var details_window = new DetailsWindow(record, registry, has_update);
+            if (is_updating) {
+                details_window.set_update_loading(true);
+            }
             details_window.uninstall_requested.connect((r) => {
                 navigation_view.pop();
                 if (active_details_window == details_window) {

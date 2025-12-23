@@ -6,7 +6,10 @@ namespace AppManager {
         private InstallationRecord record;
         private InstallationRegistry registry;
         private bool update_available;
+        private bool update_loading = false;
         private Adw.ButtonRow? update_action_row;
+        private Gtk.Spinner? update_spinner;
+        private Gtk.ListBox? update_list;
         
         public signal void uninstall_requested(InstallationRecord record);
         public signal void update_requested(InstallationRecord record);
@@ -29,6 +32,11 @@ namespace AppManager {
 
         public void set_update_available(bool available) {
             update_available = available;
+            refresh_update_action_row();
+        }
+
+        public void set_update_loading(bool loading) {
+            update_loading = loading;
             refresh_update_action_row();
         }
 
@@ -499,17 +507,37 @@ namespace AppManager {
             var actions_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
             actions_group.add(actions_box);
 
-            // Update Action
+            // Update Action with spinner
             update_action_row = new Adw.ButtonRow();
-            // Icon will be set in refresh_update_action_row
+
             update_action_row.activated.connect(() => {
+                if (update_loading) {
+                    return;
+                }
                 if (update_available) {
                     update_requested(record);
                 } else {
                     check_update_requested(record);
                 }
             });
-            actions_box.append(create_list_box_for_row(update_action_row));
+            
+            // Create a box to hold the list and spinner overlay
+            var update_wrapper = new Gtk.Overlay();
+            
+            update_list = new Gtk.ListBox();
+            update_list.add_css_class("boxed-list");
+            update_list.selection_mode = Gtk.SelectionMode.NONE;
+            update_list.append(update_action_row);
+            update_wrapper.set_child(update_list);
+            
+            update_spinner = new Gtk.Spinner();
+            update_spinner.valign = Gtk.Align.CENTER;
+            update_spinner.halign = Gtk.Align.START;
+            update_spinner.margin_start = 16;
+            update_spinner.visible = false;
+            update_wrapper.add_overlay(update_spinner);
+            
+            actions_box.append(update_wrapper);
             refresh_update_action_row();
 
             // Only show extract action for non-terminal, portable installs
@@ -544,9 +572,23 @@ namespace AppManager {
         }
 
         private void refresh_update_action_row() {
-            if (update_action_row == null) {
+            if (update_action_row == null || update_spinner == null) {
                 return;
             }
+
+            if (update_loading) {
+                update_action_row.title = I18n.tr("Checking...");
+                update_action_row.start_icon_name = null;
+                update_spinner.visible = true;
+                update_spinner.start();
+                update_action_row.sensitive = false;
+                update_action_row.remove_css_class("suggested-action");
+                return;
+            }
+
+            update_spinner.visible = false;
+            update_spinner.stop();
+            update_action_row.sensitive = true;
 
             if (update_available) {
                 update_action_row.title = I18n.tr("Update");
@@ -751,7 +793,7 @@ namespace AppManager {
             }
         }
 
-        private Gtk.ListBox create_list_box_for_row(Adw.ButtonRow row) {
+        private Gtk.ListBox create_list_box_for_row(Adw.PreferencesRow row) {
             var list = new Gtk.ListBox();
             list.add_css_class("boxed-list");
             list.selection_mode = Gtk.SelectionMode.NONE;
