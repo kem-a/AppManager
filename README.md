@@ -31,23 +31,6 @@ AppManager is a GTK/Libadwaita developed desktop utility in Vala that makes inst
 
 ## Build & Install
 
-Default setup
-```bash
-meson setup build
-```
-
-Or if you prefer user Home install
-
-```bash
-meson setup build --prefix=$HOME/.local
-```
-
-Build and install
-```bash
-meson compile -C build
-meson install -C build
-```
-
 <details> <summary> <H4>Install development dependencies</H4> <b>(click to open)</b> </summary>
 
 Install the development packages required to build AppManager on each distribution:
@@ -70,6 +53,23 @@ sudo dnf install vala meson ninja-build gtk4-devel libadwaita-devel glib2-devel 
 sudo pacman -S vala meson ninja gtk4 libadwaita glib2 json-glib gee libsoup libportal p7zip
 ```
 </details>
+
+Default setup
+```bash
+meson setup build
+```
+
+Or if you prefer user Home install
+
+```bash
+meson setup build --prefix=$HOME/.local
+```
+
+Build and install
+```bash
+meson compile -C build
+meson install -C build
+```
 
 ## CLI helpers
 

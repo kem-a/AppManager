@@ -1,0 +1,209 @@
+name: Build and Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-packages:
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runs_on: ubuntu-latest
+            fpm_arch_deb: amd64
+            fpm_arch_rpm: x86_64
+            is_cross: false
+          - arch: aarch64
+            runs_on: ubuntu-latest
+            fpm_arch_deb: arm64
+            fpm_arch_rpm: aarch64
+            is_cross: true
+            cross_file: .github/cross/aarch64.txt
+    runs-on: ${{ matrix.runs_on }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build and packaging dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.is_cross }}" = "true" ]; then
+            sudo dpkg --add-architecture arm64
+            # Handle DEB822 format (Ubuntu 24.04+) - add architecture restriction
+            if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+              sudo sed -i '/^Types:/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+            fi
+            # Handle traditional format
+            if [ -f /etc/apt/sources.list ]; then
+              sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
+              sudo sed -i 's/^deb https/deb [arch=amd64] https/g' /etc/apt/sources.list
+            fi
+            # Add arm64 sources from ports.ubuntu.com
+            CODENAME=$(lsb_release -cs)
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME} main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64-ports.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64-ports.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64-ports.list
+          fi
+          sudo apt-get update
+          if [ "${{ matrix.is_cross }}" = "true" ]; then
+            sudo apt-get install -y \
+              gcc-aarch64-linux-gnu \
+              g++-aarch64-linux-gnu \
+              valac \
+              libglib2.0-dev:arm64 \
+              libgtk-4-dev:arm64 \
+              libadwaita-1-dev:arm64 \
+              libjson-glib-dev:arm64 \
+              libgee-0.8-dev:arm64 \
+              libsoup-3.0-dev:arm64 \
+              libportal-dev:arm64 \
+              libportal-gtk4-dev:arm64
+            # Create pkg-config wrapper for cross-compilation
+            echo '#!/bin/sh' | sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config
+            echo 'PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig pkg-config "$@"' | sudo tee -a /usr/local/bin/aarch64-linux-gnu-pkg-config
+            sudo chmod +x /usr/local/bin/aarch64-linux-gnu-pkg-config
+          fi
+          sudo apt-get install -y \
+            curl \
+            meson \
+            ninja-build \
+            pkg-config \
+            gcc \
+            build-essential \
+            valac \
+            libglib2.0-dev \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            libjson-glib-dev \
+            libgee-0.8-dev \
+            libsoup-3.0-dev \
+            libportal-dev \
+            libportal-gtk4-dev \
+            desktop-file-utils \
+            chrpath \
+            jq \
+            ruby \
+            ruby-dev \
+            rpm \
+            p7zip-full
+          sudo gem install --no-document fpm
+
+      - name: Install appimagetool
+        shell: bash
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            APPIMAGETOOL_ARCH="x86_64"
+          else
+            APPIMAGETOOL_ARCH="aarch64"
+          fi
+          curl -Lo appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage"
+          chmod +x appimagetool
+          sudo mv appimagetool /usr/local/bin/appimagetool
+
+      - name: Configure
+        shell: bash
+        run: |
+          EXTRA_OPTS=""
+          if [ "${{ matrix.is_cross }}" = "true" ]; then
+            EXTRA_OPTS="--cross-file ${{ matrix.cross_file }}"
+          fi
+          meson setup build --prefix=/usr -Dbundle_dwarfs=true $EXTRA_OPTS
+
+      - name: Build
+        shell: bash
+        run: ninja -C build
+
+      - name: Stage install tree
+        shell: bash
+        run: |
+          DESTDIR="$GITHUB_WORKSPACE/dist-root"
+          rm -rf "$DESTDIR"
+          mkdir -p "$DESTDIR"
+          meson install -C build --destdir "$DESTDIR"
+
+      - name: Capture project version
+        id: meta
+        shell: bash
+        run: |
+          VERSION=$(meson introspect build --projectinfo | jq -r '.version')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build DEB and RPM packages
+        shell: bash
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          DESTDIR="$GITHUB_WORKSPACE/dist-root"
+          PACKAGE_DIR="$GITHUB_WORKSPACE/packages"
+          mkdir -p "$PACKAGE_DIR"
+          fpm -s dir -t deb -n app-manager \
+            -v "$VERSION" \
+            --architecture ${{ matrix.fpm_arch_deb }} \
+            --description "Install and manage AppImage applications" \
+            --license GPL-3.0-or-later \
+            --url "https://github.com/kem-a/AppManager" \
+            -p "$PACKAGE_DIR/app-manager_${VERSION}_${{ matrix.fpm_arch_deb }}.deb" \
+            -C "$DESTDIR" usr
+          fpm -s dir -t rpm -n app-manager \
+            -v "$VERSION" \
+            --architecture ${{ matrix.fpm_arch_rpm }} \
+            --description "Install and manage AppImage applications" \
+            --license GPL-3.0-or-later \
+            --url "https://github.com/kem-a/AppManager" \
+            -p "$PACKAGE_DIR/app-manager-${VERSION}-1.${{ matrix.fpm_arch_rpm }}.rpm" \
+            -C "$DESTDIR" usr
+
+      - name: Build AppImage
+        shell: bash
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          DESTDIR="$GITHUB_WORKSPACE/dist-root"
+          PACKAGE_DIR="$GITHUB_WORKSPACE/packages"
+          APPDIR="$GITHUB_WORKSPACE/AppDir"
+
+          rm -rf "$APPDIR"
+          mkdir -p "$APPDIR"
+
+          # Copy installed files
+          cp -a "$DESTDIR/usr" "$APPDIR/"
+
+          # AppRun is the binary itself for simple GTK4/Libadwaita apps
+          install -Dm755 "$DESTDIR/usr/bin/app-manager" "$APPDIR/AppRun"
+
+          # Desktop and icon at AppDir root
+          install -Dm644 "$DESTDIR/usr/share/applications/com.github.AppManager.desktop" "$APPDIR/com.github.AppManager.desktop"
+          install -Dm644 "$DESTDIR/usr/share/icons/hicolor/scalable/apps/com.github.AppManager.svg" "$APPDIR/com.github.AppManager.svg"
+
+          # Validate desktop file
+          desktop-file-validate "$APPDIR/com.github.AppManager.desktop" || true
+
+          # Remove rpath if present
+          chrpath -d "$APPDIR/usr/bin/app-manager" 2>/dev/null || true
+
+          # Build AppImage
+          ARCH=${{ matrix.arch }} appimagetool "$APPDIR" "$PACKAGE_DIR/app-manager-${VERSION}-${{ matrix.arch }}.AppImage"
+
+      - name: Upload release packages
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            packages/app-manager_${{ steps.meta.outputs.version }}_${{ matrix.fpm_arch_deb }}.deb
+            packages/app-manager-${{ steps.meta.outputs.version }}-1.${{ matrix.fpm_arch_rpm }}.rpm
+            packages/app-manager-${{ steps.meta.outputs.version }}-${{ matrix.arch }}.AppImage
+
+      - name: Upload artifacts (for non-release builds)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: packages/*
