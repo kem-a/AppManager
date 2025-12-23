@@ -1,5 +1,6 @@
 <!-- Core project info -->
-![Release](https://img.shields.io/badge/Release-Beta-blue)
+[![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/kem-a/AppManager/releases/latest)
+[![Release](https://img.shields.io/github/v/release/kem-a/AppManager?semver)](https://github.com/kem-a/AppManager/releases/latest)
 [![License](https://img.shields.io/github/license/kem-a/AppManager)](https://github.com/kem-a/AppManager/blob/main/LICENSE)
 ![GNOME 40+](https://img.shields.io/badge/GNOME-40%2B-blue?logo=gnome)
 ![GTK 4](https://img.shields.io/badge/GTK-4-blue?logo=gtk)
