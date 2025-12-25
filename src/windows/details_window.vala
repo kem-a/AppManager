@@ -13,6 +13,10 @@ namespace AppManager {
         private Gtk.Button? extract_button;
         private const string LOCAL_BIN_DIR = ".local/bin";
         
+        // Shared state for build_ui sub-methods
+        private string exec_path;
+        private HashTable<string, string> desktop_props;
+        
         public signal void uninstall_requested(InstallationRecord record);
         public signal void update_requested(InstallationRecord record);
         public signal void check_update_requested(InstallationRecord record);
@@ -49,9 +53,44 @@ namespace AppManager {
         }
 
         private void build_ui() {
+            // Initialize shared state
+            desktop_props = load_desktop_file_properties(record.desktop_file);
+            exec_path = installer.resolve_exec_path_for_record(record);
+            
             var detail_page = new Adw.PreferencesPage();
             
-            // Header group with icon, name, and version
+            // Build UI sections
+            detail_page.add(build_header_group());
+            detail_page.add(build_cards_group());
+            
+            var props_group = build_properties_group();
+            var update_group = build_update_info_group();
+            var advanced_group = build_advanced_group();
+            props_group.add(advanced_group);
+            
+            detail_page.add(props_group);
+            detail_page.add(update_group);
+            detail_page.add(build_actions_group());
+            
+            // Assemble final layout
+            var toolbar = new Adw.ToolbarView();
+            var header = new Adw.HeaderBar();
+            toolbar.add_top_bar(header);
+
+            var content_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+
+            if (!path_contains_local_bin()) {
+                var banner = new Adw.Banner(I18n.tr("Add ~/.local/bin to PATH so Add to $PATH works from the terminal."));
+                banner.set_revealed(true);
+                content_box.append(banner);
+            }
+
+            content_box.append(detail_page);
+            toolbar.set_content(content_box);
+            this.child = toolbar;
+        }
+
+        private Adw.PreferencesGroup build_header_group() {
             var header_group = new Adw.PreferencesGroup();
             
             var header_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
@@ -85,16 +124,13 @@ namespace AppManager {
             header_row.set_activatable(false);
             header_row.set_child(header_box);
             header_group.add(header_row);
-            detail_page.add(header_group);
             
-            // Load desktop file properties early for Terminal and NoDisplay checks
-            var desktop_props = load_desktop_file_properties(record.desktop_file);
-            var exec_path = installer.resolve_exec_path_for_record(record);
-            
-            // Cards group - adding box directly without PreferencesRow wrapper
+            return header_group;
+        }
+
+        private Adw.PreferencesGroup build_cards_group() {
             var cards_group = new Adw.PreferencesGroup();
             
-            // Cards container (displayed without background)
             var cards_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             cards_box.set_halign(Gtk.Align.CENTER);
             
@@ -141,36 +177,24 @@ namespace AppManager {
                 cards_box.append(hidden_card);
             }
 
-            // Add the box directly - it will be added to a separate box without the list background
             cards_group.add(cards_box);
-            detail_page.add(cards_group);
-            
-            // Properties group
+            return cards_group;
+        }
+
+        private Adw.PreferencesGroup build_properties_group() {
             var props_group = new Adw.PreferencesGroup();
             props_group.title = I18n.tr("Properties");
             
-            // Get current values from record (effective = custom if set, otherwise original)
+            // Command line arguments
             var current_args = record.get_effective_commandline_args() ?? "";
-            var current_icon = record.get_effective_icon_name() ?? "";
-            var current_keywords = record.get_effective_keywords() ?? "";
-            var current_wmclass = record.get_effective_startup_wm_class() ?? "";
-            
-            // Command line arguments (loaded from .desktop file)
             var exec_row = new Adw.EntryRow();
             exec_row.title = I18n.tr("Command line arguments");
             exec_row.text = current_args;
             
-            // Restore defaults button for command line args - visible when custom value is set
-            var restore_exec_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_exec_button.add_css_class("flat");
-            restore_exec_button.set_valign(Gtk.Align.CENTER);
-            restore_exec_button.tooltip_text = I18n.tr("Restore default");
-            restore_exec_button.set_visible(record.custom_commandline_args != null);
+            var restore_exec_button = create_restore_button(record.custom_commandline_args != null);
             restore_exec_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_commandline_args = null;
-                var original_val = record.original_commandline_args ?? "";
-                exec_row.text = original_val;
+                exec_row.text = record.original_commandline_args ?? "";
                 persist_record_and_refresh_desktop();
                 restore_exec_button.set_visible(false);
             });
@@ -179,15 +203,11 @@ namespace AppManager {
             exec_row.changed.connect(() => {
                 var new_val = exec_row.text.strip();
                 var original_val = record.original_commandline_args ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_commandline_args = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_commandline_args = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_commandline_args = new_val;
                 }
                 persist_record_and_refresh_desktop();
@@ -195,22 +215,92 @@ namespace AppManager {
             });
             props_group.add(exec_row);
             
-            // Web page address (with original/custom distinction)
+            return props_group;
+        }
+
+        private Adw.PreferencesGroup build_update_info_group() {
+            var update_group = new Adw.PreferencesGroup();
+            update_group.title = I18n.tr("Update info");
+            
+            var update_info_button = new Gtk.Button.from_icon_name("dialog-information-symbolic");
+            update_info_button.add_css_class("circular");
+            update_info_button.add_css_class("flat");
+            update_info_button.set_valign(Gtk.Align.CENTER);
+            update_info_button.tooltip_text = I18n.tr("How update links work");
+            update_info_button.clicked.connect(() => {
+                show_update_info_help();
+            });
+            update_group.set_header_suffix(update_info_button);
+            
+            // Update link row
+            var update_row = build_update_link_row();
+            update_group.add(update_row);
+            
+            // Web page row
+            var webpage_row = build_webpage_row();
+            update_group.add(webpage_row);
+            
+            return update_group;
+        }
+
+        private Adw.EntryRow build_update_link_row() {
+            var update_row = new Adw.EntryRow();
+            update_row.title = I18n.tr("Update Link");
+            update_row.text = record.get_effective_update_link() ?? "";
+            
+            var restore_update_button = create_restore_button(record.custom_update_link != null);
+            restore_update_button.clicked.connect(() => {
+                record.custom_update_link = null;
+                update_row.text = record.original_update_link ?? "";
+                persist_record_and_refresh_desktop();
+                restore_update_button.set_visible(false);
+            });
+            update_row.add_suffix(restore_update_button);
+            
+            // Normalize URL when user leaves the entry or presses Enter
+            var focus_controller = new Gtk.EventControllerFocus();
+            focus_controller.leave.connect(() => {
+                apply_update_link_value(update_row, restore_update_button);
+            });
+            update_row.add_controller(focus_controller);
+            
+            update_row.entry_activated.connect(() => {
+                apply_update_link_value(update_row, restore_update_button);
+            });
+            
+            return update_row;
+        }
+
+        private void apply_update_link_value(Adw.EntryRow row, Gtk.Button restore_button) {
+            var raw_val = row.text.strip();
+            var normalized = Updater.normalize_update_url(raw_val);
+            var new_val = normalized ?? raw_val;
+            
+            if (new_val != raw_val && new_val != "") {
+                row.text = new_val;
+            }
+            
+            var original_val = record.original_update_link ?? "";
+            if (new_val == original_val) {
+                record.custom_update_link = null;
+            } else if (new_val == "") {
+                record.custom_update_link = CLEARED_VALUE;
+            } else {
+                record.custom_update_link = new_val;
+            }
+            persist_record_and_refresh_desktop();
+            restore_button.set_visible(record.custom_update_link != null);
+        }
+
+        private Adw.EntryRow build_webpage_row() {
             var webpage_row = new Adw.EntryRow();
             webpage_row.title = I18n.tr("Web Page");
             webpage_row.text = record.get_effective_web_page() ?? "";
             
-            // Restore defaults button for web page - visible when custom value is set
-            var restore_webpage_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_webpage_button.add_css_class("flat");
-            restore_webpage_button.set_valign(Gtk.Align.CENTER);
-            restore_webpage_button.tooltip_text = I18n.tr("Restore default");
-            restore_webpage_button.set_visible(record.custom_web_page != null);
+            var restore_webpage_button = create_restore_button(record.custom_web_page != null);
             restore_webpage_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_web_page = null;
-                var original_val = record.original_web_page ?? "";
-                webpage_row.text = original_val;
+                webpage_row.text = record.original_web_page ?? "";
                 persist_record_and_refresh_desktop();
                 restore_webpage_button.set_visible(false);
             });
@@ -219,22 +309,17 @@ namespace AppManager {
             webpage_row.changed.connect(() => {
                 var new_val = webpage_row.text.strip();
                 var original_val = record.original_web_page ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_web_page = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_web_page = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_web_page = new_val;
                 }
                 persist_record_and_refresh_desktop();
                 restore_webpage_button.set_visible(record.custom_web_page != null);
             });
             
-            // Add open button for web page
             var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
             open_web_button.add_css_class("flat");
             open_web_button.set_valign(Gtk.Align.CENTER);
@@ -247,120 +332,43 @@ namespace AppManager {
             });
             webpage_row.add_suffix(open_web_button);
             
-            // Update link (with original/custom distinction)
-            var update_row = new Adw.EntryRow();
-            update_row.title = I18n.tr("Update Link");
-            update_row.text = record.get_effective_update_link() ?? "";
-            
-            // Restore defaults button for update link - visible when custom value is set
-            var restore_update_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_update_button.add_css_class("flat");
-            restore_update_button.set_valign(Gtk.Align.CENTER);
-            restore_update_button.tooltip_text = I18n.tr("Restore default");
-            restore_update_button.set_visible(record.custom_update_link != null);
-            restore_update_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
-                record.custom_update_link = null;
-                var original_val = record.original_update_link ?? "";
-                update_row.text = original_val;
-                persist_record_and_refresh_desktop();
-                restore_update_button.set_visible(false);
-            });
-            update_row.add_suffix(restore_update_button);
-            
-            // Normalize URL when user leaves the entry (focus out) or presses Enter
-            var focus_controller = new Gtk.EventControllerFocus();
-            focus_controller.leave.connect(() => {
-                var raw_val = update_row.text.strip();
-                // Normalize GitHub/GitLab URLs to project base
-                var normalized = Updater.normalize_update_url(raw_val);
-                var new_val = normalized ?? raw_val;
-                
-                // Update text field if normalization changed it
-                if (new_val != raw_val && new_val != "") {
-                    update_row.text = new_val;
-                }
-                
-                var original_val = record.original_update_link ?? "";
-                // Determine if value differs from original
-                if (new_val == original_val) {
-                    // Matches original, clear custom
-                    record.custom_update_link = null;
-                } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
-                    record.custom_update_link = CLEARED_VALUE;
-                } else {
-                    // Custom value set
-                    record.custom_update_link = new_val;
-                }
-                persist_record_and_refresh_desktop();
-                restore_update_button.set_visible(record.custom_update_link != null);
-            });
-            update_row.add_controller(focus_controller);
-            
-            update_row.entry_activated.connect(() => {
-                var raw_val = update_row.text.strip();
-                // Normalize GitHub/GitLab URLs to project base
-                var normalized = Updater.normalize_update_url(raw_val);
-                var new_val = normalized ?? raw_val;
-                
-                // Update text field if normalization changed it
-                if (new_val != raw_val && new_val != "") {
-                    update_row.text = new_val;
-                }
-                
-                var original_val = record.original_update_link ?? "";
-                // Determine if value differs from original
-                if (new_val == original_val) {
-                    // Matches original, clear custom
-                    record.custom_update_link = null;
-                } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
-                    record.custom_update_link = CLEARED_VALUE;
-                } else {
-                    // Custom value set
-                    record.custom_update_link = new_val;
-                }
-                persist_record_and_refresh_desktop();
-                restore_update_button.set_visible(record.custom_update_link != null);
-            });
-            
-            // Update info group holds links that users might want to copy quickly
-            var update_group = new Adw.PreferencesGroup();
-            update_group.title = I18n.tr("Update info");
-            var update_info_button = new Gtk.Button.from_icon_name("dialog-information-symbolic");
-                update_info_button.add_css_class("circular");
-                update_info_button.add_css_class("flat");
-                update_info_button.set_valign(Gtk.Align.CENTER);
-                update_info_button.tooltip_text = I18n.tr("How update links work");
-                update_info_button.clicked.connect(() => {
-                    show_update_info_help();
-                });
-                update_group.set_header_suffix(update_info_button);
-            update_group.add(update_row);
-            update_group.add(webpage_row);
+            return webpage_row;
+        }
 
-            // Advanced
+        private Adw.ExpanderRow build_advanced_group() {
             var advanced_group = new Adw.ExpanderRow();
             advanced_group.title = I18n.tr("Advanced");
-            props_group.add(advanced_group);
 
-            // Keywords (loaded from .desktop file)
+            // Keywords
+            advanced_group.add_row(build_keywords_row());
+            
+            // Icon name
+            advanced_group.add_row(build_icon_row());
+            
+            // StartupWMClass
+            advanced_group.add_row(build_wmclass_row());
+            
+            // Version
+            advanced_group.add_row(build_version_row());
+            
+            // NoDisplay toggle
+            advanced_group.add_row(build_nodisplay_row());
+            
+            // Add to PATH toggle
+            advanced_group.add_row(build_path_row());
+            
+            return advanced_group;
+        }
+
+        private Adw.EntryRow build_keywords_row() {
             var keywords_row = new Adw.EntryRow();
             keywords_row.title = I18n.tr("Keywords");
-            keywords_row.text = current_keywords;
+            keywords_row.text = record.get_effective_keywords() ?? "";
             
-            // Restore defaults button for keywords - visible when custom value is set
-            var restore_keywords_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_keywords_button.add_css_class("flat");
-            restore_keywords_button.set_valign(Gtk.Align.CENTER);
-            restore_keywords_button.tooltip_text = I18n.tr("Restore default");
-            restore_keywords_button.set_visible(record.custom_keywords != null);
+            var restore_keywords_button = create_restore_button(record.custom_keywords != null);
             restore_keywords_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_keywords = null;
-                var original_val = record.original_keywords ?? "";
-                keywords_row.text = original_val;
+                keywords_row.text = record.original_keywords ?? "";
                 persist_record_and_refresh_desktop();
                 restore_keywords_button.set_visible(false);
             });
@@ -369,38 +377,29 @@ namespace AppManager {
             keywords_row.changed.connect(() => {
                 var new_val = keywords_row.text.strip();
                 var original_val = record.original_keywords ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_keywords = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_keywords = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_keywords = new_val;
                 }
                 persist_record_and_refresh_desktop();
                 restore_keywords_button.set_visible(record.custom_keywords != null);
             });
-            advanced_group.add_row(keywords_row);
+            
+            return keywords_row;
+        }
 
-            // Icon name (loaded from .desktop file)
+        private Adw.EntryRow build_icon_row() {
             var icon_row = new Adw.EntryRow();
             icon_row.title = I18n.tr("Icon name");
-            icon_row.text = current_icon;
+            icon_row.text = record.get_effective_icon_name() ?? "";
             
-            // Restore defaults button for icon - visible when custom value is set
-            var restore_icon_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_icon_button.add_css_class("flat");
-            restore_icon_button.set_valign(Gtk.Align.CENTER);
-            restore_icon_button.tooltip_text = I18n.tr("Restore default");
-            restore_icon_button.set_visible(record.custom_icon_name != null);
+            var restore_icon_button = create_restore_button(record.custom_icon_name != null);
             restore_icon_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_icon_name = null;
-                var original_val = record.original_icon_name ?? "";
-                icon_row.text = original_val;
+                icon_row.text = record.original_icon_name ?? "";
                 persist_record_and_refresh_desktop();
                 restore_icon_button.set_visible(false);
             });
@@ -409,38 +408,29 @@ namespace AppManager {
             icon_row.changed.connect(() => {
                 var new_val = icon_row.text.strip();
                 var original_val = record.original_icon_name ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_icon_name = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_icon_name = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_icon_name = new_val;
                 }
                 persist_record_and_refresh_desktop();
                 restore_icon_button.set_visible(record.custom_icon_name != null);
             });
-            advanced_group.add_row(icon_row);
             
-            // StartupWMClass (loaded from .desktop file)
+            return icon_row;
+        }
+
+        private Adw.EntryRow build_wmclass_row() {
             var wmclass_row = new Adw.EntryRow();
             wmclass_row.title = I18n.tr("Startup WM Class");
-            wmclass_row.text = current_wmclass;
+            wmclass_row.text = record.get_effective_startup_wm_class() ?? "";
             
-            // Restore defaults button for wmclass - visible when custom value is set
-            var restore_wmclass_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_wmclass_button.add_css_class("flat");
-            restore_wmclass_button.set_valign(Gtk.Align.CENTER);
-            restore_wmclass_button.tooltip_text = I18n.tr("Restore default");
-            restore_wmclass_button.set_visible(record.custom_startup_wm_class != null);
+            var restore_wmclass_button = create_restore_button(record.custom_startup_wm_class != null);
             restore_wmclass_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_startup_wm_class = null;
-                var original_val = record.original_startup_wm_class ?? "";
-                wmclass_row.text = original_val;
+                wmclass_row.text = record.original_startup_wm_class ?? "";
                 persist_record_and_refresh_desktop();
                 restore_wmclass_button.set_visible(false);
             });
@@ -449,23 +439,21 @@ namespace AppManager {
             wmclass_row.changed.connect(() => {
                 var new_val = wmclass_row.text.strip();
                 var original_val = record.original_startup_wm_class ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_startup_wm_class = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_startup_wm_class = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_startup_wm_class = new_val;
                 }
                 persist_record_and_refresh_desktop();
                 restore_wmclass_button.set_visible(record.custom_startup_wm_class != null);
             });
-            advanced_group.add_row(wmclass_row);
+            
+            return wmclass_row;
+        }
 
-            // Version
+        private Adw.EntryRow build_version_row() {
             var version_row = new Adw.EntryRow();
             version_row.title = I18n.tr("Version");
             version_row.text = record.version ?? "";
@@ -474,9 +462,10 @@ namespace AppManager {
                 registry.update(record);
                 installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
             });
-            advanced_group.add_row(version_row);
-            
-            // NoDisplay toggle
+            return version_row;
+        }
+
+        private Adw.SwitchRow build_nodisplay_row() {
             var nodisplay_row = new Adw.SwitchRow();
             nodisplay_row.title = I18n.tr("Hide from app drawer");
             nodisplay_row.subtitle = I18n.tr("Don't show in application menu");
@@ -485,9 +474,10 @@ namespace AppManager {
             nodisplay_row.notify["active"].connect(() => {
                 installer.set_desktop_entry_property(record.desktop_file, "NoDisplay", nodisplay_row.active ? "true" : "false");
             });
-            advanced_group.add_row(nodisplay_row);
+            return nodisplay_row;
+        }
 
-            // Add to PATH toggle (symlink into ~/.local/bin)
+        private Adw.SwitchRow build_path_row() {
             var path_row = new Adw.SwitchRow();
             path_row.title = I18n.tr("Add to $PATH");
             path_row.subtitle = I18n.tr("Create a launcher in ~/.local/bin so you can run it from the terminal");
@@ -500,7 +490,7 @@ namespace AppManager {
             bool is_terminal_app = record.is_terminal;
             bool symlink_exists = record.bin_symlink != null && record.bin_symlink.strip() != "" && File.new_for_path(record.bin_symlink).query_exists();
 
-            // Terminal apps must always stay on PATH; ensure the symlink exists using Installer helper
+            // Terminal apps must always stay on PATH
             if (is_terminal_app && !symlink_exists) {
                 if (installer.ensure_bin_symlink_for_record(record, exec_path, symlink_name)) {
                     symlink_exists = true;
@@ -516,7 +506,6 @@ namespace AppManager {
             path_row.sensitive = !is_terminal_app;
 
             path_row.notify["active"].connect(() => {
-                // Ignore programmatic changes for terminal apps
                 if (is_terminal_app) {
                     path_row.active = true;
                     return;
@@ -536,12 +525,11 @@ namespace AppManager {
                     }
                 }
             });
-            advanced_group.add_row(path_row);
             
-            detail_page.add(props_group);
-            detail_page.add(update_group);
-            
-            // Actions group
+            return path_row;
+        }
+
+        private Adw.PreferencesGroup build_actions_group() {
             var actions_group = new Adw.PreferencesGroup();
             actions_group.title = I18n.tr("Actions");
             
@@ -581,12 +569,11 @@ namespace AppManager {
             row1.append(update_wrapper);
             refresh_update_button();
 
-            // Extract button - always shown, disabled when not applicable
+            // Extract button
             extract_button = new Gtk.Button.with_label(I18n.tr("Extract AppImage"));
             extract_button.add_css_class("pill");
             extract_button.width_request = 200;
             extract_button.hexpand = false;
-            // Enable only for non-terminal, portable installs
             var can_extract = record.mode == InstallMode.PORTABLE && !record.is_terminal;
             extract_button.sensitive = can_extract;
             extract_button.clicked.connect(() => {
@@ -612,23 +599,17 @@ namespace AppManager {
             });
             
             actions_box.append(delete_button);
-            detail_page.add(actions_group);
             
-            var toolbar = new Adw.ToolbarView();
-            var header = new Adw.HeaderBar();
-            toolbar.add_top_bar(header);
+            return actions_group;
+        }
 
-            var content_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-
-            if (!path_contains_local_bin()) {
-                var banner = new Adw.Banner(I18n.tr("Add ~/.local/bin to PATH so Add to $PATH works from the terminal."));
-                banner.set_revealed(true);
-                content_box.append(banner);
-            }
-
-            content_box.append(detail_page);
-            toolbar.set_content(content_box);
-            this.child = toolbar;
+        private Gtk.Button create_restore_button(bool visible) {
+            var button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
+            button.add_css_class("flat");
+            button.set_valign(Gtk.Align.CENTER);
+            button.tooltip_text = I18n.tr("Restore default");
+            button.set_visible(visible);
+            return button;
         }
 
         private void refresh_update_button() {

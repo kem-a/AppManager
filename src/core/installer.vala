@@ -11,6 +11,19 @@ namespace AppManager.Core {
         UNKNOWN
     }
 
+    /**
+     * Data structure holding original values extracted from an AppImage's bundled .desktop file.
+     */
+    internal class ExtractedDesktopProps : Object {
+        public string? icon_name { get; set; }
+        public string? keywords { get; set; }
+        public string? startup_wm_class { get; set; }
+        public string? exec_args { get; set; }
+        public string? homepage { get; set; }
+        public string? update_url { get; set; }
+        public string? resolved_exec { get; set; }
+    }
+
     public class Installer : Object {
         private InstallationRegistry registry;
         private Settings settings;
@@ -237,6 +250,135 @@ namespace AppManager.Core {
                 finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run);
         }
 
+        /**
+         * Extracts original property values from an AppImage's bundled .desktop file.
+         */
+        private ExtractedDesktopProps extract_desktop_properties(string desktop_path, string? app_run_path) {
+            var props = new ExtractedDesktopProps();
+            try {
+                var key_file = new KeyFile();
+                key_file.load_from_file(desktop_path, KeyFileFlags.NONE);
+                
+                if (key_file.has_key("Desktop Entry", "Icon")) {
+                    props.icon_name = key_file.get_string("Desktop Entry", "Icon");
+                }
+                if (key_file.has_key("Desktop Entry", "Keywords")) {
+                    props.keywords = key_file.get_string("Desktop Entry", "Keywords");
+                }
+                if (key_file.has_key("Desktop Entry", "StartupWMClass")) {
+                    props.startup_wm_class = key_file.get_string("Desktop Entry", "StartupWMClass");
+                }
+                if (key_file.has_key("Desktop Entry", "Exec")) {
+                    var exec_value = key_file.get_string("Desktop Entry", "Exec");
+                    props.resolved_exec = resolve_exec_from_desktop(exec_value, app_run_path);
+                    props.exec_args = extract_exec_arguments(exec_value);
+                }
+                if (key_file.has_key("Desktop Entry", "X-AppImage-Homepage")) {
+                    props.homepage = key_file.get_string("Desktop Entry", "X-AppImage-Homepage");
+                }
+                if (key_file.has_key("Desktop Entry", "X-AppImage-UpdateURL")) {
+                    props.update_url = key_file.get_string("Desktop Entry", "X-AppImage-UpdateURL");
+                }
+            } catch (Error e) {
+                warning("Failed to read desktop properties: %s", e.message);
+            }
+            return props;
+        }
+
+        /**
+         * Resolves the actual executable from a .desktop Exec value.
+         */
+        private string? resolve_exec_from_desktop(string exec_value, string? app_run_path) {
+            var base_exec = extract_base_exec_token(exec_value);
+            var normalized_exec = base_exec != null ? strip_appdir_prefix(base_exec) : null;
+            
+            if (normalized_exec != null && normalized_exec.strip() != "" && !is_apprun_token(normalized_exec)) {
+                return normalized_exec.strip();
+            }
+            
+            // Try to resolve from AppRun BIN variable
+            if (app_run_path != null && app_run_path.strip() != "") {
+                var bin_name = parse_bin_from_apprun(app_run_path);
+                if (bin_name != null && bin_name.strip() != "") {
+                    return bin_name.strip();
+                }
+            }
+            
+            // Fallback to AppRun
+            if (normalized_exec != null && is_apprun_token(normalized_exec)) {
+                return "AppRun";
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extracts command line arguments from an Exec value (everything after first token).
+         */
+        private string? extract_exec_arguments(string exec_value) {
+            var trimmed = exec_value.strip();
+            int first_space = -1;
+            bool in_quotes = false;
+            
+            for (int i = 0; i < trimmed.length; i++) {
+                if (trimmed[i] == '"') {
+                    in_quotes = !in_quotes;
+                } else if (trimmed[i] == ' ' && !in_quotes) {
+                    first_space = i;
+                    break;
+                }
+            }
+            
+            if (first_space != -1) {
+                return trimmed.substring(first_space + 1).strip();
+            }
+            return null;
+        }
+
+        /**
+         * Derives icon name without path and extension.
+         */
+        private string derive_icon_name(string? original_icon_name, string fallback_slug) {
+            if (original_icon_name == null || original_icon_name == "") {
+                return fallback_slug;
+            }
+            
+            var icon_basename = Path.get_basename(original_icon_name);
+            if (icon_basename.has_suffix(".svg")) {
+                return icon_basename.substring(0, icon_basename.length - 4);
+            }
+            if (icon_basename.has_suffix(".png")) {
+                return icon_basename.substring(0, icon_basename.length - 4);
+            }
+            return icon_basename;
+        }
+
+        /**
+         * Detects icon file extension from filename or content.
+         */
+        private string detect_icon_extension(string icon_path) {
+            var icon_file_basename = Path.get_basename(icon_path);
+            if (icon_file_basename.has_suffix(".svg")) {
+                return ".svg";
+            }
+            if (icon_file_basename.has_suffix(".png")) {
+                return ".png";
+            }
+            // No extension in filename (e.g., .DirIcon), detect from content
+            return Utils.FileUtils.detect_image_extension(icon_path);
+        }
+
+        /**
+         * Derives fallback StartupWMClass from bundled desktop file name.
+         */
+        private string derive_fallback_wmclass(string desktop_path) {
+            var bundled_desktop_basename = Path.get_basename(desktop_path);
+            if (bundled_desktop_basename.has_suffix(".desktop")) {
+                return bundled_desktop_basename.substring(0, bundled_desktop_basename.length - 8);
+            }
+            return bundled_desktop_basename;
+        }
+
         private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path) throws Error {
             string exec_path = exec_target.dup();
             string assets_path = appimage_for_assets.dup();
@@ -314,106 +456,25 @@ namespace AppManager.Core {
                 }
                 
                 // Extract original Icon name from desktop file
-                string? original_icon_name = null;
-                string? original_keywords = null;
-                string? original_startup_wm_class = null;
-                string? original_exec_args = null;
-                string? original_homepage = null;
-                string? original_update_url = null;
-                try {
-                    var key_file = new KeyFile();
-                    key_file.load_from_file(desktop_path, KeyFileFlags.NONE);
-                    if (key_file.has_key("Desktop Entry", "Icon")) {
-                        original_icon_name = key_file.get_string("Desktop Entry", "Icon");
-                    }
-                    if (key_file.has_key("Desktop Entry", "Keywords")) {
-                        original_keywords = key_file.get_string("Desktop Entry", "Keywords");
-                    }
-                    if (key_file.has_key("Desktop Entry", "StartupWMClass")) {
-                        original_startup_wm_class = key_file.get_string("Desktop Entry", "StartupWMClass");
-                    }
-                    if (key_file.has_key("Desktop Entry", "Exec")) {
-                        var exec_value = key_file.get_string("Desktop Entry", "Exec");
-                        var base_exec = extract_base_exec_token(exec_value);
-                        var normalized_exec = base_exec != null ? strip_appdir_prefix(base_exec) : null;
-                        if (normalized_exec != null && normalized_exec.strip() != "" && !is_apprun_token(normalized_exec)) {
-                            resolved_entry_exec = normalized_exec.strip();
-                        }
-                        // Extract arguments (everything after first token)
-                        var trimmed = exec_value.strip();
-                        int first_space = -1;
-                        bool in_quotes = false;
-                        for (int i = 0; i < trimmed.length; i++) {
-                            if (trimmed[i] == '"') {
-                                in_quotes = !in_quotes;
-                            } else if (trimmed[i] == ' ' && !in_quotes) {
-                                first_space = i;
-                                break;
-                            }
-                        }
-                        if (first_space != -1) {
-                            original_exec_args = trimmed.substring(first_space + 1).strip();
-                        }
-                        if ((resolved_entry_exec == null || resolved_entry_exec.strip() == "") && app_run_path != null && app_run_path.strip() != "") {
-                            var bin_name = parse_bin_from_apprun(app_run_path);
-                            if (bin_name != null && bin_name.strip() != "") {
-                                resolved_entry_exec = bin_name.strip();
-                            }
-                        }
-                        if ((resolved_entry_exec == null || resolved_entry_exec.strip() == "") && normalized_exec != null && is_apprun_token(normalized_exec)) {
-                            resolved_entry_exec = "AppRun";
-                        }
-                    }
-                    if (key_file.has_key("Desktop Entry", "X-AppImage-Homepage")) {
-                        original_homepage = key_file.get_string("Desktop Entry", "X-AppImage-Homepage");
-                    }
-                    if (key_file.has_key("Desktop Entry", "X-AppImage-UpdateURL")) {
-                        original_update_url = key_file.get_string("Desktop Entry", "X-AppImage-UpdateURL");
-                    }
-                } catch (Error e) {
-                    warning("Failed to read original icon name: %s", e.message);
-                }
+                var props = extract_desktop_properties(desktop_path, app_run_path);
+                var original_icon_name = props.icon_name;
+                var original_keywords = props.keywords;
+                var original_startup_wm_class = props.startup_wm_class;
+                var original_exec_args = props.exec_args;
+                var original_homepage = props.homepage;
+                var original_update_url = props.update_url;
+                resolved_entry_exec = props.resolved_exec;
                 
                 // Derive icon name without path and extension
-                string icon_name_for_desktop;
-                if (original_icon_name != null && original_icon_name != "") {
-                    // Strip path if present
-                    var icon_basename = Path.get_basename(original_icon_name);
-                    // Strip .svg or .png extension
-                    if (icon_basename.has_suffix(".svg")) {
-                        icon_name_for_desktop = icon_basename.substring(0, icon_basename.length - 4);
-                    } else if (icon_basename.has_suffix(".png")) {
-                        icon_name_for_desktop = icon_basename.substring(0, icon_basename.length - 4);
-                    } else {
-                        icon_name_for_desktop = icon_basename;
-                    }
-                } else {
-                    // Fallback to slug if no icon name in desktop file
-                    icon_name_for_desktop = final_slug;
-                }
+                var icon_name_for_desktop = derive_icon_name(original_icon_name, final_slug);
                 
                 // Install icon to ~/.local/share/icons with extension
-                var icon_file_basename = Path.get_basename(icon_path);
-                var icon_extension = "";
-                if (icon_file_basename.has_suffix(".svg")) {
-                    icon_extension = ".svg";
-                } else if (icon_file_basename.has_suffix(".png")) {
-                    icon_extension = ".png";
-                } else {
-                    // No extension in filename (e.g., .DirIcon), detect from content
-                    icon_extension = Utils.FileUtils.detect_image_extension(icon_path);
-                }
+                var icon_extension = detect_icon_extension(icon_path);
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
                 // Derive fallback StartupWMClass from bundled desktop file name (without .desktop extension)
-                string fallback_startup_wm_class;
-                var bundled_desktop_basename = Path.get_basename(desktop_path);
-                if (bundled_desktop_basename.has_suffix(".desktop")) {
-                    fallback_startup_wm_class = bundled_desktop_basename.substring(0, bundled_desktop_basename.length - 8);
-                } else {
-                    fallback_startup_wm_class = bundled_desktop_basename;
-                }
+                var fallback_startup_wm_class = derive_fallback_wmclass(desktop_path);
                 
                 // Store original values temporarily in record for get_effective_* methods to work
                 record.original_icon_name = icon_name_for_desktop;
