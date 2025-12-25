@@ -578,11 +578,7 @@ namespace AppManager {
             Gdk.Paintable? texture = null;
 
             new Thread<void>("appmgr-icon", () => {
-                try {
-                    texture = UiUtils.load_icon_from_appimage(appimage_path);
-                } catch (Error e) {
-                    warning("Icon preview failed: %s", e.message);
-                }
+                texture = UiUtils.load_icon_from_appimage(appimage_path);
                 Idle.add((owned) callback);
             });
 

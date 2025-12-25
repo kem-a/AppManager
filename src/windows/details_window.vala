@@ -714,13 +714,9 @@ namespace AppManager {
         private HashTable<string, string> load_desktop_file_properties(string desktop_file_path) {
             var props = new HashTable<string, string>(str_hash, str_equal);
             
-            try {
-                var entry = new DesktopEntry(desktop_file_path);
-                if (entry.no_display) {
-                    props.set("NoDisplay", "true");
-                }
-            } catch (Error e) {
-                warning("Failed to load desktop file %s: %s", desktop_file_path, e.message);
+            var entry = new DesktopEntry(desktop_file_path);
+            if (entry.no_display) {
+                props.set("NoDisplay", "true");
             }
             
             return props;

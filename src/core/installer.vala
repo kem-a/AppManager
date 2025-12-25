@@ -746,12 +746,8 @@ namespace AppManager.Core {
             string exec_value = "";
 
             if (record.desktop_file != null && record.desktop_file.strip() != "") {
-                try {
-                    var entry = new DesktopEntry(record.desktop_file);
-                    exec_value = entry.exec ?? "";
-                } catch (Error e) {
-                    warning("Failed to read Exec from desktop file %s: %s", record.desktop_file, e.message);
-                }
+                var entry = new DesktopEntry(record.desktop_file);
+                exec_value = entry.exec ?? "";
             }
 
             return DesktopEntry.resolve_exec_path(exec_value, record.installed_path);
@@ -792,13 +788,8 @@ namespace AppManager.Core {
             }
 
             bool is_terminal = false;
-            try {
-                var entry = new DesktopEntry(desktop_path);
-                is_terminal = entry.terminal;
-            } catch (Error e) {
-                // If we fail to parse Terminal, treat as non-terminal.
-                is_terminal = false;
-            }
+            var entry = new DesktopEntry(desktop_path);
+            is_terminal = entry.terminal;
 
             var exec_target = resolve_exec_path_for_record(record);
 

@@ -47,6 +47,7 @@ core_sources = files(
   'src/core/app_image_assets.vala',
   'src/core/desktop_entry.vala',
   'src/core/installer.vala',
+  'src/core/update_sources.vala',
   'src/core/updater.vala',
   'src/core/background_update_service.vala',
   'src/core/i18n.vala',
