@@ -103,46 +103,6 @@ namespace AppManager.Core {
             finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null);
         }
 
-        private string? parse_bin_from_apprun(string apprun_path) {
-            try {
-                string contents;
-                if (!GLib.FileUtils.get_contents(apprun_path, out contents)) {
-                    return null;
-                }
-                
-                // Search for BIN= line in AppRun
-                foreach (var line in contents.split("\n")) {
-                    var trimmed = line.strip();
-                    if (trimmed.has_prefix("BIN=")) {
-                        // Extract the value: BIN="$APPDIR/curseforge" -> curseforge
-                        var value = trimmed.substring("BIN=".length).strip();
-                        // Remove quotes
-                        if (value.has_prefix("\"") && value.has_suffix("\"")) {
-                            value = value.substring(1, value.length - 2);
-                        } else if (value.has_prefix("'") && value.has_suffix("'")) {
-                            value = value.substring(1, value.length - 2);
-                        }
-                        
-                        // Extract basename from path like "$APPDIR/curseforge" or "${APPDIR}/curseforge"
-                        if ("$APPDIR" in value || "${APPDIR}" in value) {
-                            // Remove $APPDIR/ or ${APPDIR}/
-                            value = value.replace("$APPDIR/", "").replace("${APPDIR}/", "");
-                            value = value.replace("$APPDIR", "").replace("${APPDIR}", "");
-                            // Clean up any leading slashes
-                            if (value.has_prefix("/")) {
-                                value = value.substring(1);
-                            }
-                        }
-                        
-                        return value.strip();
-                    }
-                }
-            } catch (Error e) {
-                warning("Failed to parse AppRun file: %s", e.message);
-            }
-            return null;
-        }
-
         private void install_extracted(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
             progress("Extracting AppImage…");
             var base_name = metadata.sanitized_basename();
@@ -214,7 +174,7 @@ namespace AppManager.Core {
                         // Check if Exec contains AppRun (without path or with relative path)
                         if ("AppRun" in exec_value) {
                             // Try to parse BIN from AppRun
-                            var bin_name = parse_bin_from_apprun(app_run);
+                            var bin_name = DesktopEntry.parse_bin_from_apprun(app_run);
                             if (bin_name != null && bin_name != "") {
                                 var bin_path = Path.build_filename(dest_dir, bin_name);
                                 if (File.new_for_path(bin_path).query_exists()) {
@@ -234,56 +194,6 @@ namespace AppManager.Core {
             
             record.installed_path = dest_dir;
                 finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run);
-        }
-
-        /**
-         * Resolves the actual executable from a .desktop Exec value.
-         */
-        private string? resolve_exec_from_desktop(string exec_value, string? app_run_path) {
-            var base_exec = extract_base_exec_token(exec_value);
-            var normalized_exec = base_exec != null ? strip_appdir_prefix(base_exec) : null;
-            
-            if (normalized_exec != null && normalized_exec.strip() != "" && !is_apprun_token(normalized_exec)) {
-                return normalized_exec.strip();
-            }
-            
-            // Try to resolve from AppRun BIN variable
-            if (app_run_path != null && app_run_path.strip() != "") {
-                var bin_name = parse_bin_from_apprun(app_run_path);
-                if (bin_name != null && bin_name.strip() != "") {
-                    return bin_name.strip();
-                }
-            }
-            
-            // Fallback to AppRun
-            if (normalized_exec != null && is_apprun_token(normalized_exec)) {
-                return "AppRun";
-            }
-            
-            return null;
-        }
-
-        /**
-         * Extracts command line arguments from an Exec value (everything after first token).
-         */
-        private string? extract_exec_arguments(string exec_value) {
-            var trimmed = exec_value.strip();
-            int first_space = -1;
-            bool in_quotes = false;
-            
-            for (int i = 0; i < trimmed.length; i++) {
-                if (trimmed[i] == '"') {
-                    in_quotes = !in_quotes;
-                } else if (trimmed[i] == ' ' && !in_quotes) {
-                    first_space = i;
-                    break;
-                }
-            }
-            
-            if (first_space != -1) {
-                return trimmed.substring(first_space + 1).strip();
-            }
-            return null;
         }
 
         /**
@@ -414,8 +324,8 @@ namespace AppManager.Core {
                 var original_update_url = desktop_entry.appimage_update_url;
                 
                 var exec_value = desktop_entry.exec;
-                var original_exec_args = exec_value != null ? extract_exec_arguments(exec_value) : null;
-                resolved_entry_exec = exec_value != null ? resolve_exec_from_desktop(exec_value, app_run_path) : null;
+                var original_exec_args = exec_value != null ? DesktopEntry.extract_exec_arguments(exec_value) : null;
+                resolved_entry_exec = exec_value != null ? DesktopEntry.resolve_exec_from_desktop(exec_value, app_run_path) : null;
                 
                 // Derive icon name without path and extension
                 var icon_name_for_desktop = derive_icon_name(original_icon_name, final_slug);
@@ -460,7 +370,7 @@ namespace AppManager.Core {
                 if (resolved_entry_exec != null && resolved_entry_exec.strip() != "") {
                     var stored_exec = resolved_entry_exec.strip();
                     if (record.mode == InstallMode.EXTRACTED && record.installed_path.strip() != "") {
-                        stored_exec = relativize_exec_to_installed(stored_exec, record.installed_path);
+                        stored_exec = DesktopEntry.relativize_exec_to_installed(stored_exec, record.installed_path);
                     }
                     record.entry_exec = stored_exec;
                 }
@@ -591,64 +501,6 @@ namespace AppManager.Core {
             
             return entry.to_data();
         }
-
-        private string? extract_base_exec_token(string exec_value) {
-            var trimmed = exec_value.strip();
-            if (trimmed == "") {
-                return null;
-            }
-
-            var builder = new StringBuilder();
-            bool in_quotes = false;
-            for (int i = 0; i < trimmed.length; i++) {
-                var ch = trimmed[i];
-                if (ch == '"') {
-                    in_quotes = !in_quotes;
-                    continue;
-                }
-                if (ch == ' ' && !in_quotes) {
-                    break;
-                }
-                builder.append_c(ch);
-            }
-
-            var token = builder.str.strip();
-            return token == "" ? null : token;
-        }
-
-        private string strip_appdir_prefix(string token) {
-            var value = token.strip();
-            value = value.replace("$APPDIR/", "").replace("${APPDIR}/", "");
-            value = value.replace("$APPDIR", "").replace("${APPDIR}", "");
-            while (value.has_prefix("/")) {
-                value = value.substring(1);
-            }
-            return value;
-        }
-
-        private bool is_apprun_token(string token) {
-            var base_name = Path.get_basename(token.strip());
-            var lower = base_name.down();
-            return lower == "apprun" || lower == "apprun.sh";
-        }
-
-        private string relativize_exec_to_installed(string exec_token, string installed_path) {
-            if (exec_token.strip() == "" || installed_path.strip() == "") {
-                return exec_token;
-            }
-            if (!Path.is_absolute(exec_token)) {
-                return exec_token;
-            }
-            var prefix = installed_path;
-            if (!prefix.has_suffix("/")) {
-                prefix = prefix + "/";
-            }
-            if (exec_token.has_prefix(prefix)) {
-                return exec_token.substring(prefix.length);
-            }
-            return exec_token;
-        }
-
 
         private string build_uninstall_exec(string installed_path) {
             var parts = new Gee.ArrayList<string>();
@@ -902,47 +754,7 @@ namespace AppManager.Core {
                 }
             }
 
-            return resolve_exec_path(exec_value, record);
-        }
-
-        private string resolve_exec_path(string exec_value, InstallationRecord record) {
-            var trimmed = exec_value.strip();
-            if (trimmed == "") {
-                return record.installed_path ?? "";
-            }
-
-            // Extract first token respecting quotes
-            bool in_quotes = false;
-            var builder = new StringBuilder();
-            for (int i = 0; i < trimmed.length; i++) {
-                var ch = trimmed[i];
-                if (ch == '"') {
-                    in_quotes = !in_quotes;
-                    continue;
-                }
-                if (ch == ' ' && !in_quotes) {
-                    break;
-                }
-                builder.append_c(ch);
-            }
-
-            var base_exec = builder.str.strip();
-            if (base_exec == "") {
-                return record.installed_path ?? "";
-            }
-
-            // If already absolute, return it
-            if (Path.is_absolute(base_exec)) {
-                return base_exec;
-            }
-
-            // If relative, resolve against installed_path when it is a directory
-            if (record.installed_path != null && File.new_for_path(record.installed_path).query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
-                return Path.build_filename(record.installed_path, base_exec);
-            }
-
-            // Fall back to the stored installed path or the token itself
-            return record.installed_path ?? base_exec;
+            return DesktopEntry.resolve_exec_path(exec_value, record.installed_path);
         }
 
         public bool remove_bin_symlink_for_record(InstallationRecord record) {

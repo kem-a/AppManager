@@ -185,5 +185,194 @@ namespace AppManager.Core {
         public KeyFile get_key_file() {
             return key_file;
         }
+
+        // --- Static Utility Methods ---
+
+        public static string? parse_bin_from_apprun(string apprun_path) {
+            try {
+                string contents;
+                if (!GLib.FileUtils.get_contents(apprun_path, out contents)) {
+                    return null;
+                }
+                
+                // Search for BIN= line in AppRun
+                foreach (var line in contents.split("\n")) {
+                    var trimmed = line.strip();
+                    if (trimmed.has_prefix("BIN=")) {
+                        // Extract the value: BIN="$APPDIR/curseforge" -> curseforge
+                        var value = trimmed.substring("BIN=".length).strip();
+                        // Remove quotes
+                        if (value.has_prefix("\"") && value.has_suffix("\"")) {
+                            value = value.substring(1, value.length - 2);
+                        } else if (value.has_prefix("'") && value.has_suffix("'")) {
+                            value = value.substring(1, value.length - 2);
+                        }
+                        
+                        // Extract basename from path like "$APPDIR/curseforge" or "${APPDIR}/curseforge"
+                        if ("$APPDIR" in value || "${APPDIR}" in value) {
+                            // Remove $APPDIR/ or ${APPDIR}/
+                            value = value.replace("$APPDIR/", "").replace("${APPDIR}/", "");
+                            value = value.replace("$APPDIR", "").replace("${APPDIR}", "");
+                            // Clean up any leading slashes
+                            if (value.has_prefix("/")) {
+                                value = value.substring(1);
+                            }
+                        }
+                        
+                        return value.strip();
+                    }
+                }
+            } catch (Error e) {
+                warning("Failed to parse AppRun file: %s", e.message);
+            }
+            return null;
+        }
+
+        /**
+         * Resolves the actual executable from a .desktop Exec value.
+         */
+        public static string? resolve_exec_from_desktop(string exec_value, string? app_run_path) {
+            var base_exec = extract_base_exec_token(exec_value);
+            var normalized_exec = base_exec != null ? strip_appdir_prefix(base_exec) : null;
+            
+            if (normalized_exec != null && normalized_exec.strip() != "" && !is_apprun_token(normalized_exec)) {
+                return normalized_exec.strip();
+            }
+            
+            // Try to resolve from AppRun BIN variable
+            if (app_run_path != null && app_run_path.strip() != "") {
+                var bin_name = parse_bin_from_apprun(app_run_path);
+                if (bin_name != null && bin_name.strip() != "") {
+                    return bin_name.strip();
+                }
+            }
+            
+            // Fallback to AppRun
+            if (normalized_exec != null && is_apprun_token(normalized_exec)) {
+                return "AppRun";
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extracts command line arguments from an Exec value (everything after first token).
+         */
+        public static string? extract_exec_arguments(string exec_value) {
+            var trimmed = exec_value.strip();
+            int first_space = -1;
+            bool in_quotes = false;
+            
+            for (int i = 0; i < trimmed.length; i++) {
+                if (trimmed[i] == '"') {
+                    in_quotes = !in_quotes;
+                } else if (trimmed[i] == ' ' && !in_quotes) {
+                    first_space = i;
+                    break;
+                }
+            }
+            
+            if (first_space != -1) {
+                return trimmed.substring(first_space + 1).strip();
+            }
+            return null;
+        }
+
+        public static string? extract_base_exec_token(string exec_value) {
+            var trimmed = exec_value.strip();
+            if (trimmed == "") {
+                return null;
+            }
+
+            var builder = new StringBuilder();
+            bool in_quotes = false;
+            for (int i = 0; i < trimmed.length; i++) {
+                var ch = trimmed[i];
+                if (ch == '"') {
+                    in_quotes = !in_quotes;
+                    continue;
+                }
+                if (ch == ' ' && !in_quotes) {
+                    break;
+                }
+                builder.append_c(ch);
+            }
+
+            var token = builder.str.strip();
+            return token == "" ? null : token;
+        }
+
+        public static string strip_appdir_prefix(string token) {
+            var value = token.strip();
+            value = value.replace("$APPDIR/", "").replace("${APPDIR}/", "");
+            value = value.replace("$APPDIR", "").replace("${APPDIR}", "");
+            while (value.has_prefix("/")) {
+                value = value.substring(1);
+            }
+            return value;
+        }
+
+        public static bool is_apprun_token(string token) {
+            var base_name = Path.get_basename(token.strip());
+            var lower = base_name.down();
+            return lower == "apprun" || lower == "apprun.sh";
+        }
+
+        public static string relativize_exec_to_installed(string exec_token, string installed_path) {
+            if (exec_token.strip() == "" || installed_path.strip() == "") {
+                return exec_token;
+            }
+            if (!Path.is_absolute(exec_token)) {
+                return exec_token;
+            }
+            var prefix = installed_path;
+            if (!prefix.has_suffix("/")) {
+                prefix = prefix + "/";
+            }
+            if (exec_token.has_prefix(prefix)) {
+                return exec_token.substring(prefix.length);
+            }
+            return exec_token;
+        }
+        
+        public static string resolve_exec_path(string exec_value, string? installed_path) {
+            var trimmed = exec_value.strip();
+            if (trimmed == "") {
+                return installed_path ?? "";
+            }
+
+            // Extract first token respecting quotes
+            bool in_quotes = false;
+            var builder = new StringBuilder();
+            for (int i = 0; i < trimmed.length; i++) {
+                var ch = trimmed[i];
+                if (ch == '"') {
+                    in_quotes = !in_quotes;
+                    continue;
+                }
+                if (ch == ' ' && !in_quotes) {
+                    break;
+                }
+                builder.append_c(ch);
+            }
+
+            var base_exec = builder.str.strip();
+            if (base_exec == "") {
+                return installed_path ?? "";
+            }
+
+            // If already absolute, return it
+            if (Path.is_absolute(base_exec)) {
+                return base_exec;
+            }
+
+            // If relative, resolve against installed_path when it is a directory
+            if (installed_path != null && File.new_for_path(installed_path).query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                return Path.build_filename(installed_path, base_exec);
+            }
+
+            // Fall back to the stored installed path or the token itself
+            return installed_path ?? base_exec;
+        }
     }
 }
