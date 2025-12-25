@@ -3,6 +3,7 @@
   <gresource prefix="/com/github/AppManager">
     <file>ui/main-window-shortcuts.ui</file>
     <file alias="com.github.AppManager.metainfo.xml">../com.github.AppManager.metainfo.xml</file>
+    <file alias="style.css">../style.css</file>
     <file compressed="true" alias="icons/hicolor/scalable/status/software-update-available-symbolic.svg">../icons/software-update-available-symbolic.svg</file>
   </gresource>
 </gresources>

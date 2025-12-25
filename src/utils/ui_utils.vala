@@ -11,53 +11,7 @@ namespace AppManager.Utils {
         private static Gtk.CssProvider? app_css_provider = null;
         private static bool app_css_applied = false;
         private static ulong css_display_handler = 0;
-        private const string APP_CARD_CSS = """
-            .card.accent,
-            .app-card.accent {
-                background-color: @accent_bg_color;
-                color: @accent_fg_color;
-            }
-            .card.accent label,
-            .app-card.accent label {
-                color: @accent_fg_color;
-            }
-            .card.destructive,
-            .app-card.destructive {
-                background-color: @destructive_bg_color;
-                color: @destructive_fg_color;
-            }
-            .card.destructive label,
-            .app-card.destructive label {
-                color: @destructive_fg_color;
-            }
-            .card.terminal,
-            .app-card.terminal {
-                background-color: #535252ff;
-                color: #ffffff;
-            }
-            .card.terminal label,
-            .app-card.terminal label {
-                color: #ffffff;
-            }
-            .app-card-label {
-                border-radius: 999px;
-                background-color: alpha(@window_bg_color, 0.6);
-                color: inherit;
-                padding: 0.2em 0.8em;
-            }
-            .app-card-label.accent-badge {
-                background-color: @accent_bg_color;
-                color: @accent_fg_color;
-            }
-            .app-card-label.terminal-badge {
-                background-color: #535252ff;
-                color: #ffffff;
-            }
-            .update-success-badge {
-                min-width: 18px;
-                min-height: 18px;
-            }
-        """;
+
 
         public static Gdk.Paintable? load_icon_from_appimage(string path) {
             string? temp_dir = null;
@@ -160,7 +114,7 @@ namespace AppManager.Utils {
 
             if (app_css_provider == null) {
                 app_css_provider = new Gtk.CssProvider();
-                app_css_provider.load_from_string(APP_CARD_CSS);
+                app_css_provider.load_from_resource("/com/github/AppManager/style.css");
             }
 
             var style_manager = Adw.StyleManager.get_default();

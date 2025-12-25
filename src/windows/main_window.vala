@@ -57,7 +57,6 @@ namespace AppManager {
             this.app_rows = new Gee.ArrayList<Adw.PreferencesRow>();
             add_css_class("devel");
             this.set_default_size(settings.get_int("window-width"), settings.get_int("window-height"));
-            load_custom_css();
             build_ui();
             setup_window_actions();
             refresh_installations();
@@ -67,31 +66,6 @@ namespace AppManager {
         private void on_registry_changed() {
             debug("MainWindow: received registry changed signal");
             refresh_installations();
-        }
-
-        private void load_custom_css() {
-            // Shared card styles are maintained in UiUtils to avoid duplication.
-            UiUtils.ensure_app_card_styles();
-
-            var provider = new Gtk.CssProvider();
-            string css = """
-                .extracted-app .title > label {
-                    color: @accent_color;
-                    font-weight: bold;
-                }
-                .update-indicator {
-                    color: @accent_color;
-                    font-size: 10px;
-                }
-            """;
-            provider.load_from_string(css);
-
-            var display = Gdk.Display.get_default();
-            if (display != null) {
-                Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-            } else {
-                warning("Custom CSS could not be applied because no display is available");
-            }
         }
 
         private void build_ui() {
