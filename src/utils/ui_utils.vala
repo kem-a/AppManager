@@ -184,58 +184,6 @@ namespace AppManager.Utils {
             app_css_applied = true;
         }
 
-        public static Gdk.RGBA get_accent_background_color() {
-            // Use GNOME default blue accent as fallback - accent color API requires libadwaita 1.6+
-            return parse_color("#3584e4");
-        }
-
-        public static Gdk.RGBA get_accent_foreground_color(Gdk.RGBA accent_bg) {
-            var style_manager = Adw.StyleManager.get_default();
-            if (style_manager != null && style_manager.get_dark()) {
-                return parse_color("#f6f5f4");
-            }
-
-            double luminance = relative_luminance(accent_bg);
-            if (luminance > 0.6) {
-                return parse_color("#241f31");
-            }
-            return parse_color("#ffffff");
-        }
-
-        public static string rgba_to_hex(Gdk.RGBA color) {
-            int r = clamp_channel((int)(color.red * 255.0 + 0.5));
-            int g = clamp_channel((int)(color.green * 255.0 + 0.5));
-            int b = clamp_channel((int)(color.blue * 255.0 + 0.5));
-            return "#%02x%02x%02x".printf(r, g, b);
-        }
-
-        public static string rgba_to_css(Gdk.RGBA color) {
-            int r = clamp_channel((int)(color.red * 255.0 + 0.5));
-            int g = clamp_channel((int)(color.green * 255.0 + 0.5));
-            int b = clamp_channel((int)(color.blue * 255.0 + 0.5));
-            return "rgba(%d, %d, %d, %.3f)".printf(r, g, b, color.alpha);
-        }
-
-        public static Gdk.RGBA parse_color(string value) {
-            var color = Gdk.RGBA();
-            color.parse(value);
-            return color;
-        }
-
-        private static int clamp_channel(int value) {
-            if (value < 0) {
-                return 0;
-            }
-            if (value > 255) {
-                return 255;
-            }
-            return value;
-        }
-
-        private static double relative_luminance(Gdk.RGBA color) {
-            return 0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue;
-        }
-
         public static Gdk.Paintable? load_record_icon(InstallationRecord record) {
             if (record.icon_path == null || record.icon_path.strip() == "") {
                 return null;
