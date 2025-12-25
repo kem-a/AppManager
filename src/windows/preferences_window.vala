@@ -183,43 +183,10 @@ namespace AppManager {
         }
 
         private void handle_auto_update_toggle(bool enabled) {
-            var autostart_file = Path.build_filename(
-                Environment.get_user_config_dir(),
-                "autostart",
-                "com.github.AppManager.desktop"
-            );
-            
             if (enabled) {
-                // Write autostart file when enabled
-                try {
-                    var autostart_dir = Path.build_filename(Environment.get_user_config_dir(), "autostart");
-                    DirUtils.create_with_parents(autostart_dir, 0755);
-                    
-                    var exec_path = AppPaths.current_executable_path ?? "app-manager";
-                    var content = """[Desktop Entry]
-Type=Application
-Name=AppManager Background Updater
-Exec=%s --background-update
-X-GNOME-Autostart-enabled=true
-NoDisplay=true
-X-XDP-Autostart=com.github.AppManager
-""".printf(exec_path);
-                    GLib.FileUtils.set_contents(autostart_file, content);
-                    debug("Created autostart file: %s", autostart_file);
-                } catch (Error e) {
-                    warning("Failed to write autostart file: %s", e.message);
-                }
+                BackgroundUpdateService.write_autostart_file();
             } else {
-                // Remove autostart file when disabled
-                var file = File.new_for_path(autostart_file);
-                if (file.query_exists()) {
-                    try {
-                        file.delete();
-                        debug("Removed autostart file: %s", autostart_file);
-                    } catch (Error e) {
-                        warning("Failed to remove autostart file: %s", e.message);
-                    }
-                }
+                BackgroundUpdateService.remove_autostart_file();
             }
         }
 

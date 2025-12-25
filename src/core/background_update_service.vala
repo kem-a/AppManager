@@ -55,7 +55,11 @@ namespace AppManager.Core {
             }
         }
 
-        private void write_autostart_file() {
+        /**
+         * Writes the autostart desktop file to enable background updates.
+         * Public so PreferencesDialog can use it when the user enables auto-updates.
+         */
+        public static void write_autostart_file() {
             try {
                 var autostart_dir = Path.build_filename(Environment.get_user_config_dir(), "autostart");
                 DirUtils.create_with_parents(autostart_dir, 0755);
@@ -74,6 +78,27 @@ X-XDP-Autostart=com.github.AppManager
                 debug("Autostart file written to %s", autostart_file);
             } catch (Error e) {
                 warning("Failed to write autostart file: %s", e.message);
+            }
+        }
+
+        /**
+         * Removes the autostart desktop file to disable background updates.
+         * Public so PreferencesDialog can use it when the user disables auto-updates.
+         */
+        public static void remove_autostart_file() {
+            var autostart_file = Path.build_filename(
+                Environment.get_user_config_dir(),
+                "autostart",
+                "com.github.AppManager.desktop"
+            );
+            var file = File.new_for_path(autostart_file);
+            if (file.query_exists()) {
+                try {
+                    file.delete();
+                    debug("Removed autostart file: %s", autostart_file);
+                } catch (Error e) {
+                    warning("Failed to remove autostart file: %s", e.message);
+                }
             }
         }
 
