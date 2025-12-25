@@ -481,9 +481,13 @@ namespace AppManager {
             path_row.title = I18n.tr("Add to $PATH");
             path_row.subtitle = I18n.tr("Create a launcher in ~/.local/bin so you can run it from the terminal");
 
-            var symlink_name = Path.get_basename(exec_path);
-            if (symlink_name.strip() == "" && record.installed_path != null) {
-                symlink_name = Path.get_basename(record.installed_path);
+            var symlink_name = "";
+            if (record.installed_path != null && record.installed_path.strip() != "") {
+                symlink_name = installer.derive_slug_from_path(record.installed_path, record.mode == InstallMode.EXTRACTED);
+            }
+            
+            if (symlink_name == "") {
+                symlink_name = Path.get_basename(exec_path).down();
             }
 
             bool is_terminal_app = record.is_terminal;

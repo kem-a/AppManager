@@ -592,7 +592,7 @@ namespace AppManager.Core {
             return dot_index >= 0 ? base_name.substring(dot_index) : "";
         }
 
-        private string derive_slug_from_path(string path, bool is_extracted) {
+        public string derive_slug_from_path(string path, bool is_extracted) {
             var base_name = Path.get_basename(path);
             if (!is_extracted) {
                 var dot_index = base_name.last_index_of_char('.');
