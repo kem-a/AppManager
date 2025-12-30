@@ -63,6 +63,20 @@ namespace AppManager.Core {
             notify_changed();
         }
 
+        /**
+         * Updates an existing record in-place and persists the registry.
+         *
+         * Unlike register(), this does not touch reinstall history. This is intended for
+         * user-driven edits of an already-installed record (custom args, keywords, links, etc.).
+         */
+        public void update(InstallationRecord record, bool notify = true) {
+            records.insert(record.id, record);
+            save();
+            if (notify) {
+                notify_changed();
+            }
+        }
+
         public void unregister(string id) {
             // Before removing, save custom values to history for potential reinstall
             var record = records.get(id);

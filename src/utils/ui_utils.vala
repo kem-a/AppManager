@@ -1,6 +1,7 @@
 using Gtk;
 using Gdk;
 using Adw;
+using AppManager.Core;
 
 namespace AppManager.Utils {
     public class UiUtils {
@@ -10,53 +11,25 @@ namespace AppManager.Utils {
         private static Gtk.CssProvider? app_css_provider = null;
         private static bool app_css_applied = false;
         private static ulong css_display_handler = 0;
-        private const string APP_CARD_CSS = """
-            .card.accent,
-            .app-card.accent {
-                background-color: @accent_bg_color;
-                color: @accent_fg_color;
+
+
+        public static Gdk.Paintable? load_icon_from_appimage(string path) {
+            string? temp_dir = null;
+            try {
+                temp_dir = FileUtils.create_temp_dir("appmgr-icon-");
+                var icon_path = AppImageAssets.extract_icon(path, temp_dir);
+                if (icon_path != null) {
+                    return Gdk.Texture.from_file(File.new_for_path(icon_path));
+                }
+            } catch (Error e) {
+                warning("Icon extraction error: %s", e.message);
+            } finally {
+                if (temp_dir != null) {
+                    FileUtils.remove_dir_recursive(temp_dir);
+                }
             }
-            .card.accent label,
-            .app-card.accent label {
-                color: @accent_fg_color;
-            }
-            .card.destructive,
-            .app-card.destructive {
-                background-color: @destructive_bg_color;
-                color: @destructive_fg_color;
-            }
-            .card.destructive label,
-            .app-card.destructive label {
-                color: @destructive_fg_color;
-            }
-            .card.terminal,
-            .app-card.terminal {
-                background-color: #535252ff;
-                color: #ffffff;
-            }
-            .card.terminal label,
-            .app-card.terminal label {
-                color: #ffffff;
-            }
-            .app-card-label {
-                border-radius: 999px;
-                background-color: alpha(@window_bg_color, 0.6);
-                color: inherit;
-                padding: 0.2em 0.8em;
-            }
-            .app-card-label.accent-badge {
-                background-color: @accent_bg_color;
-                color: @accent_fg_color;
-            }
-            .app-card-label.terminal-badge {
-                background-color: #535252ff;
-                color: #ffffff;
-            }
-            .update-success-badge {
-                min-width: 18px;
-                min-height: 18px;
-            }
-        """;
+            return null;
+        }
 
         public static Gtk.Image? load_app_icon(string icon_path) {
             // Extract icon name from the path (without extension)
@@ -141,7 +114,7 @@ namespace AppManager.Utils {
 
             if (app_css_provider == null) {
                 app_css_provider = new Gtk.CssProvider();
-                app_css_provider.load_from_string(APP_CARD_CSS);
+                app_css_provider.load_from_resource("/com/github/AppManager/style.css");
             }
 
             var style_manager = Adw.StyleManager.get_default();
@@ -183,56 +156,37 @@ namespace AppManager.Utils {
             app_css_applied = true;
         }
 
-        public static Gdk.RGBA get_accent_background_color() {
-            // Use GNOME default blue accent as fallback - accent color API requires libadwaita 1.6+
-            return parse_color("#3584e4");
-        }
-
-        public static Gdk.RGBA get_accent_foreground_color(Gdk.RGBA accent_bg) {
-            var style_manager = Adw.StyleManager.get_default();
-            if (style_manager != null && style_manager.get_dark()) {
-                return parse_color("#f6f5f4");
+        public static Gdk.Paintable? load_record_icon(InstallationRecord record) {
+            if (record.icon_path == null || record.icon_path.strip() == "") {
+                return null;
             }
-
-            double luminance = relative_luminance(accent_bg);
-            if (luminance > 0.6) {
-                return parse_color("#241f31");
+            try {
+                var file = File.new_for_path(record.icon_path);
+                if (file.query_exists()) {
+                    return Gdk.Texture.from_file(file);
+                }
+            } catch (Error e) {
+                warning("Failed to load record icon: %s", e.message);
             }
-            return parse_color("#ffffff");
+            return null;
         }
 
-        public static string rgba_to_hex(Gdk.RGBA color) {
-            int r = clamp_channel((int)(color.red * 255.0 + 0.5));
-            int g = clamp_channel((int)(color.green * 255.0 + 0.5));
-            int b = clamp_channel((int)(color.blue * 255.0 + 0.5));
-            return "#%02x%02x%02x".printf(r, g, b);
-        }
-
-        public static string rgba_to_css(Gdk.RGBA color) {
-            int r = clamp_channel((int)(color.red * 255.0 + 0.5));
-            int g = clamp_channel((int)(color.green * 255.0 + 0.5));
-            int b = clamp_channel((int)(color.blue * 255.0 + 0.5));
-            return "rgba(%d, %d, %d, %.3f)".printf(r, g, b, color.alpha);
-        }
-
-        public static Gdk.RGBA parse_color(string value) {
-            var color = Gdk.RGBA();
-            color.parse(value);
-            return color;
-        }
-
-        private static int clamp_channel(int value) {
-            if (value < 0) {
-                return 0;
+        public static Gtk.Label create_wrapped_label(string text, bool use_markup = false, bool dim = false) {
+            var label = new Gtk.Label(null);
+            label.wrap = true;
+            label.set_wrap_mode(Pango.WrapMode.WORD_CHAR);
+            label.halign = Gtk.Align.CENTER;
+            label.justify = Gtk.Justification.CENTER;
+            label.use_markup = use_markup;
+            if (use_markup) {
+                label.set_markup(text);
+            } else {
+                label.set_text(text);
             }
-            if (value > 255) {
-                return 255;
+            if (dim) {
+                label.add_css_class("dim-label");
             }
-            return value;
-        }
-
-        private static double relative_luminance(Gdk.RGBA color) {
-            return 0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue;
+            return label;
         }
     }
 }

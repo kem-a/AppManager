@@ -52,6 +52,14 @@ namespace AppManager.Core {
             }
         }
 
+        public static string local_bin_dir {
+            owned get {
+                var dir = Path.build_filename(Environment.get_home_dir(), LOCAL_BIN_DIRNAME);
+                DirUtils.create_with_parents(dir, 0755);
+                return dir;
+            }
+        }
+
         public static string? current_executable_path {
             owned get {
                 // If running as an AppImage, use the original AppImage path

@@ -12,3 +12,5 @@ squashfs-*.img
 build/
 .directory
 *ns.md
+*RE.md
+*.log

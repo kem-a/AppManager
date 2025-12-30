@@ -17,7 +17,7 @@
       <description>Stores the last known height so the preferences window can restore it.</description>
     </key>
     <key name="auto-check-updates" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>Automatically check for updates in background</summary>
       <description>When enabled, AppManager will periodically check for AppImage updates using the XDG Background Portal</description>
     </key>

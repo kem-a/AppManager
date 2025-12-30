@@ -57,7 +57,6 @@ namespace AppManager {
             this.app_rows = new Gee.ArrayList<Adw.PreferencesRow>();
             add_css_class("devel");
             this.set_default_size(settings.get_int("window-width"), settings.get_int("window-height"));
-            load_custom_css();
             build_ui();
             setup_window_actions();
             refresh_installations();
@@ -67,49 +66,6 @@ namespace AppManager {
         private void on_registry_changed() {
             debug("MainWindow: received registry changed signal");
             refresh_installations();
-        }
-
-        private void load_custom_css() {
-            var provider = new Gtk.CssProvider();
-            string css = """
-                .card.accent {
-                    background-color: @accent_bg_color;
-                    color: @accent_fg_color;
-                }
-                .card.accent label {
-                    color: @accent_fg_color;
-                }
-                .card.destructive {
-                    background-color: @destructive_bg_color;
-                    color: @destructive_fg_color;
-                }
-                .card.destructive label {
-                    color: @destructive_fg_color;
-                }
-                .card.terminal {
-                    background-color: #535252ff;
-                    color: #ffffff;
-                }
-                .card.terminal label {
-                    color: #ffffff;
-                }
-                .extracted-app .title > label {
-                    color: @accent_color;
-                    font-weight: bold;
-                }
-                .update-indicator {
-                    color: @accent_color;
-                    font-size: 10px;
-                }
-            """;
-            provider.load_from_string(css);
-
-            var display = Gdk.Display.get_default();
-            if (display != null) {
-                Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-            } else {
-                warning("Custom CSS could not be applied because no display is available");
-            }
         }
 
         private void build_ui() {
@@ -678,13 +634,23 @@ namespace AppManager {
 
         private void start_update_check() {
             set_update_button_state(UpdateWorkflowState.CHECKING);
+            start_update_check_async.begin();
+        }
+
+        private async void start_update_check_async() {
+            SourceFunc callback = start_update_check_async.callback;
+            Gee.ArrayList<UpdateProbeResult>? probes = null;
+
             new Thread<void>("appmgr-check-updates", () => {
-                var probes = updater.probe_updates();
-                Idle.add(() => {
-                    handle_probe_results(probes);
-                    return GLib.Source.REMOVE;
-                });
+                probes = updater.probe_updates();
+                Idle.add((owned) callback);
             });
+
+            yield;
+
+            if (probes != null) {
+                handle_probe_results(probes);
+            }
         }
 
         private void handle_probe_results(Gee.ArrayList<UpdateProbeResult> probes) {
@@ -719,14 +685,24 @@ namespace AppManager {
                 updating_records.add(key);
             }
             refresh_installations();
+            start_update_install_async.begin();
+        }
+
+        private async void start_update_install_async() {
+            SourceFunc callback = start_update_install_async.callback;
+            Gee.ArrayList<UpdateResult>? results = null;
+
             new Thread<void>("appmgr-update", () => {
-                var results = updater.update_all();
-                Idle.add(() => {
-                    handle_update_results(results);
-                    finalize_update_workflow(results);
-                    return GLib.Source.REMOVE;
-                });
+                results = updater.update_all();
+                Idle.add((owned) callback);
             });
+
+            yield;
+
+            if (results != null) {
+                handle_update_results(results);
+                finalize_update_workflow(results);
+            }
         }
 
         private void trigger_single_update(InstallationRecord record) {
@@ -736,19 +712,29 @@ namespace AppManager {
                 active_details_window.set_update_loading(true);
             }
             refresh_installations();
+            trigger_single_update_async.begin(record);
+        }
+
+        private async void trigger_single_update_async(InstallationRecord record) {
+            SourceFunc callback = trigger_single_update_async.callback;
+            UpdateResult? result = null;
+
             new Thread<void>("appmgr-update-single", () => {
-                var result = updater.update_single(record);
+                result = updater.update_single(record);
+                Idle.add((owned) callback);
+            });
+
+            yield;
+
+            if (active_details_window != null && active_details_window.matches_record(record)) {
+                active_details_window.set_update_loading(false);
+            }
+            if (result != null) {
                 var payload = new Gee.ArrayList<UpdateResult>();
                 payload.add(result);
-                Idle.add(() => {
-                    if (active_details_window != null && active_details_window.matches_record(record)) {
-                        active_details_window.set_update_loading(false);
-                    }
-                    handle_update_results(payload);
-                    finalize_single_update(result);
-                    return GLib.Source.REMOVE;
-                });
-            });
+                handle_update_results(payload);
+                finalize_single_update(result);
+            }
         }
 
         private void finalize_single_update(UpdateResult result) {
@@ -930,16 +916,26 @@ namespace AppManager {
             if (source != null) {
                 source.set_update_loading(true);
             }
+            start_single_probe_async.begin(record, source);
+        }
+
+        private async void start_single_probe_async(InstallationRecord record, DetailsWindow? source) {
+            SourceFunc callback = start_single_probe_async.callback;
+            UpdateProbeResult? result = null;
+
             new Thread<void>("appmgr-probe-single", () => {
-                var result = updater.probe_single(record);
-                Idle.add(() => {
-                    if (source != null) {
-                        source.set_update_loading(false);
-                    }
-                    handle_single_probe_result(result, source);
-                    return GLib.Source.REMOVE;
-                });
+                result = updater.probe_single(record);
+                Idle.add((owned) callback);
             });
+
+            yield;
+
+            if (source != null) {
+                source.set_update_loading(false);
+            }
+            if (result != null) {
+                handle_single_probe_result(result, source);
+            }
         }
 
         private void handle_single_probe_result(UpdateProbeResult result, DetailsWindow? source) {
@@ -1041,7 +1037,7 @@ namespace AppManager {
             var key = record_state_key(record);
             var has_update = pending_update_keys.contains(key);
             var is_updating = updating_records.contains(key);
-            var details_window = new DetailsWindow(record, registry, has_update);
+            var details_window = new DetailsWindow(record, registry, installer, has_update);
             if (is_updating) {
                 details_window.set_update_loading(true);
             }

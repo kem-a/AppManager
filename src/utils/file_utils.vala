@@ -251,5 +251,25 @@ namespace AppManager.Utils {
 
             return "";
         }
+
+        public static void ensure_executable(string path) {
+            if (Posix.chmod(path, 0755) != 0) {
+                warning("Failed to chmod %s", path);
+            }
+        }
+
+        public static string escape_exec_arg(string value) {
+            return value.replace("\"", "\\\"");
+        }
+
+        public static string quote_exec_token(string token) {
+            for (int i = 0; i < token.length; i++) {
+                var ch = token[i];
+                if (ch == ' ' || ch == '\t') {
+                    return "\"%s\"".printf(escape_exec_arg(token));
+                }
+            }
+            return token;
+        }
     }
 }

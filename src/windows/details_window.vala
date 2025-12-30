@@ -5,21 +5,29 @@ namespace AppManager {
     public class DetailsWindow : Adw.NavigationPage {
         private InstallationRecord record;
         private InstallationRegistry registry;
+        private Installer installer;
         private bool update_available;
         private bool update_loading = false;
         private Gtk.Button? update_button;
         private Gtk.Spinner? update_spinner;
         private Gtk.Button? extract_button;
+        private Adw.Banner? path_banner;
+        private Adw.SwitchRow? path_row;
+        
+        // Shared state for build_ui sub-methods
+        private string exec_path;
+        private HashTable<string, string> desktop_props;
         
         public signal void uninstall_requested(InstallationRecord record);
         public signal void update_requested(InstallationRecord record);
         public signal void check_update_requested(InstallationRecord record);
         public signal void extract_requested(InstallationRecord record);
 
-        public DetailsWindow(InstallationRecord record, InstallationRegistry registry, bool update_available = false) {
+        public DetailsWindow(InstallationRecord record, InstallationRegistry registry, Installer installer, bool update_available = false) {
             Object(title: record.name, tag: record.id);
             this.record = record;
             this.registry = registry;
+            this.installer = installer;
             this.update_available = update_available;
             this.can_pop = true;
             
@@ -40,10 +48,48 @@ namespace AppManager {
             refresh_update_button();
         }
 
+        private void persist_record_and_refresh_desktop() {
+            registry.update(record);
+            installer.apply_record_customizations_to_desktop(record);
+        }
+
         private void build_ui() {
+            // Initialize shared state
+            desktop_props = load_desktop_file_properties(record.desktop_file);
+            exec_path = installer.resolve_exec_path_for_record(record);
+            
             var detail_page = new Adw.PreferencesPage();
             
-            // Header group with icon, name, and version
+            // Build UI sections
+            detail_page.add(build_header_group());
+            detail_page.add(build_cards_group());
+            
+            var props_group = build_properties_group();
+            var update_group = build_update_info_group();
+            var advanced_group = build_advanced_group();
+            props_group.add(advanced_group);
+            
+            detail_page.add(props_group);
+            detail_page.add(update_group);
+            detail_page.add(build_actions_group());
+            
+            // Assemble final layout
+            var toolbar = new Adw.ToolbarView();
+            var header = new Adw.HeaderBar();
+            toolbar.add_top_bar(header);
+
+            var content_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+
+            path_banner = new Adw.Banner(I18n.tr("⚠️ '~/.local/bin' is not in $PATH. App will not launch from the terminal"));
+            content_box.append(path_banner);
+            update_path_banner_visibility();
+
+            content_box.append(detail_page);
+            toolbar.set_content(content_box);
+            this.child = toolbar;
+        }
+
+        private Adw.PreferencesGroup build_header_group() {
             var header_group = new Adw.PreferencesGroup();
             
             var header_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
@@ -77,15 +123,13 @@ namespace AppManager {
             header_row.set_activatable(false);
             header_row.set_child(header_box);
             header_group.add(header_row);
-            detail_page.add(header_group);
             
-            // Load desktop file properties early for Terminal and NoDisplay checks
-            var desktop_props = load_desktop_file_properties(record.desktop_file);
-            
-            // Cards group - adding box directly without PreferencesRow wrapper
+            return header_group;
+        }
+
+        private Adw.PreferencesGroup build_cards_group() {
             var cards_group = new Adw.PreferencesGroup();
             
-            // Cards container (displayed without background)
             var cards_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             cards_box.set_halign(Gtk.Align.CENTER);
             
@@ -118,9 +162,8 @@ namespace AppManager {
             var size_card = create_info_card(UiUtils.format_size(size));
             cards_box.append(size_card);
             
-            // Terminal app card (only show if Terminal=true)
-            var terminal_value = desktop_props.get("Terminal") ?? "false";
-            if (terminal_value.down() == "true") {
+            // Terminal app card (only show if is_terminal)
+            if (record.is_terminal) {
                 var terminal_card = create_info_card(I18n.tr("Terminal"));
                 terminal_card.add_css_class("terminal");
                 cards_box.append(terminal_card);
@@ -133,39 +176,25 @@ namespace AppManager {
                 cards_box.append(hidden_card);
             }
 
-            // Add the box directly - it will be added to a separate box without the list background
             cards_group.add(cards_box);
-            detail_page.add(cards_group);
-            
-            // Properties group
+            return cards_group;
+        }
+
+        private Adw.PreferencesGroup build_properties_group() {
             var props_group = new Adw.PreferencesGroup();
             props_group.title = I18n.tr("Properties");
             
-            // Extract current values from desktop file
-            var exec_from_desktop = desktop_props.get("Exec") ?? "";
-            var current_args = extract_exec_args(exec_from_desktop);
-            var current_icon = desktop_props.get("Icon") ?? "";
-            var current_keywords = desktop_props.get("Keywords") ?? "";
-            var current_wmclass = desktop_props.get("StartupWMClass") ?? "";
-            
-            // Command line arguments (loaded from .desktop file)
+            // Command line arguments
+            var current_args = record.get_effective_commandline_args() ?? "";
             var exec_row = new Adw.EntryRow();
             exec_row.title = I18n.tr("Command line arguments");
             exec_row.text = current_args;
             
-            // Restore defaults button for command line args - visible when custom value is set
-            var restore_exec_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_exec_button.add_css_class("flat");
-            restore_exec_button.set_valign(Gtk.Align.CENTER);
-            restore_exec_button.tooltip_text = I18n.tr("Restore default");
-            restore_exec_button.set_visible(record.custom_commandline_args != null);
+            var restore_exec_button = create_restore_button(record.custom_commandline_args != null);
             restore_exec_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_commandline_args = null;
-                registry.register(record);
-                var original_val = record.original_commandline_args ?? "";
-                exec_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "Exec", build_exec_with_args(exec_from_desktop, original_val));
+                exec_row.text = record.original_commandline_args ?? "";
+                persist_record_and_refresh_desktop();
                 restore_exec_button.set_visible(false);
             });
             exec_row.add_suffix(restore_exec_button);
@@ -173,42 +202,105 @@ namespace AppManager {
             exec_row.changed.connect(() => {
                 var new_val = exec_row.text.strip();
                 var original_val = record.original_commandline_args ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_commandline_args = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_commandline_args = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_commandline_args = new_val;
                 }
-                registry.register(record);
-                // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "Exec", build_exec_with_args(exec_from_desktop, exec_row.text));
+                persist_record_and_refresh_desktop();
                 restore_exec_button.set_visible(record.custom_commandline_args != null);
             });
             props_group.add(exec_row);
             
-            // Web page address (with original/custom distinction)
+            return props_group;
+        }
+
+        private Adw.PreferencesGroup build_update_info_group() {
+            var update_group = new Adw.PreferencesGroup();
+            update_group.title = I18n.tr("Update info");
+            
+            var update_info_button = new Gtk.Button.from_icon_name("dialog-information-symbolic");
+            update_info_button.add_css_class("circular");
+            update_info_button.add_css_class("flat");
+            update_info_button.set_valign(Gtk.Align.CENTER);
+            update_info_button.tooltip_text = I18n.tr("How update links work");
+            update_info_button.clicked.connect(() => {
+                show_update_info_help();
+            });
+            update_group.set_header_suffix(update_info_button);
+            
+            // Update link row
+            var update_row = build_update_link_row();
+            update_group.add(update_row);
+            
+            // Web page row
+            var webpage_row = build_webpage_row();
+            update_group.add(webpage_row);
+            
+            return update_group;
+        }
+
+        private Adw.EntryRow build_update_link_row() {
+            var update_row = new Adw.EntryRow();
+            update_row.title = I18n.tr("Update Link");
+            update_row.text = record.get_effective_update_link() ?? "";
+            
+            var restore_update_button = create_restore_button(record.custom_update_link != null);
+            restore_update_button.clicked.connect(() => {
+                record.custom_update_link = null;
+                update_row.text = record.original_update_link ?? "";
+                persist_record_and_refresh_desktop();
+                restore_update_button.set_visible(false);
+            });
+            update_row.add_suffix(restore_update_button);
+            
+            // Normalize URL when user leaves the entry or presses Enter
+            var focus_controller = new Gtk.EventControllerFocus();
+            focus_controller.leave.connect(() => {
+                apply_update_link_value(update_row, restore_update_button);
+            });
+            update_row.add_controller(focus_controller);
+            
+            update_row.entry_activated.connect(() => {
+                apply_update_link_value(update_row, restore_update_button);
+            });
+            
+            return update_row;
+        }
+
+        private void apply_update_link_value(Adw.EntryRow row, Gtk.Button restore_button) {
+            var raw_val = row.text.strip();
+            var normalized = Updater.normalize_update_url(raw_val);
+            var new_val = normalized ?? raw_val;
+            
+            if (new_val != raw_val && new_val != "") {
+                row.text = new_val;
+            }
+            
+            var original_val = record.original_update_link ?? "";
+            if (new_val == original_val) {
+                record.custom_update_link = null;
+            } else if (new_val == "") {
+                record.custom_update_link = CLEARED_VALUE;
+            } else {
+                record.custom_update_link = new_val;
+            }
+            persist_record_and_refresh_desktop();
+            restore_button.set_visible(record.custom_update_link != null);
+        }
+
+        private Adw.EntryRow build_webpage_row() {
             var webpage_row = new Adw.EntryRow();
             webpage_row.title = I18n.tr("Web Page");
             webpage_row.text = record.get_effective_web_page() ?? "";
             
-            // Restore defaults button for web page - visible when custom value is set
-            var restore_webpage_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_webpage_button.add_css_class("flat");
-            restore_webpage_button.set_valign(Gtk.Align.CENTER);
-            restore_webpage_button.tooltip_text = I18n.tr("Restore default");
-            restore_webpage_button.set_visible(record.custom_web_page != null);
+            var restore_webpage_button = create_restore_button(record.custom_web_page != null);
             restore_webpage_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_web_page = null;
-                registry.register(record);
-                var original_val = record.original_web_page ?? "";
-                webpage_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", original_val);
+                webpage_row.text = record.original_web_page ?? "";
+                persist_record_and_refresh_desktop();
                 restore_webpage_button.set_visible(false);
             });
             webpage_row.add_suffix(restore_webpage_button);
@@ -216,23 +308,17 @@ namespace AppManager {
             webpage_row.changed.connect(() => {
                 var new_val = webpage_row.text.strip();
                 var original_val = record.original_web_page ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_web_page = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_web_page = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_web_page = new_val;
                 }
-                registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-Homepage", new_val);
+                persist_record_and_refresh_desktop();
                 restore_webpage_button.set_visible(record.custom_web_page != null);
             });
             
-            // Add open button for web page
             var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
             open_web_button.add_css_class("flat");
             open_web_button.set_valign(Gtk.Align.CENTER);
@@ -245,125 +331,44 @@ namespace AppManager {
             });
             webpage_row.add_suffix(open_web_button);
             
-            // Update link (with original/custom distinction)
-            var update_row = new Adw.EntryRow();
-            update_row.title = I18n.tr("Update Link");
-            update_row.text = record.get_effective_update_link() ?? "";
-            
-            // Restore defaults button for update link - visible when custom value is set
-            var restore_update_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_update_button.add_css_class("flat");
-            restore_update_button.set_valign(Gtk.Align.CENTER);
-            restore_update_button.tooltip_text = I18n.tr("Restore default");
-            restore_update_button.set_visible(record.custom_update_link != null);
-            restore_update_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
-                record.custom_update_link = null;
-                registry.register(record);
-                var original_val = record.original_update_link ?? "";
-                update_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", original_val);
-                restore_update_button.set_visible(false);
-            });
-            update_row.add_suffix(restore_update_button);
-            
-            // Normalize URL when user leaves the entry (focus out) or presses Enter
-            var focus_controller = new Gtk.EventControllerFocus();
-            focus_controller.leave.connect(() => {
-                var raw_val = update_row.text.strip();
-                // Normalize GitHub/GitLab URLs to project base
-                var normalized = Updater.normalize_update_url(raw_val);
-                var new_val = normalized ?? raw_val;
-                
-                // Update text field if normalization changed it
-                if (new_val != raw_val && new_val != "") {
-                    update_row.text = new_val;
-                }
-                
-                var original_val = record.original_update_link ?? "";
-                // Determine if value differs from original
-                if (new_val == original_val) {
-                    // Matches original, clear custom
-                    record.custom_update_link = null;
-                } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
-                    record.custom_update_link = CLEARED_VALUE;
-                } else {
-                    // Custom value set
-                    record.custom_update_link = new_val;
-                }
-                registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", new_val);
-                restore_update_button.set_visible(record.custom_update_link != null);
-            });
-            update_row.add_controller(focus_controller);
-            
-            update_row.entry_activated.connect(() => {
-                var raw_val = update_row.text.strip();
-                // Normalize GitHub/GitLab URLs to project base
-                var normalized = Updater.normalize_update_url(raw_val);
-                var new_val = normalized ?? raw_val;
-                
-                // Update text field if normalization changed it
-                if (new_val != raw_val && new_val != "") {
-                    update_row.text = new_val;
-                }
-                
-                var original_val = record.original_update_link ?? "";
-                // Determine if value differs from original
-                if (new_val == original_val) {
-                    // Matches original, clear custom
-                    record.custom_update_link = null;
-                } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
-                    record.custom_update_link = CLEARED_VALUE;
-                } else {
-                    // Custom value set
-                    record.custom_update_link = new_val;
-                }
-                registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-UpdateURL", new_val);
-                restore_update_button.set_visible(record.custom_update_link != null);
-            });
-            
-            // Update info group holds links that users might want to copy quickly
-            var update_group = new Adw.PreferencesGroup();
-            update_group.title = I18n.tr("Update info");
-            var update_info_button = new Gtk.Button.from_icon_name("dialog-information-symbolic");
-                update_info_button.add_css_class("circular");
-                update_info_button.add_css_class("flat");
-                update_info_button.set_valign(Gtk.Align.CENTER);
-                update_info_button.tooltip_text = I18n.tr("How update links work");
-                update_info_button.clicked.connect(() => {
-                    show_update_info_help();
-                });
-                update_group.set_header_suffix(update_info_button);
-            update_group.add(update_row);
-            update_group.add(webpage_row);
+            return webpage_row;
+        }
 
-            // Advanced
+        private Adw.ExpanderRow build_advanced_group() {
             var advanced_group = new Adw.ExpanderRow();
             advanced_group.title = I18n.tr("Advanced");
-            props_group.add(advanced_group);
 
-            // Keywords (loaded from .desktop file)
+            // Keywords
+            advanced_group.add_row(build_keywords_row());
+            
+            // Icon name
+            advanced_group.add_row(build_icon_row());
+            
+            // StartupWMClass
+            advanced_group.add_row(build_wmclass_row());
+            
+            // Version
+            advanced_group.add_row(build_version_row());
+            
+            // NoDisplay toggle
+            advanced_group.add_row(build_nodisplay_row());
+            
+            // Add to PATH toggle
+            advanced_group.add_row(build_path_row());
+            
+            return advanced_group;
+        }
+
+        private Adw.EntryRow build_keywords_row() {
             var keywords_row = new Adw.EntryRow();
             keywords_row.title = I18n.tr("Keywords");
-            keywords_row.text = current_keywords;
+            keywords_row.text = record.get_effective_keywords() ?? "";
             
-            // Restore defaults button for keywords - visible when custom value is set
-            var restore_keywords_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_keywords_button.add_css_class("flat");
-            restore_keywords_button.set_valign(Gtk.Align.CENTER);
-            restore_keywords_button.tooltip_text = I18n.tr("Restore default");
-            restore_keywords_button.set_visible(record.custom_keywords != null);
+            var restore_keywords_button = create_restore_button(record.custom_keywords != null);
             restore_keywords_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_keywords = null;
-                registry.register(record);
-                var original_val = record.original_keywords ?? "";
-                keywords_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "Keywords", original_val);
+                keywords_row.text = record.original_keywords ?? "";
+                persist_record_and_refresh_desktop();
                 restore_keywords_button.set_visible(false);
             });
             keywords_row.add_suffix(restore_keywords_button);
@@ -371,42 +376,30 @@ namespace AppManager {
             keywords_row.changed.connect(() => {
                 var new_val = keywords_row.text.strip();
                 var original_val = record.original_keywords ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_keywords = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_keywords = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_keywords = new_val;
                 }
-                registry.register(record);
-                // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "Keywords", new_val);
+                persist_record_and_refresh_desktop();
                 restore_keywords_button.set_visible(record.custom_keywords != null);
             });
-            advanced_group.add_row(keywords_row);
+            
+            return keywords_row;
+        }
 
-            // Icon name (loaded from .desktop file)
+        private Adw.EntryRow build_icon_row() {
             var icon_row = new Adw.EntryRow();
             icon_row.title = I18n.tr("Icon name");
-            icon_row.text = current_icon;
+            icon_row.text = record.get_effective_icon_name() ?? "";
             
-            // Restore defaults button for icon - visible when custom value is set
-            var restore_icon_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_icon_button.add_css_class("flat");
-            restore_icon_button.set_valign(Gtk.Align.CENTER);
-            restore_icon_button.tooltip_text = I18n.tr("Restore default");
-            restore_icon_button.set_visible(record.custom_icon_name != null);
+            var restore_icon_button = create_restore_button(record.custom_icon_name != null);
             restore_icon_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_icon_name = null;
-                registry.register(record);
-                var original_val = record.original_icon_name ?? "";
-                icon_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "Icon", original_val);
+                icon_row.text = record.original_icon_name ?? "";
+                persist_record_and_refresh_desktop();
                 restore_icon_button.set_visible(false);
             });
             icon_row.add_suffix(restore_icon_button);
@@ -414,42 +407,30 @@ namespace AppManager {
             icon_row.changed.connect(() => {
                 var new_val = icon_row.text.strip();
                 var original_val = record.original_icon_name ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_icon_name = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_icon_name = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_icon_name = new_val;
                 }
-                registry.register(record);
-                // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "Icon", new_val);
+                persist_record_and_refresh_desktop();
                 restore_icon_button.set_visible(record.custom_icon_name != null);
             });
-            advanced_group.add_row(icon_row);
             
-            // StartupWMClass (loaded from .desktop file)
+            return icon_row;
+        }
+
+        private Adw.EntryRow build_wmclass_row() {
             var wmclass_row = new Adw.EntryRow();
             wmclass_row.title = I18n.tr("Startup WM Class");
-            wmclass_row.text = current_wmclass;
+            wmclass_row.text = record.get_effective_startup_wm_class() ?? "";
             
-            // Restore defaults button for wmclass - visible when custom value is set
-            var restore_wmclass_button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
-            restore_wmclass_button.add_css_class("flat");
-            restore_wmclass_button.set_valign(Gtk.Align.CENTER);
-            restore_wmclass_button.tooltip_text = I18n.tr("Restore default");
-            restore_wmclass_button.set_visible(record.custom_startup_wm_class != null);
+            var restore_wmclass_button = create_restore_button(record.custom_startup_wm_class != null);
             restore_wmclass_button.clicked.connect(() => {
-                // Undo: clear custom, restore original to .desktop
                 record.custom_startup_wm_class = null;
-                registry.register(record);
-                var original_val = record.original_startup_wm_class ?? "";
-                wmclass_row.text = original_val;
-                update_desktop_file_property(record.desktop_file, "StartupWMClass", original_val);
+                wmclass_row.text = record.original_startup_wm_class ?? "";
+                persist_record_and_refresh_desktop();
                 restore_wmclass_button.set_visible(false);
             });
             wmclass_row.add_suffix(restore_wmclass_button);
@@ -457,50 +438,107 @@ namespace AppManager {
             wmclass_row.changed.connect(() => {
                 var new_val = wmclass_row.text.strip();
                 var original_val = record.original_startup_wm_class ?? "";
-                // Determine if value differs from original
                 if (new_val == original_val) {
-                    // Matches original, clear custom
                     record.custom_startup_wm_class = null;
                 } else if (new_val == "") {
-                    // User cleared the value, mark as CLEARED
                     record.custom_startup_wm_class = CLEARED_VALUE;
                 } else {
-                    // Custom value set
                     record.custom_startup_wm_class = new_val;
                 }
-                registry.register(record);
-                // Update .desktop file
-                update_desktop_file_property(record.desktop_file, "StartupWMClass", new_val);
+                persist_record_and_refresh_desktop();
                 restore_wmclass_button.set_visible(record.custom_startup_wm_class != null);
             });
-            advanced_group.add_row(wmclass_row);
+            
+            return wmclass_row;
+        }
 
-            // Version
+        private Adw.EntryRow build_version_row() {
             var version_row = new Adw.EntryRow();
             version_row.title = I18n.tr("Version");
             version_row.text = record.version ?? "";
             version_row.changed.connect(() => {
                 record.version = version_row.text.strip() == "" ? null : version_row.text;
-                registry.register(record);
-                update_desktop_file_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
+                registry.update(record);
+                installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
             });
-            advanced_group.add_row(version_row);
-            
-            // NoDisplay toggle
+            return version_row;
+        }
+
+        private Adw.SwitchRow build_nodisplay_row() {
             var nodisplay_row = new Adw.SwitchRow();
             nodisplay_row.title = I18n.tr("Hide from app drawer");
             nodisplay_row.subtitle = I18n.tr("Don't show in application menu");
             var nodisplay_current = desktop_props.get("NoDisplay") ?? "false";
             nodisplay_row.active = (nodisplay_current.down() == "true");
             nodisplay_row.notify["active"].connect(() => {
-                update_desktop_file_property(record.desktop_file, "NoDisplay", nodisplay_row.active ? "true" : "false");
+                installer.set_desktop_entry_property(record.desktop_file, "NoDisplay", nodisplay_row.active ? "true" : "false");
             });
-            advanced_group.add_row(nodisplay_row);
+            return nodisplay_row;
+        }
+
+        private Adw.SwitchRow build_path_row() {
+            path_row = new Adw.SwitchRow();
+            path_row.title = I18n.tr("Add to $PATH");
+            path_row.subtitle = I18n.tr("Create a launcher in ~/.local/bin so you can run it from the terminal");
+
+            var symlink_name = "";
+
+            if (record.entry_exec != null && record.entry_exec.strip() != "") {
+                symlink_name = Path.get_basename(record.entry_exec.strip());
+            }
+
+            if (symlink_name == "" && record.installed_path != null && record.installed_path.strip() != "") {
+                symlink_name = installer.derive_slug_from_path(record.installed_path, record.mode == InstallMode.EXTRACTED);
+            }
             
-            detail_page.add(props_group);
-            detail_page.add(update_group);
+            if (symlink_name == "") {
+                symlink_name = Path.get_basename(exec_path).down();
+            }
+
+            bool is_terminal_app = record.is_terminal;
+            bool symlink_exists = record.bin_symlink != null && record.bin_symlink.strip() != "" && File.new_for_path(record.bin_symlink).query_exists();
+
+            // Terminal apps must always stay on PATH
+            if (is_terminal_app && !symlink_exists) {
+                if (installer.ensure_bin_symlink_for_record(record, exec_path, symlink_name)) {
+                    symlink_exists = true;
+                }
+            }
+
+            // Clean up stale metadata if the recorded symlink is gone
+            if (!is_terminal_app && record.bin_symlink != null && !symlink_exists) {
+                installer.remove_bin_symlink_for_record(record);
+            }
+
+            path_row.active = is_terminal_app || symlink_exists;
+            path_row.sensitive = !is_terminal_app;
+
+            path_row.notify["active"].connect(() => {
+                if (is_terminal_app) {
+                    path_row.active = true;
+                    return;
+                }
+
+                if (path_row.active) {
+                    if (installer.ensure_bin_symlink_for_record(record, exec_path, symlink_name)) {
+                        symlink_exists = true;
+                    } else {
+                        path_row.active = false;
+                    }
+                } else {
+                    if (installer.remove_bin_symlink_for_record(record)) {
+                        symlink_exists = false;
+                    } else {
+                        path_row.active = true;
+                    }
+                }
+                update_path_banner_visibility();
+            });
             
-            // Actions group
+            return path_row;
+        }
+
+        private Adw.PreferencesGroup build_actions_group() {
             var actions_group = new Adw.PreferencesGroup();
             actions_group.title = I18n.tr("Actions");
             
@@ -540,13 +578,12 @@ namespace AppManager {
             row1.append(update_wrapper);
             refresh_update_button();
 
-            // Extract button - always shown, disabled when not applicable
+            // Extract button
             extract_button = new Gtk.Button.with_label(I18n.tr("Extract AppImage"));
             extract_button.add_css_class("pill");
             extract_button.width_request = 200;
             extract_button.hexpand = false;
-            // Enable only for non-terminal, portable installs
-            var can_extract = record.mode == InstallMode.PORTABLE && (desktop_props.get("Terminal") ?? "false").down() != "true";
+            var can_extract = record.mode == InstallMode.PORTABLE && !record.is_terminal;
             extract_button.sensitive = can_extract;
             extract_button.clicked.connect(() => {
                 present_extract_warning();
@@ -571,13 +608,17 @@ namespace AppManager {
             });
             
             actions_box.append(delete_button);
-            detail_page.add(actions_group);
             
-            var toolbar = new Adw.ToolbarView();
-            var header = new Adw.HeaderBar();
-            toolbar.add_top_bar(header);
-            toolbar.set_content(detail_page);
-            this.child = toolbar;
+            return actions_group;
+        }
+
+        private Gtk.Button create_restore_button(bool visible) {
+            var button = new Gtk.Button.from_icon_name("edit-undo-symbolic");
+            button.add_css_class("flat");
+            button.set_valign(Gtk.Align.CENTER);
+            button.tooltip_text = I18n.tr("Restore default");
+            button.set_visible(visible);
+            return button;
         }
 
         private void refresh_update_button() {
@@ -657,20 +698,12 @@ namespace AppManager {
                 
                 // Add icon size if exists
                 if (record.icon_path != null && record.icon_path != "") {
-                    var icon_file = File.new_for_path(record.icon_path);
-                    if (icon_file.query_exists()) {
-                        var info = icon_file.query_info(FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NONE);
-                        total_size += info.get_size();
-                    }
+                    total_size += AppManager.Utils.FileUtils.get_path_size(record.icon_path);
                 }
                 
                 // Add desktop file size
                 if (record.desktop_file != null && record.desktop_file != "") {
-                    var desktop_file = File.new_for_path(record.desktop_file);
-                    if (desktop_file.query_exists()) {
-                        var info = desktop_file.query_info(FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NONE);
-                        total_size += info.get_size();
-                    }
+                    total_size += AppManager.Utils.FileUtils.get_path_size(record.desktop_file);
                 }
             } catch (Error e) {
                 warning("Failed to calculate size for %s: %s", record.name, e.message);
@@ -691,118 +724,14 @@ namespace AppManager {
         private HashTable<string, string> load_desktop_file_properties(string desktop_file_path) {
             var props = new HashTable<string, string>(str_hash, str_equal);
             
-            try {
-                var keyfile = new KeyFile();
-                keyfile.load_from_file(desktop_file_path, KeyFileFlags.NONE);
-                
-                string[] keys = {"Exec", "Icon", "X-AppImage-Version", "StartupWMClass", "Keywords", "X-AppImage-Homepage", "X-AppImage-UpdateURL", "Terminal", "NoDisplay"};
-                foreach (var key in keys) {
-                    try {
-                        var value = keyfile.get_string("Desktop Entry", key);
-                        props.set(key, value);
-                    } catch (Error e) {
-                        // Key doesn't exist, that's okay
-                    }
-                }
-            } catch (Error e) {
-                warning("Failed to load desktop file %s: %s", desktop_file_path, e.message);
+            var entry = new DesktopEntry(desktop_file_path);
+            if (entry.no_display) {
+                props.set("NoDisplay", "true");
             }
             
             return props;
         }
         
-        // Extract command line arguments from Exec field (everything after first token)
-        private string extract_exec_args(string exec_value) {
-            var trimmed = exec_value.strip();
-            if (trimmed.length == 0) {
-                return "";
-            }
-            
-            // Find first unquoted space
-            int first_space = -1;
-            bool in_quotes = false;
-            for (int i = 0; i < trimmed.length; i++) {
-                if (trimmed[i] == '"') {
-                    in_quotes = !in_quotes;
-                } else if (trimmed[i] == ' ' && !in_quotes) {
-                    first_space = i;
-                    break;
-                }
-            }
-            
-            if (first_space == -1) {
-                // No arguments
-                return "";
-            }
-            
-            // Return only the arguments part
-            return trimmed.substring(first_space + 1).strip();
-        }
-        
-        // Build Exec value with new args, preserving the executable path
-        private string build_exec_with_args(string current_exec, string new_args) {
-            var trimmed = current_exec.strip();
-            if (trimmed.length == 0) {
-                return "";
-            }
-            
-            // Find the base executable (first token)
-            int first_space = -1;
-            bool in_quotes = false;
-            for (int i = 0; i < trimmed.length; i++) {
-                if (trimmed[i] == '"') {
-                    in_quotes = !in_quotes;
-                } else if (trimmed[i] == ' ' && !in_quotes) {
-                    first_space = i;
-                    break;
-                }
-            }
-            
-            string base_exec;
-            if (first_space == -1) {
-                base_exec = trimmed;
-            } else {
-                base_exec = trimmed.substring(0, first_space);
-            }
-            
-            if (new_args.strip() != "") {
-                return "%s %s".printf(base_exec, new_args);
-            } else {
-                return base_exec;
-            }
-        }
-        
-        private void update_desktop_file_property(string desktop_file_path, string key, string value) {
-            try {
-                var keyfile = new KeyFile();
-                keyfile.load_from_file(desktop_file_path, KeyFileFlags.KEEP_COMMENTS | KeyFileFlags.KEEP_TRANSLATIONS);
-                
-                if (value.strip() == "") {
-                    // Remove key if value is empty - Linux Desktop treats empty values as values
-                    // Exception: Exec should always be kept (never remove the executable line)
-                    if (key != "Exec") {
-                        try {
-                            keyfile.remove_key("Desktop Entry", key);
-                            debug("Removed desktop file property %s (value was empty)", key);
-                        } catch (Error e) {
-                            // Key might not exist, that's fine
-                        }
-                    } else {
-                        keyfile.set_string("Desktop Entry", key, value);
-                    }
-                } else {
-                    keyfile.set_string("Desktop Entry", key, value);
-                }
-                
-                // Save the file
-                var data = keyfile.to_data();
-                GLib.FileUtils.set_contents(desktop_file_path, data);
-                debug("Updated desktop file property %s = %s", key, value);
-            } catch (Error e) {
-                warning("Failed to update desktop file %s: %s", desktop_file_path, e.message);
-            }
-        }
-
         private void present_extract_warning() {
             var body = I18n.tr("Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically.");
             var dialog = new Adw.AlertDialog(I18n.tr("Extract application?"), body);
@@ -818,5 +747,78 @@ namespace AppManager {
             });
             dialog.present(this);
         }
+
+        private void update_path_banner_visibility() {
+            if (path_banner == null || path_row == null) {
+                return;
+            }
+
+            bool needs_path = path_row.active;
+            bool path_missing = !path_contains_local_bin();
+
+            path_banner.set_revealed(needs_path && path_missing);
+        }
+
+        private bool path_contains_local_bin() {
+            var home_bin = AppPaths.local_bin_dir;
+            var home_bin_file = File.new_for_path(home_bin);
+            
+            // 1. Check current environment PATH
+            var path_env = Environment.get_variable("PATH") ?? "";
+            if (check_path_string(path_env, home_bin, home_bin_file)) {
+                return true;
+            }
+            
+            // 2. Fallback: Try to get PATH from user's shell
+            try {
+                string shell = Environment.get_variable("SHELL");
+                if (shell == null || shell == "") {
+                    shell = "/bin/sh";
+                }
+                
+                string std_out;
+                string std_err;
+                int exit_status;
+                
+                // Use interactive login shell to ensure we get the full user configuration
+                // (sources .bashrc, .zshrc, .profile, etc.)
+                string[] argv = { shell, "-i", "-l", "-c", "echo $PATH" };
+                
+                Process.spawn_sync(null, argv, null, SpawnFlags.SEARCH_PATH, null, out std_out, out std_err, out exit_status);
+                
+                if (exit_status == 0 && std_out != null) {
+                    if (check_path_string(std_out, home_bin, home_bin_file)) {
+                        return true;
+                    }
+                }
+            } catch (Error e) {
+                warning("Failed to probe shell PATH: %s", e.message);
+            }
+            
+            return false;
+        }
+
+        private bool check_path_string(string path_str, string home_bin, File home_bin_file) {
+            foreach (var segment in path_str.split(":")) {
+                var clean_segment = segment.strip();
+                if (clean_segment == "") {
+                    continue;
+                }
+                
+                if (clean_segment == home_bin) {
+                    return true;
+                }
+                
+                try {
+                    if (File.new_for_path(clean_segment).equal(home_bin_file)) {
+                        return true;
+                    }
+                } catch (Error e) {
+                    // Ignore errors during path comparison
+                }
+            }
+            return false;
+        }
+
     }
 }

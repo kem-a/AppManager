@@ -100,47 +100,7 @@ namespace AppManager.Core {
         private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
             progress("Preparing Applications folder…");
             record.installed_path = metadata.path;
-            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade);
-        }
-
-        private string? parse_bin_from_apprun(string apprun_path) {
-            try {
-                string contents;
-                if (!GLib.FileUtils.get_contents(apprun_path, out contents)) {
-                    return null;
-                }
-                
-                // Search for BIN= line in AppRun
-                foreach (var line in contents.split("\n")) {
-                    var trimmed = line.strip();
-                    if (trimmed.has_prefix("BIN=")) {
-                        // Extract the value: BIN="$APPDIR/curseforge" -> curseforge
-                        var value = trimmed.substring("BIN=".length).strip();
-                        // Remove quotes
-                        if (value.has_prefix("\"") && value.has_suffix("\"")) {
-                            value = value.substring(1, value.length - 2);
-                        } else if (value.has_prefix("'") && value.has_suffix("'")) {
-                            value = value.substring(1, value.length - 2);
-                        }
-                        
-                        // Extract basename from path like "$APPDIR/curseforge" or "${APPDIR}/curseforge"
-                        if ("$APPDIR" in value || "${APPDIR}" in value) {
-                            // Remove $APPDIR/ or ${APPDIR}/
-                            value = value.replace("$APPDIR/", "").replace("${APPDIR}/", "");
-                            value = value.replace("$APPDIR", "").replace("${APPDIR}", "");
-                            // Clean up any leading slashes
-                            if (value.has_prefix("/")) {
-                                value = value.substring(1);
-                            }
-                        }
-                        
-                        return value.strip();
-                    }
-                }
-            } catch (Error e) {
-                warning("Failed to parse AppRun file: %s", e.message);
-            }
-            return null;
+            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null);
         }
 
         private void install_extracted(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
@@ -153,10 +113,10 @@ namespace AppManager.Core {
                 var staging_template = Path.build_filename(AppPaths.extracted_root, "%s-extract-XXXXXX".printf(base_name));
                 staging_dir = DirUtils.mkdtemp(staging_template);
                 run_appimage_extract(metadata.path, staging_dir);
-                var extracted_root = Path.build_filename(staging_dir, "squashfs-root");
+                var extracted_root = Path.build_filename(staging_dir, SQUASHFS_ROOT_DIR);
                 var extracted_file = File.new_for_path(extracted_root);
                 if (!extracted_file.query_exists()) {
-                    throw new InstallerError.EXTRACTION_FAILED("AppImage extraction did not produce squashfs-root");
+                    throw new InstallerError.EXTRACTION_FAILED("AppImage extraction did not produce %s".printf(SQUASHFS_ROOT_DIR));
                 }
                 
                 // Some AppImages create squashfs-root as a symlink (e.g., to AppDir).
@@ -172,9 +132,9 @@ namespace AppManager.Core {
                             resolved_path = Path.build_filename(staging_dir, link_target);
                         }
                         extracted_file = File.new_for_path(resolved_path);
-                        debug("squashfs-root is a symlink, resolved to: %s", resolved_path);
+                        debug("%s is a symlink, resolved to: %s", SQUASHFS_ROOT_DIR, resolved_path);
                     } catch (Error e) {
-                        throw new InstallerError.EXTRACTION_FAILED("Failed to resolve squashfs-root symlink: %s".printf(e.message));
+                        throw new InstallerError.EXTRACTION_FAILED("Failed to resolve %s symlink: %s".printf(SQUASHFS_ROOT_DIR, e.message));
                     }
                 }
                 
@@ -200,7 +160,7 @@ namespace AppManager.Core {
                 Utils.FileUtils.remove_dir_recursive(dest_dir);
                 throw e;
             }
-            ensure_executable(app_run);
+            Utils.FileUtils.ensure_executable(app_run);
             
             // Check if desktop file Exec points to AppRun, and if so, resolve the actual binary
             string exec_target = app_run;
@@ -208,18 +168,17 @@ namespace AppManager.Core {
                 var temp_dir = Utils.FileUtils.create_temp_dir("appmgr-desktop-check-");
                 try {
                     var desktop_path = AppImageAssets.extract_desktop_entry(metadata.path, temp_dir);
-                    var key_file = new KeyFile();
-                    key_file.load_from_file(desktop_path, KeyFileFlags.NONE);
-                    if (key_file.has_key("Desktop Entry", "Exec")) {
-                        var exec_value = key_file.get_string("Desktop Entry", "Exec");
+                    var entry = new DesktopEntry(desktop_path);
+                    if (entry.exec != null) {
+                        var exec_value = entry.exec;
                         // Check if Exec contains AppRun (without path or with relative path)
                         if ("AppRun" in exec_value) {
                             // Try to parse BIN from AppRun
-                            var bin_name = parse_bin_from_apprun(app_run);
+                            var bin_name = DesktopEntry.parse_bin_from_apprun(app_run);
                             if (bin_name != null && bin_name != "") {
                                 var bin_path = Path.build_filename(dest_dir, bin_name);
                                 if (File.new_for_path(bin_path).query_exists()) {
-                                    ensure_executable(bin_path);
+                                    Utils.FileUtils.ensure_executable(bin_path);
                                     exec_target = bin_path;
                                     debug("Resolved exec from AppRun BIN=%s to %s", bin_name, exec_target);
                                 }
@@ -234,34 +193,87 @@ namespace AppManager.Core {
             }
             
             record.installed_path = dest_dir;
-            finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade);
+                finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run);
         }
 
-        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade) throws Error {
+        /**
+         * Derives icon name without path and extension.
+         */
+        private string derive_icon_name(string? original_icon_name, string fallback_slug) {
+            if (original_icon_name == null || original_icon_name == "") {
+                return fallback_slug;
+            }
+            
+            var icon_basename = Path.get_basename(original_icon_name);
+            if (icon_basename.has_suffix(".svg")) {
+                return icon_basename.substring(0, icon_basename.length - 4);
+            }
+            if (icon_basename.has_suffix(".png")) {
+                return icon_basename.substring(0, icon_basename.length - 4);
+            }
+            return icon_basename;
+        }
+
+        /**
+         * Detects icon file extension from filename or content.
+         */
+        private string detect_icon_extension(string icon_path) {
+            var icon_file_basename = Path.get_basename(icon_path);
+            if (icon_file_basename.has_suffix(".svg")) {
+                return ".svg";
+            }
+            if (icon_file_basename.has_suffix(".png")) {
+                return ".png";
+            }
+            // No extension in filename (e.g., .DirIcon), detect from content
+            return Utils.FileUtils.detect_image_extension(icon_path);
+        }
+
+        /**
+         * Derives fallback StartupWMClass from bundled desktop file name.
+         */
+        private string derive_fallback_wmclass(string desktop_path) {
+            var bundled_desktop_basename = Path.get_basename(desktop_path);
+            if (bundled_desktop_basename.has_suffix(".desktop")) {
+                return bundled_desktop_basename.substring(0, bundled_desktop_basename.length - 8);
+            }
+            return bundled_desktop_basename;
+        }
+
+        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path) throws Error {
             string exec_path = exec_target.dup();
             string assets_path = appimage_for_assets.dup();
+            string? resolved_entry_exec = null;
             progress("Extracting desktop entry…");
             var temp_dir = Utils.FileUtils.create_temp_dir("appmgr-");
             try {
                 var desktop_path = AppImageAssets.extract_desktop_entry(assets_path, temp_dir);
                 var icon_path = AppImageAssets.extract_icon(assets_path, temp_dir);
+                
+                // Try to extract AppRun if not provided (for portable mode)
+                string? effective_app_run = app_run_path;
+                if (effective_app_run == null) {
+                    effective_app_run = AppImageAssets.extract_apprun(assets_path, temp_dir);
+                }
+
                 string desktop_name = metadata.display_name;
                 string? desktop_version = null;
                 bool is_terminal_app = false;
-                try {
-                    var desktop_info = AppImageAssets.parse_desktop_file(desktop_path);
-                    if (desktop_info.name != null && desktop_info.name.strip() != "") {
-                        desktop_name = desktop_info.name.strip();
-                    }
-                    if (desktop_info.version != null) {
-                        desktop_version = desktop_info.version;
-                    }
-                    is_terminal_app = desktop_info.is_terminal;
-                } catch (Error e) {
-                    warning("Failed to parse desktop metadata: %s", e.message);
+                
+                // Use DesktopEntry to parse the file once
+                var desktop_entry = new DesktopEntry(desktop_path);
+                
+                if (desktop_entry.name != null && desktop_entry.name.strip() != "") {
+                    desktop_name = desktop_entry.name.strip();
                 }
+                if (desktop_entry.version != null) {
+                    desktop_version = desktop_entry.version;
+                }
+                is_terminal_app = desktop_entry.terminal;
+                
                 record.name = desktop_name;
                 record.version = desktop_version;
+                record.is_terminal = is_terminal_app;
                 
                 // For fresh installs or upgrades, apply history now that we have the real app name
                 // This restores user's custom settings if they uninstalled and are reinstalling,
@@ -311,93 +323,27 @@ namespace AppManager.Core {
                     }
                 }
                 
-                // Extract original Icon name from desktop file
-                string? original_icon_name = null;
-                string? original_keywords = null;
-                string? original_startup_wm_class = null;
-                string? original_exec_args = null;
-                string? original_homepage = null;
-                string? original_update_url = null;
-                try {
-                    var key_file = new KeyFile();
-                    key_file.load_from_file(desktop_path, KeyFileFlags.NONE);
-                    if (key_file.has_key("Desktop Entry", "Icon")) {
-                        original_icon_name = key_file.get_string("Desktop Entry", "Icon");
-                    }
-                    if (key_file.has_key("Desktop Entry", "Keywords")) {
-                        original_keywords = key_file.get_string("Desktop Entry", "Keywords");
-                    }
-                    if (key_file.has_key("Desktop Entry", "StartupWMClass")) {
-                        original_startup_wm_class = key_file.get_string("Desktop Entry", "StartupWMClass");
-                    }
-                    if (key_file.has_key("Desktop Entry", "Exec")) {
-                        var exec_value = key_file.get_string("Desktop Entry", "Exec");
-                        // Extract arguments (everything after first token)
-                        var trimmed = exec_value.strip();
-                        int first_space = -1;
-                        bool in_quotes = false;
-                        for (int i = 0; i < trimmed.length; i++) {
-                            if (trimmed[i] == '"') {
-                                in_quotes = !in_quotes;
-                            } else if (trimmed[i] == ' ' && !in_quotes) {
-                                first_space = i;
-                                break;
-                            }
-                        }
-                        if (first_space != -1) {
-                            original_exec_args = trimmed.substring(first_space + 1).strip();
-                        }
-                    }
-                    if (key_file.has_key("Desktop Entry", "X-AppImage-Homepage")) {
-                        original_homepage = key_file.get_string("Desktop Entry", "X-AppImage-Homepage");
-                    }
-                    if (key_file.has_key("Desktop Entry", "X-AppImage-UpdateURL")) {
-                        original_update_url = key_file.get_string("Desktop Entry", "X-AppImage-UpdateURL");
-                    }
-                } catch (Error e) {
-                    warning("Failed to read original icon name: %s", e.message);
-                }
+                // Extract original values from desktop entry
+                var original_icon_name = desktop_entry.icon;
+                var original_keywords = desktop_entry.keywords;
+                var original_startup_wm_class = desktop_entry.startup_wm_class;
+                var original_homepage = desktop_entry.appimage_homepage;
+                var original_update_url = desktop_entry.appimage_update_url;
+                
+                var exec_value = desktop_entry.exec;
+                var original_exec_args = exec_value != null ? DesktopEntry.extract_exec_arguments(exec_value) : null;
+                resolved_entry_exec = exec_value != null ? DesktopEntry.resolve_exec_from_desktop(exec_value, effective_app_run) : null;
                 
                 // Derive icon name without path and extension
-                string icon_name_for_desktop;
-                if (original_icon_name != null && original_icon_name != "") {
-                    // Strip path if present
-                    var icon_basename = Path.get_basename(original_icon_name);
-                    // Strip .svg or .png extension
-                    if (icon_basename.has_suffix(".svg")) {
-                        icon_name_for_desktop = icon_basename.substring(0, icon_basename.length - 4);
-                    } else if (icon_basename.has_suffix(".png")) {
-                        icon_name_for_desktop = icon_basename.substring(0, icon_basename.length - 4);
-                    } else {
-                        icon_name_for_desktop = icon_basename;
-                    }
-                } else {
-                    // Fallback to slug if no icon name in desktop file
-                    icon_name_for_desktop = final_slug;
-                }
+                var icon_name_for_desktop = derive_icon_name(original_icon_name, final_slug);
                 
                 // Install icon to ~/.local/share/icons with extension
-                var icon_file_basename = Path.get_basename(icon_path);
-                var icon_extension = "";
-                if (icon_file_basename.has_suffix(".svg")) {
-                    icon_extension = ".svg";
-                } else if (icon_file_basename.has_suffix(".png")) {
-                    icon_extension = ".png";
-                } else {
-                    // No extension in filename (e.g., .DirIcon), detect from content
-                    icon_extension = Utils.FileUtils.detect_image_extension(icon_path);
-                }
+                var icon_extension = detect_icon_extension(icon_path);
                 var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
                 // Derive fallback StartupWMClass from bundled desktop file name (without .desktop extension)
-                string fallback_startup_wm_class;
-                var bundled_desktop_basename = Path.get_basename(desktop_path);
-                if (bundled_desktop_basename.has_suffix(".desktop")) {
-                    fallback_startup_wm_class = bundled_desktop_basename.substring(0, bundled_desktop_basename.length - 8);
-                } else {
-                    fallback_startup_wm_class = bundled_desktop_basename;
-                }
+                var fallback_startup_wm_class = derive_fallback_wmclass(desktop_path);
                 
                 // Store original values temporarily in record for get_effective_* methods to work
                 record.original_icon_name = icon_name_for_desktop;
@@ -416,7 +362,7 @@ namespace AppManager.Core {
                 var effective_web_page = record.get_effective_web_page();
                 
                 var desktop_contents = rewrite_desktop(desktop_path, exec_path, record, is_terminal_app, final_slug, is_upgrade, effective_icon, effective_keywords, effective_wmclass, effective_args, effective_update_link, effective_web_page);
-                var desktop_filename = "%s-%s.desktop".printf("appmanager", final_slug);
+                var desktop_filename = "%s-%s.desktop".printf(DESKTOP_FILE_PREFIX, final_slug);
                 var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
                 Utils.FileUtils.ensure_parent(desktop_destination);
                 
@@ -428,12 +374,25 @@ namespace AppManager.Core {
                 record.desktop_file = desktop_destination;
                 record.icon_path = stored_icon;
                 
+                if (resolved_entry_exec != null && resolved_entry_exec.strip() != "") {
+                    var stored_exec = resolved_entry_exec.strip();
+                    if (record.mode == InstallMode.EXTRACTED && record.installed_path.strip() != "") {
+                        stored_exec = DesktopEntry.relativize_exec_to_installed(stored_exec, record.installed_path);
+                    }
+                    record.entry_exec = stored_exec;
+                }
+
                 // original_* values were already set above before get_effective_* calls
 
                 // Create symlink for terminal applications or if it's AppManager itself
                 if (is_terminal_app || record.original_startup_wm_class == Core.APPLICATION_ID) {
                     progress("Creating symlink for application…");
                     var symlink_name = final_slug;
+
+                    if (resolved_entry_exec != null && resolved_entry_exec.strip() != "") {
+                        symlink_name = Path.get_basename(resolved_entry_exec.strip());
+                    }
+
                     if (record.original_startup_wm_class == Core.APPLICATION_ID) {
                         symlink_name = "app-manager";
                     }
@@ -443,7 +402,6 @@ namespace AppManager.Core {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
         }
-
         public void uninstall(InstallationRecord record) throws Error {
             uninstall_sync(record);
         }
@@ -500,265 +458,69 @@ namespace AppManager.Core {
         }
 
         private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page) throws Error {
-            string contents;
-            if (!GLib.FileUtils.get_contents(desktop_path, out contents)) {
-                throw new InstallerError.DESKTOP_MISSING("Failed to read desktop file");
-            }
-
-            var output_lines = new Gee.ArrayList<string>();
-            bool actions_handled = false;
-            bool no_display_handled = false;
-            bool startup_wm_class_handled = false;
-            bool keywords_handled = false;
-            bool homepage_handled = false;
-            bool update_url_handled = false;
-            bool icon_handled = false;
-            bool skipping_uninstall_block = false;
-            bool in_desktop_entry = false;
-
-            foreach (var line in contents.split("\n")) {
-                var trimmed = line.strip();
-
-                // Handle section headers
-                if (trimmed.has_prefix("[") && trimmed.has_suffix("]")) {
-                    if (trimmed == "[Desktop Action Uninstall]") {
-                        skipping_uninstall_block = true;
-                        in_desktop_entry = false;
-                        continue;
-                    }
-                    skipping_uninstall_block = false;
-                    in_desktop_entry = trimmed == "[Desktop Entry]";
-                    output_lines.add(line);
-                    continue;
-                }
-
-                // Skip existing uninstall action block
-                if (skipping_uninstall_block) {
-                    continue;
-                }                // Pass through non-Desktop Entry sections unchanged
-                if (!in_desktop_entry) {
-                    output_lines.add(line);
-                    continue;
-                }
-
-                // Drop TryExec to avoid GNOME misreporting installed apps
-                if (trimmed.has_prefix("TryExec=")) {
-                    continue;
-                }
-                // Replace Exec in Desktop Entry section
-                if (trimmed.has_prefix("Exec=")) {
-                    // Use effective command line args (considers custom and CLEARED values)
-                    var args = effective_commandline_args ?? "";
-                    if (args.strip() != "") {
-                        output_lines.add("Exec=\"%s\" %s".printf(exec_target, args));
-                    } else {
-                        output_lines.add("Exec=\"%s\"".printf(exec_target));
-                    }
-                    continue;
-                }
-
-                // Replace Icon in Desktop Entry section
-                if (trimmed.has_prefix("Icon=")) {
-                    icon_handled = true;
-                    // If icon is null/empty (CLEARED), remove the line entirely
-                    if (effective_icon_name != null && effective_icon_name.strip() != "") {
-                        output_lines.add("Icon=%s".printf(effective_icon_name));
-                    }
-                    // Otherwise drop the line
-                    continue;
-                }
-
-                // Handle StartupWMClass
-                if (trimmed.has_prefix("StartupWMClass=")) {
-                    startup_wm_class_handled = true;
-                    // If wmclass is null/empty (CLEARED), remove the line entirely
-                    if (effective_startup_wm_class != null && effective_startup_wm_class.strip() != "") {
-                        output_lines.add("StartupWMClass=%s".printf(effective_startup_wm_class));
-                    }
-                    // Otherwise drop the line
-                    continue;
-                }
-
-                // Handle Keywords
-                if (trimmed.has_prefix("Keywords=")) {
-                    keywords_handled = true;
-                    if (effective_keywords != null && effective_keywords.strip() != "") {
-                        output_lines.add("Keywords=%s".printf(effective_keywords));
-                    }
-                    // If keywords is null/empty, drop the line
-                    continue;
-                }
-
-                // Handle NoDisplay for terminal apps
-                if (trimmed.has_prefix("NoDisplay=")) {
-                    no_display_handled = true;
-                    if (is_terminal) {
-                        output_lines.add("NoDisplay=true");
-                    } else {
-                        output_lines.add(line);
-                    }
-                    continue;
-                }
-
-                // Handle Terminal
-                if (trimmed.has_prefix("Terminal=")) {
-                    output_lines.add(line);
-                    continue;
-                }
-
-                // Handle custom X-AppImage fields
-                if (trimmed.has_prefix("X-AppImage-Homepage=")) {
-                    homepage_handled = true;
-                    if (effective_web_page != null && effective_web_page.strip() != "") {
-                        output_lines.add("X-AppImage-Homepage=%s".printf(effective_web_page));
-                    }
-                    // If web_page is null/empty, drop the line
-                    continue;
-                }
-
-                if (trimmed.has_prefix("X-AppImage-UpdateURL=")) {
-                    update_url_handled = true;
-                    if (effective_update_link != null && effective_update_link.strip() != "") {
-                        output_lines.add("X-AppImage-UpdateURL=%s".printf(effective_update_link));
-                    }
-                    // If update_link is null/empty, drop the line
-                    continue;
-                }                if (trimmed.has_prefix("Actions=")) {
-                    actions_handled = true;
-                    var value = trimmed.substring("Actions=".length);
-                    var actions = new Gee.ArrayList<string>();
-                    foreach (var part in value.split(";")) {
-                        var action = part.strip();
-                        if (action != "" && action != "Uninstall") {
-                            actions.add(action);
-                        }
-                    }
-                    actions.add("Uninstall");
-                    var action_builder = new StringBuilder();
-                    bool first_action = true;
-                    foreach (var action_name in actions) {
-                        if (!first_action) {
-                            action_builder.append(";");
-                        }
-                        action_builder.append(action_name);
-                        first_action = false;
-                    }
-                    action_builder.append(";");
-                    output_lines.add("Actions=%s".printf(action_builder.str));
-                    continue;
-                }
-
-                // Keep all other lines unchanged
-                output_lines.add(line);
-            }
-
-            // Add custom fields from registry that weren't in the original desktop file
-            int insert_pos = -1;
-            for (int i = 0; i < output_lines.size; i++) {
-                var line = output_lines[i].strip();
-                if (line == "[Desktop Entry]") {
-                    insert_pos = i + 1;
-                } else if (insert_pos > 0 && line.has_prefix("[") && line.has_suffix("]")) {
-                    break;
-                } else if (insert_pos > 0) {
-                    insert_pos = i + 1;
-                }
+            var entry = new DesktopEntry(desktop_path);
+            
+            // Update Exec
+            var args = effective_commandline_args ?? "";
+            if (args.strip() != "") {
+                entry.exec = "\"%s\" %s".printf(exec_target, args);
+            } else {
+                entry.exec = "\"%s\"".printf(exec_target);
             }
             
-            // Add Icon if not handled and has value
-            if (!icon_handled && effective_icon_name != null && effective_icon_name.strip() != "") {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "Icon=%s".printf(effective_icon_name));
-                    insert_pos++;
-                }
+            // Update Icon
+            entry.icon = (effective_icon_name != null && effective_icon_name.strip() != "") ? effective_icon_name : null;
+            
+            // Update StartupWMClass
+            entry.startup_wm_class = (effective_startup_wm_class != null && effective_startup_wm_class.strip() != "") ? effective_startup_wm_class : null;
+            
+            // Update Keywords
+            entry.keywords = (effective_keywords != null && effective_keywords.strip() != "") ? effective_keywords : null;
+            
+            // Update NoDisplay
+            if (is_terminal) {
+                entry.no_display = true;
             }
             
-            // Add Keywords if not handled and has value
-            if (!keywords_handled && effective_keywords != null && effective_keywords.strip() != "") {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "Keywords=%s".printf(effective_keywords));
-                    insert_pos++;
-                }
-            }
+            // Update X-AppImage fields
+            entry.appimage_homepage = (effective_web_page != null && effective_web_page.strip() != "") ? effective_web_page : null;
+            entry.appimage_update_url = (effective_update_link != null && effective_update_link.strip() != "") ? effective_update_link : null;
             
-            // Add Homepage if not handled and has value
-            if (!homepage_handled && effective_web_page != null && effective_web_page.strip() != "") {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "X-AppImage-Homepage=%s".printf(effective_web_page));
-                    insert_pos++;
+            // Ensure Uninstall action exists
+            var actions_str = entry.actions ?? "";
+            var actions = new Gee.ArrayList<string>();
+            foreach (var part in actions_str.split(";")) {
+                var action = part.strip();
+                if (action != "" && action != "Uninstall") {
+                    actions.add(action);
                 }
             }
+            actions.add("Uninstall");
             
-            // Add UpdateURL if not handled and has value
-            if (!update_url_handled && effective_update_link != null && effective_update_link.strip() != "") {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "X-AppImage-UpdateURL=%s".printf(effective_update_link));
-                    insert_pos++;
-                }
+            var action_builder = new StringBuilder();
+            foreach (var action_name in actions) {
+                action_builder.append(action_name);
+                action_builder.append(";");
             }
-
-            // Add Actions line if not present
-            if (!actions_handled) {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "Actions=Uninstall;");
-                    insert_pos++;
-                } else {
-                    output_lines.add("Actions=Uninstall;");
-                }
-            }
-
-            // Add NoDisplay for terminal apps if not already set
-            if (is_terminal && !no_display_handled) {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "NoDisplay=true");
-                    insert_pos++;
-                } else {
-                    output_lines.add("NoDisplay=true");
-                }
-            }
-
-            // Add StartupWMClass if not present and has value
-            if (!startup_wm_class_handled && effective_startup_wm_class != null && effective_startup_wm_class.strip() != "") {
-                if (insert_pos > 0) {
-                    output_lines.insert(insert_pos, "StartupWMClass=%s".printf(effective_startup_wm_class));
-                } else {
-                    output_lines.add("StartupWMClass=%s".printf(effective_startup_wm_class));
-                }
-            }
-
+            entry.actions = action_builder.str;
+            
+            // Remove TryExec
+            entry.remove_key("TryExec");
+            
             // Add Uninstall action block
             var uninstall_exec = build_uninstall_exec(record.installed_path);
-            output_lines.add("");
-            output_lines.add("[Desktop Action Uninstall]");
-            output_lines.add("Name=%s".printf(I18n.tr("Move to Trash")));
-            output_lines.add("Exec=%s".printf(uninstall_exec));
-            output_lines.add("Icon=user-trash");
-
-            var final_builder = new StringBuilder();
-            foreach (var output_line in output_lines) {
-                final_builder.append(output_line);
-                final_builder.append("\n");
-            }
-            return final_builder.str;
-        }
-
-        private void ensure_executable(string path) {
-            if (Posix.chmod(path, 0755) != 0) {
-                warning("Failed to chmod %s", path);
-            }
-        }
-
-        private string escape_exec_arg(string value) {
-            return value.replace("\"", "\\\"");
+            entry.set_action_group("Uninstall", I18n.tr("Move to Trash"), uninstall_exec, "user-trash");
+            
+            return entry.to_data();
         }
 
         private string build_uninstall_exec(string installed_path) {
             var parts = new Gee.ArrayList<string>();
             foreach (var token in uninstall_prefix) {
-                parts.add(quote_exec_token(token));
+                parts.add(Utils.FileUtils.quote_exec_token(token));
             }
             parts.add("--uninstall");
-            parts.add("\"%s\"".printf(escape_exec_arg(installed_path)));
+            parts.add("\"%s\"".printf(Utils.FileUtils.escape_exec_arg(installed_path)));
             var builder = new StringBuilder();
             for (int i = 0; i < parts.size; i++) {
                 if (i > 0) {
@@ -769,15 +531,6 @@ namespace AppManager.Core {
             return builder.str;
         }
 
-        private string quote_exec_token(string token) {
-            for (int i = 0; i < token.length; i++) {
-                var ch = token[i];
-                if (ch == ' ' || ch == '\t') {
-                    return "\"%s\"".printf(escape_exec_arg(token));
-                }
-            }
-            return token;
-        }
 
         private string slugify_app_name(string name) {
             var normalized = name.strip().down();
@@ -841,7 +594,7 @@ namespace AppManager.Core {
             var source = File.new_for_path(source_path);
             var dest = File.new_for_path(final_path);
             source.move(dest, FileCopyFlags.NONE, null, null);
-            ensure_executable(final_path);
+            Utils.FileUtils.ensure_executable(final_path);
             return final_path;
         }
 
@@ -851,7 +604,7 @@ namespace AppManager.Core {
             return dot_index >= 0 ? base_name.substring(dot_index) : "";
         }
 
-        private string derive_slug_from_path(string path, bool is_extracted) {
+        public string derive_slug_from_path(string path, bool is_extracted) {
             var base_name = Path.get_basename(path);
             if (!is_extracted) {
                 var dot_index = base_name.last_index_of_char('.');
@@ -921,7 +674,7 @@ namespace AppManager.Core {
         }
 
         private void run_appimage_extract(string appimage_path, string working_dir) throws Error {
-            ensure_executable(appimage_path);
+            Utils.FileUtils.ensure_executable(appimage_path);
             var cmd = new string[2];
             cmd[0] = appimage_path;
             cmd[1] = "--appimage-extract";
@@ -933,7 +686,7 @@ namespace AppManager.Core {
                 warning("AppImage extract stdout: %s", stdout_str ?? "");
                 warning("AppImage extract stderr: %s", stderr_str ?? "");
                 // Fallback for DwarFS-based AppImages that the runtime cannot extract
-                var dwarfs_output = Path.build_filename(working_dir, "squashfs-root");
+                var dwarfs_output = Path.build_filename(working_dir, SQUASHFS_ROOT_DIR);
                 DirUtils.create_with_parents(dwarfs_output, 0755);
                 if (DwarfsTools.extract_all(appimage_path, dwarfs_output)) {
                     return;
@@ -944,8 +697,7 @@ namespace AppManager.Core {
 
         private string? create_bin_symlink(string exec_path, string slug) {
             try {
-                var bin_dir = Path.build_filename(Environment.get_home_dir(), ".local", "bin");
-                DirUtils.create_with_parents(bin_dir, 0755);
+                var bin_dir = AppPaths.local_bin_dir;
                 
                 var symlink_path = Path.build_filename(bin_dir, slug);
                 var symlink_file = File.new_for_path(symlink_path);
@@ -962,6 +714,159 @@ namespace AppManager.Core {
             } catch (Error e) {
                 warning("Failed to create symlink for %s: %s", slug, e.message);
                 return null;
+            }
+        }
+
+        public bool ensure_bin_symlink_for_record(InstallationRecord record, string exec_path, string slug) {
+            if (exec_path.strip() == "") {
+                return false;
+            }
+
+            var link = create_bin_symlink(exec_path, slug);
+            if (link == null) {
+                return false;
+            }
+
+            record.bin_symlink = link;
+            registry.persist(false);
+            return true;
+        }
+
+        /**
+         * Resolve the effective executable path for an installed record based on its desktop file.
+         * This mirrors the runtime resolution used when creating the desktop entry, but can be
+         * called later (e.g., from the Details window) without reimplementing parsing logic.
+         */
+        public string resolve_exec_path_for_record(InstallationRecord record) {
+            var installed_path = record.installed_path ?? "";
+            var stored_exec = record.entry_exec;
+
+            if (stored_exec != null && stored_exec.strip() != "") {
+                var token = stored_exec.strip();
+                if (Path.is_absolute(token)) {
+                    return token;
+                }
+                if (installed_path != "" && File.new_for_path(installed_path).query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                    return Path.build_filename(installed_path, token);
+                }
+            }
+
+            if (installed_path != "" && File.new_for_path(installed_path).query_file_type(FileQueryInfoFlags.NONE) != FileType.DIRECTORY) {
+                return installed_path;
+            }
+
+            string exec_value = "";
+
+            if (record.desktop_file != null && record.desktop_file.strip() != "") {
+                var entry = new DesktopEntry(record.desktop_file);
+                exec_value = entry.exec ?? "";
+            }
+
+            return DesktopEntry.resolve_exec_path(exec_value, record.installed_path);
+        }
+
+        public bool remove_bin_symlink_for_record(InstallationRecord record) {
+            if (record.bin_symlink == null || record.bin_symlink.strip() == "") {
+                return true;
+            }
+            try {
+                var file = File.new_for_path(record.bin_symlink);
+                if (file.query_exists()) {
+                    file.delete(null);
+                    debug("Removed symlink: %s", record.bin_symlink);
+                }
+                record.bin_symlink = null;
+                registry.persist(false);
+                return true;
+            } catch (Error e) {
+                warning("Failed to remove symlink for %s: %s", record.name, e.message);
+                return false;
+            }
+        }
+
+        /**
+         * Rewrites an installed record's desktop file to reflect the record's effective values
+         * (custom values and cleared values). This centralizes desktop entry edits that used to
+         * be scattered across the UI.
+         */
+        public void apply_record_customizations_to_desktop(InstallationRecord record) {
+            if (record.desktop_file == null || record.desktop_file.strip() == "") {
+                return;
+            }
+
+            var desktop_path = record.desktop_file;
+            if (!File.new_for_path(desktop_path).query_exists()) {
+                return;
+            }
+
+            bool is_terminal = false;
+            var entry = new DesktopEntry(desktop_path);
+            is_terminal = entry.terminal;
+
+            var exec_target = resolve_exec_path_for_record(record);
+
+            var effective_icon = record.get_effective_icon_name();
+            var effective_keywords = record.get_effective_keywords();
+            var effective_wmclass = record.get_effective_startup_wm_class();
+            var effective_args = record.get_effective_commandline_args();
+            var effective_update_link = record.get_effective_update_link();
+            var effective_web_page = record.get_effective_web_page();
+
+            try {
+                var new_contents = rewrite_desktop(
+                    desktop_path,
+                    exec_target,
+                    record,
+                    is_terminal,
+                    "",
+                    false,
+                    effective_icon,
+                    effective_keywords,
+                    effective_wmclass,
+                    effective_args,
+                    effective_update_link,
+                    effective_web_page
+                );
+
+                if (!GLib.FileUtils.set_contents(desktop_path, new_contents)) {
+                    warning("Failed to write updated desktop file: %s", desktop_path);
+                }
+            } catch (Error e) {
+                warning("Failed to rewrite desktop file %s: %s", desktop_path, e.message);
+            }
+        }
+
+        /**
+         * Updates a single key inside the [Desktop Entry] group.
+         * If value is empty, the key is removed (except Exec, which is preserved).
+         */
+        public void set_desktop_entry_property(string desktop_file_path, string key, string value) {
+            if (desktop_file_path == null || desktop_file_path.strip() == "") {
+                return;
+            }
+
+            try {
+                var keyfile = new KeyFile();
+                keyfile.load_from_file(desktop_file_path, KeyFileFlags.KEEP_COMMENTS | KeyFileFlags.KEEP_TRANSLATIONS);
+
+                if (value.strip() == "") {
+                    if (key != "Exec") {
+                        try {
+                            keyfile.remove_key("Desktop Entry", key);
+                        } catch (Error e) {
+                            // Key may not exist
+                        }
+                    } else {
+                        keyfile.set_string("Desktop Entry", key, value);
+                    }
+                } else {
+                    keyfile.set_string("Desktop Entry", key, value);
+                }
+
+                var data = keyfile.to_data();
+                GLib.FileUtils.set_contents(desktop_file_path, data);
+            } catch (Error e) {
+                warning("Failed to update desktop file %s: %s", desktop_file_path, e.message);
             }
         }
 
@@ -982,35 +887,14 @@ namespace AppManager.Core {
             if (record.desktop_file == null || record.installed_path == null) {
                 return;
             }
-            string contents;
-            if (!GLib.FileUtils.get_contents(record.desktop_file, out contents)) {
-                return;
-            }
-            var builder = new StringBuilder();
-            bool in_uninstall_block = false;
-            bool modified = false;
-            foreach (var line in contents.split("\n")) {
-                var trimmed = line.strip();
-                if (trimmed == "[Desktop Action Uninstall]") {
-                    in_uninstall_block = true;
-                    builder.append(line + "\n");
-                    continue;
-                }
-                if (in_uninstall_block && trimmed.has_prefix("[")) {
-                    in_uninstall_block = false;
-                }
-                if (in_uninstall_block && trimmed.has_prefix("Exec=")) {
-                    var uninstall_exec = build_uninstall_exec(record.installed_path);
-                    builder.append("Exec=%s\n".printf(uninstall_exec));
-                    modified = true;
-                    continue;
-                }
-                builder.append(line + "\n");
-            }
-            if (modified) {
-                if (!GLib.FileUtils.set_contents(record.desktop_file, builder.str)) {
-                    throw new InstallerError.UNKNOWN("Unable to update desktop file");
-                }
+            
+            try {
+                var entry = new DesktopEntry(record.desktop_file);
+                var uninstall_exec = build_uninstall_exec(record.installed_path);
+                entry.set_action_group("Uninstall", I18n.tr("Move to Trash"), uninstall_exec, "user-trash");
+                entry.save();
+            } catch (Error e) {
+                warning("Failed to sanitize uninstall action for %s: %s", record.name, e.message);
             }
         }
     }

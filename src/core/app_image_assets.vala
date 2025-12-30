@@ -10,16 +10,6 @@ namespace AppManager.Core {
         EXTRACTION_FAILED
     }
 
-    public class DesktopEntryMetadata : Object {
-        public string? name { get; set; }
-        public string? version { get; set; }
-        public bool is_terminal { get; set; }
-
-        public DesktopEntryMetadata() {
-            is_terminal = false;
-        }
-    }
-
     internal class DwarfsTools : Object {
         private static bool checked_tools = false;
         private static bool available_cache = false;
@@ -106,8 +96,13 @@ namespace AppManager.Core {
             warning("DwarFS tools not found. Install or place dwarfsextract/dwarfsck in PATH, APP_MANAGER_DWARFS_DIR, /usr/lib/app-manager, or ~/.local/share/app-manager/dwarfs for DwarFS AppImages.");
         }
 
+        /**
+         * Extracts files matching pattern from a DwarFS archive.
+         * Returns false if tools unavailable or extraction fails.
+         */
         public static bool extract_entry(string archive, string output_dir, string pattern) {
             if (!available()) {
+                log_missing_once();
                 return false;
             }
 
@@ -134,12 +129,21 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Extracts entire DwarFS archive contents.
+         * Returns false if tools unavailable or extraction fails.
+         */
         public static bool extract_all(string archive, string output_dir) {
             return extract_entry(archive, output_dir, "*");
         }
 
+        /**
+         * Lists all paths in a DwarFS archive.
+         * Returns null if tools unavailable or listing fails.
+         */
         public static Gee.ArrayList<string>? list_paths(string archive) {
             if (!available()) {
+                log_missing_once();
                 return null;
             }
 
@@ -242,43 +246,8 @@ namespace AppManager.Core {
         private const string DIRICON_NAME = ".DirIcon";
         private const int MAX_SYMLINK_ITERATIONS = 5;
 
-        public static DesktopEntryMetadata parse_desktop_file(string desktop_path) throws Error {
-            var metadata = new DesktopEntryMetadata();
-            var key_file = new KeyFile();
-            key_file.load_from_file(desktop_path, KeyFileFlags.NONE);
-            if (key_file.has_key("Desktop Entry", "Name")) {
-                metadata.name = key_file.get_string("Desktop Entry", "Name");
-            }
-            if (key_file.has_key("Desktop Entry", "X-AppImage-Version")) {
-                var version = key_file.get_string("Desktop Entry", "X-AppImage-Version").strip();
-                if (version.length > 0) {
-                    metadata.version = version;
-                }
-            } else {
-                // Some AppImages place X-AppImage-Version after Desktop Action sections,
-                // which causes it to be parsed into the wrong group. Search all groups.
-                metadata.version = find_key_in_any_group(key_file, "X-AppImage-Version");
-            }
-            if (key_file.has_key("Desktop Entry", "Terminal")) {
-                metadata.is_terminal = key_file.get_boolean("Desktop Entry", "Terminal");
-            }
-            return metadata;
-        }
-
-        private static string? find_key_in_any_group(KeyFile key_file, string key) {
-            try {
-                foreach (var group in key_file.get_groups()) {
-                    if (key_file.has_key(group, key)) {
-                        var value = key_file.get_string(group, key).strip();
-                        if (value.length > 0) {
-                            return value;
-                        }
-                    }
-                }
-            } catch (Error e) {
-                // Ignore errors when searching
-            }
-            return null;
+        public static DesktopEntry parse_desktop_file(string desktop_path) throws Error {
+            return new DesktopEntry(desktop_path);
         }
 
         public static string extract_desktop_entry(string appimage_path, string temp_root) throws Error {
@@ -323,6 +292,22 @@ namespace AppManager.Core {
             }
             
             throw new AppImageAssetsError.ICON_FILE_MISSING("No icon file (.png, .svg, or .DirIcon) found in AppImage root");
+        }
+
+        public static string? extract_apprun(string appimage_path, string temp_root) {
+            var apprun_root = Path.build_filename(temp_root, "apprun");
+            try {
+                DirUtils.create_with_parents(apprun_root, 0755);
+                if (try_extract_entry(appimage_path, apprun_root, "AppRun")) {
+                    var apprun_path = Path.build_filename(apprun_root, "AppRun");
+                    if (File.new_for_path(apprun_path).query_exists()) {
+                        return resolve_symlink(apprun_path, appimage_path, apprun_root);
+                    }
+                }
+            } catch (Error e) {
+                warning("Failed to extract AppRun: %s", e.message);
+            }
+            return null;
         }
 
         public static string ensure_apprun_present(string extracted_root) throws Error {
@@ -463,9 +448,6 @@ namespace AppManager.Core {
                 extraction_successful(output_dir, pattern)) {
                 return true;
             }
-            if (!DwarfsTools.available()) {
-                DwarfsTools.log_missing_once();
-            }
             return false;
         }
 
@@ -497,13 +479,7 @@ namespace AppManager.Core {
                 return paths;
             }
             var dwarfs_paths = DwarfsTools.list_paths(appimage_path);
-            if (dwarfs_paths != null) {
-                return dwarfs_paths;
-            }
-            if (!DwarfsTools.available()) {
-                DwarfsTools.log_missing_once();
-            }
-            return null;
+            return dwarfs_paths;
         }
 
         private static Gee.ArrayList<string>? list_archive_paths_7z(string appimage_path) {
