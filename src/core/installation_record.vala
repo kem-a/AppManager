@@ -20,7 +20,8 @@ namespace AppManager.Core {
         public int64 installed_at { get; set; }
         public int64 updated_at { get; set; default = 0; }
         public string? version { get; set; }
-        public string? etag { get; set; }
+        public string? last_modified { get; set; }  // HTTP Last-Modified header for change detection
+        public int64 content_length { get; set; default = 0; }  // HTTP Content-Length for change detection
         public string? last_release_tag { get; set; }  // Stores release tag_name for apps without version
         
         // Original values captured from AppImage's .desktop during install/update
@@ -118,8 +119,10 @@ namespace AppManager.Core {
             builder.add_int_value(updated_at);
             builder.set_member_name("version");
             builder.add_string_value(version ?? "");
-            builder.set_member_name("etag");
-            builder.add_string_value(etag ?? "");
+            builder.set_member_name("last_modified");
+            builder.add_string_value(last_modified ?? "");
+            builder.set_member_name("content_length");
+            builder.add_int_value(content_length);
             builder.set_member_name("last_release_tag");
             builder.add_string_value(last_release_tag ?? "");
             builder.set_member_name("entry_exec");
@@ -228,8 +231,9 @@ namespace AppManager.Core {
             record.updated_at = (int64)obj.get_int_member_with_default("updated_at", 0);
             var version = obj.get_string_member_with_default("version", "");
             record.version = version == "" ? null : version;
-            var etag = obj.get_string_member_with_default("etag", "");
-            record.etag = etag == "" ? null : etag;
+            var last_modified = obj.get_string_member_with_default("last_modified", "");
+            record.last_modified = last_modified == "" ? null : last_modified;
+            record.content_length = (int64)obj.get_int_member_with_default("content_length", 0);
             var last_release_tag = obj.get_string_member_with_default("last_release_tag", "");
             record.last_release_tag = last_release_tag == "" ? null : last_release_tag;
             var entry_exec = obj.get_string_member_with_default("entry_exec", "");

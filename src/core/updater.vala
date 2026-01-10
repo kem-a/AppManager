@@ -14,7 +14,7 @@ namespace AppManager.Core {
         ALREADY_CURRENT,
         MISSING_ASSET,
         API_UNAVAILABLE,
-        ETAG_MISSING
+        NO_TRACKING_HEADERS
     }
 
     public class UpdateResult : Object {
@@ -221,51 +221,23 @@ namespace AppManager.Core {
                     return "%s://%s/%s/%s".printf(scheme, host, segments[0], segments[1]);
                 }
 
-                // GitLab (gitlab.com or self-hosted): https://gitlab.com/group/project/...
-                // GitLab URLs may have nested groups: group/subgroup/project
-                // The "/-/" marker separates project path from GitLab-specific routes
+                // GitLab: find "/-/" marker or strip /releases
                 if (host_lower.contains("gitlab") || path.contains("/-/")) {
-                    int split_index = -1;
+                    int end = segments.length;
                     for (int i = 0; i < segments.length; i++) {
-                        if (segments[i] == "-") {
-                            split_index = i;
-                            break;
-                        }
+                        if (segments[i] == "-") { end = i; break; }
                     }
-                    
-                    if (split_index > 0) {
-                        // Build project path from segments before "/-/"
-                        var project_parts = new StringBuilder();
-                        for (int i = 0; i < split_index; i++) {
-                            if (i > 0) project_parts.append("/");
-                            project_parts.append(segments[i]);
-                        }
-                        return "%s://%s/%s".printf(scheme, host, project_parts.str);
+                    if (end == segments.length && segments.length > 0 && segments[end - 1] == "releases") {
+                        end--;
                     }
-                    
-                    // No "/-/" marker, check for /releases at end
-                    if (segments.length >= 2) {
-                        int end = segments.length;
-                        if (segments[end - 1] == "releases") {
-                            end--;
-                        }
-                        var project_parts = new StringBuilder();
-                        for (int i = 0; i < end; i++) {
-                            if (i > 0) project_parts.append("/");
-                            project_parts.append(segments[i]);
-                        }
-                        return "%s://%s/%s".printf(scheme, host, project_parts.str);
+                    if (end >= 1) {
+                        return "%s://%s/%s".printf(scheme, host, string.joinv("/", segments[0:end]));
                     }
                 }
 
                 // Generic: strip /releases if present at end
                 if (segments.length >= 2 && segments[segments.length - 1] == "releases") {
-                    var project_parts = new StringBuilder();
-                    for (int i = 0; i < segments.length - 1; i++) {
-                        if (i > 0) project_parts.append("/");
-                        project_parts.append(segments[i]);
-                    }
-                    return "%s://%s/%s".printf(scheme, host, project_parts.str);
+                    return "%s://%s/%s".printf(scheme, host, string.joinv("/", segments[0:segments.length - 1]));
                 }
 
             } catch (Error e) {
@@ -329,9 +301,8 @@ namespace AppManager.Core {
 
             try {
                 pool = new ThreadPool<RecordTask>.with_owned_data((task) => {
-                    var outcome = probe_record(task.record, cancellable);
                     slots_lock.lock();
-                    slots[task.index] = outcome;
+                    slots[task.index] = probe_record(task.record, cancellable);
                     slots_lock.unlock();
                 }, MAX_PARALLEL_JOBS, false);
 
@@ -339,19 +310,14 @@ namespace AppManager.Core {
                     var task = new RecordTask(i, records[i]);
                     pool.add((owned) task);
                 }
-
                 ThreadPool.free((owned) pool, false, true);
-                pool = null;
             } catch (Error e) {
-                if (pool != null) {
-                    ThreadPool.free((owned) pool, false, true);
-                }
                 warning("Parallel probe failed: %s", e.message);
             }
 
             var results = new ArrayList<UpdateProbeResult>();
-            for (int i = 0; i < slots.length; i++) {
-                results.add(slots[i] ?? probe_record(records[i], cancellable));
+            foreach (var slot in slots) {
+                if (slot != null) results.add(slot);
             }
             return results;
         }
@@ -363,9 +329,8 @@ namespace AppManager.Core {
 
             try {
                 pool = new ThreadPool<RecordTask>.with_owned_data((task) => {
-                    var outcome = update_record(task.record, cancellable);
                     slots_lock.lock();
-                    slots[task.index] = outcome;
+                    slots[task.index] = update_record(task.record, cancellable);
                     slots_lock.unlock();
                 }, MAX_PARALLEL_JOBS, false);
 
@@ -373,19 +338,14 @@ namespace AppManager.Core {
                     var task = new RecordTask(i, records[i]);
                     pool.add((owned) task);
                 }
-
                 ThreadPool.free((owned) pool, false, true);
-                pool = null;
             } catch (Error e) {
-                if (pool != null) {
-                    ThreadPool.free((owned) pool, false, true);
-                }
                 warning("Parallel update failed: %s", e.message);
             }
 
             var results = new ArrayList<UpdateResult>();
-            for (int i = 0; i < slots.length; i++) {
-                results.add(slots[i] ?? update_record(records[i], cancellable));
+            foreach (var slot in slots) {
+                if (slot != null) results.add(slot);
             }
             return results;
         }
@@ -528,70 +488,99 @@ namespace AppManager.Core {
         }
 
         private UpdateCheckInfo? check_for_update(InstallationRecord record, GLib.Cancellable? cancellable) throws Error {
-            var update_url = read_update_url(record);
-            if (update_url == null || update_url.strip() == "") {
+            var probe = probe_record(record, cancellable);
+            
+            // No update URL or unsupported source
+            if (probe.skip_reason == UpdateSkipReason.NO_UPDATE_URL || 
+                probe.skip_reason == UpdateSkipReason.UNSUPPORTED_SOURCE) {
                 return null;
-            }
-
-            var source = resolve_update_source(update_url, record.version);
-            if (source == null) {
-                return null;
-            }
-
-            if (source is DirectUrlSource) {
-                return check_direct_update(record, source as DirectUrlSource, cancellable);
-            }
-
-            var release_source = source as ReleaseSource;
-            var release = fetch_latest_release(release_source, cancellable);
-            if (release == null) {
-                return null;
-            }
-
-            var latest = release.version ?? release.tag_name ?? "";
-            var current = record.version ?? "";
-            var asset = select_appimage_asset(release.assets);
-
-            if (asset == null) {
-                return new UpdateCheckInfo(false, latest, current, release.tag_name);
-            }
-
-            // Version comparison if both have versions
-            bool has_update = false;
-            if (latest != "" && current != "" && record.version != null && release.version != null) {
-                has_update = compare_versions(latest, current) > 0;
-            } else if (release.tag_name != null) {
-                // Fallback: compare release tags for version-less apps
-                has_update = record.last_release_tag != release.tag_name;
             }
             
-            return new UpdateCheckInfo(has_update, latest, current, release.tag_name);
+            var current = record.version ?? "";
+            var latest = probe.available_version ?? current;
+            
+            return new UpdateCheckInfo(probe.has_update, latest, current, latest);
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // Direct URL Updates (ETag-based)
+        // Direct URL Updates (Last-Modified + Content-Length based)
+        // Note: ETag is unreliable for mirror-based CDNs (each mirror generates different ETags)
+        // Last-Modified and Content-Length are consistent across mirrors
         // ─────────────────────────────────────────────────────────────────────
+
+        /**
+         * Build a fingerprint from Last-Modified and Content-Length headers.
+         * This is more reliable than ETag for mirror-based CDNs.
+         */
+        private string? build_direct_fingerprint(Soup.Message message) {
+            var last_modified = message.response_headers.get_one("Last-Modified");
+            var content_length = message.response_headers.get_content_length();
+            
+            if (last_modified != null && last_modified.strip() != "") {
+                if (content_length > 0) {
+                    return "%s|%lld".printf(last_modified.strip(), content_length);
+                }
+                return last_modified.strip();
+            }
+            
+            // Fallback: just content length
+            if (content_length > 0) {
+                return "size:%lld".printf(content_length);
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extract the stored fingerprint from record
+         */
+        private string? get_stored_fingerprint(InstallationRecord record) {
+            if (record.last_modified != null && record.last_modified.strip() != "") {
+                if (record.content_length > 0) {
+                    return "%s|%lld".printf(record.last_modified.strip(), record.content_length);
+                }
+                return record.last_modified.strip();
+            }
+            
+            // Fallback: just content length
+            if (record.content_length > 0) {
+                return "size:%lld".printf(record.content_length);
+            }
+            
+            return null;
+        }
+
+        /**
+         * Store fingerprint components from HTTP headers into the record
+         */
+        private void store_fingerprint(InstallationRecord record, Soup.Message message) {
+            var last_modified = message.response_headers.get_one("Last-Modified");
+            record.last_modified = (last_modified != null && last_modified.strip() != "") ? last_modified.strip() : null;
+            record.content_length = message.response_headers.get_content_length();
+        }
 
         private UpdateProbeResult probe_direct(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) {
             try {
                 var message = send_head(source.url, cancellable);
-                var etag = message.response_headers.get_one("ETag");
-                if (etag == null || etag.strip() == "") {
-                    return new UpdateProbeResult(record, false, null, UpdateSkipReason.ETAG_MISSING, I18n.tr("No ETag returned by server"));
+                var current_fingerprint = build_direct_fingerprint(message);
+                
+                if (current_fingerprint == null) {
+                    return new UpdateProbeResult(record, false, null, UpdateSkipReason.NO_TRACKING_HEADERS, I18n.tr("Server does not provide change tracking headers"));
                 }
 
-                var current = etag.strip();
-                if (record.etag == null || record.etag.strip() == "") {
-                    record.etag = current;
+                var stored_fingerprint = get_stored_fingerprint(record);
+                if (stored_fingerprint == null) {
+                    // First time: record baseline
+                    store_fingerprint(record, message);
                     registry.persist(false);
-                    return new UpdateProbeResult(record, false, current, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Baseline ETag recorded"));
+                    return new UpdateProbeResult(record, false, current_fingerprint, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Baseline recorded"));
                 }
 
-                if (record.etag == current) {
-                    return new UpdateProbeResult(record, false, current, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Already up to date"));
+                if (stored_fingerprint == current_fingerprint) {
+                    return new UpdateProbeResult(record, false, current_fingerprint, UpdateSkipReason.ALREADY_CURRENT, I18n.tr("Already up to date"));
                 }
 
-                return new UpdateProbeResult(record, true, current);
+                return new UpdateProbeResult(record, true, current_fingerprint);
             } catch (Error e) {
                 warning("Failed to check direct update for %s: %s", record.name, e.message);
                 return new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, e.message);
@@ -601,18 +590,19 @@ namespace AppManager.Core {
         private UpdateResult update_direct(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) {
             try {
                 var message = send_head(source.url, cancellable);
-                var etag = message.response_headers.get_one("ETag");
-                if (etag == null || etag.strip() == "") {
-                    record_skipped(record, UpdateSkipReason.ETAG_MISSING);
-                    log_update_event(record, "SKIP", "direct url missing etag");
-                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("No ETag returned by server"), null, UpdateSkipReason.ETAG_MISSING);
+                var current_fingerprint = build_direct_fingerprint(message);
+                
+                if (current_fingerprint == null) {
+                    record_skipped(record, UpdateSkipReason.NO_TRACKING_HEADERS);
+                    log_update_event(record, "SKIP", "direct url missing tracking headers");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Server does not provide change tracking headers"), null, UpdateSkipReason.NO_TRACKING_HEADERS);
                 }
 
-                var current = etag.strip();
-                if (record.etag != null && record.etag == current) {
+                var stored_fingerprint = get_stored_fingerprint(record);
+                if (stored_fingerprint != null && stored_fingerprint == current_fingerprint) {
                     record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                    log_update_event(record, "SKIP", "etag unchanged");
-                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Already up to date"), current, UpdateSkipReason.ALREADY_CURRENT);
+                    log_update_event(record, "SKIP", "fingerprint unchanged");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, I18n.tr("Already up to date"), current_fingerprint, UpdateSkipReason.ALREADY_CURRENT);
                 }
 
                 record_downloading(record);
@@ -625,33 +615,20 @@ namespace AppManager.Core {
                     AppManager.Utils.FileUtils.remove_dir_recursive(download.temp_dir);
                 }
 
-                // Store the new etag on the new record (upgrade returns a new record)
+                // Store the new fingerprint on the new record (upgrade returns a new record)
                 if (new_record != null) {
-                    new_record.etag = current;
+                    store_fingerprint(new_record, message);
                 }
                 registry.persist();
                 record_succeeded(record);
-                log_update_event(record, "UPDATED", "direct url etag=%s".printf(current));
-                return new UpdateResult(record, UpdateStatus.UPDATED, I18n.tr("Updated"), current);
+                log_update_event(record, "UPDATED", "direct url fingerprint=%s".printf(current_fingerprint));
+                return new UpdateResult(record, UpdateStatus.UPDATED, I18n.tr("Updated"), current_fingerprint);
             } catch (Error e) {
                 warning("Failed to update %s via direct URL: %s", record.name, e.message);
                 record_failed(record, e.message);
                 log_update_event(record, "FAILED", e.message);
                 return new UpdateResult(record, UpdateStatus.FAILED, e.message);
             }
-        }
-
-        private UpdateCheckInfo? check_direct_update(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) throws Error {
-            var message = send_head(source.url, cancellable);
-            var etag = message.response_headers.get_one("ETag");
-            if (etag == null || etag.strip() == "") {
-                var baseline = record.etag ?? "";
-                return new UpdateCheckInfo(false, baseline, baseline, null);
-            }
-
-            var current = etag.strip();
-            var previous = record.etag ?? current;
-            return new UpdateCheckInfo(previous != current, current, previous, current);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -743,48 +720,43 @@ namespace AppManager.Core {
             return null;
         }
 
-        private ReleaseInfo? fetch_github_release(GithubSource source, GLib.Cancellable? cancellable) throws Error {
-            var url = source.releases_api_url();
+        private Json.Node? fetch_json(string url, string accept_header, GLib.Cancellable? cancellable) throws Error {
             var message = new Soup.Message("GET", url);
-            message.request_headers.replace("Accept", "application/vnd.github+json");
+            message.request_headers.replace("Accept", accept_header);
             message.request_headers.replace("User-Agent", user_agent);
             
             var bytes = session.send_and_read(message, cancellable);
             var status = message.get_status();
             if (status < 200 || status >= 300) {
-                throw new GLib.IOError.FAILED("GitHub API error (%u)".printf(status));
+                throw new GLib.IOError.FAILED("API error (%u)".printf(status));
             }
 
             var parser = new Json.Parser();
             parser.load_from_stream(new MemoryInputStream.from_bytes(bytes), cancellable);
-            var root = parser.steal_root();
-            
-            if (root == null || root.get_node_type() != Json.NodeType.ARRAY) {
-                return null;
-            }
+            return parser.steal_root();
+        }
 
-            var array = root.get_array();
-            
-            // Find first release with an AppImage asset
+        private ReleaseInfo? find_release_with_appimage(Json.Array array, ParseReleaseFunc parser) {
+            ReleaseInfo? fallback = null;
             for (uint i = 0; i < array.get_length(); i++) {
                 var node = array.get_element(i);
                 if (node.get_node_type() != Json.NodeType.OBJECT) continue;
                 
-                var release = parse_github_release(node.get_object());
-                if (release != null && select_appimage_asset(release.assets) != null) {
-                    return release;
-                }
+                var release = parser(node.get_object());
+                if (release == null) continue;
+                
+                if (fallback == null) fallback = release;
+                if (select_appimage_asset(release.assets) != null) return release;
             }
+            return fallback;
+        }
 
-            // Fallback to first release even without matching asset
-            if (array.get_length() > 0) {
-                var first = array.get_element(0);
-                if (first.get_node_type() == Json.NodeType.OBJECT) {
-                    return parse_github_release(first.get_object());
-                }
-            }
+        private delegate ReleaseInfo? ParseReleaseFunc(Json.Object obj);
 
-            return null;
+        private ReleaseInfo? fetch_github_release(GithubSource source, GLib.Cancellable? cancellable) throws Error {
+            var root = fetch_json(source.releases_api_url(), "application/vnd.github+json", cancellable);
+            if (root == null || root.get_node_type() != Json.NodeType.ARRAY) return null;
+            return find_release_with_appimage(root.get_array(), parse_github_release);
         }
 
         private ReleaseInfo? parse_github_release(Json.Object obj) {
@@ -811,49 +783,14 @@ namespace AppManager.Core {
         }
 
         private ReleaseInfo? fetch_gitlab_release(GitlabSource source, GLib.Cancellable? cancellable) throws Error {
-            var url = source.releases_api_url();
-            var message = new Soup.Message("GET", url);
-            message.request_headers.replace("Accept", "application/json");
-            message.request_headers.replace("User-Agent", user_agent);
-            
-            var bytes = session.send_and_read(message, cancellable);
-            var status = message.get_status();
-            if (status < 200 || status >= 300) {
-                throw new GLib.IOError.FAILED("GitLab API error (%u)".printf(status));
-            }
-
-            var parser = new Json.Parser();
-            parser.load_from_stream(new MemoryInputStream.from_bytes(bytes), cancellable);
-            var root = parser.steal_root();
-            
+            var root = fetch_json(source.releases_api_url(), "application/json", cancellable);
             if (root == null) return null;
-
-            Json.Object? release_obj = null;
+            
             if (root.get_node_type() == Json.NodeType.ARRAY) {
-                var array = root.get_array();
-                
-                // Find first release with an AppImage asset
-                for (uint i = 0; i < array.get_length(); i++) {
-                    var node = array.get_element(i);
-                    if (node.get_node_type() != Json.NodeType.OBJECT) continue;
-                    
-                    var release = parse_gitlab_release(node.get_object());
-                    if (release != null && select_appimage_asset(release.assets) != null) {
-                        return release;
-                    }
-                    if (release_obj == null) {
-                        release_obj = node.get_object();
-                    }
-                }
-                
-                // Fallback to first release
-                if (release_obj != null) {
-                    return parse_gitlab_release(release_obj);
-                }
+                return find_release_with_appimage(root.get_array(), parse_gitlab_release);
             } else if (root.get_node_type() == Json.NodeType.OBJECT) {
                 return parse_gitlab_release(root.get_object());
             }
-
             return null;
         }
 

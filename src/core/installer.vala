@@ -56,8 +56,9 @@ namespace AppManager.Core {
                 record.installed_at = old_record.installed_at;
                 record.updated_at = (int64)GLib.get_real_time();
                 
-                // Carry over etag and release tag from old record
-                record.etag = old_record.etag;
+                // Carry over last_modified, content_length and release tag from old record
+                record.last_modified = old_record.last_modified;
+                record.content_length = old_record.content_length;
                 record.last_release_tag = old_record.last_release_tag;
                 
                 // Carry over custom values from old record (user customizations survive updates)

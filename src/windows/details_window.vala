@@ -714,7 +714,7 @@ namespace AppManager {
 
         private void show_update_info_help() {
             var body = I18n.tr("Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest.");
-            body += "\n\n" + I18n.tr("Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the remote URL supports ETag.");
+            body += "\n\n" + I18n.tr("Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers.");
             var dialog = new Adw.AlertDialog(I18n.tr("Update links"), body);
             dialog.add_response("close", I18n.tr("Got it"));
             dialog.set_close_response("close");
