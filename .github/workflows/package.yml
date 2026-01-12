@@ -45,6 +45,10 @@ jobs:
             echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64-ports.list
             echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64-ports.list
           fi
+          # Add GNOME PPA for libadwaita >= 1.6
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:gnome-team/gnome
           sudo apt-get update
           # Install host (amd64) build tools first
           sudo apt-get install -y \
