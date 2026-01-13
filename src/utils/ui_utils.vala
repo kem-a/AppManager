@@ -163,6 +163,19 @@ namespace AppManager.Utils {
                 if (file.query_exists()) {
                     return Gdk.Texture.from_file(file);
                 }
+                
+                // Fallback: try the new hicolor location if icon was at old flat icons dir
+                // Old path: ~/.local/share/icons/icon.svg
+                // New path: ~/.local/share/icons/hicolor/scalable/apps/icon.svg
+                var icons_base = Path.build_filename(Environment.get_user_data_dir(), "icons");
+                if (record.icon_path.has_prefix(icons_base)) {
+                    var icon_basename = file.get_basename();
+                    var new_path = Path.build_filename(icons_base, "hicolor", "scalable", "apps", icon_basename);
+                    var new_file = File.new_for_path(new_path);
+                    if (new_file.query_exists()) {
+                        return Gdk.Texture.from_file(new_file);
+                    }
+                }
             } catch (Error e) {
                 warning("Failed to load record icon: %s", e.message);
             }
