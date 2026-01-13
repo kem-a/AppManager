@@ -68,7 +68,7 @@ namespace AppManager.Core {
 
         public static string icons_dir {
             owned get {
-                var dir = Path.build_filename(Environment.get_user_data_dir(), "icons");
+                var dir = Path.build_filename(Environment.get_user_data_dir(), "icons", "hicolor", "scalable", "apps");
                 DirUtils.create_with_parents(dir, 0755);
                 return dir;
             }
