@@ -31,6 +31,7 @@ Type=Application
 Name=AppManager Background Updater
 Exec=%s --background-update
 X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=60
 NoDisplay=true
 X-XDP-Autostart=com.github.AppManager
 """.printf(exec_path);
@@ -222,25 +223,52 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         /**
-         * Sends a desktop notification about available updates.
+         * Sends a desktop notification about available updates via D-Bus.
+         * Uses org.freedesktop.Notifications directly since background daemon
+         * may not have a full GLib.Application context.
          */
         private void send_updates_notification(int count, Gee.ArrayList<string> app_names) {
-            var notification = new GLib.Notification(I18n.tr("App updates available"));
-            
+            string title = I18n.tr("App updates available");
             string body;
             if (count == 1) {
                 body = I18n.tr("Update available for %s").printf(app_names.get(0));
             } else {
                 body = I18n.tr("%d app updates available").printf(count);
             }
-            notification.set_body(body);
-            notification.set_priority(NotificationPriority.NORMAL);
-            
-            // Set default action to open the app
-            notification.set_default_action("app.activate");
-            
-            GLib.Application.get_default().send_notification("updates-available", notification);
-            log_debug("background update: sent notification for %d update(s)".printf(count));
+
+            try {
+                var connection = Bus.get_sync(BusType.SESSION);
+                var hints = new HashTable<string, Variant>(str_hash, str_equal);
+                hints.insert("urgency", new Variant.byte(1)); // Normal urgency
+                
+                // Get the executable path for the default action
+                var exec_path = AppPaths.current_executable_path ?? "app-manager";
+                hints.insert("desktop-entry", new Variant.string(Core.APPLICATION_ID));
+
+                connection.call_sync(
+                    "org.freedesktop.Notifications",
+                    "/org/freedesktop/Notifications",
+                    "org.freedesktop.Notifications",
+                    "Notify",
+                    new Variant("(susssasa{sv}i)",
+                        Core.APPLICATION_ID,  // app_name
+                        (uint32) 0,           // replaces_id
+                        "com.github.AppManager",  // app_icon
+                        title,
+                        body,
+                        new Variant.array(VariantType.STRING, {}),  // actions
+                        hints,
+                        -1                    // expire_timeout (-1 = default)
+                    ),
+                    VariantType.TUPLE,
+                    DBusCallFlags.NONE,
+                    -1,
+                    null
+                );
+                log_debug("background update: sent notification for %d update(s)".printf(count));
+            } catch (Error e) {
+                warning("Failed to send notification via D-Bus: %s", e.message);
+            }
         }
 
         public bool should_check_now() {
