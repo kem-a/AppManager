@@ -22,8 +22,7 @@ AppManager is a GTK/Libadwaita developed desktop utility in Vala that makes inst
 - **Desktop integration**: Extracts the bundled `.desktop` file via `7z` or `dwarfs`, rewrites `Exec` and `Icon`, and stores it in `~/.local/share/applications`.
 - **Simple uninstall**: Right click in app drawer and choose `Move to Trash`, can uninstall in AppManager or simply delete from `~/Applications` folder.
 - **Install registry + preferences**: Main window lists installed apps, default mode, and cleanup behaviors, all stored with GSettings.
-- **Auto update apps**: Automaticaly update apps from github, gitlab or from direct links. Simply add download URL.
-- **Background update checks**: Optional automatic update checks with configurable interval (daily, weekly, monthly) and notifications when updates are found.
+- **Background app updates**: Optional automatic update checks with configurable interval (daily, weekly, monthly) and notifications when updates are found.
 
 ## Requirements
 
@@ -61,12 +60,6 @@ sudo pacman -S vala meson ninja gtk4 libadwaita glib2 json-glib gee libsoup p7zi
 </details>
 
 Default setup
-```bash
-meson setup build
-```
-
-Or if you prefer user Home install
-
 ```bash
 meson setup build --prefix=$HOME/.local
 ```
