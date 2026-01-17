@@ -549,6 +549,7 @@ namespace AppManager {
             menu.append(I18n.tr("Preferences"), "app.show_preferences");
             menu.append(I18n.tr("Keyboard shortcuts"), "app.show_shortcuts");
             menu.append(I18n.tr("About AppManager"), "app.show_about");
+            menu.append(I18n.tr("Quit"), "app.quit");
             return menu;
         }
 
