@@ -351,7 +351,7 @@ namespace AppManager {
                 restore_webpage_button.set_visible(record.custom_web_page != null);
             });
             
-            var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
+            var open_web_button = new Gtk.Button.from_icon_name("adw-external-link-symbolic");
             open_web_button.add_css_class("flat");
             open_web_button.set_valign(Gtk.Align.CENTER);
             open_web_button.tooltip_text = I18n.tr("Open web page");

@@ -191,7 +191,7 @@ namespace AppManager {
             pkgforge_row.title = "Anylinux AppImages";
             pkgforge_row.subtitle = "pkgforge-dev.github.io";
             pkgforge_row.activatable = true;
-            pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             pkgforge_row.activated.connect(() => {
                 UiUtils.open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/");
             });
@@ -201,7 +201,7 @@ namespace AppManager {
             appimagehub_row.title = "AppImageHub";
             appimagehub_row.subtitle = "appimagehub.com";
             appimagehub_row.activatable = true;
-            appimagehub_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            appimagehub_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             appimagehub_row.activated.connect(() => {
                 UiUtils.open_url("https://www.appimagehub.com/");
             });
@@ -211,7 +211,7 @@ namespace AppManager {
             appimage_catalog_row.title = "AppImage Catalog";
             appimage_catalog_row.subtitle = "appimage.github.io";
             appimage_catalog_row.activatable = true;
-            appimage_catalog_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            appimage_catalog_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             appimage_catalog_row.activated.connect(() => {
                 UiUtils.open_url("https://appimage.github.io/");
             });

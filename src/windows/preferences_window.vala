@@ -107,7 +107,7 @@ namespace AppManager {
             thumbnailer_row.title = I18n.tr("AppImage Thumbnailer");
             thumbnailer_row.subtitle = I18n.tr("Install appimage-thumbnailer to generate thumbnails for AppImages");
             thumbnailer_row.activatable = true;
-            thumbnailer_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            thumbnailer_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             thumbnailer_row.activated.connect(() => {
                 UiUtils.open_url("https://github.com/kem-a/appimage-thumbnailer");
             });
