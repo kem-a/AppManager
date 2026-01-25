@@ -1,4 +1,6 @@
 namespace AppManager.Core {
     public const string APPLICATION_VERSION = "@VERSION@";
     public const string DWARFS_BUNDLE_DIR = "@DWARFS_BUNDLE_DIR@";
+    public const string ZSYNC_BUNDLE_DIR = "@ZSYNC_BUNDLE_DIR@";
+    public const string SEVENZIP_BUNDLE_DIR = "@SEVENZIP_BUNDLE_DIR@";
 }

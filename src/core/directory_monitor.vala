@@ -2,6 +2,11 @@ namespace AppManager.Core {
     /**
      * Monitors the Applications directory and extracted apps directory
      * for manual file deletions and changes.
+     * 
+     * Note: This monitor is careful to avoid race conditions with the install process.
+     * When a file deletion is detected, we check if the app is "in-flight" (being 
+     * installed/uninstalled) before taking any action. This prevents false positives
+     * when the installer intentionally deletes files.
      */
     public class DirectoryMonitor : Object {
         private FileMonitor? applications_monitor;
@@ -64,6 +69,12 @@ namespace AppManager.Core {
             // Check if this file is in the registry as a PORTABLE installation
             var record = registry.lookup_by_installed_path(path);
             if (record != null && record.mode == InstallMode.PORTABLE) {
+                // Skip if the app is in-flight (being installed/uninstalled)
+                // This prevents false positives when the installer intentionally deletes files
+                if (registry.is_in_flight(record.id)) {
+                    debug("Ignoring deletion of in-flight app: %s", path);
+                    return;
+                }
                 debug("Detected manual deletion of portable app: %s", path);
                 app_deleted(path);
                 changes_detected();
@@ -86,6 +97,11 @@ namespace AppManager.Core {
                 if (record.mode == InstallMode.EXTRACTED) {
                     // Check if the deleted path is part of this record's installation
                     if (path.has_prefix(record.installed_path) || path == record.installed_path) {
+                        // Skip if the app is in-flight (being installed/uninstalled)
+                        if (registry.is_in_flight(record.id)) {
+                            debug("Ignoring deletion of in-flight extracted app: %s", record.name);
+                            break;
+                        }
                         debug("Detected manual deletion of extracted app: %s", record.name);
                         app_deleted(record.installed_path);
                         changes_detected();

@@ -191,7 +191,7 @@ namespace AppManager {
             pkgforge_row.title = "Anylinux AppImages";
             pkgforge_row.subtitle = "pkgforge-dev.github.io";
             pkgforge_row.activatable = true;
-            pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             pkgforge_row.activated.connect(() => {
                 UiUtils.open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/");
             });
@@ -201,7 +201,7 @@ namespace AppManager {
             appimagehub_row.title = "AppImageHub";
             appimagehub_row.subtitle = "appimagehub.com";
             appimagehub_row.activatable = true;
-            appimagehub_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            appimagehub_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             appimagehub_row.activated.connect(() => {
                 UiUtils.open_url("https://www.appimagehub.com/");
             });
@@ -211,7 +211,7 @@ namespace AppManager {
             appimage_catalog_row.title = "AppImage Catalog";
             appimage_catalog_row.subtitle = "appimage.github.io";
             appimage_catalog_row.activatable = true;
-            appimage_catalog_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            appimage_catalog_row.add_suffix(new Gtk.Image.from_icon_name("adw-external-link-symbolic"));
             appimage_catalog_row.activated.connect(() => {
                 UiUtils.open_url("https://appimage.github.io/");
             });
@@ -892,7 +892,10 @@ namespace AppManager {
             var key = record_state_key(record);
             updating_records.add(key);
             if (active_details_window != null && active_details_window.matches_record(record)) {
+                // Order matters: set_update_loading first, then set_update_updating
+                // because refresh_update_button() resets update_updating when update_loading is false
                 active_details_window.set_update_loading(true);
+                active_details_window.set_update_updating(true);
             }
             refresh_installations();
             trigger_single_update_async.begin(record);
@@ -929,6 +932,10 @@ namespace AppManager {
                 // Remove from staged updates and save
                 staged_updates.remove(result.record.id);
                 staged_updates.save();
+                // Refresh details window with updated record data
+                if (active_details_window != null && active_details_window.matches_record(result.record)) {
+                    active_details_window.refresh_with_record(result.record);
+                }
             }
             refresh_installations();
             sync_details_window_state(result.record);
@@ -1225,6 +1232,8 @@ namespace AppManager {
         public void present_about_dialog() {
             var dialog = new Adw.AboutDialog.from_appdata(APPDATA_RESOURCE, null);
             dialog.version = APPLICATION_VERSION;
+            string[] credits = { "Contributors https://github.com/kem-a/AppManager/graphs/contributors" };
+            dialog.add_credit_section(I18n.tr("Credits"), credits);
             dialog.present(this);
         }
 

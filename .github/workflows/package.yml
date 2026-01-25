@@ -53,7 +53,7 @@ jobs:
           ln -sf /tmp/appimagetool-extracted/AppRun /usr/local/bin/appimagetool
 
       - name: Configure
-        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true
+        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true -Dbundle_zsync=true -Dbundle_7z=true
 
       - name: Build
         run: ninja -C build
@@ -175,7 +175,7 @@ jobs:
           ln -sf /tmp/appimagetool-extracted/AppRun /usr/local/bin/appimagetool
 
       - name: Configure
-        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true
+        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true -Dbundle_zsync=true -Dbundle_7z=true
 
       - name: Build
         run: ninja -C build

@@ -24,6 +24,10 @@ namespace AppManager.Core {
         public int64 content_length { get; set; default = 0; }  // HTTP Content-Length for change detection
         public string? last_release_tag { get; set; }  // Stores release tag_name for apps without version
         
+        // Zsync update info from .upd_info section (e.g., gh-releases-zsync|owner|repo|latest|*.zsync)
+        // If set, app uses zsync delta updates instead of full downloads
+        public string? zsync_update_info { get; set; }
+        
         // Original values captured from AppImage's .desktop during install/update
         public string? original_commandline_args { get; set; }
         public string? original_keywords { get; set; }
@@ -133,6 +137,12 @@ namespace AppManager.Core {
             builder.add_string_value(entry_exec ?? "");
             builder.set_member_name("is_terminal");
             builder.add_boolean_value(is_terminal);
+            
+            // Zsync update info (if app supports zsync delta updates)
+            if (zsync_update_info != null && zsync_update_info.strip() != "") {
+                builder.set_member_name("zsync_update_info");
+                builder.add_string_value(zsync_update_info);
+            }
             
             // Original values from AppImage's .desktop
             builder.set_member_name("original_commandline_args");
@@ -260,6 +270,12 @@ namespace AppManager.Core {
             record.entry_exec = entry_exec == "" ? null : entry_exec;
             if (obj.has_member("is_terminal")) {
                 record.is_terminal = obj.get_boolean_member("is_terminal");
+            }
+            
+            // Zsync update info (if app supports zsync delta updates)
+            if (obj.has_member("zsync_update_info")) {
+                var zsync_info = obj.get_string_member("zsync_update_info");
+                record.zsync_update_info = (zsync_info != null && zsync_info.strip() != "") ? zsync_info : null;
             }
             
             // Original values from AppImage's .desktop

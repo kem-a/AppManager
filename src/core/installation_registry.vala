@@ -5,21 +5,28 @@ namespace AppManager.Core {
         private HashTable<string, InstallationRecord> records;
         // History stores uninstalled apps' name and custom values as JSON objects
         private HashTable<string, Json.Object> history;
+        // Tracks apps currently being installed/uninstalled to skip during reconcile
+        private HashTable<string, bool> in_flight;
         private File registry_file;
+        private Mutex registry_mutex = Mutex();
         public signal void changed();
 
         public InstallationRegistry() {
             records = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
             history = new HashTable<string, Json.Object>(GLib.str_hash, GLib.str_equal);
+            in_flight = new HashTable<string, bool>(GLib.str_hash, GLib.str_equal);
             registry_file = File.new_for_path(AppPaths.registry_file);
-            load();
+            // Constructor runs in single-threaded context, no locking needed
+            load_unlocked();
         }
 
         public InstallationRecord[] list() {
+            registry_mutex.lock();
             var list = new ArrayList<InstallationRecord>();
             foreach (var record in records.get_values()) {
                 list.add(record);
             }
+            registry_mutex.unlock();
             return list.to_array();
         }
 
@@ -28,40 +35,56 @@ namespace AppManager.Core {
         }
 
         public InstallationRecord? lookup_by_checksum(string checksum) {
+            registry_mutex.lock();
+            InstallationRecord? result = null;
             foreach (var record in records.get_values()) {
                 if (record.source_checksum == checksum) {
-                    return record;
+                    result = record;
+                    break;
                 }
             }
-            return null;
+            registry_mutex.unlock();
+            return result;
         }
 
         public InstallationRecord? lookup_by_installed_path(string path) {
+            registry_mutex.lock();
+            InstallationRecord? result = null;
             foreach (var record in records.get_values()) {
                 if (record.installed_path == path) {
-                    return record;
+                    result = record;
+                    break;
                 }
             }
-            return null;
+            registry_mutex.unlock();
+            return result;
         }
 
         public InstallationRecord? lookup_by_source(string path) {
+            registry_mutex.lock();
+            InstallationRecord? result = null;
             foreach (var record in records.get_values()) {
                 if (record.source_path == path) {
-                    return record;
+                    result = record;
+                    break;
                 }
             }
-            return null;
+            registry_mutex.unlock();
+            return result;
         }
 
         public InstallationRecord? lookup_by_name(string name) {
+            registry_mutex.lock();
             var target = name.down();
+            InstallationRecord? result = null;
             foreach (var record in records.get_values()) {
                 if (record.name != null && record.name.strip().down() == target) {
-                    return record;
+                    result = record;
+                    break;
                 }
             }
-            return null;
+            registry_mutex.unlock();
+            return result;
         }
 
         /**
@@ -89,12 +112,45 @@ namespace AppManager.Core {
             return null;
         }
 
+        /**
+         * Marks an app as "in-flight" (being installed/uninstalled).
+         * Reconcile will skip in-flight apps to prevent race conditions.
+         */
+        public void mark_in_flight(string id) {
+            registry_mutex.lock();
+            in_flight.insert(id, true);
+            registry_mutex.unlock();
+        }
+        
+        /**
+         * Clears the in-flight flag for an app.
+         */
+        public void clear_in_flight(string id) {
+            registry_mutex.lock();
+            in_flight.remove(id);
+            registry_mutex.unlock();
+        }
+        
+        /**
+         * Checks if an app is currently in-flight.
+         */
+        public bool is_in_flight(string id) {
+            registry_mutex.lock();
+            var result = in_flight.contains(id);
+            registry_mutex.unlock();
+            return result;
+        }
+
         public void register(InstallationRecord record) {
+            registry_mutex.lock();
             records.insert(record.id, record);
             // Remove any history entry for this app name since it's now registered
             // This prevents duplicate entries in the JSON (don't persist yet - we'll save below)
-            remove_history(record.name, false);
-            save();
+            remove_history_unlocked(record.name);
+            // Clear in-flight flag now that registration is complete
+            in_flight.remove(record.id);
+            save_unlocked();
+            registry_mutex.unlock();
             notify_changed();
         }
 
@@ -105,29 +161,36 @@ namespace AppManager.Core {
          * user-driven edits of an already-installed record (custom args, keywords, links, etc.).
          */
         public void update(InstallationRecord record, bool notify = true) {
+            registry_mutex.lock();
             records.insert(record.id, record);
-            save();
+            save_unlocked();
+            registry_mutex.unlock();
             if (notify) {
                 notify_changed();
             }
         }
 
         public void unregister(string id) {
+            registry_mutex.lock();
             // Before removing, save custom values to history for potential reinstall
             var record = records.get(id);
             if (record != null) {
-                save_to_history(record);
+                save_to_history_unlocked(record);
             }
             records.remove(id);
-            save();
+            // Clear in-flight flag
+            in_flight.remove(id);
+            save_unlocked();
+            registry_mutex.unlock();
             notify_changed();
         }
         
         /**
          * Saves custom values from a record to history for later restoration.
          * Only saves if record has custom values worth preserving.
+         * Note: Caller must hold registry_mutex.
          */
-        private void save_to_history(InstallationRecord record) {
+        private void save_to_history_unlocked(InstallationRecord record) {
             if (record.has_custom_values()) {
                 var history_node = record.to_history_json();
                 history.insert(record.name.down(), history_node.get_object());
@@ -140,7 +203,10 @@ namespace AppManager.Core {
          * Returns null if no history exists.
          */
         public Json.Object? lookup_history(string app_name) {
-            return history.get(app_name.down());
+            registry_mutex.lock();
+            var result = history.get(app_name.down());
+            registry_mutex.unlock();
+            return result;
         }
         
         /**
@@ -149,12 +215,26 @@ namespace AppManager.Core {
          * @param persist If true, saves registry to disk. Set to false when save will happen later.
          */
         public void remove_history(string app_name, bool persist = true) {
+            registry_mutex.lock();
             var key = app_name.down();
             if (history.contains(key)) {
                 history.remove(key);
                 if (persist) {
-                    save();
+                    save_unlocked();
                 }
+                debug("Removed history for %s", app_name);
+            }
+            registry_mutex.unlock();
+        }
+        
+        /**
+         * Removes history entry without locking.
+         * Note: Caller must hold registry_mutex.
+         */
+        private void remove_history_unlocked(string app_name) {
+            var key = app_name.down();
+            if (history.contains(key)) {
+                history.remove(key);
                 debug("Removed history for %s", app_name);
             }
         }
@@ -164,7 +244,9 @@ namespace AppManager.Core {
          * Called during fresh install to restore user's previous settings.
          */
         public void apply_history_to_record(InstallationRecord record) {
-            var history_obj = lookup_history(record.name);
+            registry_mutex.lock();
+            var history_obj = history.get(record.name.down());
+            registry_mutex.unlock();
             if (history_obj != null) {
                 debug("Restoring history for %s", record.name);
                 record.apply_history(history_obj);
@@ -172,7 +254,9 @@ namespace AppManager.Core {
         }
 
         public void persist(bool notify = true) {
-            save();
+            registry_mutex.lock();
+            save_unlocked();
+            registry_mutex.unlock();
             if (notify) {
                 notify_changed();
             }
@@ -183,9 +267,17 @@ namespace AppManager.Core {
          * Useful when another AppManager process (or external tooling) modified the registry file.
          */
         public void reload(bool notify = true) {
+            registry_mutex.lock();
+            // Preserve in-flight apps across reload
+            var preserved_in_flight = new HashTable<string, bool>(GLib.str_hash, GLib.str_equal);
+            foreach (var id in in_flight.get_keys()) {
+                preserved_in_flight.insert(id, true);
+            }
             records = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
             history = new HashTable<string, Json.Object>(GLib.str_hash, GLib.str_equal);
-            load();
+            in_flight = preserved_in_flight;
+            load_unlocked();
+            registry_mutex.unlock();
             if (notify) {
                 notify_changed();
             }
@@ -198,10 +290,17 @@ namespace AppManager.Core {
          * Returns the list of orphaned records that were cleaned up.
          */
         public Gee.ArrayList<InstallationRecord> reconcile_with_filesystem() {
+            registry_mutex.lock();
             var orphaned = new Gee.ArrayList<InstallationRecord>();
             var records_to_remove = new Gee.ArrayList<string>();
             
             foreach (var record in records.get_values()) {
+                // Skip apps that are currently being installed/uninstalled
+                if (in_flight.contains(record.id)) {
+                    debug("Skipping in-flight app during reconcile: %s", record.name);
+                    continue;
+                }
+                
                 var installed_file = File.new_for_path(record.installed_path);
                 if (!installed_file.query_exists()) {
                     debug("Found orphaned record: %s (path: %s)", record.name, record.installed_path);
@@ -209,7 +308,7 @@ namespace AppManager.Core {
                     records_to_remove.add(record.id);
                     
                     // Save custom values to history before removing (same as unregister)
-                    save_to_history(record);
+                    save_to_history_unlocked(record);
                     
                     // Clean up associated files
                     cleanup_record_files(record);
@@ -222,7 +321,11 @@ namespace AppManager.Core {
             }
             
             if (records_to_remove.size > 0) {
-                save();
+                save_unlocked();
+            }
+            registry_mutex.unlock();
+            
+            if (records_to_remove.size > 0) {
                 notify_changed();
             }
             
@@ -262,7 +365,11 @@ namespace AppManager.Core {
             }
         }
 
-        private void load() {
+        /**
+         * Internal load function without locking.
+         * Note: Caller must hold registry_mutex or ensure exclusive access.
+         */
+        private void load_unlocked() {
             if (!registry_file.query_exists(null)) {
                 return;
             }
@@ -333,7 +440,11 @@ namespace AppManager.Core {
             }
         }
 
-        private void save() {
+        /**
+         * Internal save function without locking.
+         * Note: Caller must hold registry_mutex.
+         */
+        private void save_unlocked() {
             try {
                 var builder = new Json.Builder();
                 builder.begin_object();

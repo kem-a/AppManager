@@ -658,7 +658,13 @@ namespace AppManager.Core {
 
         private static int execute_7z(string[] arguments, out string? stdout_str, out string? stderr_str) throws Error {
             var cmd = new string[1 + arguments.length];
-            cmd[0] = "7z";
+            // Try bundled 7z first, then fall back to system 7z
+            string bundled_7z = Path.build_filename(SEVENZIP_BUNDLE_DIR, "7z");
+            if (FileUtils.test(bundled_7z, FileTest.IS_EXECUTABLE)) {
+                cmd[0] = bundled_7z;
+            } else {
+                cmd[0] = "7z";
+            }
             for (int i = 0; i < arguments.length; i++) {
                 cmd[i + 1] = arguments[i];
             }

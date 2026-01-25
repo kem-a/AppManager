@@ -15,6 +15,7 @@
   <launchable type="desktop-id">com.github.AppManager.desktop</launchable>
   <url type="homepage">https://github.com/kem-a/AppManager</url>
   <url type="bugtracker">https://github.com/kem-a/AppManager/issues</url>
+  <url type="contribute">https://github.com/kem-a/AppManager/graphs/contributors</url>
   <provides>
     <binary>app-manager</binary>
   </provides>

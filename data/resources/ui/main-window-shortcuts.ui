@@ -32,11 +32,6 @@
                                 <property name="accelerator">&lt;Primary&gt;question</property>
                             </object>
                         </child>
-                        <child>
-                            <object class="GtkShortcutsShortcut" id="shortcut_about">
-                                <property name="accelerator">F1</property>
-                            </object>
-                        </child>
                     </object>
                 </child>
                 <child>

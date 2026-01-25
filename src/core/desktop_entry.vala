@@ -6,7 +6,6 @@ namespace AppManager.Core {
         private string? file_path;
 
         public string? name { get; set; }
-        public string? version { get; set; }
         public string? exec { get; set; }
         public string? icon { get; set; }
         public string? keywords { get; set; }
@@ -14,6 +13,8 @@ namespace AppManager.Core {
         public string? startup_wm_class { get; set; }
         public bool terminal { get; set; }
         public bool no_display { get; set; }
+        public string? mime_type { get; set; }
+        public bool dbus_activatable { get; set; }
         public string? appimage_homepage { get; set; }
         public string? appimage_update_url { get; set; }
         public string? appimage_version { get; set; }
@@ -41,19 +42,16 @@ namespace AppManager.Core {
             keywords = get_string("Keywords");
             categories = get_string("Categories");
             startup_wm_class = get_string("StartupWMClass");
+            mime_type = get_string("MimeType");
             terminal = get_boolean("Terminal");
             no_display = get_boolean("NoDisplay");
+            dbus_activatable = get_boolean("DBusActivatable");
             actions = get_string("Actions");
 
             // X-AppImage keys
             appimage_homepage = get_string("X-AppImage-Homepage");
             appimage_update_url = get_string("X-AppImage-UpdateURL");
             appimage_version = get_string("X-AppImage-Version") ?? find_key_in_any_group("X-AppImage-Version");
-            
-            // Use X-AppImage-Version for app version (standard Version field is desktop spec version, not app version)
-            if (appimage_version != null && appimage_version.strip() != "") {
-                version = appimage_version;
-            }
         }
 
         public void save(string? path = null) throws Error {
@@ -63,12 +61,12 @@ namespace AppManager.Core {
             }
 
             set_string("Name", name);
-            set_string("Version", version);
             set_string("Exec", exec);
             set_string("Icon", icon);
             set_string("Keywords", keywords);
             set_string("Categories", categories);
             set_string("StartupWMClass", startup_wm_class);
+            set_string("MimeType", mime_type);
             set_boolean("Terminal", terminal);
             set_boolean("NoDisplay", no_display);
             set_string("Actions", actions);
@@ -82,12 +80,12 @@ namespace AppManager.Core {
 
         public string to_data() {
             set_string("Name", name);
-            set_string("Version", version);
             set_string("Exec", exec);
             set_string("Icon", icon);
             set_string("Keywords", keywords);
             set_string("Categories", categories);
             set_string("StartupWMClass", startup_wm_class);
+            set_string("MimeType", mime_type);
             set_boolean("Terminal", terminal);
             set_boolean("NoDisplay", no_display);
             set_string("Actions", actions);

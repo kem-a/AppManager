@@ -9,6 +9,7 @@ namespace AppManager {
         private Installer installer;
         private bool update_available;
         private bool update_loading = false;
+        private bool update_updating = false;  // true when actually updating (vs just checking)
         private Gtk.Button? update_button;
         private Gtk.Spinner? update_spinner;
         private Gtk.Button? extract_button;
@@ -36,7 +37,8 @@ namespace AppManager {
         }
 
         public bool matches_record(InstallationRecord other) {
-            return record.id == other.id;
+            // Compare by name (case-insensitive) since ID is checksum and changes after update
+            return record.name.down() == other.name.down();
         }
 
         public void set_update_available(bool available) {
@@ -47,6 +49,18 @@ namespace AppManager {
         public void set_update_loading(bool loading) {
             update_loading = loading;
             refresh_update_button();
+        }
+
+        public void set_update_updating(bool updating) {
+            update_updating = updating;
+            refresh_update_button();
+        }
+
+        public void refresh_with_record(InstallationRecord updated_record) {
+            this.record = updated_record;
+            // Rebuild the entire UI with fresh data
+            this.child = null;
+            build_ui();
         }
 
         private void persist_record_and_refresh_desktop() {
@@ -172,6 +186,13 @@ namespace AppManager {
                 cards_box.append(terminal_card);
             }
             
+            // Zsync delta updates badge (only show if app supports zsync)
+            if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {
+                var zsync_card = create_info_card("Zsync");
+                zsync_card.set_tooltip_text(I18n.tr("This app supports efficient delta updates"));
+                cards_box.append(zsync_card);
+            }
+            
             // Hidden from app drawer card (only show if NoDisplay=true)
             var nodisplay_value = desktop_props.get("NoDisplay") ?? "false";
             if (nodisplay_value.down() == "true") {
@@ -250,6 +271,14 @@ namespace AppManager {
             update_row.title = I18n.tr("Update Link");
             update_row.text = record.get_effective_update_link() ?? "";
             
+            // If app uses zsync updates, disable the row entirely (zsync info is embedded in AppImage)
+            var uses_zsync = record.zsync_update_info != null && record.zsync_update_info.strip() != "";
+            if (uses_zsync) {
+                update_row.sensitive = false;
+                update_row.set_tooltip_text(I18n.tr("Update link is managed by zsync and cannot be edited"));
+                return update_row;
+            }
+            
             var restore_update_button = create_restore_button(record.custom_update_link != null);
             restore_update_button.clicked.connect(() => {
                 record.custom_update_link = null;
@@ -322,7 +351,7 @@ namespace AppManager {
                 restore_webpage_button.set_visible(record.custom_web_page != null);
             });
             
-            var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
+            var open_web_button = new Gtk.Button.from_icon_name("adw-external-link-symbolic");
             open_web_button.add_css_class("flat");
             open_web_button.set_valign(Gtk.Align.CENTER);
             open_web_button.tooltip_text = I18n.tr("Open web page");
@@ -791,7 +820,11 @@ namespace AppManager {
             }
 
             if (update_loading) {
-                update_button.set_label(I18n.tr("Checking..."));
+                if (update_updating) {
+                    update_button.set_label(I18n.tr("Updating..."));
+                } else {
+                    update_button.set_label(I18n.tr("Checking..."));
+                }
                 update_spinner.visible = true;
                 update_spinner.start();
                 update_button.sensitive = false;
@@ -802,6 +835,7 @@ namespace AppManager {
             update_spinner.visible = false;
             update_spinner.stop();
             update_button.sensitive = true;
+            update_updating = false;  // Reset updating state
 
             if (update_available) {
                 var update_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);

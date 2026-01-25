@@ -1,78 +1,10 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   viewBox="0 0 128 128"
-   version="1.1"
-   id="svg4"
-   sodipodi:docname="com.github.AppManager.svg"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview4"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="6.546875"
-     inkscape:cx="64.076372"
-     inkscape:cy="64"
-     inkscape:window-width="1920"
-     inkscape:window-height="1098"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg4" />
-  <defs
-     id="defs2">
-    <linearGradient
-       id="bg"
-       x1="0%"
-       x2="100%"
-       y1="0%"
-       y2="100%">
-      <stop
-         offset="0%"
-         stop-color="#3584e4"
-         id="stop1" />
-      <stop
-         offset="100%"
-         stop-color="#1c59b7"
-         id="stop2" />
-    </linearGradient>
-  </defs>
-  <rect
-     x="8"
-     y="8"
-     width="112"
-     height="112"
-     rx="24"
-     fill="url(#bg)"
-     id="rect2" />
-  <g
-     id="g4">
-    <path
-       d="M40 32h48a8 8 0 0 1 8 8v16H32V40a8 8 0 0 1 8-8z"
-       fill="#fff"
-       opacity=".9"
-       id="path2" />
-    <path
-       d="M32 56h64v40a12 12 0 0 1-12 12H44a12 12 0 0 1-12-12z"
-       fill="#fdfdfd"
-       id="path3" />
-    <path
-       d="M48 72h32v12H48z"
-       fill="#3584e4"
-       id="path4" />
-    <circle
-       cx="64"
-       cy="96"
-       r="6"
-       fill="#3584e4"
-       id="circle4" />
-  </g>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="prefix__a" x1="8.466" x2="8.466" y1="1.058" y2="15.875" gradientTransform="scale(3.7796)" gradientUnits="userSpaceOnUse"><stop stop-color="#02c5fd" offset="0"/><stop stop-color="#2f71f9" offset="1"/></linearGradient>
+        <linearGradient id="prefix__c" x1="15.081" x2="12.7" y1="14.816" y2="12.171" gradientUnits="userSpaceOnUse"><stop stop-color="#2dacfa" offset="0"/><stop stop-color="#2dacfa" stop-opacity="0" offset="1"/></linearGradient>
+        <linearGradient id="prefix__d" x1="6.745" x2="10.583" y1="1.058" y2="11.312" gradientUnits="userSpaceOnUse"><stop stop-color="#3ae7fd" offset="0"/><stop stop-color="#3ae7fd" stop-opacity="0" offset="1"/></linearGradient>
+        <filter id="prefix__b" x="-.012" y="-.012" width="1.024" height="1.024" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".074"/></filter>
+    </defs>
+    
+    <path d="M20.26 4c-5.782 0-9.743 1.725-12.321 4.535C5.374 11.331 4 15.34 4 19.876v24.248c0 4.538 1.374 8.545 3.939 11.341C10.517 58.275 14.479 60 20.26 60h23.549c5.782 0 9.743-1.724 12.321-4.535C58.695 52.67 60 49.03 60 44.125V20.786c0-5.935-1.305-9.456-3.87-12.252C53.552 5.725 49.59 4 43.809 4H25.494z" fill="url(#prefix__a)"/><g transform="scale(3.7796)" filter="url(#prefix__b)" opacity=".75" style="mix-blend-mode:normal"><path d="M5.36 1.058c-1.53 0-2.577.457-3.26 1.2-.678.74-1.042 1.8-1.042 3.001v6.415c0 1.2.364 2.26 1.043 3 .682.744 1.73 1.2 3.26 1.2h6.23c1.53 0 2.577-.456 3.26-1.2.678-.739 1.024-1.702 1.024-3V5.5c0-1.57-.346-2.502-1.024-3.242-.683-.743-1.73-1.2-3.26-1.2H6.745zm0 .264h6.232c1.477 0 2.437.432 3.064 1.116.634.69.954 1.53.954 3.062v6.174c0 1.251-.322 2.134-.954 2.822-.627.684-1.587 1.114-3.064 1.114H5.359c-1.477 0-2.437-.43-3.064-1.114-.625-.682-.973-1.675-.973-2.822V5.26c0-1.148.348-2.14.973-2.822.627-.684 1.587-1.116 3.064-1.116z" fill="url(#prefix__c)"/><path d="M5.36 1.058c-1.53 0-2.577.457-3.26 1.2-.678.74-1.042 1.8-1.042 3.001v6.415c0 1.2.364 2.26 1.043 3 .682.744 1.73 1.2 3.26 1.2h6.23c1.53 0 2.577-.456 3.26-1.2.678-.739 1.024-1.702 1.024-3V5.5c0-1.57-.346-2.502-1.024-3.242-.683-.743-1.73-1.2-3.26-1.2H6.745zm0 .264h6.232c1.477 0 2.437.432 3.064 1.116.634.69.954 1.53.954 3.062v6.174c0 1.251-.322 2.134-.954 2.822-.627.684-1.587 1.114-3.064 1.114H5.359c-1.477 0-2.437-.43-3.064-1.114-.625-.682-.973-1.675-.973-2.822V5.26c0-1.148.348-2.14.973-2.822.627-.684 1.587-1.116 3.064-1.116z" fill="url(#prefix__d)"/></g><g transform="matrix(.5 0 0 .5 0 -1)"><path d="M40 32h48a8 8 0 018 8v16H32V40a8 8 0 018-8z" fill="#fff" opacity=".9"/><path d="M32 56h64v40a12 12 0 01-12 12H44a12 12 0 01-12-12z" fill="#fdfdfd"/><path d="M48 72h32v12H48z" fill="#3584e4"/><circle cx="64" cy="96" r="6" fill="#3584e4"/></g>
 </svg>

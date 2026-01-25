@@ -61,9 +61,10 @@ namespace AppManager {
             metadata = new AppImageMetadata(File.new_for_path(path));
             resolved_app_name = extract_app_name();
             
-            // Clean up orphaned records early (apps deleted outside the manager)
-            // This ensures history is properly saved before we check for existing installations
-            registry.reconcile_with_filesystem();
+            // Note: We intentionally do NOT call reconcile_with_filesystem() here.
+            // Reconciling on every DropWindow open can race with ongoing installs in other windows
+            // and cause apps to be incorrectly marked as orphaned. Reconcile is called on app
+            // launch and on manual refresh, which is sufficient.
             
             build_ui();
             check_compatibility();
@@ -751,8 +752,8 @@ namespace AppManager {
                     if (desktop_info.name != null && desktop_info.name.strip() != "") {
                         resolved = desktop_info.name.strip();
                     }
-                    if (desktop_info.version != null) {
-                        resolved_app_version = desktop_info.version;
+                    if (desktop_info.appimage_version != null) {
+                        resolved_app_version = desktop_info.appimage_version;
                     }
                     is_terminal_app = desktop_info.terminal;
                 }

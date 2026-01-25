@@ -3,3 +3,15 @@ option('bundle_dwarfs',
   value: true,
   description: 'Bundle DwarFS tools (dwarfsextract, dwarfsck) during build'
 )
+
+option('bundle_zsync',
+  type: 'boolean',
+  value: true,
+  description: 'Bundle zsync2 tool for delta updates during build'
+)
+
+option('bundle_7z',
+  type: 'boolean',
+  value: true,
+  description: 'Bundle 7-Zip (7z) tool for AppImage extraction during build'
+)

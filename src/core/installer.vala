@@ -48,6 +48,10 @@ namespace AppManager.Core {
             InstallMode mode = override_mode;
 
             var record = new InstallationRecord(metadata.checksum, metadata.display_name, mode);
+            
+            // Mark as in-flight immediately to prevent reconcile from interfering
+            registry.mark_in_flight(record.id);
+            
             record.source_path = metadata.path;
             record.source_checksum = metadata.checksum;
             
@@ -90,9 +94,14 @@ namespace AppManager.Core {
                 debug("Installer: calling registry.register() for %s", record.name);
                 registry.register(record);
                 debug("Installer: registry.register() completed");
+                
+                // Update MIME database so file associations work
+                update_desktop_database();
+                
                 return record;
             } catch (Error e) {
-                // Cleanup on failure
+                // Cleanup on failure and clear in-flight flag
+                registry.clear_in_flight(record.id);
                 cleanup_failed_installation(record);
                 throw e;
             }
@@ -267,8 +276,8 @@ namespace AppManager.Core {
                 if (desktop_entry.name != null && desktop_entry.name.strip() != "") {
                     desktop_name = desktop_entry.name.strip();
                 }
-                if (desktop_entry.version != null) {
-                    desktop_version = desktop_entry.version;
+                if (desktop_entry.appimage_version != null) {
+                    desktop_version = desktop_entry.appimage_version;
                 }
                 
                 // Fall back to metainfo if no version from desktop entry
@@ -337,6 +346,26 @@ namespace AppManager.Core {
                 var original_homepage = desktop_entry.appimage_homepage;
                 var original_update_url = desktop_entry.appimage_update_url;
                 
+                // Check for zsync update info from .upd_info ELF section
+                // If present and is zsync format, store it for delta updates
+                string? zsync_info = null;
+                if (metadata.update_info != null && metadata.update_info.strip() != "") {
+                    var update_info = metadata.update_info.strip();
+                    // Check if it's a zsync format (gh-releases-zsync|... or zsync|...)
+                    if (update_info.has_prefix("gh-releases-zsync|") || update_info.has_prefix("zsync|")) {
+                        zsync_info = update_info;
+                        // Use normalized URL as the display update link
+                        original_update_url = Updater.normalize_update_url(update_info);
+                        // If web page is blank, use the normalized zsync URL as web page
+                        if (original_homepage == null || original_homepage.strip() == "") {
+                            original_homepage = original_update_url;
+                        }
+                    } else {
+                        // Not zsync, use as regular update URL
+                        original_update_url = update_info;
+                    }
+                }
+                
                 var exec_value = desktop_entry.exec;
                 var original_exec_args = exec_value != null ? DesktopEntry.extract_exec_arguments(exec_value) : null;
                 resolved_entry_exec = exec_value != null ? DesktopEntry.resolve_exec_from_desktop(exec_value, effective_app_run) : null;
@@ -344,13 +373,9 @@ namespace AppManager.Core {
                 // Derive icon name without path and extension
                 var icon_name_for_desktop = derive_icon_name(original_icon_name, final_slug);
                 
-                // Install icon to appropriate directory based on format:
-                // - SVG icons go to hicolor/scalable/apps/ (freedesktop.org spec, found by GTK theme)
-                // - PNG icons go to flat icons/ dir (loaded by file path)
+                // Install icon to flat ~/.local/share/icons directory
                 var icon_extension = detect_icon_extension(icon_path);
-                var is_svg = icon_extension.down() == ".svg";
-                var icon_target_dir = is_svg ? AppPaths.scalable_icons_dir : AppPaths.icons_dir;
-                var stored_icon = Path.build_filename(icon_target_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
+                var stored_icon = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, icon_extension));
                 Utils.FileUtils.file_copy(icon_path, stored_icon);
                 
                 // Derive fallback StartupWMClass from bundled desktop file name (without .desktop extension)
@@ -363,6 +388,7 @@ namespace AppManager.Core {
                 record.original_commandline_args = original_exec_args;
                 record.original_update_link = original_update_url;
                 record.original_web_page = original_homepage;
+                record.zsync_update_info = zsync_info;  // Store zsync info if present
                 
                 // For fresh install with history (reinstall), use effective values (considers CLEARED_VALUE)
                 var effective_icon = record.get_effective_icon_name() ?? icon_name_for_desktop;
@@ -373,7 +399,9 @@ namespace AppManager.Core {
                 var effective_web_page = record.get_effective_web_page();
                 
                 var desktop_contents = rewrite_desktop(desktop_path, exec_path, record, is_terminal_app, final_slug, is_upgrade, effective_icon, effective_keywords, effective_wmclass, effective_args, effective_update_link, effective_web_page);
-                var desktop_filename = "%s-%s.desktop".printf(DESKTOP_FILE_PREFIX, final_slug);
+                
+                // Preserve original bundled desktop filename for proper desktop integration
+                var desktop_filename = Path.get_basename(desktop_path);
                 var desktop_destination = Path.build_filename(AppPaths.desktop_dir, desktop_filename);
                 Utils.FileUtils.ensure_parent(desktop_destination);
                 
@@ -395,20 +423,18 @@ namespace AppManager.Core {
 
                 // original_* values were already set above before get_effective_* calls
 
-                // Create symlink for terminal applications or if it's AppManager itself
-                if (is_terminal_app || record.original_startup_wm_class == Core.APPLICATION_ID) {
-                    progress("Creating symlink for application…");
-                    var symlink_name = final_slug;
+                // Create symlink for all applications by default (improves compatibility)
+                progress("Creating symlink for application…");
+                var symlink_name = final_slug;
 
-                    if (resolved_entry_exec != null && resolved_entry_exec.strip() != "") {
-                        symlink_name = Path.get_basename(resolved_entry_exec.strip());
-                    }
-
-                    if (record.original_startup_wm_class == Core.APPLICATION_ID) {
-                        symlink_name = "app-manager";
-                    }
-                    record.bin_symlink = create_bin_symlink(exec_path, symlink_name);
+                if (resolved_entry_exec != null && resolved_entry_exec.strip() != "") {
+                    symlink_name = Path.get_basename(resolved_entry_exec.strip());
                 }
+
+                if (record.original_startup_wm_class == Core.APPLICATION_ID) {
+                    symlink_name = "app-manager";
+                }
+                record.bin_symlink = create_bin_symlink(exec_path, symlink_name);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
@@ -419,6 +445,13 @@ namespace AppManager.Core {
 
         private void uninstall_sync(InstallationRecord record) throws Error {
             try {
+                // Mark as in-flight and unregister FIRST to prevent reconcile race conditions
+                // This ensures the record is removed from registry before the file is deleted,
+                // so DirectoryMonitor won't see it as orphaned during the deletion.
+                registry.mark_in_flight(record.id);
+                registry.unregister(record.id);
+                
+                // Now safely delete the files
                 var installed_file = File.new_for_path(record.installed_path);
                 if (installed_file.query_exists()) {
                     if (installed_file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
@@ -436,8 +469,12 @@ namespace AppManager.Core {
                 if (record.bin_symlink != null && File.new_for_path(record.bin_symlink).query_exists()) {
                     File.new_for_path(record.bin_symlink).delete(null);
                 }
-                registry.unregister(record.id);
+                
+                // Update MIME database after removing desktop file
+                update_desktop_database();
             } catch (Error e) {
+                // Clear in-flight flag on error
+                registry.clear_in_flight(record.id);
                 throw new InstallerError.UNINSTALL_FAILED(e.message);
             }
         }
@@ -546,6 +583,10 @@ namespace AppManager.Core {
             
             // Remove TryExec
             entry.remove_key("TryExec");
+            
+            // Disable DBusActivatable - AppImages don't have D-Bus service files,
+            // so we must force the launcher to use Exec= instead of D-Bus activation
+            entry.remove_key("DBusActivatable");
             
             // Add Uninstall action block
             var uninstall_exec = build_uninstall_exec(record.installed_path);
@@ -937,6 +978,24 @@ namespace AppManager.Core {
                 entry.save();
             } catch (Error e) {
                 warning("Failed to sanitize uninstall action for %s: %s", record.name, e.message);
+            }
+        }
+
+        /**
+         * Updates the MIME database and desktop file cache so that file associations work.
+         * Runs update-desktop-database on ~/.local/share/applications.
+         */
+        private void update_desktop_database() {
+            try {
+                string[] argv = { "update-desktop-database", AppPaths.desktop_dir };
+                int exit_status;
+                Process.spawn_sync(null, argv, null, SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
+                if (exit_status != 0) {
+                    debug("update-desktop-database returned non-zero exit status: %d", exit_status);
+                }
+            } catch (Error e) {
+                // update-desktop-database may not be available on all systems
+                debug("Failed to run update-desktop-database: %s", e.message);
             }
         }
     }

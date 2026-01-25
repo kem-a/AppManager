@@ -164,19 +164,9 @@ namespace AppManager.Utils {
                     return Gdk.Texture.from_file(file);
                 }
                 
-                // Fallback: check both icon locations for backward compatibility
-                // Icons may be in flat icons/ dir or hicolor/scalable/apps/
+                // Fallback: check flat icons directory
                 var icon_basename = file.get_basename();
                 var icons_base = Path.build_filename(Environment.get_user_data_dir(), "icons");
-                
-                // Try hicolor/scalable/apps/ location
-                var scalable_path = Path.build_filename(icons_base, "hicolor", "scalable", "apps", icon_basename);
-                var scalable_file = File.new_for_path(scalable_path);
-                if (scalable_file.query_exists()) {
-                    return Gdk.Texture.from_file(scalable_file);
-                }
-                
-                // Try flat icons/ location
                 var flat_path = Path.build_filename(icons_base, icon_basename);
                 var flat_file = File.new_for_path(flat_path);
                 if (flat_file.query_exists()) {
