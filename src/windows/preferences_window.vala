@@ -38,7 +38,7 @@ namespace AppManager {
             // Add log button to header
             var log_button = new Gtk.Button.from_icon_name("text-x-generic-symbolic");
             log_button.valign = Gtk.Align.CENTER;
-            log_button.add_css_class("flat");
+            // log_button.add_css_class("flat");
             log_button.tooltip_text = I18n.tr("Open update log");
             var log_file = File.new_for_path(AppPaths.updates_log_file);
             log_button.sensitive = log_file.query_exists();

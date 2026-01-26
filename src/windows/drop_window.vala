@@ -149,7 +149,7 @@ namespace AppManager {
             var app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true);
             drag_box.append(app_column);
 
-            arrow_icon = new Gtk.Image.from_icon_name("pan-end-symbolic");
+            arrow_icon = new Gtk.Image.from_icon_name("go-next-symbolic");
             arrow_icon.set_pixel_size(48);
             arrow_icon.set_size_request(48, 48);
             arrow_icon.halign = Gtk.Align.CENTER;

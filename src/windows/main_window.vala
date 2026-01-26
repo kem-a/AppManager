@@ -125,7 +125,7 @@ namespace AppManager {
             refresh_button = new Gtk.Button();
             refresh_button.icon_name = "view-refresh-symbolic";
             refresh_button.tooltip_text = I18n.tr("Refresh app list");
-            refresh_button.add_css_class("flat");
+            // refresh_button.add_css_class("flat");
             refresh_button.clicked.connect(on_refresh_clicked);
             apps_group.set_header_suffix(refresh_button);
             
@@ -756,7 +756,7 @@ namespace AppManager {
                 cancel_button = new Gtk.Button();
                 cancel_button.set_icon_name("process-stop-symbolic");
                 cancel_button.set_tooltip_text(I18n.tr("Cancel update"));
-                cancel_button.add_css_class("flat");
+                // cancel_button.add_css_class("flat");
                 cancel_button.set_visible(false);
                 cancel_button.clicked.connect(handle_cancel_clicked);
             }
