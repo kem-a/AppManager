@@ -24,7 +24,8 @@ for app in "$APPS_DIR"/*; do
         fi
         
         echo "Uninstalling: $appname"
-        app-manager --uninstall "$appname"
+        # Pass the full path, not just the filename
+        app-manager --uninstall "$app"
         ((count++))
     fi
 done

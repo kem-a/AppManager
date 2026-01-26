@@ -316,6 +316,34 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         /**
+         * Checks for staged updates on login and sends a notification if auto-update is enabled.
+         * This is called when the background daemon starts (on system login).
+         */
+        private void check_staged_updates_on_login() {
+            if (!settings.get_boolean("auto-update-apps")) {
+                log_debug("background daemon: auto-update disabled, skipping staged updates check on login");
+                return;
+            }
+
+            // Reload staged updates from disk
+            staged_updates.load();
+
+            if (staged_updates.has_updates()) {
+                int count = staged_updates.count();
+                var app_names = new Gee.ArrayList<string>();
+                
+                foreach (var update in staged_updates.list()) {
+                    app_names.add(update.record_name);
+                }
+
+                log_debug("background daemon: found %d staged update(s) on login, sending notification".printf(count));
+                send_updates_notification(count, app_names);
+            } else {
+                log_debug("background daemon: no staged updates found on login");
+            }
+        }
+
+        /**
          * Handles notification action invocations.
          * Opens AppManager when user clicks the notification.
          */
@@ -373,6 +401,9 @@ X-XDP-Autostart=com.github.AppManager
          */
         public void run_daemon() {
             log_debug("background daemon: starting persistent service");
+
+            // On login, check for staged updates and notify if auto-update is enabled
+            check_staged_updates_on_login();
 
             // Check immediately on startup if interval has elapsed
             if (should_check_now()) {
