@@ -37,7 +37,6 @@ namespace AppManager {
         private Gtk.SearchEntry? search_entry;
         private GLib.SimpleActionGroup? window_actions;
         private Gtk.MenuButton? main_menu_button;
-        private Gtk.Button? refresh_button;
         private Adw.Banner? fuse_banner;
         private string current_search_query = "";
         private bool has_installations = true;
@@ -120,14 +119,6 @@ namespace AppManager {
 
             apps_group = new Adw.PreferencesGroup();
             apps_group.title = I18n.tr("My Apps");
-            
-            // Add refresh button next to title
-            refresh_button = new Gtk.Button();
-            refresh_button.icon_name = "view-refresh-symbolic";
-            refresh_button.tooltip_text = I18n.tr("Refresh app list");
-            refresh_button.add_css_class("flat");
-            refresh_button.clicked.connect(on_refresh_clicked);
-            apps_group.set_header_suffix(refresh_button);
             
             general_page.add(apps_group);
 
@@ -632,40 +623,6 @@ namespace AppManager {
             }
         }
 
-        private void on_refresh_clicked() {
-            debug("Refresh button clicked, syncing with filesystem");
-
-            var before_count = registry.list().length;
-
-            // Reload from disk so installs done by another process show up.
-            registry.reload(false);
-
-            // Then reconcile to drop entries whose files were deleted manually.
-            var orphaned = registry.reconcile_with_filesystem();
-
-            var after_count = registry.list().length;
-            var added = after_count - before_count;
-
-            // Always refresh the UI even when the registry didn't emit a signal.
-            refresh_installations();
-
-            if (added > 0 && orphaned.size > 0) {
-                add_toast(I18n.tr("Refreshed: added %d, removed %d").printf(added, orphaned.size));
-            } else if (added > 0) {
-                var message = added == 1
-                    ? I18n.tr("Found 1 new app")
-                    : I18n.tr("Found %d new apps").printf(added);
-                add_toast(message);
-            } else if (orphaned.size > 0) {
-                var message = orphaned.size == 1
-                    ? I18n.tr("Removed 1 orphaned app from registry")
-                    : I18n.tr("Removed %d orphaned apps from registry").printf(orphaned.size);
-                add_toast(message);
-            } else {
-                add_toast(I18n.tr("App list is up to date"));
-            }
-        }
-
         private void setup_window_actions() {
             var search_action = new GLib.SimpleAction("toggle_search", null);
             search_action.activate.connect(() => {
@@ -676,12 +633,6 @@ namespace AppManager {
             var check_updates_action = new GLib.SimpleAction("check_updates", null);
             check_updates_action.activate.connect(on_check_updates_accel);
             add_window_action(check_updates_action);
-
-            var refresh_action = new GLib.SimpleAction("refresh", null);
-            refresh_action.activate.connect(() => {
-                on_refresh_clicked();
-            });
-            add_window_action(refresh_action);
 
             var show_menu_action = new GLib.SimpleAction("show_menu", null);
             show_menu_action.activate.connect(() => {
@@ -1210,7 +1161,6 @@ namespace AppManager {
                     window_group.title = I18n.tr("Window");
                 }
                 assign_shortcut_title(builder, "shortcut_check_updates", I18n.tr("Check for updates"));
-                assign_shortcut_title(builder, "shortcut_refresh", I18n.tr("Refresh app list"));
                 assign_shortcut_title(builder, "shortcut_main_menu", I18n.tr("Show main menu"));
                 assign_shortcut_title(builder, "shortcut_search", I18n.tr("Search"));
                 assign_shortcut_title(builder, "shortcut_show_overlay", I18n.tr("Show shortcuts"));

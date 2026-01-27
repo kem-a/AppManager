@@ -1,7 +1,7 @@
 namespace AppManager.Core {
     /**
-     * Monitors the Applications directory and extracted apps directory
-     * for manual file deletions and changes.
+     * Monitors the Applications directory, extracted apps directory,
+     * and the registry file for changes.
      * 
      * Note: This monitor is careful to avoid race conditions with the install process.
      * When a file deletion is detected, we check if the app is "in-flight" (being 
@@ -11,6 +11,7 @@ namespace AppManager.Core {
     public class DirectoryMonitor : Object {
         private FileMonitor? applications_monitor;
         private FileMonitor? extracted_monitor;
+        private FileMonitor? registry_file_monitor;
         private InstallationRegistry registry;
         
         public signal void app_deleted(string path);
@@ -38,6 +39,14 @@ namespace AppManager.Core {
                 );
                 extracted_monitor.changed.connect(on_extracted_changed);
                 
+                // Monitor registry file for changes by other processes
+                var registry_file = File.new_for_path(AppPaths.registry_file);
+                registry_file_monitor = registry_file.monitor_file(
+                    FileMonitorFlags.NONE,
+                    null
+                );
+                registry_file_monitor.changed.connect(on_registry_file_changed);
+                
                 debug("Directory monitoring started");
             } catch (Error e) {
                 warning("Failed to start directory monitoring: %s", e.message);
@@ -53,10 +62,23 @@ namespace AppManager.Core {
                 extracted_monitor.cancel();
                 extracted_monitor = null;
             }
+            if (registry_file_monitor != null) {
+                registry_file_monitor.cancel();
+                registry_file_monitor = null;
+            }
             debug("Directory monitoring stopped");
         }
         
+        private void on_registry_file_changed(File file, File? other_file, FileMonitorEvent event_type) {
+            if (event_type != FileMonitorEvent.CHANGED && event_type != FileMonitorEvent.CHANGES_DONE_HINT) {
+                return;
+            }
+            debug("Registry file changed by another process, reloading");
+            registry.reload(true);
+        }
+        
         private void on_applications_changed(File file, File? other_file, FileMonitorEvent event_type) {
+            // Only handle deletions - additions are detected via registry file monitoring
             if (event_type != FileMonitorEvent.DELETED && event_type != FileMonitorEvent.MOVED_OUT) {
                 return;
             }

@@ -143,14 +143,12 @@ Examples:
             string[] close_accels = { "<Primary>w" };
             string[] search_accels = { "<Primary>f" };
             string[] check_updates_accels = { "<Primary>u" };
-            string[] refresh_accels = { "<Primary>r" };
             string[] menu_accels = { "F10" };
             this.set_accels_for_action("app.show_shortcuts", shortcut_accels);
             this.set_accels_for_action("app.show_preferences", preferences_accels);
             this.set_accels_for_action("app.close_window", close_accels);
             this.set_accels_for_action("win.toggle_search", search_accels);
             this.set_accels_for_action("win.check_updates", check_updates_accels);
-            this.set_accels_for_action("win.refresh", refresh_accels);
             this.set_accels_for_action("win.show_menu", menu_accels);
         }
 
