@@ -1293,12 +1293,55 @@ namespace AppManager.Core {
             var zsync_source = source as ZsyncDirectSource;
             var zsync_url = zsync_source.zsync_url;
             
-            // Try to get version info for better update messages
+            // Get version info for checking and display
             string? new_version = zsync_source.remote_version;
             if (new_version == null || new_version.strip() == "") {
                 var zsync_info = fetch_zsync_file_info(zsync_url, null);
                 if (zsync_info != null && zsync_info.version != null) {
                     new_version = zsync_info.version;
+                }
+            }
+            
+            // Check if update is actually needed before downloading
+            var current_version = record.version;
+            if (new_version != null && new_version.strip() != "") {
+                // Compare versions if both are available
+                if (current_version != null && current_version.strip() != "") {
+                    var cmp = compare_versions(new_version, current_version);
+                    if (cmp <= 0) {
+                        // Remote version is same or older than current - skip
+                        record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                        log_update_event(record, "SKIP", "already current");
+                        return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
+                    }
+                }
+            } else {
+                // Fallback to fingerprint comparison for zsync URLs without version info
+                try {
+                    var message = send_head(zsync_url, cancellable);
+                    var fingerprint = build_direct_fingerprint(message);
+                    
+                    if (fingerprint != null) {
+                        var stored = get_stored_fingerprint(record);
+                        
+                        if (stored == null) {
+                            // First time: record baseline fingerprint and skip
+                            store_fingerprint(record, message);
+                            registry.persist(false);
+                            record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                            log_update_event(record, "SKIP", "baseline recorded");
+                            return new UpdateResult(record, UpdateStatus.SKIPPED, _("Baseline recorded"), fingerprint, UpdateSkipReason.ALREADY_CURRENT);
+                        }
+                        
+                        if (stored == fingerprint) {
+                            record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                            log_update_event(record, "SKIP", "already current");
+                            return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), fingerprint, UpdateSkipReason.ALREADY_CURRENT);
+                        }
+                    }
+                } catch (Error e) {
+                    // Non-fatal: continue with update attempt if fingerprint check fails
+                    warning("Failed to check zsync fingerprint for %s: %s", record.name, e.message);
                 }
             }
             
