@@ -27,6 +27,7 @@ namespace AppManager {
         private Gtk.Box drag_box;
         private Gtk.Spinner drag_spinner;
         private Adw.Banner incompatibility_banner;
+        private Adw.Banner architecture_banner;
         private Adw.Banner verification_banner;
         private Gtk.Label subtitle;
         private string appimage_path;
@@ -98,6 +99,16 @@ namespace AppManager {
                 this.close();
             });
             toolbar_view.add_top_bar(incompatibility_banner);
+            
+            // Architecture mismatch banner
+            architecture_banner = new Adw.Banner("");
+            architecture_banner.button_label = _("Close");
+            architecture_banner.use_markup = false;
+            architecture_banner.revealed = false;
+            architecture_banner.button_clicked.connect(() => {
+                this.close();
+            });
+            toolbar_view.add_top_bar(architecture_banner);
             
             // Verification failed banner
             verification_banner = new Adw.Banner(_("SHA256 hash does not match. Verification failed."));
@@ -297,6 +308,18 @@ namespace AppManager {
                 incompatibility_banner.revealed = true;
                 subtitle.set_text(_("Missing required files (AppRun, .desktop, or icon)"));
                 drag_box.set_sensitive(false);
+                verify_button.set_sensitive(false);
+                return;
+            }
+            
+            // Check architecture compatibility
+            if (!metadata.is_architecture_compatible()) {
+                var appimage_arch = metadata.architecture ?? _("unknown");
+                architecture_banner.title = _("This app is built for %s and cannot run here").printf(appimage_arch);
+                architecture_banner.revealed = true;
+                subtitle.set_text(_("Architecture mismatch"));
+                drag_box.set_sensitive(false);
+                verify_button.set_sensitive(false);
             }
         }
 

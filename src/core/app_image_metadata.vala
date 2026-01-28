@@ -7,6 +7,7 @@ namespace AppManager.Core {
         public bool is_executable { get; private set; }
         public string checksum { get; private set; }
         public string? update_info { get; private set; }
+        public string? architecture { get; private set; }
 
         public AppImageMetadata(File file) throws Error {
             this.file = file;
@@ -17,6 +18,7 @@ namespace AppManager.Core {
             checksum = Utils.FileUtils.compute_checksum(file.get_path());
             is_executable = detect_executable();
             update_info = extract_update_info(file.get_path());
+            architecture = detect_architecture(file.get_path());
         }
 
         /**
@@ -139,6 +141,58 @@ namespace AppManager.Core {
             } catch (Error e) {
                 warning("Failed to query file mode: %s", e.message);
                 return false;
+            }
+        }
+
+        /**
+         * Detect the architecture of an AppImage by reading the ELF e_machine field.
+         * Returns "x86_64" or "aarch64", null for other/unknown architectures.
+         */
+        private static string? detect_architecture(string appimage_path) {
+            try {
+                var file = File.new_for_path(appimage_path);
+                var stream = file.read();
+                var data = new DataInputStream(stream);
+                data.byte_order = DataStreamByteOrder.LITTLE_ENDIAN;
+
+                // Read ELF magic and verify
+                uint8[] elf_magic = new uint8[4];
+                stream.read(elf_magic);
+                if (elf_magic[0] != 0x7F || elf_magic[1] != 'E' || elf_magic[2] != 'L' || elf_magic[3] != 'F') {
+                    return null;
+                }
+
+                // e_machine is at offset 18
+                stream.seek(18, SeekType.SET);
+                uint16 e_machine = data.read_uint16();
+
+                switch (e_machine) {
+                    case 0x3E:  // EM_X86_64
+                        return "x86_64";
+                    case 0xB7:  // EM_AARCH64
+                        return "aarch64";
+                    default:
+                        return null;
+                }
+            } catch (Error e) {
+                debug("Failed to detect architecture: %s", e.message);
+                return null;
+            }
+        }
+
+        /**
+         * Check if the AppImage architecture is compatible with the system.
+         */
+        public bool is_architecture_compatible() {
+            if (architecture == null) {
+                return true;
+            }
+            try {
+                string stdout_buf;
+                Process.spawn_command_line_sync("uname -m", out stdout_buf, null, null);
+                return architecture == stdout_buf.strip();
+            } catch (Error e) {
+                return true;
             }
         }
 
