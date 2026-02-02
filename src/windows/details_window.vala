@@ -271,14 +271,6 @@ namespace AppManager {
             update_row.title = _("Update Link");
             update_row.text = record.get_effective_update_link() ?? "";
             
-            // If app uses zsync updates, disable the row entirely (zsync info is embedded in AppImage)
-            var uses_zsync = record.zsync_update_info != null && record.zsync_update_info.strip() != "";
-            if (uses_zsync) {
-                update_row.sensitive = false;
-                update_row.set_tooltip_text(_("Update link is managed by zsync and cannot be edited"));
-                return update_row;
-            }
-            
             var restore_update_button = create_restore_button(record.custom_update_link != null);
             restore_update_button.clicked.connect(() => {
                 record.custom_update_link = null;
