@@ -531,7 +531,7 @@ Examples:
             }
 
             if (preferences_dialog == null) {
-                preferences_dialog = new PreferencesDialog(settings);
+                preferences_dialog = new PreferencesDialog(settings, registry, directory_monitor);
                 preferences_dialog.closed.connect(() => {
                     preferences_dialog = null;
                 });

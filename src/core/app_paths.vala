@@ -50,12 +50,41 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Returns the default applications directory (~/Applications).
+         * This is used as fallback when no custom path is configured.
+         */
+        public static string default_applications_dir {
+            owned get {
+                return Path.build_filename(Environment.get_home_dir(), APPLICATIONS_DIRNAME);
+            }
+        }
+
+        /**
+         * Returns the current applications directory.
+         * Uses custom path from GSettings if set, otherwise defaults to ~/Applications.
+         * Note: This does NOT create the directory - callers should use ensure_applications_dir()
+         * when they need to write to the directory.
+         */
         public static string applications_dir {
             owned get {
-                var dir = Path.build_filename(Environment.get_home_dir(), APPLICATIONS_DIRNAME);
-                DirUtils.create_with_parents(dir, 0755);
-                return dir;
+                var settings = new Settings(APPLICATION_ID);
+                var custom = settings.get_string("applications-dir");
+                if (custom != null && custom.strip() != "") {
+                    return custom.strip();
+                }
+                return default_applications_dir;
             }
+        }
+
+        /**
+         * Ensures the applications directory exists and returns its path.
+         * Creates the directory if it doesn't exist.
+         */
+        public static string ensure_applications_dir() {
+            var dir = applications_dir;
+            DirUtils.create_with_parents(dir, 0755);
+            return dir;
         }
 
         public static string extracted_root {

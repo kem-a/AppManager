@@ -3,6 +3,7 @@ src/application.vala
 src/main.vala
 src/core/background_update_service.vala
 src/core/installer.vala
+src/core/path_migration_service.vala
 src/core/updater.vala
 src/windows/details_window.vala
 src/windows/dialog_window.vala

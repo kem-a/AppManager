@@ -13,11 +13,36 @@ namespace AppManager.Core {
         private FileMonitor? extracted_monitor;
         private FileMonitor? registry_file_monitor;
         private InstallationRegistry registry;
+        private bool paused = false;
         
         public signal void changes_detected();
         
         public DirectoryMonitor(InstallationRegistry registry) {
             this.registry = registry;
+        }
+        
+        /**
+         * Pauses directory monitoring.
+         * Use this during migration operations to prevent false uninstallation triggers.
+         */
+        public void pause() {
+            paused = true;
+            debug("Directory monitoring paused");
+        }
+        
+        /**
+         * Resumes directory monitoring after a pause.
+         */
+        public void resume() {
+            paused = false;
+            debug("Directory monitoring resumed");
+        }
+        
+        /**
+         * Returns true if monitoring is currently paused.
+         */
+        public bool is_paused() {
+            return paused;
         }
         
         public void start() {
@@ -77,6 +102,11 @@ namespace AppManager.Core {
         }
         
         private void on_applications_changed(File file, File? other_file, FileMonitorEvent event_type) {
+            // Skip all events when paused (e.g., during migration)
+            if (paused) {
+                return;
+            }
+            
             // Only handle deletions - additions are detected via registry file monitoring
             if (event_type != FileMonitorEvent.DELETED && event_type != FileMonitorEvent.MOVED_OUT) {
                 return;
@@ -102,6 +132,11 @@ namespace AppManager.Core {
         }
         
         private void on_extracted_changed(File file, File? other_file, FileMonitorEvent event_type) {
+            // Skip all events when paused (e.g., during migration)
+            if (paused) {
+                return;
+            }
+            
             if (event_type != FileMonitorEvent.DELETED && event_type != FileMonitorEvent.MOVED_OUT) {
                 return;
             }

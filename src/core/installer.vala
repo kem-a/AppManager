@@ -668,8 +668,8 @@ namespace AppManager.Core {
         }
 
         private string move_portable_to_applications(string source_path, string app_name) throws Error {
-            DirUtils.create_with_parents(AppPaths.applications_dir, 0755);
-            var desired = Path.build_filename(AppPaths.applications_dir, app_name);
+            var apps_dir = AppPaths.ensure_applications_dir();
+            var desired = Path.build_filename(apps_dir, app_name);
             var final_path = Utils.FileUtils.unique_path(desired);
             var source = File.new_for_path(source_path);
             var dest = File.new_for_path(final_path);

@@ -7,9 +7,32 @@ namespace AppManager.Core {
         private HashTable<string, Json.Object> history;
         // Tracks apps currently being installed/uninstalled to skip during reconcile
         private HashTable<string, bool> in_flight;
+        // Flag to prevent reconciliation during path migration
+        private bool migration_in_progress = false;
         private File registry_file;
         private Mutex registry_mutex = Mutex();
         public signal void changed();
+
+        /**
+         * Sets the migration in progress flag.
+         * When true, reconcile_with_filesystem() will be skipped entirely.
+         */
+        public void set_migration_in_progress(bool in_progress) {
+            registry_mutex.lock();
+            migration_in_progress = in_progress;
+            debug("Migration in progress: %s", in_progress.to_string());
+            registry_mutex.unlock();
+        }
+
+        /**
+         * Returns true if migration is currently in progress.
+         */
+        public bool is_migration_in_progress() {
+            registry_mutex.lock();
+            var result = migration_in_progress;
+            registry_mutex.unlock();
+            return result;
+        }
 
         public InstallationRegistry() {
             records = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
@@ -291,6 +314,14 @@ namespace AppManager.Core {
          */
         public Gee.ArrayList<InstallationRecord> reconcile_with_filesystem() {
             registry_mutex.lock();
+            
+            // Skip reconciliation entirely during migration to prevent false uninstallations
+            if (migration_in_progress) {
+                debug("Skipping reconcile_with_filesystem: migration in progress");
+                registry_mutex.unlock();
+                return new Gee.ArrayList<InstallationRecord>();
+            }
+            
             var orphaned = new Gee.ArrayList<InstallationRecord>();
             var records_to_remove = new Gee.ArrayList<string>();
             

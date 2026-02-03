@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '2.4.1-beta',
+  version: '2.4.2-beta',
   meson_version: '>=0.64.0'
 )
 
@@ -87,6 +87,7 @@ core_sources = files(
   'src/core/staged_updates.vala',
   'src/core/i18n.vala',
   'src/core/version_utils.vala',
+  'src/core/path_migration_service.vala',
   'src/utils/file_utils.vala'
 )
 

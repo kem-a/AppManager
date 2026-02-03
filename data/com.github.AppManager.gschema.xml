@@ -41,5 +41,10 @@
       <summary>Remove checkered background from thumbnails</summary>
       <description>When enabled, AppManager writes a GTK CSS override to hide the checkered alpha pattern behind thumbnails and icons.</description>
     </key>
+    <key name="applications-dir" type="s">
+      <default>''</default>
+      <summary>Custom installation directory for AppImages</summary>
+      <description>Custom directory path for installed AppImages. When empty, uses the default ~/Applications directory.</description>
+    </key>
   </schema>
 </schemalist>

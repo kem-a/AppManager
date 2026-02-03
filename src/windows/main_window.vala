@@ -927,16 +927,20 @@ namespace AppManager {
             pending_update_keys.clear();
             // Clear staged updates since we're doing a fresh check
             staged_updates.clear();
-            staged_updates.save();
             
             int available = 0;
             foreach (var result in probes) {
                 if (result.has_update) {
                     pending_update_keys.add(record_state_key(result.record));
+                    // Stage the update so it persists across app restarts
+                    staged_updates.add(result.record.id, result.record.name, result.available_version);
                     available++;
                 }
                 sync_details_window_state(result.record);
             }
+            // Save staged updates after processing all results
+            staged_updates.save();
+            
             refresh_installations();
             if (available > 0) {
                 add_toast(_("%d app(s) have updates").printf(available));
