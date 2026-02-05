@@ -3,46 +3,19 @@ namespace AppManager.Core {
      * Monitors the Applications directory, extracted apps directory,
      * and the registry file for changes.
      * 
-     * Note: This monitor is careful to avoid race conditions with the install process.
-     * When a file deletion is detected, we check if the app is "in-flight" (being 
-     * installed/uninstalled) before taking any action. This prevents false positives
-     * when the installer intentionally deletes files.
+     * During migration, monitoring is completely stopped (not just paused).
+     * The migration_in_progress flag provides additional protection.
      */
     public class DirectoryMonitor : Object {
         private FileMonitor? applications_monitor;
         private FileMonitor? extracted_monitor;
         private FileMonitor? registry_file_monitor;
         private InstallationRegistry registry;
-        private bool paused = false;
         
         public signal void changes_detected();
         
         public DirectoryMonitor(InstallationRegistry registry) {
             this.registry = registry;
-        }
-        
-        /**
-         * Pauses directory monitoring.
-         * Use this during migration operations to prevent false uninstallation triggers.
-         */
-        public void pause() {
-            paused = true;
-            debug("Directory monitoring paused");
-        }
-        
-        /**
-         * Resumes directory monitoring after a pause.
-         */
-        public void resume() {
-            paused = false;
-            debug("Directory monitoring resumed");
-        }
-        
-        /**
-         * Returns true if monitoring is currently paused.
-         */
-        public bool is_paused() {
-            return paused;
         }
         
         public void start() {
@@ -71,7 +44,7 @@ namespace AppManager.Core {
                 );
                 registry_file_monitor.changed.connect(on_registry_file_changed);
                 
-                debug("Directory monitoring started");
+                debug("Directory monitoring started for %s", AppPaths.applications_dir);
             } catch (Error e) {
                 warning("Failed to start directory monitoring: %s", e.message);
             }
@@ -97,13 +70,19 @@ namespace AppManager.Core {
             if (event_type != FileMonitorEvent.CHANGED && event_type != FileMonitorEvent.CHANGES_DONE_HINT) {
                 return;
             }
+            
+            // Skip if migration is in progress
+            if (registry.is_migration_in_progress()) {
+                return;
+            }
+            
             debug("Registry file changed by another process, reloading");
             registry.reload(true);
         }
         
         private void on_applications_changed(File file, File? other_file, FileMonitorEvent event_type) {
-            // Skip all events when paused (e.g., during migration)
-            if (paused) {
+            // Skip if migration is in progress
+            if (registry.is_migration_in_progress()) {
                 return;
             }
             
@@ -121,7 +100,6 @@ namespace AppManager.Core {
             var record = registry.lookup_by_installed_path(path);
             if (record != null && record.mode == InstallMode.PORTABLE) {
                 // Skip if the app is in-flight (being installed/uninstalled)
-                // This prevents false positives when the installer intentionally deletes files
                 if (registry.is_in_flight(record.id)) {
                     debug("Ignoring deletion of in-flight app: %s", path);
                     return;
@@ -132,8 +110,8 @@ namespace AppManager.Core {
         }
         
         private void on_extracted_changed(File file, File? other_file, FileMonitorEvent event_type) {
-            // Skip all events when paused (e.g., during migration)
-            if (paused) {
+            // Skip if migration is in progress
+            if (registry.is_migration_in_progress()) {
                 return;
             }
             
@@ -147,12 +125,9 @@ namespace AppManager.Core {
             }
             
             // For extracted apps, we need to check if the parent directory was deleted
-            // The installed_path points to the extracted directory
             foreach (var record in registry.list()) {
                 if (record.mode == InstallMode.EXTRACTED) {
-                    // Check if the deleted path is part of this record's installation
                     if (path.has_prefix(record.installed_path) || path == record.installed_path) {
-                        // Skip if the app is in-flight (being installed/uninstalled)
                         if (registry.is_in_flight(record.id)) {
                             debug("Ignoring deletion of in-flight extracted app: %s", record.name);
                             break;

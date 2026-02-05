@@ -356,10 +356,10 @@ namespace AppManager {
         private void start_migration(string new_setting) {
             var migration_service = new PathMigrationService(registry, settings);
             
-            // CRITICAL: Pause directory monitoring to prevent false uninstallation triggers
-            // when files are moved out of the old directory
+            // STOP directory monitoring completely during migration
+            // This is simpler and more reliable than pausing
             if (directory_monitor != null) {
-                directory_monitor.pause();
+                directory_monitor.stop();
             }
             
             // Create progress dialog
@@ -381,9 +381,12 @@ namespace AppManager {
             });
 
             migration_service.migration_complete.connect((success, error_message) => {
-                // Resume directory monitoring regardless of success/failure
+                // Clear migration flag first
+                registry.set_migration_in_progress(false);
+                
+                // Start fresh directory monitoring on new paths
                 if (directory_monitor != null) {
-                    directory_monitor.resume();
+                    directory_monitor.start();
                 }
                 
                 progress_dialog.force_close();

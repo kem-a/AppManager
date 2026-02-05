@@ -98,7 +98,10 @@ Examples:
             // Initialize directory monitoring for manual deletions
             directory_monitor = new DirectoryMonitor(registry);
             directory_monitor.changes_detected.connect(() => {
-                // Reconcile registry with filesystem when changes are detected
+                // Skip if migration in progress
+                if (registry.is_migration_in_progress()) {
+                    return;
+                }
                 var orphaned = registry.reconcile_with_filesystem();
                 if (orphaned.size > 0) {
                     debug("Reconciled %d orphaned installation(s)", orphaned.size);
@@ -159,9 +162,12 @@ Examples:
 
         protected override void activate() {
             // Check integrity on app launch to detect manual deletions while app was closed
-            var orphaned = registry.reconcile_with_filesystem();
-            if (orphaned.size > 0) {
-                debug("Found %d orphaned installation(s) on launch", orphaned.size);
+            // Skip during migration to prevent false uninstallation
+            if (!registry.is_migration_in_progress()) {
+                var orphaned = registry.reconcile_with_filesystem();
+                if (orphaned.size > 0) {
+                    debug("Found %d orphaned installation(s) on launch", orphaned.size);
+                }
             }
 
             // Self-install: if running as AppImage and not yet installed, show installer

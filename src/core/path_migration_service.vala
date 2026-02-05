@@ -152,21 +152,24 @@ namespace AppManager.Core {
             }
 
             if (old_base == new_base) {
+                // Same path, nothing to do - clear flag since we won't emit signal
                 registry.set_migration_in_progress(false);
-                return; // Nothing to do
+                return;
             }
 
             var records = registry.list();
             if (records.length == 0) {
                 // No apps installed, just update the setting
                 settings.set_string("applications-dir", new_path.strip());
-                registry.set_migration_in_progress(false);
+                // DO NOT clear migration flag here - PreferencesDialog will clear it
+                // after receiving migration_complete and restarting monitors
                 migration_complete(true, null);
                 return;
             }
 
             // Create new directory
             if (DirUtils.create_with_parents(new_base, 0755) != 0) {
+                // Exception path - clear flag since no signal will be emitted
                 registry.set_migration_in_progress(false);
                 throw new MigrationError.PERMISSION_DENIED(_("Failed to create directory: %s").printf(new_base));
             }
@@ -174,6 +177,7 @@ namespace AppManager.Core {
             // Create .installed subdirectory for extracted apps
             var new_extracted_root = Path.build_filename(new_base, EXTRACTED_DIRNAME);
             if (DirUtils.create_with_parents(new_extracted_root, 0755) != 0) {
+                // Exception path - clear flag since no signal will be emitted
                 registry.set_migration_in_progress(false);
                 throw new MigrationError.PERMISSION_DENIED(_("Failed to create extracted directory: %s").printf(new_extracted_root));
             }
@@ -182,6 +186,7 @@ namespace AppManager.Core {
             int current = 0;
             var errors = new ArrayList<string>();
 
+            // Simple migration loop - the migration_in_progress flag protects us
             foreach (var record in records) {
                 current++;
                 double fraction = (double)current / (double)total;
@@ -203,14 +208,12 @@ namespace AppManager.Core {
             settings.set_string("applications-dir", new_path.strip());
 
             // Save registry with updated paths
-            registry.persist(true);
+            registry.persist(false);  // Don't notify - we'll do that after migration flag is cleared
 
             // Refresh desktop database so the system sees the updated paths
             update_desktop_database();
 
-            // Clear migration flag AFTER all operations complete
-            registry.set_migration_in_progress(false);
-
+            // Emit signal - PreferencesDialog will clear migration flag and restart monitors
             if (errors.size > 0) {
                 var error_msg = string.joinv("\n", errors.to_array());
                 migration_complete(false, _("Some apps failed to migrate:\n%s").printf(error_msg));
@@ -270,9 +273,10 @@ namespace AppManager.Core {
             // Update record path
             record.installed_path = new_path;
 
-            // Update desktop file Exec= line
+            // Update desktop file - replace old base directory with new base directory
+            // This updates both the app's Exec path AND the AppManager uninstall path
             if (record.desktop_file != null && File.new_for_path(record.desktop_file).query_exists()) {
-                update_desktop_file(record.desktop_file, old_path, new_path);
+                update_desktop_file(record.desktop_file, old_path, new_path, old_base, new_base);
             }
 
             // Update symlink if exists
@@ -308,23 +312,24 @@ namespace AppManager.Core {
             }
         }
 
-        private void update_desktop_file(string desktop_path, string old_path, string new_path) {
+        private void update_desktop_file(string desktop_path, string old_app_path, string new_app_path, string old_base, string new_base) {
             try {
                 uint8[] contents;
                 File.new_for_path(desktop_path).load_contents(null, out contents, null);
                 var content = (string)contents;
                 
-                debug("Checking desktop file %s for path replacement: %s -> %s", desktop_path, old_path, new_path);
-                
-                // Replace old path with new path throughout the file
-                // This handles Exec=, TryExec=, Path=, and X-AppImage-Uninstall= lines
-                var updated = content.replace(old_path, new_path);
+                // Replace old base directory with new base directory throughout the file
+                // This handles:
+                // - Exec= line (the app's own path)
+                // - Uninstall action (references AppManager's path in the same base directory)
+                // - Any other paths that reference the old installation directory
+                var updated = content.replace(old_base, new_base);
                 
                 if (updated != content) {
                     GLib.FileUtils.set_contents(desktop_path, updated);
-                    debug("Updated desktop file: %s (replaced %s with %s)", desktop_path, old_path, new_path);
+                    debug("Updated desktop file: %s (replaced %s with %s)", desktop_path, old_base, new_base);
                 } else {
-                    debug("No changes needed in desktop file: %s (path %s not found)", desktop_path, old_path);
+                    debug("No changes needed in desktop file: %s (base path %s not found)", desktop_path, old_base);
                 }
             } catch (Error e) {
                 warning("Failed to update desktop file %s: %s", desktop_path, e.message);
