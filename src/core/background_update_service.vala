@@ -48,6 +48,39 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         /**
+         * Updates the autostart desktop file after migration.
+         * The current executable path in memory still points to the old location,
+         * so we need to calculate the new path based on the migration paths.
+         */
+        public static void update_autostart_file_after_migration(string old_base, string new_base) {
+            var autostart_file = Path.build_filename(
+                Environment.get_user_config_dir(),
+                "autostart",
+                "com.github.AppManager.desktop"
+            );
+            
+            // Only update if autostart file exists
+            if (!FileUtils.test(autostart_file, FileTest.EXISTS)) {
+                return;
+            }
+            
+            try {
+                string contents;
+                FileUtils.get_contents(autostart_file, out contents);
+                
+                // Replace old base path with new base path in Exec line
+                var updated = contents.replace(old_base, new_base);
+                
+                if (updated != contents) {
+                    FileUtils.set_contents(autostart_file, updated);
+                    debug("Updated autostart file Exec path: %s -> %s", old_base, new_base);
+                }
+            } catch (Error e) {
+                warning("Failed to update autostart file: %s", e.message);
+            }
+        }
+
+        /**
          * Removes the autostart desktop file to disable background updates.
          * Public so PreferencesDialog can use it when the user disables auto-updates.
          */

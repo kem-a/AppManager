@@ -397,8 +397,10 @@ namespace AppManager {
                     directory_monitor.start();
                 }
                 
-                // Respawn background daemon if it was running before migration
+                // If background daemon was running, update autostart file and respawn
                 if (daemon_was_running) {
+                    // Update autostart Exec path to point to new location
+                    BackgroundUpdateService.update_autostart_file_after_migration(old_path, new_path);
                     BackgroundUpdateService.spawn_daemon();
                 }
                 
