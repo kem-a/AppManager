@@ -5,8 +5,11 @@
    viewBox="0 0 64 64"
    version="1.1"
    id="svg11"
-   sodipodi:docname="com.github.AppManager-v11.svg"
-   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="com.github.AppManager.svg"
+   inkscape:version="1.4.2 (ebf0e94, 2025-05-08)"
+   inkscape:export-filename="com.github.AppManager.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -22,14 +25,14 @@
      inkscape:deskcolor="#d1d1d1"
      showguides="true"
      inkscape:zoom="14.265625"
-     inkscape:cx="32.035049"
+     inkscape:cx="32.070099"
      inkscape:cy="32"
      inkscape:window-width="1920"
-     inkscape:window-height="1168"
+     inkscape:window-height="972"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg11" />
+     inkscape:current-layer="g2" />
   <defs
      id="defs6">
     <linearGradient
@@ -185,8 +188,8 @@
        inkscape:rounded="0"
        inkscape:randomized="0"
        d="M 65.069213,53.002386 38.654282,53.284079 51.617794,30.267231 Z"
-       inkscape:transform-center-x="-0.033599944"
-       inkscape:transform-center-y="-1.5463469"
-       transform="matrix(0.41321328,0,0,0.41321328,10.570037,8.8221781)" />
+       inkscape:transform-center-x="-0.031226795"
+       inkscape:transform-center-y="-1.4371596"
+       transform="matrix(0.38403643,0,0,0.38403643,12.06365,10.256841)" />
   </g>
 </svg>
