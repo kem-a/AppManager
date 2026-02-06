@@ -73,8 +73,8 @@ meson install -C build
 
 ## CLI helpers
 
-- Install an AppImage: `app-manager --install /path/to/app.AppImage`
-- Uninstall by path or checksum: `app-manager --uninstall /path/or/checksum`
+- Install an AppImage: `app-manager install /path/to/app.AppImage`
+- Uninstall by path or checksum: `app-manager uninstall /path/or/checksum`
 - Check if installed: `app-manager --is-installed /path/to/app.AppImage`
 - Run a background update check: `app-manager --background-update`
 - Show version or help: `app-manager --version` / `app-manager --help`

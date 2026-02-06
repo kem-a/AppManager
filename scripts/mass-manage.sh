@@ -51,7 +51,7 @@ install_apps() {
         if [ -f "$app" ]; then
             appname=$(basename "$app")
             echo "Installing: $appname"
-            app-manager --install "$app"
+            app-manager install "$app"
             ((count++))
         fi
     done
@@ -106,7 +106,7 @@ uninstall_apps() {
             fi
             
             echo "Uninstalling: $appname"
-            app-manager --uninstall "$app"
+            app-manager uninstall "$app"
             ((count++))
         fi
     done

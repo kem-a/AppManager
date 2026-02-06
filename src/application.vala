@@ -25,8 +25,8 @@ namespace AppManager {
             { "help", 'h', 0, OptionArg.NONE, ref opt_help, "Show help options", null },
             { "version", 0, 0, OptionArg.NONE, ref opt_version, "Display version number", null },
             { "background-update", 0, 0, OptionArg.NONE, ref opt_background_update, "Run background update check", null },
-            { "install", 0, 0, OptionArg.FILENAME, ref opt_install, "Install an AppImage from PATH", "PATH" },
-            { "uninstall", 0, 0, OptionArg.STRING, ref opt_uninstall, "Uninstall an AppImage (by path or checksum)", "PATH" },
+            { "install", 0, OptionFlags.HIDDEN, OptionArg.FILENAME, ref opt_install, null, "PATH" },
+            { "uninstall", 0, OptionFlags.HIDDEN, OptionArg.STRING, ref opt_uninstall, null, "PATH" },
             { "is-installed", 0, 0, OptionArg.FILENAME, ref opt_is_installed, "Check if an AppImage is installed", "PATH" },
             { null }
         };
@@ -41,6 +41,10 @@ namespace AppManager {
             add_main_option_entries(options);
             set_option_context_parameter_string("[FILE...]");
             set_option_context_summary("AppImage Manager - Manage and update AppImages on your system");
+            set_option_context_description("""Commands:
+  install PATH                Install an AppImage from PATH
+  uninstall PATH              Uninstall an AppImage (by path or checksum)
+""");
         }
 
         protected override int handle_local_options(GLib.VariantDict options) {
@@ -48,19 +52,21 @@ namespace AppManager {
                 print("""Usage:
   app-manager [OPTION...] [FILE...]
 
-Application Options:
+Commands:
+  install PATH                Install an AppImage from PATH
+  uninstall PATH              Uninstall an AppImage (by path or checksum)
+
+Options:
   -h, --help                  Show help options
   --version                   Display version number
   --background-update         Run background update check
-  --install PATH              Install an AppImage from PATH
-  --uninstall PATH            Uninstall an AppImage (by path or checksum)
   --is-installed PATH         Check if an AppImage is installed
 
 Examples:
   app-manager                             Launch the GUI
   app-manager app.AppImage                Open installer for app.AppImage
-  app-manager --install app.AppImage      Install app.AppImage
-  app-manager --uninstall app.AppImage    Uninstall app.AppImage
+  app-manager install app.AppImage        Install app.AppImage
+  app-manager uninstall app.AppImage      Uninstall app.AppImage
   app-manager --is-installed app.AppImage Check installation status
   app-manager --background-update         Run background update check
 
@@ -294,15 +300,25 @@ Examples:
 
             // Handle non-option arguments (file paths)
             var args = command_line.get_arguments();
+
+            // Support subcommand-style: app-manager install PATH / app-manager uninstall PATH
+            // (--install/--uninstall flags are handled by GLib option parser as hidden options)
+            if (args.length > 2 && opt_install == null && args[1] == "install") {
+                opt_install = args[2];
+            } else if (args.length > 2 && opt_uninstall == null && args[1] == "uninstall") {
+                opt_uninstall = args[2];
+            }
             debug("command_line: got %u args", args.length);
             for (int _k = 0; _k < args.length; _k++)
                 debug("command_line arg[%d] = %s", _k, args[_k]);
             for (int i = 1; i < args.length; i++) {
                 var arg = args[i];
-                // Skip already-processed option arguments
+                // Skip already-processed option arguments and subcommands
                 if (arg == "--install" || arg == "--uninstall" || arg == "--is-installed" ||
-                    arg == "--background-update" || arg == "--help" || arg == "-h" || arg == "--version") {
-                    if (arg == "--install" || arg == "--uninstall" || arg == "--is-installed") {
+                    arg == "--background-update" || arg == "--help" || arg == "-h" || arg == "--version" ||
+                    arg == "install" || arg == "uninstall") {
+                    if (arg == "--install" || arg == "--uninstall" || arg == "--is-installed" ||
+                        arg == "install" || arg == "uninstall") {
                         i++; // Skip the value
                     }
                     continue;
@@ -324,6 +340,14 @@ Examples:
 
             if (opt_install != null) {
                 try {
+                    // Check architecture compatibility before installing
+                    var metadata = new AppImageMetadata(File.new_for_path(opt_install));
+                    if (!metadata.is_architecture_compatible()) {
+                        var appimage_arch = metadata.architecture ?? "unknown";
+                        command_line.printerr("Install failed: This AppImage is built for %s and cannot run on this system\n", appimage_arch);
+                        return 2;
+                    }
+
                     // Check for existing installation to replace/upgrade
                     var existing = detect_existing_for_cli_install(opt_install);
                     InstallationRecord record;

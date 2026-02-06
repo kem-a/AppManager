@@ -622,7 +622,7 @@ namespace AppManager.Core {
                 }
             }
             
-            parts.add("--uninstall");
+            parts.add("uninstall");
             parts.add("\"%s\"".printf(Utils.FileUtils.escape_exec_arg(installed_path)));
             var builder = new StringBuilder();
             for (int i = 0; i < parts.size; i++) {
