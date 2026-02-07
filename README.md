@@ -85,41 +85,6 @@ AppManager supports multiple languages. Want to help translate to your language?
 
 Currently supported: German, Spanish, Estonian, Finnish, French, Italian, Japanese, Lithuanian, Latvian, Norwegian, Portuguese (Brazil), Swedish, Chinese (Simplified).
 
-## Minimum Requirements & Supported Distributions
-
-### Minimum Requirements
-
-| Component | Minimum Version |
-| --------- | --------------- |
-| libadwaita | >= 1.6 |
-| glibc | >= 2.38 |
-| GTK | 4.x |
-
-<details> <summary> <H3> Supported Distributions</H4><b> (click to open)</b> </summary>
-
-The following table shows compatibility with the top 10 most popular Linux distributions. Support depends on the availability of **libadwaita >= 1.6** and a compatible **glibc** version.
-
-| Distribution | Version | libadwaita | glibc | Supported |
-| ------------ | ------- | ---------- | ----- | --------- |
-| **Ubuntu** | 24.04 LTS (Noble) | 1.5 | 2.39 | ❌ |
-| **Ubuntu** | 24.10+ | 1.6+ | 2.40 | ✅ |
-| **Fedora** | 40+ | 1.6+ | 2.39+ | ✅ |
-| **Linux Mint** | 22+ | 1.5 | 2.39 | ❌ |
-| **Debian** | 12 (Bookworm) | 1.2 | 2.36 | ❌ |
-| **Debian** | 13 (Trixie/Testing) | 1.6+ | 2.40 | ✅ |
-| **Arch Linux** | Rolling | 1.6+ | 2.40+ | ✅ |
-| **Manjaro** | Rolling | 1.6+ | 2.40+ | ✅ |
-| **openSUSE Tumbleweed** | Rolling | 1.6+ | 2.40+ | ✅ |
-| **openSUSE Leap** | 15.6 | 1.4 | 2.38 | ❌ |
-| **Pop!_OS** | 24.04+ | 1.5 | 2.39 | ❌ |
-| **Zorin OS** | 17+ | 1.5 | 2.39 | ❌ |
-| **elementary OS** | 8+ | TBD | TBD | ⏳ |
-| **EndeavourOS** | Rolling | 1.6+ | 2.40+ | ✅ |
-
-> **Legend:** ✅ Supported | ❌ Not Supported | ⏳ Pending/TBD
-> **Note:** Rolling release distributions (Arch, Manjaro, openSUSE Tumbleweed, EndeavourOS) generally have the latest packages and are fully supported. Fixed-release distributions may need to wait for newer versions that include libadwaita >= 1.6.
-</details>
-
 ## License
 
 GPL-3.0-or-later. See [LICENSE](./LICENSE).

@@ -10,6 +10,9 @@ appimagetool/
 squashfs-root/
 squashfs-*.img
 build/
+build-anyimage/
+dist/
+AppDir/
 .directory
 *ns.md
 *RE.md

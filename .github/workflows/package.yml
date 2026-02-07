@@ -7,276 +7,57 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-x86_64:
+  build:
+    name: "Build AppImage (${{ matrix.arch }})"
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            arch: x86_64
+          - runs-on: ubuntu-24.04-arm
+            arch: aarch64
+    container: ghcr.io/pkgforge-dev/archlinux:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preparing Container
+        uses: pkgforge-dev/anylinux-setup-action@v1
+
+      - name: Build AnyLinux AppImage
+        run: sh scripts/make-anyimage.sh
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppManager-anylinux-${{ matrix.arch }}.AppImage
+          path: build-anyimage/dist/*.AppImage
+
+      - name: Upload zsync artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppManager-anylinux-${{ matrix.arch }}.AppImage.zsync
+          path: build-anyimage/dist/*.AppImage.zsync
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build]
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
-    container:
-      image: fedora:41
-    permissions:
-      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: AppManager-*
+          merge-multiple: true
 
-      - name: Install build dependencies
-        run: |
-          dnf install -y \
-            meson \
-            ninja-build \
-            gcc \
-            vala \
-            glib2-devel \
-            gtk4-devel \
-            libadwaita-devel \
-            json-glib-devel \
-            libgee-devel \
-            libsoup3-devel \
-            libportal-devel \
-            libportal-gtk4-devel \
-            desktop-file-utils \
-            chrpath \
-            jq \
-            p7zip \
-            curl \
-            file \
-            fuse \
-            fuse-libs \
-            zsync
-
-      - name: Install appimagetool
-        run: |
-          curl -Lo /usr/local/bin/appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-          chmod +x /usr/local/bin/appimagetool
-          # Extract appimagetool since FUSE may not work in container
-          cd /tmp
-          /usr/local/bin/appimagetool --appimage-extract
-          mv squashfs-root appimagetool-extracted
-          ln -sf /tmp/appimagetool-extracted/AppRun /usr/local/bin/appimagetool
-
-      - name: Configure
-        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true -Dbundle_zsync=true -Dbundle_7z=true
-
-      - name: Build
-        run: ninja -C build
-
-      - name: Stage install tree
-        run: |
-          DESTDIR="${GITHUB_WORKSPACE}/dist-root"
-          rm -rf "$DESTDIR"
-          mkdir -p "$DESTDIR"
-          meson install -C build --destdir "$DESTDIR"
-
-      - name: Capture project version
-        id: meta
-        run: |
-          VERSION=$(meson introspect build --projectinfo | jq -r '.version')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Build AppImage
-        env:
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          set -euo pipefail
-          DESTDIR="${GITHUB_WORKSPACE}/dist-root"
-          PACKAGE_DIR="${GITHUB_WORKSPACE}/packages"
-          APPDIR="${GITHUB_WORKSPACE}/AppDir"
-
-          rm -rf "$APPDIR"
-          mkdir -p "$APPDIR"
-          mkdir -p "$PACKAGE_DIR"
-
-          # Copy installed files
-          cp -a "$DESTDIR/usr" "$APPDIR/"
-
-          # Bundle shared libraries that may not be present on non-GNOME systems
-          # (e.g. KDE-based distros like CachyOS KDE)
-          mkdir -p "$APPDIR/usr/lib"
-          for lib in libgee-0.8.so libsoup-3.0.so; do
-            lib_path=$(ldd "$DESTDIR/usr/bin/app-manager" 2>/dev/null | grep "$lib" | awk '{print $3}' | head -1)
-            if [ -n "$lib_path" ] && [ -f "$lib_path" ]; then
-              cp -L "$lib_path" "$APPDIR/usr/lib/"
-              echo "Bundled: $lib → $(basename "$lib_path") ($lib_path)"
-            else
-              echo "Warning: $lib not found via ldd, skipping"
-            fi
-          done
-
-          # Create AppRun script
-          printf '%s\n' '#!/bin/bash' \
-            'HERE="$(dirname "$(readlink -f "$0")")"' \
-            'export APPDIR="$HERE"' \
-            'export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH:-}"' \
-            'export GSETTINGS_SCHEMA_DIR="$HERE/usr/share/glib-2.0/schemas:${GSETTINGS_SCHEMA_DIR:-}"' \
-            'export XDG_DATA_DIRS="$HERE/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"' \
-            'export PATH="$HERE/usr/bin:$PATH"' \
-            'exec "$HERE/usr/bin/app-manager" "$@"' > "$APPDIR/AppRun"
-          chmod +x "$APPDIR/AppRun"
-
-          # Desktop and icon at AppDir root
-          install -Dm644 "$DESTDIR/usr/share/applications/com.github.AppManager.desktop" "$APPDIR/com.github.AppManager.desktop"
-          install -Dm644 "$DESTDIR/usr/share/icons/hicolor/scalable/apps/com.github.AppManager.svg" "$APPDIR/com.github.AppManager.svg"
-
-          # Validate desktop file
-          desktop-file-validate "$APPDIR/com.github.AppManager.desktop" || true
-
-          # Remove rpath if present
-          chrpath -d "$APPDIR/usr/bin/app-manager" 2>/dev/null || true
-
-          # Build AppImage with embedded update information for zsync delta updates
-          UPDATE_INFO="gh-releases-zsync|kem-a|AppManager|latest|AppManager-*-x86_64.AppImage.zsync"
-          ARCH=x86_64 appimagetool --updateinformation "$UPDATE_INFO" "$APPDIR" "$PACKAGE_DIR/AppManager-${VERSION}-x86_64.AppImage"
-
-          # Generate zsync file for delta updates
-          cd "$PACKAGE_DIR"
-          zsyncmake -u "AppManager-${VERSION}-x86_64.AppImage" "AppManager-${VERSION}-x86_64.AppImage"
-
-      - name: Upload release packages
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Release AppImage
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            packages/AppManager-${{ steps.meta.outputs.version }}-x86_64.AppImage
-            packages/AppManager-${{ steps.meta.outputs.version }}-x86_64.AppImage.zsync
-
-      - name: Upload artifacts (for non-release builds)
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        uses: actions/upload-artifact@v4
-        with:
-          name: packages-x86_64
-          path: packages/*
-
-  build-aarch64:
-    runs-on: ubuntu-24.04-arm
-    container:
-      image: fedora:41
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install build dependencies
-        run: |
-          dnf install -y \
-            meson \
-            ninja-build \
-            gcc \
-            vala \
-            glib2-devel \
-            gtk4-devel \
-            libadwaita-devel \
-            json-glib-devel \
-            libgee-devel \
-            libsoup3-devel \
-            libportal-devel \
-            libportal-gtk4-devel \
-            desktop-file-utils \
-            chrpath \
-            jq \
-            p7zip \
-            curl \
-            file \
-            fuse \
-            fuse-libs \
-            zsync
-
-      - name: Install appimagetool
-        run: |
-          curl -Lo /usr/local/bin/appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-aarch64.AppImage"
-          chmod +x /usr/local/bin/appimagetool
-          # Extract appimagetool since FUSE may not work in container
-          cd /tmp
-          /usr/local/bin/appimagetool --appimage-extract
-          mv squashfs-root appimagetool-extracted
-          ln -sf /tmp/appimagetool-extracted/AppRun /usr/local/bin/appimagetool
-
-      - name: Configure
-        run: meson setup build --prefix=/usr -Dbundle_dwarfs=true -Dbundle_zsync=true -Dbundle_7z=true
-
-      - name: Build
-        run: ninja -C build
-
-      - name: Stage install tree
-        run: |
-          DESTDIR="${GITHUB_WORKSPACE}/dist-root"
-          rm -rf "$DESTDIR"
-          mkdir -p "$DESTDIR"
-          meson install -C build --destdir "$DESTDIR"
-
-      - name: Capture project version
-        id: meta
-        run: |
-          VERSION=$(meson introspect build --projectinfo | jq -r '.version')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Build AppImage
-        env:
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          set -euo pipefail
-          DESTDIR="${GITHUB_WORKSPACE}/dist-root"
-          PACKAGE_DIR="${GITHUB_WORKSPACE}/packages"
-          APPDIR="${GITHUB_WORKSPACE}/AppDir"
-
-          rm -rf "$APPDIR"
-          mkdir -p "$APPDIR"
-          mkdir -p "$PACKAGE_DIR"
-
-          # Copy installed files
-          cp -a "$DESTDIR/usr" "$APPDIR/"
-
-          # Bundle shared libraries that may not be present on non-GNOME systems
-          # (e.g. KDE-based distros like CachyOS KDE)
-          mkdir -p "$APPDIR/usr/lib"
-          for lib in libgee-0.8.so libsoup-3.0.so; do
-            lib_path=$(ldd "$DESTDIR/usr/bin/app-manager" 2>/dev/null | grep "$lib" | awk '{print $3}' | head -1)
-            if [ -n "$lib_path" ] && [ -f "$lib_path" ]; then
-              cp -L "$lib_path" "$APPDIR/usr/lib/"
-              echo "Bundled: $lib → $(basename "$lib_path") ($lib_path)"
-            else
-              echo "Warning: $lib not found via ldd, skipping"
-            fi
-          done
-
-          # Create AppRun script
-          printf '%s\n' '#!/bin/bash' \
-            'HERE="$(dirname "$(readlink -f "$0")")"' \
-            'export APPDIR="$HERE"' \
-            'export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH:-}"' \
-            'export GSETTINGS_SCHEMA_DIR="$HERE/usr/share/glib-2.0/schemas:${GSETTINGS_SCHEMA_DIR:-}"' \
-            'export XDG_DATA_DIRS="$HERE/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"' \
-            'export PATH="$HERE/usr/bin:$PATH"' \
-            'exec "$HERE/usr/bin/app-manager" "$@"' > "$APPDIR/AppRun"
-          chmod +x "$APPDIR/AppRun"
-
-          # Desktop and icon at AppDir root
-          install -Dm644 "$DESTDIR/usr/share/applications/com.github.AppManager.desktop" "$APPDIR/com.github.AppManager.desktop"
-          install -Dm644 "$DESTDIR/usr/share/icons/hicolor/scalable/apps/com.github.AppManager.svg" "$APPDIR/com.github.AppManager.svg"
-
-          # Validate desktop file
-          desktop-file-validate "$APPDIR/com.github.AppManager.desktop" || true
-
-          # Remove rpath if present
-          chrpath -d "$APPDIR/usr/bin/app-manager" 2>/dev/null || true
-
-          # Build AppImage with embedded update information for zsync delta updates
-          UPDATE_INFO="gh-releases-zsync|kem-a|AppManager|latest|AppManager-*-aarch64.AppImage.zsync"
-          ARCH=aarch64 appimagetool --updateinformation "$UPDATE_INFO" "$APPDIR" "$PACKAGE_DIR/AppManager-${VERSION}-aarch64.AppImage"
-
-          # Generate zsync file for delta updates
-          cd "$PACKAGE_DIR"
-          zsyncmake -u "AppManager-${VERSION}-aarch64.AppImage" "AppManager-${VERSION}-aarch64.AppImage"
-
-      - name: Upload release packages
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            packages/AppManager-${{ steps.meta.outputs.version }}-aarch64.AppImage
-            packages/AppManager-${{ steps.meta.outputs.version }}-aarch64.AppImage.zsync
-
-      - name: Upload artifacts (for non-release builds)
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        uses: actions/upload-artifact@v4
-        with:
-          name: packages-aarch64
-          path: packages/*
+            *.AppImage
+            *.AppImage.zsync
