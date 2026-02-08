@@ -9,11 +9,11 @@ namespace AppManager {
         private Gtk.Box action_box;
         private bool actions_initialized = false;
 
-        public DialogWindow(Application app, Gtk.Window parent, string title, Gtk.Image? icon = null) {
+        public DialogWindow(Application app, Gtk.Window? parent, string title, Gtk.Image? icon = null) {
             Object(application: app,
-                modal: true,
+                modal: (parent != null),
                 resizable: false,
-                destroy_with_parent: true,
+                destroy_with_parent: (parent != null),
                 width_request: 220,
                 default_width: 280);
 

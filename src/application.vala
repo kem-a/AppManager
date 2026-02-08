@@ -207,6 +207,11 @@ Examples:
                 return;
             }
             
+            if (settings.get_boolean("skip-drop-window")) {
+                show_quick_install_dialog(path);
+                return;
+            }
+            
             try {
                 debug("Opening drop window for %s", path);
                 var window = new DropWindow(this, registry, installer, settings, path);
@@ -220,6 +225,341 @@ Examples:
                 critical("Failed to open drop window: %s", e.message);
                 this.activate();
             }
+        }
+
+        /**
+         * Shows a direct install confirmation dialog, bypassing the drag-and-drop window.
+         */
+        private void show_quick_install_dialog(string appimage_path) {
+            AppImageMetadata metadata;
+            try {
+                metadata = new AppImageMetadata(File.new_for_path(appimage_path));
+            } catch (Error e) {
+                release_drop_window_lock(appimage_path);
+                critical("Failed to read AppImage metadata: %s", e.message);
+                return;
+            }
+
+            // Check compatibility
+            if (!AppImageAssets.check_compatibility(appimage_path)) {
+                var err_dialog = new Adw.AlertDialog(
+                    _("Incompatible AppImage"),
+                    _("This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."));
+                err_dialog.add_response("close", _("Close"));
+                err_dialog.present(this.get_active_window());
+                release_drop_window_lock(appimage_path);
+                return;
+            }
+
+            // Check architecture
+            if (!metadata.is_architecture_compatible()) {
+                var appimage_arch = metadata.architecture ?? _("unknown");
+                var err_dialog = new Adw.AlertDialog(
+                    _("Architecture Mismatch"),
+                    _("This app is built for %s and cannot run here").printf(appimage_arch));
+                err_dialog.add_response("close", _("Close"));
+                err_dialog.present(this.get_active_window());
+                release_drop_window_lock(appimage_path);
+                return;
+            }
+
+            // Extract app name and version from .desktop file
+            string resolved_name = metadata.display_name;
+            string? resolved_version = null;
+            string? temp_dir = null;
+            try {
+                temp_dir = Utils.FileUtils.create_temp_dir("appmgr-quick-");
+                var desktop_file = AppImageAssets.extract_desktop_entry(appimage_path, temp_dir);
+                if (desktop_file != null) {
+                    var desktop_info = AppImageAssets.parse_desktop_file(desktop_file);
+                    if (desktop_info.name != null && desktop_info.name.strip() != "") {
+                        resolved_name = desktop_info.name.strip();
+                    }
+                    if (desktop_info.appimage_version != null) {
+                        resolved_version = desktop_info.appimage_version;
+                    }
+                }
+            } catch (Error e) {
+                warning("Desktop file extraction error: %s", e.message);
+            } finally {
+                if (temp_dir != null) {
+                    Utils.FileUtils.remove_dir_recursive(temp_dir);
+                }
+            }
+
+            // Check for existing installation
+            var existing = registry.detect_existing(appimage_path, metadata.checksum, resolved_name);
+            if (existing != null) {
+                var relation = quick_install_version_relation(existing, resolved_version);
+                if (relation == 1) {
+                    // Candidate is newer -> update dialog
+                    quick_install_present_update(appimage_path, existing, resolved_version);
+                } else {
+                    // Same or older -> replace dialog
+                    quick_install_present_replace(appimage_path, existing, resolved_version, relation == -1);
+                }
+            } else {
+                quick_install_present_warning(appimage_path, resolved_name);
+            }
+        }
+
+        /**
+         * Returns 1 if candidate is newer, -1 if installed is newer, 0 otherwise.
+         */
+        private int quick_install_version_relation(InstallationRecord record, string? candidate_version) {
+            if (record.version == null || candidate_version == null) {
+                return 0;
+            }
+            return VersionUtils.compare(record.version, candidate_version) < 0 ? 1 :
+                   VersionUtils.compare(record.version, candidate_version) > 0 ? -1 : 0;
+        }
+
+        private Gtk.Overlay quick_install_build_icon_with_badge(string appimage_path, InstallationRecord? record = null) {
+            var image = new Gtk.Image();
+            image.set_pixel_size(64);
+            image.halign = Gtk.Align.CENTER;
+
+            bool icon_set = false;
+            if (record != null) {
+                var record_icon = UiUtils.load_record_icon(record);
+                if (record_icon != null) {
+                    image.set_from_paintable(record_icon);
+                    icon_set = true;
+                }
+            }
+            if (!icon_set) {
+                var texture = UiUtils.load_icon_from_appimage(appimage_path);
+                if (texture != null) {
+                    image.set_from_paintable(texture);
+                } else {
+                    image.set_from_icon_name("application-x-executable");
+                }
+            }
+
+            var overlay = new Gtk.Overlay();
+            overlay.set_child(image);
+            overlay.halign = Gtk.Align.CENTER;
+            overlay.set_size_request(64, 64);
+
+            var badge = new Gtk.Image();
+            badge.set_pixel_size(20);
+            badge.halign = Gtk.Align.END;
+            badge.valign = Gtk.Align.END;
+            badge.set_from_icon_name("verify-warning");
+            overlay.add_overlay(badge);
+
+            return overlay;
+        }
+
+        private void quick_install_present_warning(string appimage_path, string app_name) {
+            var parent = this.get_active_window();
+            var dialog = new DialogWindow(this, parent, _("Open %s?").printf(app_name), null);
+
+            dialog.append_body(quick_install_build_icon_with_badge(appimage_path));
+
+            var warning_text = _("Origins of %s application can not be verified. Are you sure you want to open it?").printf(app_name);
+            var warning_markup = "<b>%s</b>".printf(GLib.Markup.escape_text(warning_text, -1));
+            dialog.append_body(UiUtils.create_wrapped_label(warning_markup, true));
+            dialog.append_body(UiUtils.create_wrapped_label(_("Install the AppImage to add it to your applications."), false, true));
+
+            dialog.add_option("install", _("Install"));
+            dialog.add_option("cancel", _("Cancel"), true);
+
+            dialog.close_request.connect(() => {
+                release_drop_window_lock(appimage_path);
+                return false;
+            });
+
+            dialog.option_selected.connect((response) => {
+                if (response == "install") {
+                    quick_install_run(appimage_path, InstallMode.PORTABLE, null);
+                }
+            });
+
+            dialog.present();
+        }
+
+        private void quick_install_present_update(string appimage_path, InstallationRecord record, string? candidate_version) {
+            var parent = this.get_active_window();
+            var dialog = new DialogWindow(this, parent, _("Update %s?").printf(record.name), null);
+
+            dialog.append_body(quick_install_build_icon_with_badge(appimage_path, record));
+
+            var version_text = record.version ?? _("Version unknown");
+            var current_label = UiUtils.create_wrapped_label(version_text, false);
+            current_label.add_css_class("dim-label");
+            dialog.append_body(current_label);
+
+            var new_version = candidate_version ?? _("Unknown version");
+            dialog.append_body(UiUtils.create_wrapped_label(_("Will update to version %s").printf(new_version), false));
+
+            dialog.add_option("update", _("Update"), true);
+            dialog.add_option("cancel", _("Cancel"));
+
+            dialog.close_request.connect(() => {
+                release_drop_window_lock(appimage_path);
+                return false;
+            });
+
+            dialog.option_selected.connect((response) => {
+                if (response == "update") {
+                    quick_install_run(appimage_path, record.mode, record);
+                }
+            });
+
+            dialog.present();
+        }
+
+        private void quick_install_present_replace(string appimage_path, InstallationRecord record, string? candidate_version, bool installed_newer) {
+            var parent = this.get_active_window();
+            var dialog = new DialogWindow(this, parent, _("Replace %s?").printf(record.name), null);
+
+            dialog.append_body(quick_install_build_icon_with_badge(appimage_path, record));
+
+            string replace_text;
+            if (installed_newer) {
+                replace_text = _("A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?").printf(record.name);
+                if (record.version != null && candidate_version != null) {
+                    var versions = _("Installed: %s | Incoming: %s").printf(record.version, candidate_version);
+                    dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
+                }
+            } else {
+                replace_text = _("An item named %s already exists in this location. Do you want to replace it with one you're copying?").printf(record.name);
+            }
+            dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(replace_text, -1), true));
+
+            var replace_is_default = !installed_newer;
+            dialog.add_option("stop", _("Stop"), !replace_is_default);
+            dialog.add_option("replace", _("Replace"), replace_is_default);
+
+            dialog.close_request.connect(() => {
+                release_drop_window_lock(appimage_path);
+                return false;
+            });
+
+            dialog.option_selected.connect((response) => {
+                if (response == "replace") {
+                    quick_install_run(appimage_path, record.mode, record);
+                }
+            });
+
+            dialog.present();
+        }
+
+        private void quick_install_run(string appimage_path, InstallMode mode, InstallationRecord? existing) {
+            // Stage a copy
+            string staged_path;
+            string staged_dir;
+            try {
+                staged_dir = Utils.FileUtils.create_temp_dir("appmgr-stage-");
+                staged_path = Path.build_filename(staged_dir, Path.get_basename(appimage_path));
+                Utils.FileUtils.file_copy(appimage_path, staged_path);
+            } catch (Error e) {
+                release_drop_window_lock(appimage_path);
+                quick_install_show_error(e.message);
+                return;
+            }
+
+            quick_install_run_async.begin(appimage_path, staged_path, staged_dir, mode, existing);
+        }
+
+        private async void quick_install_run_async(string appimage_path, string staged_path, string staged_dir, InstallMode mode, InstallationRecord? existing) {
+            SourceFunc callback = quick_install_run_async.callback;
+            InstallationRecord? record = null;
+            Error? error = null;
+            bool upgraded = (existing != null);
+
+            new Thread<void>("appmgr-quick-install", () => {
+                try {
+                    if (existing != null) {
+                        record = installer.upgrade(staged_path, existing);
+                    } else {
+                        record = installer.install(staged_path, mode);
+                    }
+                } catch (Error e) {
+                    error = e;
+                }
+                Idle.add((owned) callback);
+            });
+
+            yield;
+
+            Utils.FileUtils.remove_dir_recursive(staged_dir);
+
+            // Delete source AppImage on success
+            if (error == null) {
+                try {
+                    var source = File.new_for_path(appimage_path);
+                    if (source.query_exists()) {
+                        source.delete(null);
+                    }
+                } catch (Error e) {
+                    warning("Failed to delete original AppImage: %s", e.message);
+                }
+            }
+
+            release_drop_window_lock(appimage_path);
+
+            if (error != null) {
+                quick_install_show_error(error.message);
+            } else if (record != null) {
+                quick_install_show_success(record, upgraded);
+            }
+        }
+
+        private void quick_install_show_success(InstallationRecord record, bool upgraded) {
+            var parent = this.get_active_window();
+            var title = upgraded ? _("Successfully Updated") : _("Successfully Installed");
+
+            var image = new Gtk.Image();
+            image.set_pixel_size(64);
+            image.halign = Gtk.Align.CENTER;
+            var record_icon = UiUtils.load_record_icon(record);
+            if (record_icon != null) {
+                image.set_from_paintable(record_icon);
+            } else {
+                image.set_from_icon_name("application-x-executable");
+            }
+
+            var dialog = new DialogWindow(this, parent, title, image);
+            var app_name_markup = "<b>%s</b>".printf(GLib.Markup.escape_text(record.name, -1));
+            dialog.append_body(UiUtils.create_wrapped_label(app_name_markup, true));
+
+            var version_text = record.version ?? _("Unknown version");
+            var version_label = UiUtils.create_wrapped_label(_("Version %s").printf(version_text), false);
+            version_label.add_css_class("dim-label");
+            dialog.append_body(version_label);
+
+            dialog.add_option("open", _("Open"), true);
+            dialog.add_option("done", _("Done"));
+            dialog.option_selected.connect((response) => {
+                if (response == "open") {
+                    try {
+                        if (record.desktop_file != null && record.desktop_file.strip() != "") {
+                            var app_info = new DesktopAppInfo.from_filename(record.desktop_file);
+                            if (app_info != null) {
+                                app_info.launch(null, null);
+                            }
+                        }
+                    } catch (Error e) {
+                        warning("Launch error: %s", e.message);
+                    }
+                }
+            });
+
+            dialog.present();
+        }
+
+        private void quick_install_show_error(string message) {
+            var parent = this.get_active_window();
+            var error_icon = new Gtk.Image.from_icon_name("dialog-error-symbolic");
+            error_icon.set_pixel_size(64);
+            error_icon.halign = Gtk.Align.CENTER;
+
+            var dialog = new DialogWindow(this, parent, _("Installation failed"), error_icon);
+            dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(message, -1), true));
+            dialog.add_option("dismiss", _("Dismiss"));
+            dialog.present();
         }
 
         /**

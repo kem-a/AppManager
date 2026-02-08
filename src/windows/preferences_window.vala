@@ -103,7 +103,13 @@ namespace AppManager {
             // Allow Enter key to apply
             install_dir_row.entry_activated.connect(on_apply_install_dir);
 
+            var skip_drop_row = new Adw.SwitchRow();
+            skip_drop_row.title = _("Skip drag-and-drop window");
+            skip_drop_row.subtitle = _("Show install dialog directly when opening AppImages");
+            settings.bind("skip-drop-window", skip_drop_row, "active", GLib.SettingsBindFlags.DEFAULT);
+
             install_group.add(install_dir_row);
+            install_group.add(skip_drop_row);
             page.add(install_group);
 
             // Automatic updates group
