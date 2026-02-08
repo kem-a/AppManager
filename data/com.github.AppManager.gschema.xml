@@ -46,5 +46,10 @@
       <summary>Custom installation directory for AppImages</summary>
       <description>Custom directory path for installed AppImages. When empty, uses the default ~/Applications directory.</description>
     </key>
+    <key name="skip-drop-window" type="b">
+      <default>false</default>
+      <summary>Skip drag-and-drop installer window</summary>
+      <description>When enabled, opening an AppImage shows a confirmation dialog directly instead of the drag-and-drop installer window.</description>
+    </key>
   </schema>
 </schemalist>

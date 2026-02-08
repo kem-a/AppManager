@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-05 16:37+0200\n"
+"POT-Creation-Date: 2026-02-08 19:20+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
@@ -16,48 +16,194 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/application.vala:399
-msgid "Uninstall failed"
-msgstr "Error al desinstalar"
+#: src/application.vala:246
+#, fuzzy
+msgid "Incompatible AppImage"
+msgstr "Encontrar más AppImages"
 
-#: src/application.vala:400
-#, c-format
-msgid "%s could not be removed: %s"
-msgstr "%s no se pudo eliminar: %s"
+#: src/application.vala:247
+#, fuzzy
+msgid ""
+"This AppImage is incompatible or corrupted. Missing required files "
+"(AppRun, .desktop, or icon)."
+msgstr "Faltan archivos requeridos (AppRun, .desktop o icono)"
 
-#. Architecture mismatch banner
-#: src/application.vala:402 src/application.vala:457 src/application.vala:469
+#: src/application.vala:248 src/application.vala:260 src/application.vala:766
+#: src/application.vala:821 src/application.vala:833
 #: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:95
 #: src/windows/drop_window.vala:105
 msgid "Close"
 msgstr "Cerrar"
 
-#: src/application.vala:407
+#: src/application.vala:256 src/windows/drop_window.vala:317
+#, fuzzy
+msgid "unknown"
+msgstr "Versión desconocida"
+
+#: src/application.vala:258
+msgid "Architecture Mismatch"
+msgstr ""
+
+#: src/application.vala:259 src/windows/drop_window.vala:318
+#, c-format
+msgid "This app is built for %s and cannot run here"
+msgstr ""
+
+#: src/application.vala:356 src/windows/drop_window.vala:221
+#, c-format
+msgid "Open %s?"
+msgstr "¿Abrir %s?"
+
+#: src/application.vala:360 src/windows/drop_window.vala:224
+#, c-format
+msgid ""
+"Origins of %s application can not be verified. Are you sure you want to open "
+"it?"
+msgstr ""
+"No se puede verificar el origen de la aplicación %s. ¿Estás seguro de que "
+"quieres abrirla?"
+
+#: src/application.vala:363 src/windows/drop_window.vala:231
+msgid "Install the AppImage to add it to your applications."
+msgstr "Instala el AppImage para añadirlo a tus aplicaciones."
+
+#: src/application.vala:365 src/windows/drop_window.vala:234
+msgid "Install"
+msgstr "Instalar"
+
+#: src/application.vala:366 src/application.vala:397
+#: src/windows/details_window.vala:911 src/windows/drop_window.vala:235
+#: src/windows/drop_window.vala:409 src/windows/drop_window.vala:965
+#: src/windows/preferences_window.vala:347
+#: src/windows/preferences_window.vala:381
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/application.vala:384 src/windows/drop_window.vala:405
+#, c-format
+msgid "Update %s?"
+msgstr "¿Actualizar %s?"
+
+#: src/application.vala:388 src/windows/details_window.vala:135
+#: src/windows/drop_window.vala:381
+msgid "Version unknown"
+msgstr "Versión desconocida"
+
+#: src/application.vala:393 src/application.vala:528
+#: src/windows/drop_window.vala:388 src/windows/drop_window.vala:545
+msgid "Unknown version"
+msgstr "Versión desconocida"
+
+#: src/application.vala:394 src/windows/drop_window.vala:389
+#, c-format
+msgid "Will update to version %s"
+msgstr "Se actualizará a la versión %s"
+
+#: src/application.vala:396 src/windows/details_window.vala:819
+#: src/windows/drop_window.vala:408
+msgid "Update"
+msgstr "Actualizar"
+
+#: src/application.vala:415 src/windows/drop_window.vala:435
+#, c-format
+msgid "Replace %s?"
+msgstr "¿Reemplazar %s?"
+
+#: src/application.vala:421 src/windows/drop_window.vala:439
+#, c-format
+msgid ""
+"A newer item named %s already exists in this location. Do you want to "
+"replace it with the older one you're copying?"
+msgstr ""
+"Ya existe un elemento más nuevo llamado %s en esta ubicación. ¿Quieres "
+"reemplazarlo por el más antiguo que estás copiando?"
+
+#: src/application.vala:423 src/windows/drop_window.vala:441
+#, c-format
+msgid "Installed: %s | Incoming: %s"
+msgstr "Instalado: %s | Entrante: %s"
+
+#: src/application.vala:427 src/windows/drop_window.vala:445
+#, c-format
+msgid ""
+"An item named %s already exists in this location. Do you want to replace it "
+"with one you're copying?"
+msgstr ""
+"Ya existe un elemento llamado %s en esta ubicación. ¿Quieres reemplazarlo "
+"por el que estás copiando?"
+
+#: src/application.vala:432 src/windows/drop_window.vala:449
+msgid "Stop"
+msgstr "Detener"
+
+#: src/application.vala:433 src/windows/drop_window.vala:450
+msgid "Replace"
+msgstr "Reemplazar"
+
+#: src/application.vala:512 src/windows/drop_window.vala:528
+msgid "Successfully Updated"
+msgstr "Actualizado correctamente"
+
+#: src/application.vala:512 src/windows/drop_window.vala:526
+msgid "Successfully Installed"
+msgstr "Instalado correctamente"
+
+#: src/application.vala:529 src/windows/drop_window.vala:546
+#, c-format
+msgid "Version %s"
+msgstr "Versión %s"
+
+#: src/application.vala:533 src/windows/drop_window.vala:550
+msgid "Open"
+msgstr "Abrir"
+
+#: src/application.vala:534 src/windows/drop_window.vala:551
+msgid "Done"
+msgstr "Hecho"
+
+#: src/application.vala:559 src/windows/drop_window.vala:577
+msgid "Installation failed"
+msgstr "Error en la instalación"
+
+#: src/application.vala:561 src/windows/drop_window.vala:587
+msgid "Dismiss"
+msgstr "Descartar"
+
+#: src/application.vala:763
+msgid "Uninstall failed"
+msgstr "Error al desinstalar"
+
+#: src/application.vala:764
+#, c-format
+msgid "%s could not be removed: %s"
+msgstr "%s no se pudo eliminar: %s"
+
+#: src/application.vala:771
 msgid "Moved to Trash"
 msgstr "Movido a la papelera"
 
-#: src/application.vala:415
+#: src/application.vala:779
 msgid "Extraction is only available for portable installations."
 msgstr "La extracción solo está disponible para instalaciones portables."
 
-#: src/application.vala:451
+#: src/application.vala:815
 msgid "Extracted for faster launch"
 msgstr "Extraído para un inicio más rápido"
 
-#: src/application.vala:454
+#: src/application.vala:818
 msgid "Extraction complete"
 msgstr "Extracción completada"
 
-#: src/application.vala:455
+#: src/application.vala:819
 #, c-format
 msgid "%s was extracted and will open faster."
 msgstr "%s se extrajo y se abrirá más rápido."
 
-#: src/application.vala:466
+#: src/application.vala:830
 msgid "Extraction failed"
 msgstr "Error en la extracción"
 
-#: src/application.vala:467
+#: src/application.vala:831
 #, c-format
 msgid "%s could not be extracted: %s"
 msgstr "%s no se pudo extraer: %s"
@@ -66,14 +212,11 @@ msgstr "%s no se pudo extraer: %s"
 msgid "App updates available"
 msgstr "Actualizaciones de aplicaciones disponibles"
 
-#. Always show aggregate count
 #: src/core/background_update_service.vala:308
 #, c-format
 msgid "%d app update(s) available"
 msgstr "%d actualización(es) de aplicación disponible(s)"
 
-#. Build actions array: pairs of (action_key, label)
-#. "default" action is invoked when user clicks the notification body
 #: src/core/background_update_service.vala:317
 msgid "Open AppManager"
 msgstr "Abrir AppManager"
@@ -82,12 +225,10 @@ msgstr "Abrir AppManager"
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
 
-#. Check if path is absolute
 #: src/core/path_migration_service.vala:42
 msgid "Path must be absolute"
 msgstr "La ruta debe ser absoluta"
 
-#. Check if it's the same as current
 #: src/core/path_migration_service.vala:47
 msgid "This is already the current directory"
 msgstr "Este ya es el directorio actual"
@@ -101,7 +242,6 @@ msgstr "El directorio no puede ser escrito"
 msgid "Cannot access directory: %s"
 msgstr "No se puede acceder al directorio: %s"
 
-#. Check if it's a directory
 #: src/core/path_migration_service.vala:63
 msgid "Path exists but is not a directory"
 msgstr "La ruta existe pero no es un directorio"
@@ -116,21 +256,19 @@ msgstr "El directorio padre no existe"
 
 #: src/core/path_migration_service.vala:77
 msgid "Cannot create directory: parent is not writable"
-msgstr "No se puede crear el directorio: el directorio padre no puede ser escrito"
+msgstr ""
+"No se puede crear el directorio: el directorio padre no puede ser escrito"
 
 #: src/core/path_migration_service.vala:80
 #, c-format
 msgid "Cannot access parent directory: %s"
 msgstr "No se puede acceder al directorio padre: %s"
 
-#. Create new directory
-#. Exception path - clear flag since no signal will be emitted
 #: src/core/path_migration_service.vala:170
 #, c-format
 msgid "Failed to create directory: %s"
 msgstr "Error al crear el directorio: %s"
 
-#. Exception path - clear flag since no signal will be emitted
 #: src/core/path_migration_service.vala:178
 #, c-format
 msgid "Failed to create extracted directory: %s"
@@ -146,9 +284,7 @@ msgstr "Migrando %s (%d/%d)…"
 msgid ""
 "Some apps failed to migrate:\n"
 "%s"
-msgstr "" 
-"Algunas apps han sufrido un error en la migración"
-"%s"
+msgstr "Algunas apps han sufrido un error en la migración%s"
 
 #: src/core/updater.vala:547 src/core/updater.vala:612
 msgid "No update address configured"
@@ -167,8 +303,6 @@ msgstr "No se pueden leer las versiones"
 msgid "No matching AppImage found for %s"
 msgstr "No se encontró AppImage compatible para %s"
 
-#. Version comparison: if both have versions, compare them
-#. Remote version is same or older than current
 #: src/core/updater.vala:581 src/core/updater.vala:587
 #: src/core/updater.vala:649 src/core/updater.vala:657
 #: src/core/updater.vala:770 src/core/updater.vala:795
@@ -217,11 +351,6 @@ msgstr ""
 "⚠️ '~/.local/bin' no está en $PATH. La aplicación no se ejecutará desde la "
 "terminal"
 
-#. App version
-#: src/windows/details_window.vala:135 src/windows/drop_window.vala:381
-msgid "Version unknown"
-msgstr "Versión desconocida"
-
 #: src/windows/details_window.vala:160
 msgid "Show in Files"
 msgstr "Mostrar en Archivos"
@@ -234,7 +363,6 @@ msgstr "Portable"
 msgid "Extracted"
 msgstr "Extraído"
 
-#. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
 msgstr "Terminal"
@@ -335,7 +463,6 @@ msgstr "Crear un lanzador en ~/.local/bin para ejecutarlo desde la terminal"
 msgid "Actions"
 msgstr "Acciones"
 
-#. Extract button
 #: src/windows/details_window.vala:750
 msgid "Extract AppImage"
 msgstr "Extraer AppImage"
@@ -344,17 +471,13 @@ msgstr "Extraer AppImage"
 msgid "Restore default"
 msgstr "Restaurar predeterminado"
 
-#: src/windows/details_window.vala:799 src/windows/main_window.vala:456
+#: src/windows/details_window.vala:799 src/windows/main_window.vala:447
 msgid "Updating..."
 msgstr "Actualizando..."
 
 #: src/windows/details_window.vala:801
 msgid "Checking..."
 msgstr "Comprobando..."
-
-#: src/windows/details_window.vala:819 src/windows/drop_window.vala:408
-msgid "Update"
-msgstr "Actualizar"
 
 #: src/windows/details_window.vala:823
 msgid "Check Update"
@@ -399,13 +522,6 @@ msgstr ""
 msgid "Extract application?"
 msgstr "¿Extraer aplicación?"
 
-#: src/windows/details_window.vala:911 src/windows/drop_window.vala:235
-#: src/windows/drop_window.vala:409 src/windows/drop_window.vala:965
-#: src/windows/preferences_window.vala:341
-#: src/windows/preferences_window.vala:375
-msgid "Cancel"
-msgstr "Cancelar"
-
 #: src/windows/details_window.vala:912
 msgid "Extract"
 msgstr "Extraer"
@@ -422,7 +538,6 @@ msgstr "La aplicación se desinstaló correctamente."
 msgid "AppImage Installer"
 msgstr "Instalador de AppImage"
 
-#. Add Verify button to headerbar
 #: src/windows/drop_window.vala:87 src/windows/drop_window.vala:971
 msgid "Verify"
 msgstr "Verificar"
@@ -431,7 +546,6 @@ msgstr "Verificar"
 msgid "Verify AppImage with SHA256 hash"
 msgstr "Verificar AppImage con hash SHA256"
 
-#. Verification failed banner
 #: src/windows/drop_window.vala:114
 msgid "SHA256 hash does not match. Verification failed."
 msgstr "El hash SHA256 no coincide. La verificación falló."
@@ -444,32 +558,9 @@ msgstr "Arrastra y suelta para instalar en Aplicaciones"
 msgid "Applications"
 msgstr "Aplicaciones"
 
-#. Use app icon with warning badge overlay
-#: src/windows/drop_window.vala:221
-#, c-format
-msgid "Open %s?"
-msgstr "¿Abrir %s?"
-
-#: src/windows/drop_window.vala:224
-#, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
-msgstr ""
-"No se puede verificar el origen de la aplicación %s. ¿Estás seguro de que "
-"quieres abrirla?"
-
 #: src/windows/drop_window.vala:229
 msgid "This is a terminal application and will be installed in portable mode."
 msgstr "Esta es una aplicación de terminal y se instalará en modo portable."
-
-#: src/windows/drop_window.vala:231
-msgid "Install the AppImage to add it to your applications."
-msgstr "Instala el AppImage para añadirlo a tus aplicaciones."
-
-#: src/windows/drop_window.vala:234
-msgid "Install"
-msgstr "Instalar"
 
 #: src/windows/drop_window.vala:307
 msgid "This AppImage is incompatible or corrupted"
@@ -479,109 +570,17 @@ msgstr "Este AppImage es incompatible o está dañado"
 msgid "Missing required files (AppRun, .desktop, or icon)"
 msgstr "Faltan archivos requeridos (AppRun, .desktop o icono)"
 
-#. Check architecture compatibility
-#: src/windows/drop_window.vala:317
-#, fuzzy
-msgid "unknown"
-msgstr "Versión desconocida"
-
-#: src/windows/drop_window.vala:318
-#, c-format
-msgid "This app is built for %s and cannot run here"
-msgstr ""
-
 #: src/windows/drop_window.vala:320
 msgid "Architecture mismatch"
 msgstr ""
-
-#: src/windows/drop_window.vala:388 src/windows/drop_window.vala:545
-msgid "Unknown version"
-msgstr "Versión desconocida"
-
-#: src/windows/drop_window.vala:389
-#, c-format
-msgid "Will update to version %s"
-msgstr "Se actualizará a la versión %s"
-
-#. Use icon with verification badge overlay
-#: src/windows/drop_window.vala:405
-#, c-format
-msgid "Update %s?"
-msgstr "¿Actualizar %s?"
-
-#. Use icon with verification badge overlay
-#: src/windows/drop_window.vala:435
-#, c-format
-msgid "Replace %s?"
-msgstr "¿Reemplazar %s?"
-
-#: src/windows/drop_window.vala:439
-#, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ya existe un elemento más nuevo llamado %s en esta ubicación. ¿Quieres "
-"reemplazarlo por el más antiguo que estás copiando?"
-
-#: src/windows/drop_window.vala:441
-#, c-format
-msgid "Installed: %s | Incoming: %s"
-msgstr "Instalado: %s | Entrante: %s"
-
-#: src/windows/drop_window.vala:445
-#, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ya existe un elemento llamado %s en esta ubicación. ¿Quieres reemplazarlo "
-"por el que estás copiando?"
-
-#: src/windows/drop_window.vala:449
-msgid "Stop"
-msgstr "Detener"
-
-#: src/windows/drop_window.vala:450
-msgid "Replace"
-msgstr "Reemplazar"
 
 #: src/windows/drop_window.vala:485
 msgid "Unable to prepare AppImage for installation"
 msgstr "No se puede preparar el AppImage para la instalación"
 
-#: src/windows/drop_window.vala:526
-msgid "Successfully Installed"
-msgstr "Instalado correctamente"
-
-#: src/windows/drop_window.vala:528
-msgid "Successfully Updated"
-msgstr "Actualizado correctamente"
-
 #: src/windows/drop_window.vala:528
 msgid "Successfully Replaced"
 msgstr "Reemplazado correctamente"
-
-#: src/windows/drop_window.vala:546
-#, c-format
-msgid "Version %s"
-msgstr "Versión %s"
-
-#: src/windows/drop_window.vala:550
-msgid "Open"
-msgstr "Abrir"
-
-#: src/windows/drop_window.vala:551
-msgid "Done"
-msgstr "Hecho"
-
-#: src/windows/drop_window.vala:577
-msgid "Installation failed"
-msgstr "Error en la instalación"
-
-#: src/windows/drop_window.vala:587
-msgid "Dismiss"
-msgstr "Descartar"
 
 #: src/windows/drop_window.vala:932
 msgid "Verify AppImage"
@@ -600,282 +599,275 @@ msgstr "Introduce el hash SHA256 "
 msgid "AppManager"
 msgstr "AppManager"
 
-#: src/windows/main_window.vala:122 src/windows/main_window.vala:239
-#: src/windows/main_window.vala:392
+#: src/windows/main_window.vala:122 src/windows/main_window.vala:230
+#: src/windows/main_window.vala:383
 msgid "My Apps"
 msgstr "Mis aplicaciones"
 
-#: src/windows/main_window.vala:175
-#, fuzzy
-msgid "Only AppImage files can be installed"
-msgstr "No hay aplicaciones AppImage instaladas"
-
-#: src/windows/main_window.vala:196
+#: src/windows/main_window.vala:187
 msgid "Get more ..."
 msgstr "Obtener más ..."
 
-#: src/windows/main_window.vala:208
+#: src/windows/main_window.vala:199
 msgid "Find more AppImages"
 msgstr "Encontrar más AppImages"
 
-#: src/windows/main_window.vala:209
+#: src/windows/main_window.vala:200
 msgid "Browse these sources to discover and download AppImages"
 msgstr "Explore estas fuentes para descubrir y descargar AppImages"
 
-#: src/windows/main_window.vala:260 src/windows/main_window.vala:319
+#: src/windows/main_window.vala:251 src/windows/main_window.vala:310
 msgid "No AppImage apps installed"
 msgstr "No hay aplicaciones AppImage instaladas"
 
-#: src/windows/main_window.vala:265
+#: src/windows/main_window.vala:256
 msgid "Download AppImage and double click to install with AppManager"
 msgstr "Descarga un AppImage y haz doble clic para instalarlo con AppManager"
 
-#: src/windows/main_window.vala:319
+#: src/windows/main_window.vala:310
 msgid "No results found"
 msgstr "No se encontraron resultados"
 
-#: src/windows/main_window.vala:463
+#: src/windows/main_window.vala:454
 msgid "Update available"
 msgstr "Actualización disponible"
 
-#: src/windows/main_window.vala:489
+#: src/windows/main_window.vala:480
 msgid "extracted"
 msgstr "extraído"
 
-#: src/windows/main_window.vala:546
+#: src/windows/main_window.vala:537
 msgid "Updated just now"
 msgstr "Actualizado hace un momento"
 
-#: src/windows/main_window.vala:546
+#: src/windows/main_window.vala:537
 msgid "Installed just now"
 msgstr "Instalado hace un momento"
 
-#: src/windows/main_window.vala:554
+#: src/windows/main_window.vala:545
 #, c-format
 msgid "Updated %d min ago"
 msgstr "Actualizado hace %d min"
 
-#: src/windows/main_window.vala:554
+#: src/windows/main_window.vala:545
 #, c-format
 msgid "Installed %d min ago"
 msgstr "Instalado hace %d min"
 
-#: src/windows/main_window.vala:562
+#: src/windows/main_window.vala:553
 #, c-format
 msgid "Updated %d hours ago"
 msgstr "Actualizado hace %d horas"
 
-#: src/windows/main_window.vala:562
+#: src/windows/main_window.vala:553
 #, c-format
 msgid "Installed %d hours ago"
 msgstr "Instalado hace %d horas"
 
-#: src/windows/main_window.vala:569
+#: src/windows/main_window.vala:560
 #, c-format
 msgid "Updated %d days ago"
 msgstr "Actualizado hace %d días"
 
-#: src/windows/main_window.vala:569
+#: src/windows/main_window.vala:560
 #, c-format
 msgid "Installed %d days ago"
 msgstr "Instalado hace %d días"
 
-#: src/windows/main_window.vala:585 src/windows/preferences_window.vala:34
+#: src/windows/main_window.vala:576 src/windows/preferences_window.vala:34
 msgid "Preferences"
 msgstr "Preferencias"
 
-#: src/windows/main_window.vala:586
+#: src/windows/main_window.vala:577
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
 
-#: src/windows/main_window.vala:587 src/windows/main_window.vala:1327
+#: src/windows/main_window.vala:578 src/windows/main_window.vala:1321
 msgid "About AppManager"
 msgstr "Acerca de AppManager"
 
-#: src/windows/main_window.vala:588
+#: src/windows/main_window.vala:579
 msgid "Quit"
 msgstr "Salir"
 
-#: src/windows/main_window.vala:600
+#: src/windows/main_window.vala:591
 #, fuzzy
 msgid "Support AppManager"
 msgstr "Salir de AppManager"
 
-#: src/windows/main_window.vala:615
+#: src/windows/main_window.vala:606
 msgid "Buy Me a Coffee"
 msgstr "Comprame un café"
 
-#: src/windows/main_window.vala:634
+#: src/windows/main_window.vala:625
 msgid "Become a sponsor on GitHub"
 msgstr "Conviertete en patrocinador en Github"
 
-#: src/windows/main_window.vala:639
+#: src/windows/main_window.vala:630
 msgid "Sponsor Me ♡"
 msgstr "Patrocíname"
 
-#: src/windows/main_window.vala:650
+#: src/windows/main_window.vala:641
 #, fuzzy
 msgid "Star AppManager on GitHub"
 msgstr "Salir de AppManager"
 
-#: src/windows/main_window.vala:655
+#: src/windows/main_window.vala:646
 #, fuzzy
 msgid "Star AppManager"
 msgstr "Salir de AppManager"
 
-#: src/windows/main_window.vala:666
+#: src/windows/main_window.vala:657
 msgid "View contributors on GitHub"
 msgstr "Ver los contribuidores en Github"
 
-#: src/windows/main_window.vala:671
+#: src/windows/main_window.vala:662
 msgid "Contributors"
 msgstr "Contribuidores"
 
-#: src/windows/main_window.vala:694 src/windows/main_window.vala:1325
+#: src/windows/main_window.vala:685 src/windows/main_window.vala:1319
 msgid "Search"
 msgstr "Buscar"
 
-#: src/windows/main_window.vala:700
+#: src/windows/main_window.vala:691
 msgid "Support this project"
 msgstr "Apoya este proyecto"
 
-#: src/windows/main_window.vala:710
+#: src/windows/main_window.vala:701
 msgid "More actions"
 msgstr "Más acciones"
 
-#: src/windows/main_window.vala:725
+#: src/windows/main_window.vala:716
 msgid "Search apps..."
 msgstr "Buscar aplicaciones..."
 
-#. FUSE is not installed warning banner
-#: src/windows/main_window.vala:733
+#: src/windows/main_window.vala:724
 msgid "FUSE is not installed. Some AppImages may fail to run"
 msgstr "FUSE no está instalado. Algunas AppImages pueden fallar al ejecutarse"
 
-#: src/windows/main_window.vala:735
+#: src/windows/main_window.vala:726
 msgid "Learn More"
 msgstr "Más información"
 
-#: src/windows/main_window.vala:811 src/windows/main_window.vala:882
+#: src/windows/main_window.vala:805 src/windows/main_window.vala:876
 msgid "Updates already running"
 msgstr "Las actualizaciones ya están en ejecución"
 
-#: src/windows/main_window.vala:859
+#: src/windows/main_window.vala:853
 msgid "Cancel update"
 msgstr "Cancelar actualización"
 
-#: src/windows/main_window.vala:890
+#: src/windows/main_window.vala:884
 msgid "Cancelling..."
 msgstr "Cancelando..."
 
-#: src/windows/main_window.vala:916
+#: src/windows/main_window.vala:910
 msgid "Update check cancelled"
 msgstr "Comprobación de actualizaciones cancelada"
 
-#: src/windows/main_window.vala:946
+#: src/windows/main_window.vala:940
 #, c-format
 msgid "%d app(s) have updates"
 msgstr "%d aplicación(es) tienen actualizaciones"
 
-#: src/windows/main_window.vala:949
+#: src/windows/main_window.vala:943
 msgid "No updates available right now"
 msgstr "No hay actualizaciones disponibles en este momento"
 
-#: src/windows/main_window.vala:956
+#: src/windows/main_window.vala:950
 msgid "Nothing queued for updating"
 msgstr "No hay nada en cola para actualizar"
 
-#: src/windows/main_window.vala:983
+#: src/windows/main_window.vala:977
 msgid "Update cancelled"
 msgstr "Actualización cancelada"
 
-#: src/windows/main_window.vala:1120
+#: src/windows/main_window.vala:1114
 msgid "Checking updates"
 msgstr "Comprobando actualizaciones"
 
-#: src/windows/main_window.vala:1123
+#: src/windows/main_window.vala:1117
 msgid "Update Apps"
 msgstr "Actualizar aplicaciones"
 
-#: src/windows/main_window.vala:1126
+#: src/windows/main_window.vala:1120
 msgid "Updating apps"
 msgstr "Actualizando aplicaciones"
 
-#: src/windows/main_window.vala:1129
+#: src/windows/main_window.vala:1123
 msgid "Check updates"
 msgstr "Comprobar actualizaciones"
 
-#: src/windows/main_window.vala:1153
+#: src/windows/main_window.vala:1147
 msgid "No installed apps to update"
 msgstr "No hay aplicaciones instaladas para actualizar"
 
-#: src/windows/main_window.vala:1193
+#: src/windows/main_window.vala:1187
 #, c-format
 msgid "Updated %d app(s)"
 msgstr "%d aplicación(es) actualizada(s)"
 
-#: src/windows/main_window.vala:1196
+#: src/windows/main_window.vala:1190
 #, c-format
 msgid "%d update(s) failed"
 msgstr "%d actualización(es) fallida(s)"
 
-#: src/windows/main_window.vala:1204
+#: src/windows/main_window.vala:1198
 msgid "Add update addresses in Details to enable updates"
 msgstr ""
 "Añade direcciones de actualización en Detalles para habilitar las "
 "actualizaciones"
 
-#: src/windows/main_window.vala:1206
+#: src/windows/main_window.vala:1200
 msgid "All supported apps are already up to date"
 msgstr "Todas las aplicaciones compatibles ya están actualizadas"
 
-#: src/windows/main_window.vala:1210
+#: src/windows/main_window.vala:1204
 #, c-format
 msgid "%d app(s) use unsupported update links"
 msgstr "%d aplicación(es) usan enlaces de actualización no compatibles"
 
-#: src/windows/main_window.vala:1273
+#: src/windows/main_window.vala:1267
 #, c-format
 msgid "Update available for %s"
 msgstr "Actualización disponible para %s"
 
-#: src/windows/main_window.vala:1313
+#: src/windows/main_window.vala:1307
 msgid "General"
 msgstr "General"
 
-#: src/windows/main_window.vala:1317
+#: src/windows/main_window.vala:1311
 msgid "Navigation"
 msgstr "Navegación"
 
-#: src/windows/main_window.vala:1321
+#: src/windows/main_window.vala:1315
 msgid "Window"
 msgstr "Ventana"
 
-#: src/windows/main_window.vala:1323
+#: src/windows/main_window.vala:1317
 msgid "Check for updates"
 msgstr "Buscar actualizaciones"
 
-#: src/windows/main_window.vala:1324
+#: src/windows/main_window.vala:1318
 msgid "Show main menu"
 msgstr "Mostrar menú principal"
 
-#: src/windows/main_window.vala:1326
+#: src/windows/main_window.vala:1320
 msgid "Show shortcuts"
 msgstr "Mostrar atajos"
 
-#: src/windows/main_window.vala:1328
+#: src/windows/main_window.vala:1322
 msgid "Close window"
 msgstr "Cerrar ventana"
 
-#: src/windows/main_window.vala:1329
+#: src/windows/main_window.vala:1323
 msgid "Quit AppManager"
 msgstr "Salir de AppManager"
 
-#: src/windows/main_window.vala:1346
+#: src/windows/main_window.vala:1340
 msgid "Credits"
 msgstr "Créditos"
 
-#. Installation directory group
 #: src/windows/preferences_window.vala:59
 #, fuzzy
 msgid "Installation"
@@ -904,133 +896,133 @@ msgstr "Restaurar predeterminado"
 msgid "Apply changes"
 msgstr "Aplicaciones"
 
-#. Automatic updates group
-#: src/windows/preferences_window.vala:111
+#: src/windows/preferences_window.vala:107
+msgid "Skip drag-and-drop window"
+msgstr ""
+
+#: src/windows/preferences_window.vala:108
+msgid "Show install dialog directly when opening AppImages"
+msgstr ""
+
+#: src/windows/preferences_window.vala:117
 msgid "Automatic updates"
 msgstr "Actualizaciones automáticas"
 
-#: src/windows/preferences_window.vala:112
+#: src/windows/preferences_window.vala:118
 msgid "Configure automatic update checking"
 msgstr "Configurar comprobación automática de actualizaciones"
 
-#: src/windows/preferences_window.vala:118
+#: src/windows/preferences_window.vala:124
 msgid "Open update log"
 msgstr "Abrir registro de actualizaciones"
 
-#. Background update check expander row
-#: src/windows/preferences_window.vala:132
+#: src/windows/preferences_window.vala:138
 msgid "Background update check"
 msgstr "Comprobación de actualizaciones en segundo plano"
 
-#: src/windows/preferences_window.vala:133
+#: src/windows/preferences_window.vala:139
 msgid "Will notify when new app updates are available"
 msgstr "Notificará cuando haya nuevas actualizaciones disponibles"
 
-#. Auto update apps toggle (inside expander)
-#: src/windows/preferences_window.vala:144
+#: src/windows/preferences_window.vala:150
 msgid "Auto update apps"
 msgstr "Actualizar aplicaciones automáticamente"
 
-#: src/windows/preferences_window.vala:145
+#: src/windows/preferences_window.vala:151
 msgid "Will update apps automatically in background"
 msgstr "Actualizará las aplicaciones automáticamente en segundo plano"
 
-#. Check interval (inside expander)
-#: src/windows/preferences_window.vala:151
+#: src/windows/preferences_window.vala:157
 msgid "Check interval"
 msgstr "Intervalo de comprobación"
 
-#: src/windows/preferences_window.vala:153
+#: src/windows/preferences_window.vala:159
 msgid "Daily"
 msgstr "Diario"
 
-#: src/windows/preferences_window.vala:154
+#: src/windows/preferences_window.vala:160
 msgid "Weekly"
 msgstr "Semanal"
 
-#: src/windows/preferences_window.vala:155
+#: src/windows/preferences_window.vala:161
 msgid "Monthly"
 msgstr "Mensual"
 
-#. Thumbnails group
-#: src/windows/preferences_window.vala:180
+#: src/windows/preferences_window.vala:186
 msgid "Thumbnails"
 msgstr "Miniaturas"
 
-#: src/windows/preferences_window.vala:183
+#: src/windows/preferences_window.vala:189
 msgid "AppImage Thumbnailer"
 msgstr "Generador de miniaturas de AppImage"
 
-#: src/windows/preferences_window.vala:184
+#: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
 msgstr "Instalar appimage-thumbnailer para generar miniaturas de AppImages"
 
-#: src/windows/preferences_window.vala:193
+#: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
 msgstr "Ocultar fondo de miniatura de Nautilus"
 
-#: src/windows/preferences_window.vala:194
+#: src/windows/preferences_window.vala:200
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
 msgstr ""
 "Eliminar el patrón de tablero de ajedrez detrás de las miniaturas e iconos"
 
-#: src/windows/preferences_window.vala:251
+#: src/windows/preferences_window.vala:257
 #, fuzzy
 msgid "Select Installation Directory"
 msgstr "Error en la instalación"
 
-#: src/windows/preferences_window.vala:318
+#: src/windows/preferences_window.vala:324
 msgid "Invalid Path"
 msgstr "Ruta no válida"
 
-#: src/windows/preferences_window.vala:328
+#: src/windows/preferences_window.vala:334
 #, fuzzy
 msgid "Installation directory updated"
 msgstr "Error en la instalación"
 
-#: src/windows/preferences_window.vala:338
+#: src/windows/preferences_window.vala:344
 msgid "Move Installed Apps?"
 msgstr "¿Mover las Apps instaladas?"
 
-#: src/windows/preferences_window.vala:339
+#: src/windows/preferences_window.vala:345
 #, c-format
 msgid ""
 "This will move %d installed app(s) to the new location. This may take a "
 "while depending on the size of your apps."
 msgstr ""
-"Esto moverá %d app(s) instaladas a la nueva ubicación. Esto puede tomar "
-"un rato dependiendo del tamaño de tus apps."
+"Esto moverá %d app(s) instaladas a la nueva ubicación. Esto puede tomar un "
+"rato dependiendo del tamaño de tus apps."
 
-#: src/windows/preferences_window.vala:342
+#: src/windows/preferences_window.vala:348
 #, fuzzy
 msgid "Move Apps"
 msgstr "Mis aplicaciones"
 
-#. Kill background daemon if running - it may interfere with migration
-#. by monitoring folders and triggering reconciliation
-#. Create progress dialog
-#: src/windows/preferences_window.vala:374
+#: src/windows/preferences_window.vala:380
 msgid "Moving Apps…"
 msgstr "Moviendo Apps…"
 
-#: src/windows/preferences_window.vala:374
+#: src/windows/preferences_window.vala:380
 msgid "Please wait while your apps are being moved."
 msgstr "Por favor espera mientras tus apps se mueven."
 
-#: src/windows/preferences_window.vala:411
+#: src/windows/preferences_window.vala:417
 msgid "Apps moved successfully"
 msgstr "Apps movidas con éxito"
 
-#: src/windows/preferences_window.vala:413
+#: src/windows/preferences_window.vala:419
 #, fuzzy
 msgid "Migration Failed"
 msgstr "Error en la extracción"
 
-#: src/windows/preferences_window.vala:413
+#: src/windows/preferences_window.vala:419
 msgid "Unknown error occurred"
 msgstr "Ha occurido un error desconocido"
 
-#: src/windows/preferences_window.vala:431
+#: src/windows/preferences_window.vala:437
 msgid "OK"
 msgstr "OK"
 
@@ -1049,9 +1041,10 @@ msgid ""
 "drop workflow inspired by macOS. It handles desktop integration, icon "
 "extraction, executable bits, and Nautilus context menus."
 msgstr ""
-"AppManager te permite instaladar o desinstalar AppImages con un flujo de trabajo"
-"familiar de arrastrar y soltar inspirado en macOS. Maneja la integración "
-"con desktop, iconos, extracción, ejecutables y menus de contexto de Nautilus" 
+"AppManager te permite instaladar o desinstalar AppImages con un flujo de "
+"trabajofamiliar de arrastrar y soltar inspirado en macOS. Maneja la "
+"integración con desktop, iconos, extracción, ejecutables y menus de contexto "
+"de Nautilus"
 
 #: data/com.github.AppManager.metainfo.xml:47
 msgid ""
@@ -1065,6 +1058,10 @@ msgid ""
 "portal. Users grant permission on first launch, can pick an interval, and "
 "receive a notification when updates are detected."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Only AppImage files can be installed"
+#~ msgstr "No hay aplicaciones AppImage instaladas"
 
 #~ msgid "Update link is managed by zsync and cannot be edited"
 #~ msgstr ""
