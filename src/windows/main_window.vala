@@ -746,7 +746,10 @@ namespace AppManager {
                 "/lib64/libfuse.so.2",
                 "/usr/lib/x86_64-linux-gnu/libfuse.so.2",
                 "/usr/lib/aarch64-linux-gnu/libfuse.so.2",
-                "/usr/lib/i386-linux-gnu/libfuse.so.2"
+                "/usr/lib/i386-linux-gnu/libfuse.so.2",
+                "/lib/x86_64-linux-gnu/libfuse.so.2",
+                "/lib/aarch64-linux-gnu/libfuse.so.2",
+                "/lib/i386-linux-gnu/libfuse.so.2"
             };
 
             foreach (var path in lib_paths) {
