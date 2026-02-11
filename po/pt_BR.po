@@ -345,9 +345,9 @@ msgid "Cannot determine download URL from zsync URL"
 msgstr ""
 
 #: src/windows/details_window.vala:100
-msgid "⚠️ '~/.local/bin' is not in $PATH. App will not launch from the terminal"
+msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
 msgstr ""
-"⚠️ '~/.local/bin' não está no $PATH. O aplicativo não será iniciado pelo "
+"⚠️ '%s' não está no $PATH. O aplicativo não será iniciado pelo "
 "terminal"
 
 #: src/windows/details_window.vala:160
@@ -455,8 +455,8 @@ msgid "Add to $PATH"
 msgstr "Adicionar ao $PATH"
 
 #: src/windows/details_window.vala:650
-msgid "Create a launcher in ~/.local/bin so you can run it from the terminal"
-msgstr "Criar um lançador em ~/.local/bin para executá-lo pelo terminal"
+msgid "Create a launcher in %s so you can run it from the terminal"
+msgstr "Criar um lançador em %s para executá-lo pelo terminal"
 
 #: src/windows/details_window.vala:711
 msgid "Actions"

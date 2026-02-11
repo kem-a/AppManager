@@ -97,7 +97,7 @@ namespace AppManager {
 
             var content_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
-            path_banner = new Adw.Banner(_("⚠️ '~/.local/bin' is not in $PATH. App will not launch from the terminal"));
+            path_banner = new Adw.Banner(_("⚠️ '%s' is not in $PATH. App will not launch from the terminal").printf(AppPaths.local_bin_dir));
             content_box.append(path_banner);
             update_path_banner_visibility();
 
@@ -647,7 +647,7 @@ namespace AppManager {
         private Adw.SwitchRow build_path_row() {
             path_row = new Adw.SwitchRow();
             path_row.title = _("Add to $PATH");
-            path_row.subtitle = _("Create a launcher in ~/.local/bin so you can run it from the terminal");
+            path_row.subtitle = _("Create a launcher in %s so you can run it from the terminal").printf(AppPaths.local_bin_dir);
 
             var symlink_name = "";
 
