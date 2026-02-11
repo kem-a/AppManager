@@ -9,20 +9,20 @@
 
 | Language | Code | Status |
 | -------- | ---- | ------ |
-| German | de | 74% |
-| Spanish | es | 77% |
-| Estonian | et | 78% |
-| Finnish | fi | 77% |
-| French | fr | 75% |
-| Italian | it | 77% |
-| Japanese | ja | 77% |
-| Lithuanian | lt | 77% |
-| Latvian | lv | 77% |
-| Norwegian Bokmål | nb | 77% |
+| German | de | 73% |
+| Spanish | es | 88% |
+| Estonian | et | 73% |
+| Finnish | fi | 73% |
+| French | fr | 73% |
+| Italian | it | 73% |
+| Japanese | ja | 73% |
+| Lithuanian | lt | 73% |
+| Latvian | lv | 73% |
+| Norwegian Bokmål | nb | 73% |
 | Dutch | nl | 100% |
-| Portuguese (Brazil) | pt_BR | 77% |
-| Swedish | sv | 76% |
-| Chinese (Simplified) | zh_CN | 80% |
+| Portuguese (Brazil) | pt_BR | 73% |
+| Swedish | sv | 73% |
+| Chinese (Simplified) | zh_CN | 73% |
 
 ## Note
 

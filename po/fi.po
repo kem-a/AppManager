@@ -343,9 +343,9 @@ msgid "Cannot determine download URL from zsync URL"
 msgstr ""
 
 #: src/windows/details_window.vala:100
-msgid "⚠️ '~/.local/bin' is not in $PATH. App will not launch from the terminal"
+msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
 msgstr ""
-"⚠️ '~/.local/bin' ei ole $PATH-muuttujassa. Sovellus ei käynnisty päätteestä"
+"⚠️ '%s' ei ole $PATH-muuttujassa. Sovellus ei käynnisty päätteestä"
 
 #: src/windows/details_window.vala:160
 msgid "Show in Files"
@@ -452,9 +452,9 @@ msgid "Add to $PATH"
 msgstr "Lisää $PATH-muuttujaan"
 
 #: src/windows/details_window.vala:650
-msgid "Create a launcher in ~/.local/bin so you can run it from the terminal"
+msgid "Create a launcher in %s so you can run it from the terminal"
 msgstr ""
-"Luo käynnistin ~/.local/bin-kansioon, jotta voit käynnistää sen päätteestä"
+"Luo käynnistin %s-kansioon, jotta voit käynnistää sen päätteestä"
 
 #: src/windows/details_window.vala:711
 msgid "Actions"

@@ -131,9 +131,21 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Returns the user-specific executable directory.
+         * Follows, in order:
+         *   1. $XDG_BIN_HOME (if set and absolute)
+         *   2. $HOME/.local/bin (fallback)
+         */
         public static string local_bin_dir {
             owned get {
-                var dir = Path.build_filename(Environment.get_home_dir(), LOCAL_BIN_DIRNAME);
+                string dir;
+                var xdg_bin_home = Environment.get_variable("XDG_BIN_HOME");
+                if (xdg_bin_home != null && xdg_bin_home.strip() != "" && Path.is_absolute(xdg_bin_home.strip())) {
+                    dir = xdg_bin_home.strip();
+                } else {
+                    dir = Path.build_filename(Environment.get_home_dir(), LOCAL_BIN_DEFAULT_DIRNAME);
+                }
                 DirUtils.create_with_parents(dir, 0755);
                 return dir;
             }
