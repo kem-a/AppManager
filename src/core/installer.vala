@@ -96,7 +96,34 @@ namespace AppManager.Core {
                 
                 // Update MIME database so file associations work
                 update_desktop_database();
-                
+
+                // If this is a self-update and background daemon is running,
+                // kill and respawn so it runs the new binary.
+                // We spawn directly from the installed path rather than using
+                // spawn_daemon() which would resolve to the current (installer) process.
+                if (is_upgrade && record.original_startup_wm_class == Core.APPLICATION_ID) {
+                    if (BackgroundUpdateService.is_daemon_running()) {
+                        debug("Installer: self-update detected, restarting background daemon");
+                        BackgroundUpdateService.kill_daemon_and_wait();
+                        var exec = record.bin_symlink ?? record.installed_path;
+                        try {
+                            string[] argv = { exec, "--background-update" };
+                            Pid child_pid;
+                            Process.spawn_async(
+                                null, argv, null,
+                                SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
+                                null, out child_pid
+                            );
+                            debug("Installer: respawned background daemon (PID %d) from %s", (int) child_pid, exec);
+                            ChildWatch.add(child_pid, (pid, status) => {
+                                Process.close_pid(pid);
+                            });
+                        } catch (SpawnError e) {
+                            warning("Failed to respawn background daemon: %s", e.message);
+                        }
+                    }
+                }
+
                 return record;
             } catch (Error e) {
                 // Cleanup on failure and clear in-flight flag
