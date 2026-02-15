@@ -127,7 +127,8 @@ namespace AppManager {
             var outer = new Gtk.Box(Gtk.Orientation.VERTICAL, 18);
             clamp.child = outer;
 
-            subtitle = new Gtk.Label(_("Drag and drop to install into Applications"));
+            var install_dir_name = Path.get_basename(AppPaths.applications_dir);
+            subtitle = new Gtk.Label(_("Drag and drop to install into %s").printf(install_dir_name));
             subtitle.add_css_class("dim-label");
             subtitle.halign = Gtk.Align.CENTER;
             subtitle.wrap = true;
@@ -182,7 +183,7 @@ namespace AppManager {
             drag_box.append(arrow_overlay);
 
             folder_icon = create_applications_icon();
-            var folder_column = build_icon_column(folder_icon, out folder_name_label, _("Applications"));
+            var folder_column = build_icon_column(folder_icon, out folder_name_label, install_dir_name);
             drag_box.append(folder_column);
 
             drag_overlay = new Gtk.Overlay();
@@ -822,6 +823,9 @@ namespace AppManager {
         private GLib.Icon? load_applications_gicon() {
             var applications_path = AppPaths.applications_dir;
             var applications_dir = File.new_for_path(applications_path);
+            
+            // Ensure the directory exists before querying its icon
+            DirUtils.create_with_parents(applications_path, 0755);
             
             try {
                 string attributes = "standard::icon";
