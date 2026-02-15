@@ -110,7 +110,11 @@ namespace AppManager.Core {
                 };
                 int exit_status = execute(cmd, out stdout_str, out stderr_str);
                 if (exit_status != 0) {
-                    debug("dwarfsextract failed (%d): %s", exit_status, stderr_str ?? "");
+                    var err = stderr_str ?? "";
+                    // "no filesystem found" just means this isn't a DwarFS image — not an error
+                    if (!err.contains("no filesystem found")) {
+                        debug("dwarfsextract failed (%d): %s", exit_status, err);
+                    }
                 }
                 return exit_status == 0;
             } catch (Error e) {
@@ -601,12 +605,45 @@ namespace AppManager.Core {
         private static int execute_7z(string[] arguments, out string? stdout_str, out string? stderr_str) throws Error {
             var cmd = new string[1 + arguments.length];
             // Try bundled 7z first, then fall back to system 7z
-            string bundled_7z = Path.build_filename(SEVENZIP_BUNDLE_DIR, "7z");
-            if (FileUtils.test(bundled_7z, FileTest.IS_EXECUTABLE)) {
-                cmd[0] = bundled_7z;
-            } else {
-                cmd[0] = "7z";
+            string? resolved_7z = null;
+
+            // 1. Check next to the running executable (works in AppImages
+            //    where quick-sharun may restructure /usr/bin → /bin)
+            try {
+                var exe_path = FileUtils.read_link("/proc/self/exe");
+                var exe_dir = Path.get_dirname(exe_path);
+                var sibling_7z = Path.build_filename(exe_dir, "7z");
+                if (FileUtils.test(sibling_7z, FileTest.IS_EXECUTABLE)) {
+                    resolved_7z = sibling_7z;
+                }
+            } catch (Error e) {
+                // /proc/self/exe not available, skip
             }
+
+            // 2. When running inside an AppImage, resolve relative to APPDIR
+            if (resolved_7z == null) {
+                var appdir = Environment.get_variable("APPDIR");
+                if (appdir != null && appdir != "" && SEVENZIP_BUNDLE_DIR != null && SEVENZIP_BUNDLE_DIR.strip() != "") {
+                    var relative_dir = SEVENZIP_BUNDLE_DIR.strip();
+                    if (relative_dir.has_prefix("/")) {
+                        relative_dir = relative_dir.substring(1);
+                    }
+                    var appimage_7z = Path.build_filename(appdir, relative_dir, "7z");
+                    if (FileUtils.test(appimage_7z, FileTest.IS_EXECUTABLE)) {
+                        resolved_7z = appimage_7z;
+                    }
+                }
+            }
+
+            // 3. Try the build-time bundle dir directly
+            if (resolved_7z == null) {
+                string bundled_7z = Path.build_filename(SEVENZIP_BUNDLE_DIR, "7z");
+                if (FileUtils.test(bundled_7z, FileTest.IS_EXECUTABLE)) {
+                    resolved_7z = bundled_7z;
+                }
+            }
+
+            cmd[0] = resolved_7z ?? "7z";
             for (int i = 0; i < arguments.length; i++) {
                 cmd[i + 1] = arguments[i];
             }
