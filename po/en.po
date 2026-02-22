@@ -6,16 +6,17 @@ msgstr ""
 "PO-Revision-Date: 2026-02-22 00:32\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
-"Language: en\n"
+"Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.7\n"
 "X-Crowdin-Project: appmanager-kem-a\n"
 "X-Crowdin-Project-ID: 874216\n"
 "X-Crowdin-Language: en\n"
-"X-Crowdin-File: /main/po/nl.po\n"
-"X-Crowdin-File-ID: 30\n"
+"X-Crowdin-File: /main/po/pt_BR.po\n"
+"X-Crowdin-File-ID: 32\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
@@ -285,9 +286,8 @@ msgstr ""
 msgid "No matching AppImage found for %s"
 msgstr ""
 
-#: src/core/updater.vala:621 src/core/updater.vala:627
-#: src/core/updater.vala:689 src/core/updater.vala:697
-#: src/core/updater.vala:810 src/core/updater.vala:835
+#: src/core/updater.vala:621 src/core/updater.vala:627 src/core/updater.vala:689
+#: src/core/updater.vala:697 src/core/updater.vala:810 src/core/updater.vala:835
 #: src/core/updater.vala:1298 src/core/updater.vala:1326
 #: src/core/updater.vala:1368 src/core/updater.vala:1392
 msgid "Already up to date"
@@ -1098,4 +1098,11 @@ msgstr ""
 #: data/com.github.AppManager.metainfo.xml:48
 msgid "Added optional background update checks powered by the XDG Background portal. Users grant permission on first launch, can pick an interval, and receive a notification when updates are detected."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Only AppImage files can be installed"
+#~ msgstr "Nenhum aplicativo AppImage instalado"
+
+#~ msgid "Update link is managed by zsync and cannot be edited"
+#~ msgstr "O link de atualização é gerenciado pelo zsync e não pode ser editado"
 
