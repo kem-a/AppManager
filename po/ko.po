@@ -14,8 +14,8 @@ msgstr ""
 "X-Crowdin-Project: appmanager-kem-a\n"
 "X-Crowdin-Project-ID: 874216\n"
 "X-Crowdin-Language: ko\n"
-"X-Crowdin-File: /main/po/de.po\n"
-"X-Crowdin-File-ID: 8\n"
+"X-Crowdin-File: /main/po/es.po\n"
+"X-Crowdin-File-ID: 10\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
@@ -1100,9 +1100,9 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Only AppImage files can be installed"
-#~ msgstr "Keine AppImage-Apps installiert"
+#~ msgstr "No hay aplicaciones AppImage instaladas"
 
 #~ msgid "Update link is managed by zsync and cannot be edited"
 #~ msgstr ""
-#~ "Update-Link wird von zsync verwaltet und kann nicht bearbeitet werden"
+#~ "El enlace de actualización está gestionado por zsync y no se puede editar"
 
