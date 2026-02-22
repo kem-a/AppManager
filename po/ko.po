@@ -14,8 +14,8 @@ msgstr ""
 "X-Crowdin-Project: appmanager-kem-a\n"
 "X-Crowdin-Project-ID: 874216\n"
 "X-Crowdin-Language: ko\n"
-"X-Crowdin-File: /main/po/nb.po\n"
-"X-Crowdin-File-ID: 28\n"
+"X-Crowdin-File: /main/po/nl.po\n"
+"X-Crowdin-File-ID: 30\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
@@ -295,6 +295,7 @@ msgstr ""
 
 #: src/core/updater.vala:727 src/core/updater.vala:1434
 #: src/core/updater.vala:1499
+#, c-format
 msgid "Updated to %s"
 msgstr ""
 
@@ -1097,11 +1098,4 @@ msgstr ""
 #: data/com.github.AppManager.metainfo.xml:48
 msgid "Added optional background update checks powered by the XDG Background portal. Users grant permission on first launch, can pick an interval, and receive a notification when updates are detected."
 msgstr ""
-
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Ingen AppImage-apper installert"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr "Oppdateringslenken administreres av zsync og kan ikke redigeres"
 
