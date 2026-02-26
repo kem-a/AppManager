@@ -1,32 +1,29 @@
-# Korean translations for app-manager package.
-# Copyright (C) 2026 THE app-manager'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-# Automatically generated, 2026.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-02-26 10:50+0200\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
-"Language: ko\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
+"Last-Translator: \n"
+"Language-Team: Korean\n"
+"Language: ko_KR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: ko\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "호환되지 않는 앱 이미지"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
-msgstr ""
-"이 AppImage는 호환되지 않거나 손상되었습니다. 필수 파일(AppRun, .desktop 또는 아이콘)이 누락되었습니다."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "이 AppImage는 호환되지 않거나 손상되었습니다. 필수 파일(AppRun, .desktop 또는 아이콘)이 누락되었습니다."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -59,9 +56,7 @@ msgstr "%s을 열까요?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr "%s 애플리케이션의 출처를 확인할 수 없습니다. 정말로 열어보시겠어요?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
@@ -115,9 +110,7 @@ msgstr "%s을 바꾸시겠습니까?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
 msgstr "%s이라는 새로운 항목이 이미 이 위치에 있습니다. 복사 중인 이전 항목으로 바꾸시겠습니까?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
@@ -127,9 +120,7 @@ msgstr "설치됨: %s | 수신: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
 msgstr "%s이라는 항목이 이 위치에 이미 존재합니다. 복사 중인 항목으로 바꾸시겠습니까?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
@@ -289,11 +280,9 @@ msgstr "%s(%d/%d) 마이그레이션 중…"
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"일부 앱을 이전하지 못했습니다:\n"
+msgstr "일부 앱을 이전하지 못했습니다:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -347,20 +336,15 @@ msgid "Updated"
 msgstr "업데이트됨"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr "GitHub 인증에 실패했습니다(401). 환경 설정 → GitHub에서 토큰을 확인하세요."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr "GitHub API 비율 제한을 초과했습니다. 한도를 늘리려면 환경 설정 → GitHub에 토큰을 추가하세요."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr "GitHub 액세스가 금지되었습니다(403). 토큰에 필요한 권한이 부족할 수 있습니다."
 
 #: src/core/updater.vala:1286
@@ -517,21 +501,12 @@ msgid "Check Update"
 msgstr "업데이트 확인"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"업데이트 정보를 통해 AppManager가 새 빌드를 가져올 수 있습니다. 다운로드 링크를 붙여넣으면 AppManager가 나머지 작업을"
-" 수행합니다."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "업데이트 정보를 통해 AppManager가 새 빌드를 가져올 수 있습니다. 다운로드 링크를 붙여넣으면 AppManager가 나머지 작업을 수행합니다."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"현재 GitHub 및 GitLab URL 형식이 완벽하게 지원됩니다. 서버가 Last-Modified 또는 Content-Length "
-"헤더를 제공하는 경우에도 직접 다운로드 링크가 작동합니다."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "현재 GitHub 및 GitLab URL 형식이 완벽하게 지원됩니다. 서버가 Last-Modified 또는 Content-Length 헤더를 제공하는 경우에도 직접 다운로드 링크가 작동합니다."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -542,12 +517,8 @@ msgid "Got it"
 msgstr "알았어요"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"압축을 풀면 응용 프로그램의 압축이 풀려 더 빨리 열리지만 더 많은 디스크 공간을 소비하게 됩니다. 이 작업은 자동으로 되돌릴 수 "
-"없습니다."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "압축을 풀면 응용 프로그램의 압축이 풀려 더 빨리 열리지만 더 많은 디스크 공간을 소비하게 됩니다. 이 작업은 자동으로 되돌릴 수 없습니다."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -1011,12 +982,10 @@ msgstr "축소판 및 아이콘 뒤의 알파 체커보드 제거"
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr "GitHub로 인증하여 API 속도 제한을 시간당 요청 60개에서 5,000개로 늘립니다."
 
 #: src/windows/preferences_window.vala:215
@@ -1083,9 +1052,7 @@ msgstr "설치된 앱을 이동하시겠습니까?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr "그러면 %d 설치된 앱이 새 위치로 이동됩니다. 앱 크기에 따라 시간이 걸릴 수 있습니다."
 
 #: src/windows/preferences_window.vala:433
@@ -1156,10 +1123,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "GNOME용 드래그 앤 드롭 AppImage 설치 프로그램"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"AppManager를 사용하면 macOS에서 영감을 받은 친숙한 드래그 앤 드롭 작업 흐름을 통해 AppImages를 설치하거나 제거할 "
-"수 있습니다. 데스크탑 통합, 아이콘 추출, 실행 가능 비트 및 노틸러스 컨텍스트 메뉴를 처리합니다."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "AppManager를 사용하면 macOS에서 영감을 받은 친숙한 드래그 앤 드롭 작업 흐름을 통해 AppImages를 설치하거나 제거할 수 있습니다. 데스크탑 통합, 아이콘 추출, 실행 가능 비트 및 노틸러스 컨텍스트 메뉴를 처리합니다."
+
