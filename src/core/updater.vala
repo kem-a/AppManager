@@ -593,7 +593,7 @@ namespace AppManager.Core {
 
             try {
                 var release_source = source as ReleaseSource;
-                var release = fetch_latest_release(release_source, cancellable);
+                var release = fetch_latest_release(release_source, cancellable, record.prerelease_enabled);
                 if (release == null) {
                     return new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, _("Unable to read releases"));
                 }
@@ -662,7 +662,7 @@ namespace AppManager.Core {
 
             try {
                 var release_source = source as ReleaseSource;
-                var release = fetch_latest_release(release_source, cancellable);
+                var release = fetch_latest_release(release_source, cancellable, record.prerelease_enabled);
                 if (release == null) {
                     record_skipped(record, UpdateSkipReason.API_UNAVAILABLE);
                     log_update_event(record, "SKIP", "release API unavailable");
@@ -943,9 +943,9 @@ namespace AppManager.Core {
         // Release Fetching
         // ─────────────────────────────────────────────────────────────────────
 
-        private ReleaseInfo? fetch_latest_release(ReleaseSource source, GLib.Cancellable? cancellable) throws Error {
+        private ReleaseInfo? fetch_latest_release(ReleaseSource source, GLib.Cancellable? cancellable, bool include_prerelease = false) throws Error {
             if (source is GithubSource) {
-                return fetch_github_release(source as GithubSource, cancellable);
+                return fetch_github_release(source as GithubSource, cancellable, include_prerelease);
             }
             if (source is GitlabSource) {
                 return fetch_gitlab_release(source as GitlabSource, cancellable);
@@ -980,7 +980,7 @@ namespace AppManager.Core {
             return parser.steal_root();
         }
 
-        private ReleaseInfo? find_release_with_appimage(Json.Array array, ParseReleaseFunc parser) {
+        private ReleaseInfo? find_release_with_appimage(Json.Array array, ParseReleaseFunc parser, bool include_prerelease = false) {
             ReleaseInfo? fallback = null;
             for (uint i = 0; i < array.get_length(); i++) {
                 var node = array.get_element(i);
@@ -988,6 +988,9 @@ namespace AppManager.Core {
                 
                 var release = parser(node.get_object());
                 if (release == null) continue;
+                
+                // Skip pre-releases unless opted in
+                if (release.prerelease && !include_prerelease) continue;
                 
                 if (fallback == null) fallback = release;
                 if (select_appimage_asset(release.assets) != null) return release;
@@ -997,14 +1000,20 @@ namespace AppManager.Core {
 
         private delegate ReleaseInfo? ParseReleaseFunc(Json.Object obj);
 
-        private ReleaseInfo? fetch_github_release(GithubSource source, GLib.Cancellable? cancellable) throws Error {
+        private ReleaseInfo? fetch_github_release(GithubSource source, GLib.Cancellable? cancellable, bool include_prerelease = false) throws Error {
             var root = fetch_json(source.releases_api_url(), "application/vnd.github+json", cancellable);
             if (root == null || root.get_node_type() != Json.NodeType.ARRAY) return null;
-            return find_release_with_appimage(root.get_array(), parse_github_release);
+            return find_release_with_appimage(root.get_array(), parse_github_release, include_prerelease);
         }
 
         private ReleaseInfo? parse_github_release(Json.Object obj) {
             string? tag = obj.has_member("tag_name") ? obj.get_string_member("tag_name") : null;
+            bool is_prerelease = obj.has_member("prerelease") ? obj.get_boolean_member("prerelease") : false;
+            bool is_draft = obj.has_member("draft") ? obj.get_boolean_member("draft") : false;
+            
+            // Always skip drafts
+            if (is_draft) return null;
+            
             var assets = new ArrayList<ReleaseAsset>();
             
             if (obj.has_member("assets")) {
@@ -1023,7 +1032,7 @@ namespace AppManager.Core {
                 }
             }
 
-            return new ReleaseInfo(tag, VersionUtils.sanitize(tag), assets);
+            return new ReleaseInfo(tag, VersionUtils.sanitize(tag), is_prerelease, assets);
         }
 
         private ReleaseInfo? fetch_gitlab_release(GitlabSource source, GLib.Cancellable? cancellable) throws Error {
@@ -1031,7 +1040,7 @@ namespace AppManager.Core {
             if (root == null) return null;
             
             if (root.get_node_type() == Json.NodeType.ARRAY) {
-                return find_release_with_appimage(root.get_array(), parse_gitlab_release);
+                return find_release_with_appimage(root.get_array(), parse_gitlab_release, true);
             } else if (root.get_node_type() == Json.NodeType.OBJECT) {
                 return parse_gitlab_release(root.get_object());
             }
@@ -1074,7 +1083,7 @@ namespace AppManager.Core {
                 }
             }
 
-            return new ReleaseInfo(tag ?? name, VersionUtils.sanitize(tag ?? name), assets);
+            return new ReleaseInfo(tag ?? name, VersionUtils.sanitize(tag ?? name), false, assets);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -1710,12 +1719,14 @@ namespace AppManager.Core {
         private class ReleaseInfo : Object {
             public string? tag_name { get; private set; }
             public string? version { get; private set; }
+            public bool prerelease { get; private set; }
             public ArrayList<ReleaseAsset> assets { get; private set; }
 
-            public ReleaseInfo(string? tag_name, string? version, ArrayList<ReleaseAsset> assets) {
+            public ReleaseInfo(string? tag_name, string? version, bool prerelease, ArrayList<ReleaseAsset> assets) {
                 Object();
                 this.tag_name = tag_name;
                 this.version = version;
+                this.prerelease = prerelease;
                 this.assets = assets;
             }
         }

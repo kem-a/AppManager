@@ -258,18 +258,63 @@ namespace AppManager {
             });
             update_group.set_header_suffix(update_info_button);
             
+            var has_zsync = record.zsync_update_info != null && record.zsync_update_info.strip() != "";
+            
+            // Pre-release toggle row (created early so update_row can reference it)
+            Adw.SwitchRow? prerelease_row = null;
+            if (!has_zsync) {
+                prerelease_row = new Adw.SwitchRow();
+                prerelease_row.title = _("Pre-release Updates");
+                prerelease_row.subtitle = _("Include pre-release versions when checking for updates");
+                prerelease_row.active = record.prerelease_enabled;
+                prerelease_row.notify["active"].connect(() => {
+                    record.prerelease_enabled = prerelease_row.active;
+                    registry.update(record);
+                });
+                // Initial visibility based on current URL
+                var initial_url = record.get_effective_update_link() ?? "";
+                prerelease_row.visible = initial_url.down().contains("github.com");
+            }
+            
             // Update link row
-            var update_row = build_update_link_row();
+            var update_row = build_update_link_row(prerelease_row);
+            if (has_zsync) {
+                update_row.sensitive = false;
+                update_row.tooltip_text = _("Update link is managed by the embedded zsync update mechanism");
+            }
             update_group.add(update_row);
             
             // Web page row
             var webpage_row = build_webpage_row();
             update_group.add(webpage_row);
             
+            // Add pre-release row after web page
+            if (prerelease_row != null) {
+                update_group.add(prerelease_row);
+            }
+            
             return update_group;
         }
 
-        private Adw.EntryRow build_update_link_row() {
+        /**
+         * Syncs pre-release row visibility with the current URL text.
+         * If URL is not GitHub, turns off the toggle and hides the row.
+         */
+        private void sync_prerelease_visibility(Adw.SwitchRow? prerelease_row, string url) {
+            if (prerelease_row == null) return;
+            var is_github = url.down().contains("github.com");
+            if (is_github) {
+                prerelease_row.visible = true;
+            } else {
+                // Turn off and hide when not GitHub
+                if (prerelease_row.active) {
+                    prerelease_row.active = false;
+                }
+                prerelease_row.visible = false;
+            }
+        }
+
+        private Adw.EntryRow build_update_link_row(Adw.SwitchRow? prerelease_row) {
             var update_row = new Adw.EntryRow();
             update_row.title = _("Update Link");
             update_row.text = record.get_effective_update_link() ?? "";
@@ -280,8 +325,14 @@ namespace AppManager {
                 update_row.text = record.original_update_link ?? "";
                 persist_record_and_refresh_desktop();
                 restore_update_button.set_visible(false);
+                sync_prerelease_visibility(prerelease_row, update_row.text);
             });
             update_row.add_suffix(restore_update_button);
+            
+            // React to text changes in real-time for pre-release visibility
+            update_row.changed.connect(() => {
+                sync_prerelease_visibility(prerelease_row, update_row.text);
+            });
             
             // Normalize URL when user leaves the entry or presses Enter
             var focus_controller = new Gtk.EventControllerFocus();

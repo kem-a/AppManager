@@ -77,6 +77,7 @@ namespace AppManager.Core {
                 record.custom_startup_wm_class = old_record.custom_startup_wm_class;
                 record.custom_update_link = old_record.custom_update_link;
                 record.custom_web_page = old_record.custom_web_page;
+                record.prerelease_enabled = old_record.prerelease_enabled;
                 // Note: original_* values will be updated from the new AppImage's .desktop
             }
             // Note: For fresh installs, history is applied in finalize_desktop_and_icon()

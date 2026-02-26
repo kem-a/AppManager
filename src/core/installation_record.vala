@@ -52,6 +52,9 @@ namespace AppManager.Core {
         
         // Environment variables as array of "NAME=VALUE" strings (max 5)
         public string[]? custom_env_vars { get; set; }
+        
+        // Whether to include pre-release versions when checking for updates (GitHub only)
+        public bool prerelease_enabled { get; set; default = false; }
 
         public InstallationRecord(string id, string name, InstallMode mode) {
             Object(id: id, name: name, mode: mode, installed_at: (int64)GLib.get_real_time());
@@ -166,6 +169,10 @@ namespace AppManager.Core {
             builder.set_member_name("original_web_page");
             builder.add_string_value(original_web_page ?? "");
             
+            // Pre-release channel preference
+            builder.set_member_name("prerelease_enabled");
+            builder.add_boolean_value(prerelease_enabled);
+            
             // Custom values set by user - only write if set (not null)
             serialize_custom_values(builder);
             
@@ -251,6 +258,9 @@ namespace AppManager.Core {
             record.entry_exec = entry_exec == "" ? null : entry_exec;
             if (obj.has_member("is_terminal")) {
                 record.is_terminal = obj.get_boolean_member("is_terminal");
+            }
+            if (obj.has_member("prerelease_enabled")) {
+                record.prerelease_enabled = obj.get_boolean_member("prerelease_enabled");
             }
             
             // Zsync update info (if app supports zsync delta updates)
