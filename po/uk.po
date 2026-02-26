@@ -1,33 +1,29 @@
-# Ukrainian translations for app-manager package.
-# Copyright (C) 2026 THE app-manager'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-# Automatically generated, 2026.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-02-26 10:50+0200\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
-"Language: uk\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
+"Last-Translator: \n"
+"Language-Team: Ukrainian\n"
+"Language: uk_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=4; plural=((n%10==1 && n%100!=11) ? 0 : ((n%10 >= 2 && n%10 <=4 && (n%100 < 12 || n%100 > 14)) ? 1 : ((n%10 == 0 || (n%10 >= 5 && n%10 <=9)) || (n%100 >= 11 && n%100 <= 14)) ? 2 : 3));\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: uk\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "Несумісний AppImage"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
-msgstr ""
-"Це зображення програми несумісне або пошкоджене. Відсутні необхідні файли "
-"(AppRun, .desktop або значок)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "Це зображення програми несумісне або пошкоджене. Відсутні необхідні файли (AppRun, .desktop або значок)."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -60,12 +56,8 @@ msgstr "Відкрити %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
-msgstr ""
-"Походження програми %s неможливо перевірити. Ви впевнені, що хочете його "
-"відкрити?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "Походження програми %s неможливо перевірити. Ви впевнені, що хочете його відкрити?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
@@ -118,12 +110,8 @@ msgstr "Замінити %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Новіший елемент під назвою %s вже існує в цьому місці. Бажаєте замінити його"
-" старішим, який ви копіюєте?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Новіший елемент під назвою %s вже існує в цьому місці. Бажаєте замінити його старішим, який ви копіюєте?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -132,12 +120,8 @@ msgstr "Встановлено: %s | Вхідні: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Елемент під назвою %s вже існує в цьому місці. Бажаєте замінити його тим, що"
-" копіюєте?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Елемент під назвою %s вже існує в цьому місці. Бажаєте замінити його тим, що копіюєте?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -269,8 +253,7 @@ msgstr "Батьківський каталог не існує"
 
 #: src/core/path_migration_service.vala:77
 msgid "Cannot create directory: parent is not writable"
-msgstr ""
-"Неможливо створити каталог: батьківський каталог не доступний для запису"
+msgstr "Неможливо створити каталог: батьківський каталог не доступний для запису"
 
 #: src/core/path_migration_service.vala:80
 #, c-format
@@ -297,11 +280,9 @@ msgstr "Перенесення %s (%d/%d)…"
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"Деякі програми не вдалося перенести:\n"
+msgstr "Деякі програми не вдалося перенести:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -355,27 +336,16 @@ msgid "Updated"
 msgstr "Оновлено"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
-msgstr ""
-"Помилка автентифікації GitHub (401). Перевірте свій маркер у Налаштуваннях →"
-" GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Помилка автентифікації GitHub (401). Перевірте свій маркер у Налаштуваннях → GitHub."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Перевищено ліміт швидкості GitHub API. Щоб збільшити ліміт, додайте токен у "
-"«Налаштування» → GitHub."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Перевищено ліміт швидкості GitHub API. Щоб збільшити ліміт, додайте токен у «Налаштування» → GitHub."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Доступ до GitHub заборонено (403). Ваш маркер може не мати необхідних "
-"дозволів."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Доступ до GitHub заборонено (403). Ваш маркер може не мати необхідних дозволів."
 
 #: src/core/updater.vala:1286
 msgid "Unknown zsync source type"
@@ -531,22 +501,12 @@ msgid "Check Update"
 msgstr "Перевірте оновлення"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Інформація про оновлення дозволяє AppManager отримувати нові збірки для вас."
-" Вставте посилання для завантаження, а AppManager зробить усе інше."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Інформація про оновлення дозволяє AppManager отримувати нові збірки для вас. Вставте посилання для завантаження, а AppManager зробить усе інше."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"Наразі формати URL GitHub і GitLab повністю підтримуються. Прямі посилання "
-"для завантаження також працюють, якщо сервер надає заголовки Last-Modified "
-"або Content-Length."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "Наразі формати URL GitHub і GitLab повністю підтримуються. Прямі посилання для завантаження також працюють, якщо сервер надає заголовки Last-Modified або Content-Length."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -557,12 +517,8 @@ msgid "Got it"
 msgstr "зрозумів"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Витяг розпакує програму, щоб вона відкривалася швидше, але займає більше "
-"місця на диску. Цю дію не можна скасувати автоматично."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Витяг розпакує програму, щоб вона відкривалася швидше, але займає більше місця на диску. Цю дію не можна скасувати автоматично."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -642,7 +598,7 @@ msgstr "Введіть хеш SHA256"
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -662,8 +618,7 @@ msgstr "Немає встановлених програм AppImage"
 
 #: src/windows/main_window.vala:283
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Завантажте AppImage і двічі клацніть, щоб установити за допомогою AppManager"
+msgstr "Завантажте AppImage і двічі клацніть, щоб установити за допомогою AppManager"
 
 #: src/windows/main_window.vala:350
 msgid "No results found"
@@ -929,8 +884,7 @@ msgstr "монтаж"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"Налаштувати місце встановлення AppImages (за замовчуванням: ~/Applications)"
+msgstr "Налаштувати місце встановлення AppImages (за замовчуванням: ~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -954,9 +908,7 @@ msgstr "Пропустити вікно перетягування"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Відображати діалогове вікно встановлення безпосередньо під час відкриття "
-"AppImages"
+msgstr "Відображати діалогове вікно встановлення безпосередньо під час відкриття AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
@@ -1013,12 +965,11 @@ msgstr "Мініатюри"
 
 #: src/windows/preferences_window.vala:189
 msgid "AppImage Thumbnailer"
-msgstr "AppImage Thumbnailer"
+msgstr ""
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Встановіть appimage-thumbnailer, щоб генерувати мініатюри для AppImages"
+msgstr "Встановіть appimage-thumbnailer, щоб генерувати мініатюри для AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1031,15 +982,11 @@ msgstr "Видаліть альфа-шашку за ескізами та пік
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
-msgstr ""
-"Пройдіть автентифікацію за допомогою GitHub, щоб збільшити ліміт швидкості "
-"API з 60 до 5000 запитів на годину"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr "Пройдіть автентифікацію за допомогою GitHub, щоб збільшити ліміт швидкості API з 60 до 5000 запитів на годину"
 
 #: src/windows/preferences_window.vala:215
 msgid "Personal access token"
@@ -1085,8 +1032,7 @@ msgstr "Створіть маркер на GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Досить детального токена з доступом до публічного репо лише для читання"
+msgstr "Досить детального токена з доступом до публічного репо лише для читання"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1106,12 +1052,8 @@ msgstr "Перемістити встановлені програми?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
-msgstr ""
-"Це перемістить %d встановлені програми в нове розташування. Це може зайняти "
-"деякий час залежно від розміру ваших програм."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr "Це перемістить %d встановлені програми в нове розташування. Це може зайняти деякий час залежно від розміру ваших програм."
 
 #: src/windows/preferences_window.vala:433
 msgid "Move Apps"
@@ -1181,12 +1123,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "Інсталятор AppImage для GNOME з функцією перетягування"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"AppManager дозволяє встановлювати або видаляти AppImages за допомогою "
-"знайомого робочого процесу перетягування, натхненного macOS. Він керує "
-"інтеграцією робочого столу, вилученням піктограм, виконуваних бітів і "
-"контекстних меню Nautilus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "AppManager дозволяє встановлювати або видаляти AppImages за допомогою знайомого робочого процесу перетягування, натхненного macOS. Він керує інтеграцією робочого столу, вилученням піктограм, виконуваних бітів і контекстних меню Nautilus."
+
