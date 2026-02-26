@@ -1,31 +1,28 @@
-# Polish translations for app-manager package.
-# Copyright (C) 2026 THE app-manager'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-# Automatically generated, 2026.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-02-26 10:50+0200\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
-"Language: pl\n"
+"PO-Revision-Date: 2026-02-26 09:50\n"
+"Last-Translator: \n"
+"Language-Team: Polish\n"
+"Language: pl_PL\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
-"|| n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: pl\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr ""
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
 msgstr ""
 
 #. Architecture mismatch banner
@@ -59,9 +56,7 @@ msgstr ""
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr ""
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
@@ -115,9 +110,7 @@ msgstr ""
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
 msgstr ""
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
@@ -127,9 +120,7 @@ msgstr ""
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
 msgstr ""
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
@@ -289,8 +280,7 @@ msgstr ""
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
 
@@ -345,19 +335,15 @@ msgid "Updated"
 msgstr ""
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr ""
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr ""
 
 #: src/core/updater.vala:1286
@@ -514,16 +500,11 @@ msgid "Check Update"
 msgstr ""
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
 msgstr ""
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
 msgstr ""
 
 #: src/windows/details_window.vala:891
@@ -535,9 +516,7 @@ msgid "Got it"
 msgstr ""
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
 msgstr ""
 
 #: src/windows/details_window.vala:910
@@ -1005,9 +984,7 @@ msgid "GitHub"
 msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr ""
 
 #: src/windows/preferences_window.vala:215
@@ -1074,9 +1051,7 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr ""
 
 #: src/windows/preferences_window.vala:433
@@ -1147,8 +1122,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
 msgstr ""
+
