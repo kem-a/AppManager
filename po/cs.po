@@ -1,0 +1,1101 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: appmanager-kem-a\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-13 15:55+0200\n"
+"PO-Revision-Date: 2026-02-26 07:50\n"
+"Last-Translator: \n"
+"Language-Team: Czech\n"
+"Language: cs_CZ\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 3;\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: cs\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
+
+#: src/application.vala:246
+msgid "Incompatible AppImage"
+msgstr ""
+
+#: src/application.vala:247
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr ""
+
+#: src/application.vala:248 src/application.vala:260 src/application.vala:780
+#: src/application.vala:835 src/application.vala:847
+#: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:95
+#: src/windows/drop_window.vala:105
+msgid "Close"
+msgstr ""
+
+#: src/application.vala:256 src/windows/drop_window.vala:317
+msgid "unknown"
+msgstr ""
+
+#: src/application.vala:258
+msgid "Architecture Mismatch"
+msgstr ""
+
+#: src/application.vala:259 src/windows/drop_window.vala:318
+#, c-format
+msgid "This app is built for %s and cannot run here"
+msgstr ""
+
+#: src/application.vala:356 src/windows/drop_window.vala:221
+#, c-format
+msgid "Open %s?"
+msgstr ""
+
+#: src/application.vala:360 src/windows/drop_window.vala:224
+#, c-format
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr ""
+
+#: src/application.vala:363 src/windows/drop_window.vala:231
+msgid "Install the AppImage to add it to your applications."
+msgstr ""
+
+#: src/application.vala:365 src/windows/drop_window.vala:234
+msgid "Install"
+msgstr ""
+
+#: src/application.vala:366 src/application.vala:397
+#: src/windows/details_window.vala:911 src/windows/drop_window.vala:235
+#: src/windows/drop_window.vala:409 src/windows/drop_window.vala:965
+#: src/windows/preferences_window.vala:432
+#: src/windows/preferences_window.vala:466
+msgid "Cancel"
+msgstr ""
+
+#: src/application.vala:384 src/windows/drop_window.vala:405
+#, c-format
+msgid "Update %s?"
+msgstr ""
+
+#: src/application.vala:388 src/windows/details_window.vala:135
+#: src/windows/drop_window.vala:381
+msgid "Version unknown"
+msgstr ""
+
+#: src/application.vala:393 src/application.vala:536
+#: src/windows/drop_window.vala:388 src/windows/drop_window.vala:545
+msgid "Unknown version"
+msgstr ""
+
+#: src/application.vala:394 src/windows/drop_window.vala:389
+#, c-format
+msgid "Will update to version %s"
+msgstr ""
+
+#: src/application.vala:396 src/windows/details_window.vala:819
+#: src/windows/drop_window.vala:408
+msgid "Update"
+msgstr ""
+
+#: src/application.vala:415 src/windows/drop_window.vala:435
+#, c-format
+msgid "Replace %s?"
+msgstr ""
+
+#: src/application.vala:421 src/windows/drop_window.vala:439
+#, c-format
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr ""
+
+#: src/application.vala:423 src/windows/drop_window.vala:441
+#, c-format
+msgid "Installed: %s | Incoming: %s"
+msgstr ""
+
+#: src/application.vala:427 src/windows/drop_window.vala:445
+#, c-format
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr ""
+
+#: src/application.vala:432 src/windows/drop_window.vala:449
+msgid "Stop"
+msgstr ""
+
+#: src/application.vala:433 src/windows/drop_window.vala:450
+msgid "Replace"
+msgstr ""
+
+#: src/application.vala:520 src/windows/drop_window.vala:528
+msgid "Successfully Updated"
+msgstr ""
+
+#: src/application.vala:520 src/windows/drop_window.vala:526
+msgid "Successfully Installed"
+msgstr ""
+
+#: src/application.vala:537 src/windows/drop_window.vala:546
+#, c-format
+msgid "Version %s"
+msgstr ""
+
+#: src/application.vala:541 src/windows/drop_window.vala:550
+msgid "Open"
+msgstr ""
+
+#: src/application.vala:542 src/windows/drop_window.vala:551
+msgid "Done"
+msgstr ""
+
+#: src/application.vala:567 src/windows/drop_window.vala:577
+msgid "Installation failed"
+msgstr ""
+
+#: src/application.vala:569 src/windows/drop_window.vala:587
+msgid "Dismiss"
+msgstr ""
+
+#: src/application.vala:777
+msgid "Uninstall failed"
+msgstr ""
+
+#: src/application.vala:778
+#, c-format
+msgid "%s could not be removed: %s"
+msgstr ""
+
+#: src/application.vala:785
+msgid "Moved to Trash"
+msgstr ""
+
+#: src/application.vala:793
+msgid "Extraction is only available for portable installations."
+msgstr ""
+
+#: src/application.vala:829
+msgid "Extracted for faster launch"
+msgstr ""
+
+#: src/application.vala:832
+msgid "Extraction complete"
+msgstr ""
+
+#: src/application.vala:833
+#, c-format
+msgid "%s was extracted and will open faster."
+msgstr ""
+
+#: src/application.vala:844
+msgid "Extraction failed"
+msgstr ""
+
+#: src/application.vala:845
+#, c-format
+msgid "%s could not be extracted: %s"
+msgstr ""
+
+#: src/core/background_update_service.vala:314
+msgid "App updates available"
+msgstr ""
+
+#: src/core/background_update_service.vala:316
+#, c-format
+msgid "%d app update(s) available"
+msgstr ""
+
+#: src/core/background_update_service.vala:325
+msgid "Open AppManager"
+msgstr ""
+
+#: src/core/installer.vala:606 src/windows/details_window.vala:771
+msgid "Move to Trash"
+msgstr ""
+
+#: src/core/path_migration_service.vala:42
+msgid "Path must be absolute"
+msgstr ""
+
+#: src/core/path_migration_service.vala:47
+msgid "This is already the current directory"
+msgstr ""
+
+#: src/core/path_migration_service.vala:56
+msgid "Directory is not writable"
+msgstr ""
+
+#: src/core/path_migration_service.vala:59
+#, c-format
+msgid "Cannot access directory: %s"
+msgstr ""
+
+#: src/core/path_migration_service.vala:63
+msgid "Path exists but is not a directory"
+msgstr ""
+
+#: src/core/path_migration_service.vala:69
+msgid "Invalid path"
+msgstr ""
+
+#: src/core/path_migration_service.vala:72
+msgid "Parent directory does not exist"
+msgstr ""
+
+#: src/core/path_migration_service.vala:77
+msgid "Cannot create directory: parent is not writable"
+msgstr ""
+
+#: src/core/path_migration_service.vala:80
+#, c-format
+msgid "Cannot access parent directory: %s"
+msgstr ""
+
+#: src/core/path_migration_service.vala:170
+#, c-format
+msgid "Failed to create directory: %s"
+msgstr ""
+
+#: src/core/path_migration_service.vala:178
+#, c-format
+msgid "Failed to create extracted directory: %s"
+msgstr ""
+
+#: src/core/path_migration_service.vala:189
+#, c-format
+msgid "Migrating %s (%d/%d)…"
+msgstr ""
+
+#: src/core/path_migration_service.vala:215
+#, c-format
+msgid "Some apps failed to migrate:\n"
+"%s"
+msgstr ""
+
+#: src/core/updater.vala:587 src/core/updater.vala:652
+msgid "No update address configured"
+msgstr ""
+
+#: src/core/updater.vala:592 src/core/updater.vala:661
+msgid "Update source not supported"
+msgstr ""
+
+#: src/core/updater.vala:608 src/core/updater.vala:679
+msgid "Unable to read releases"
+msgstr ""
+
+#: src/core/updater.vala:613 src/core/updater.vala:705
+#, c-format
+msgid "No matching AppImage found for %s"
+msgstr ""
+
+#: src/core/updater.vala:621 src/core/updater.vala:627
+#: src/core/updater.vala:689 src/core/updater.vala:697
+#: src/core/updater.vala:810 src/core/updater.vala:835
+#: src/core/updater.vala:1298 src/core/updater.vala:1326
+#: src/core/updater.vala:1368 src/core/updater.vala:1392
+msgid "Already up to date"
+msgstr ""
+
+#: src/core/updater.vala:727 src/core/updater.vala:1434
+#: src/core/updater.vala:1499
+#, c-format
+msgid "Updated to %s"
+msgstr ""
+
+#: src/core/updater.vala:798 src/core/updater.vala:828
+#: src/core/updater.vala:1313
+msgid "Server does not provide change tracking headers"
+msgstr ""
+
+#: src/core/updater.vala:806 src/core/updater.vala:1322
+#: src/core/updater.vala:1386
+msgid "Baseline recorded"
+msgstr ""
+
+#: src/core/updater.vala:855 src/core/updater.vala:1435
+#: src/core/updater.vala:1500
+msgid "Updated"
+msgstr ""
+
+#: src/core/updater.vala:962
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr ""
+
+#: src/core/updater.vala:967
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr ""
+
+#: src/core/updater.vala:969
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr ""
+
+#: src/core/updater.vala:1276
+msgid "Unknown zsync source type"
+msgstr ""
+
+#: src/core/updater.vala:1343
+msgid "Unknown zsync source"
+msgstr ""
+
+#: src/core/updater.vala:1472
+msgid "Cannot determine download URL from zsync URL"
+msgstr ""
+
+#: src/windows/details_window.vala:100
+#, c-format
+msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
+msgstr ""
+
+#: src/windows/details_window.vala:160
+msgid "Show in Files"
+msgstr ""
+
+#: src/windows/details_window.vala:162
+msgid "Portable"
+msgstr ""
+
+#: src/windows/details_window.vala:162
+msgid "Extracted"
+msgstr ""
+
+#: src/windows/details_window.vala:184
+msgid "Terminal"
+msgstr ""
+
+#: src/windows/details_window.vala:192
+msgid "This app supports efficient delta updates"
+msgstr ""
+
+#: src/windows/details_window.vala:199
+msgid "Hidden"
+msgstr ""
+
+#: src/windows/details_window.vala:209
+msgid "Properties"
+msgstr ""
+
+#: src/windows/details_window.vala:214
+msgid "Command line arguments"
+msgstr ""
+
+#: src/windows/details_window.vala:246
+msgid "Update info"
+msgstr ""
+
+#: src/windows/details_window.vala:252
+msgid "How update links work"
+msgstr ""
+
+#: src/windows/details_window.vala:271
+msgid "Update Link"
+msgstr ""
+
+#: src/windows/details_window.vala:320
+msgid "Web Page"
+msgstr ""
+
+#: src/windows/details_window.vala:349
+msgid "Open web page"
+msgstr ""
+
+#: src/windows/details_window.vala:363
+msgid "Advanced"
+msgstr ""
+
+#: src/windows/details_window.vala:390
+msgid "Environment Variables"
+msgstr ""
+
+#: src/windows/details_window.vala:391
+msgid "Set custom environment variables for this app"
+msgstr ""
+
+#: src/windows/details_window.vala:444
+msgid "NAME"
+msgstr ""
+
+#: src/windows/details_window.vala:458
+msgid "value"
+msgstr ""
+
+#: src/windows/details_window.vala:470
+msgid "Remove variable"
+msgstr ""
+
+#: src/windows/details_window.vala:595
+msgid "Keywords"
+msgstr ""
+
+#: src/windows/details_window.vala:605
+msgid "Icon name"
+msgstr ""
+
+#: src/windows/details_window.vala:615
+msgid "Startup WM Class"
+msgstr ""
+
+#: src/windows/details_window.vala:625
+msgid "Version"
+msgstr ""
+
+#: src/windows/details_window.vala:637
+msgid "Hide from app drawer"
+msgstr ""
+
+#: src/windows/details_window.vala:638
+msgid "Don't show in application menu"
+msgstr ""
+
+#: src/windows/details_window.vala:649
+msgid "Add to $PATH"
+msgstr ""
+
+#: src/windows/details_window.vala:650
+#, c-format
+msgid "Create a launcher in %s so you can run it from the terminal"
+msgstr ""
+
+#: src/windows/details_window.vala:711
+msgid "Actions"
+msgstr ""
+
+#: src/windows/details_window.vala:750
+msgid "Extract AppImage"
+msgstr ""
+
+#: src/windows/details_window.vala:787
+msgid "Restore default"
+msgstr ""
+
+#: src/windows/details_window.vala:799 src/windows/main_window.vala:494
+#: src/windows/main_window.vala:562
+msgid "Updating..."
+msgstr ""
+
+#: src/windows/details_window.vala:801
+msgid "Checking..."
+msgstr ""
+
+#: src/windows/details_window.vala:823
+msgid "Check Update"
+msgstr ""
+
+#: src/windows/details_window.vala:889
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr ""
+
+#: src/windows/details_window.vala:890
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr ""
+
+#: src/windows/details_window.vala:891
+msgid "Update links"
+msgstr ""
+
+#: src/windows/details_window.vala:892
+msgid "Got it"
+msgstr ""
+
+#: src/windows/details_window.vala:909
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr ""
+
+#: src/windows/details_window.vala:910
+msgid "Extract application?"
+msgstr ""
+
+#: src/windows/details_window.vala:912
+msgid "Extract"
+msgstr ""
+
+#: src/windows/dialog_window.vala:86
+msgid "App removed"
+msgstr ""
+
+#: src/windows/dialog_window.vala:94
+msgid "The application was uninstalled successfully."
+msgstr ""
+
+#: src/windows/drop_window.vala:52 src/windows/drop_window.vala:76
+msgid "AppImage Installer"
+msgstr ""
+
+#: src/windows/drop_window.vala:87 src/windows/drop_window.vala:971
+msgid "Verify"
+msgstr ""
+
+#: src/windows/drop_window.vala:88
+msgid "Verify AppImage with SHA256 hash"
+msgstr ""
+
+#: src/windows/drop_window.vala:114
+msgid "SHA256 hash does not match. Verification failed."
+msgstr ""
+
+#: src/windows/drop_window.vala:130
+msgid "Drag and drop to install into Applications"
+msgstr ""
+
+#: src/windows/drop_window.vala:185
+msgid "Applications"
+msgstr ""
+
+#: src/windows/drop_window.vala:229
+msgid "This is a terminal application and will be installed in portable mode."
+msgstr ""
+
+#: src/windows/drop_window.vala:307
+msgid "This AppImage is incompatible or corrupted"
+msgstr ""
+
+#: src/windows/drop_window.vala:309
+msgid "Missing required files (AppRun, .desktop, or icon)"
+msgstr ""
+
+#: src/windows/drop_window.vala:320
+msgid "Architecture mismatch"
+msgstr ""
+
+#: src/windows/drop_window.vala:485
+msgid "Unable to prepare AppImage for installation"
+msgstr ""
+
+#: src/windows/drop_window.vala:528
+msgid "Successfully Replaced"
+msgstr ""
+
+#: src/windows/drop_window.vala:932
+msgid "Verify AppImage"
+msgstr ""
+
+#: src/windows/drop_window.vala:950
+msgid "Verify the authenticity of this AppImage."
+msgstr ""
+
+#: src/windows/drop_window.vala:956
+msgid "Enter the SHA256 hash "
+msgstr ""
+
+#: src/windows/main_window.vala:56 src/windows/main_window.vala:167
+#: data/com.github.AppManager.metainfo.xml:4
+msgid "AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:216
+msgid "Get more ..."
+msgstr ""
+
+#: src/windows/main_window.vala:228
+msgid "Find more AppImages"
+msgstr ""
+
+#: src/windows/main_window.vala:229
+msgid "Browse these sources to discover and download AppImages"
+msgstr ""
+
+#: src/windows/main_window.vala:279 src/windows/main_window.vala:351
+msgid "No AppImage apps installed"
+msgstr ""
+
+#: src/windows/main_window.vala:284
+msgid "Download AppImage and double click to install with AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:351
+msgid "No results found"
+msgstr ""
+
+#: src/windows/main_window.vala:430 src/windows/main_window.vala:893
+msgid "My Apps"
+msgstr ""
+
+#: src/windows/main_window.vala:501 src/windows/main_window.vala:569
+msgid "Update available"
+msgstr ""
+
+#: src/windows/main_window.vala:576
+msgid "Unknown"
+msgstr ""
+
+#: src/windows/main_window.vala:635
+msgid "extracted"
+msgstr ""
+
+#: src/windows/main_window.vala:692
+msgid "Updated just now"
+msgstr ""
+
+#: src/windows/main_window.vala:692
+msgid "Installed just now"
+msgstr ""
+
+#: src/windows/main_window.vala:700
+#, c-format
+msgid "Updated %d min ago"
+msgstr ""
+
+#: src/windows/main_window.vala:700
+#, c-format
+msgid "Installed %d min ago"
+msgstr ""
+
+#: src/windows/main_window.vala:708
+#, c-format
+msgid "Updated %d hours ago"
+msgstr ""
+
+#: src/windows/main_window.vala:708
+#, c-format
+msgid "Installed %d hours ago"
+msgstr ""
+
+#: src/windows/main_window.vala:715
+#, c-format
+msgid "Updated %d days ago"
+msgstr ""
+
+#: src/windows/main_window.vala:715
+#, c-format
+msgid "Installed %d days ago"
+msgstr ""
+
+#: src/windows/main_window.vala:731 src/windows/preferences_window.vala:34
+msgid "Preferences"
+msgstr ""
+
+#: src/windows/main_window.vala:732
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: src/windows/main_window.vala:733 src/windows/main_window.vala:1516
+msgid "About AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:734
+msgid "Quit"
+msgstr ""
+
+#: src/windows/main_window.vala:746
+msgid "Support AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:761
+msgid "Buy Me a Coffee"
+msgstr ""
+
+#: src/windows/main_window.vala:780
+msgid "Become a sponsor on GitHub"
+msgstr ""
+
+#: src/windows/main_window.vala:785
+msgid "Sponsor Me ♡"
+msgstr ""
+
+#: src/windows/main_window.vala:796
+msgid "Star AppManager on GitHub"
+msgstr ""
+
+#: src/windows/main_window.vala:801
+msgid "Star AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:812
+msgid "View contributors on GitHub"
+msgstr ""
+
+#: src/windows/main_window.vala:817
+msgid "Contributors"
+msgstr ""
+
+#: src/windows/main_window.vala:840 src/windows/main_window.vala:1514
+msgid "Search"
+msgstr ""
+
+#: src/windows/main_window.vala:846
+msgid "Support this project"
+msgstr ""
+
+#: src/windows/main_window.vala:856
+msgid "More actions"
+msgstr ""
+
+#: src/windows/main_window.vala:871
+msgid "Search apps..."
+msgstr ""
+
+#: src/windows/main_window.vala:879
+msgid "FUSE is not installed. Some AppImages may fail to run"
+msgstr ""
+
+#: src/windows/main_window.vala:881
+msgid "Learn More"
+msgstr ""
+
+#: src/windows/main_window.vala:927
+msgid "Switch to grid view"
+msgstr ""
+
+#: src/windows/main_window.vala:930
+msgid "Switch to list view"
+msgstr ""
+
+#: src/windows/main_window.vala:1000 src/windows/main_window.vala:1071
+msgid "Updates already running"
+msgstr ""
+
+#: src/windows/main_window.vala:1048
+msgid "Cancel update"
+msgstr ""
+
+#: src/windows/main_window.vala:1079
+msgid "Cancelling..."
+msgstr ""
+
+#: src/windows/main_window.vala:1105
+msgid "Update check cancelled"
+msgstr ""
+
+#: src/windows/main_window.vala:1135
+#, c-format
+msgid "%d app(s) have updates"
+msgstr ""
+
+#: src/windows/main_window.vala:1138
+msgid "No updates available right now"
+msgstr ""
+
+#: src/windows/main_window.vala:1145
+msgid "Nothing queued for updating"
+msgstr ""
+
+#: src/windows/main_window.vala:1172
+msgid "Update cancelled"
+msgstr ""
+
+#: src/windows/main_window.vala:1309
+msgid "Checking updates"
+msgstr ""
+
+#: src/windows/main_window.vala:1312
+msgid "Update Apps"
+msgstr ""
+
+#: src/windows/main_window.vala:1315
+msgid "Updating apps"
+msgstr ""
+
+#: src/windows/main_window.vala:1318
+msgid "Check updates"
+msgstr ""
+
+#: src/windows/main_window.vala:1342
+msgid "No installed apps to update"
+msgstr ""
+
+#: src/windows/main_window.vala:1382
+#, c-format
+msgid "Updated %d app(s)"
+msgstr ""
+
+#: src/windows/main_window.vala:1385
+#, c-format
+msgid "%d update(s) failed"
+msgstr ""
+
+#: src/windows/main_window.vala:1393
+msgid "Add update addresses in Details to enable updates"
+msgstr ""
+
+#: src/windows/main_window.vala:1395
+msgid "All supported apps are already up to date"
+msgstr ""
+
+#: src/windows/main_window.vala:1399
+#, c-format
+msgid "%d app(s) use unsupported update links"
+msgstr ""
+
+#: src/windows/main_window.vala:1462
+#, c-format
+msgid "Update available for %s"
+msgstr ""
+
+#: src/windows/main_window.vala:1502
+msgid "General"
+msgstr ""
+
+#: src/windows/main_window.vala:1506
+msgid "Navigation"
+msgstr ""
+
+#: src/windows/main_window.vala:1510
+msgid "Window"
+msgstr ""
+
+#: src/windows/main_window.vala:1512
+msgid "Check for updates"
+msgstr ""
+
+#: src/windows/main_window.vala:1513
+msgid "Show main menu"
+msgstr ""
+
+#: src/windows/main_window.vala:1515
+msgid "Show shortcuts"
+msgstr ""
+
+#: src/windows/main_window.vala:1517
+msgid "Close window"
+msgstr ""
+
+#: src/windows/main_window.vala:1518
+msgid "Quit AppManager"
+msgstr ""
+
+#: src/windows/main_window.vala:1535
+msgid "Credits"
+msgstr ""
+
+#: src/windows/preferences_window.vala:59
+msgid "Installation"
+msgstr ""
+
+#: src/windows/preferences_window.vala:60
+msgid "Configure where AppImages are installed (default: ~/Applications)"
+msgstr ""
+
+#: src/windows/preferences_window.vala:63
+msgid "Installation directory"
+msgstr ""
+
+#: src/windows/preferences_window.vala:78
+msgid "Browse for folder"
+msgstr ""
+
+#: src/windows/preferences_window.vala:86
+msgid "Reset to default"
+msgstr ""
+
+#: src/windows/preferences_window.vala:96
+msgid "Apply changes"
+msgstr ""
+
+#: src/windows/preferences_window.vala:107
+msgid "Skip drag-and-drop window"
+msgstr ""
+
+#: src/windows/preferences_window.vala:108
+msgid "Show install dialog directly when opening AppImages"
+msgstr ""
+
+#: src/windows/preferences_window.vala:117
+msgid "Automatic updates"
+msgstr ""
+
+#: src/windows/preferences_window.vala:118
+msgid "Configure automatic update checking"
+msgstr ""
+
+#: src/windows/preferences_window.vala:124
+msgid "Open update log"
+msgstr ""
+
+#: src/windows/preferences_window.vala:138
+msgid "Background update check"
+msgstr ""
+
+#: src/windows/preferences_window.vala:139
+msgid "Will notify when new app updates are available"
+msgstr ""
+
+#: src/windows/preferences_window.vala:150
+msgid "Auto update apps"
+msgstr ""
+
+#: src/windows/preferences_window.vala:151
+msgid "Will update apps automatically in background"
+msgstr ""
+
+#: src/windows/preferences_window.vala:157
+msgid "Check interval"
+msgstr ""
+
+#: src/windows/preferences_window.vala:159
+msgid "Daily"
+msgstr ""
+
+#: src/windows/preferences_window.vala:160
+msgid "Weekly"
+msgstr ""
+
+#: src/windows/preferences_window.vala:161
+msgid "Monthly"
+msgstr ""
+
+#: src/windows/preferences_window.vala:186
+msgid "Thumbnails"
+msgstr ""
+
+#: src/windows/preferences_window.vala:189
+msgid "AppImage Thumbnailer"
+msgstr ""
+
+#: src/windows/preferences_window.vala:190
+msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
+msgstr ""
+
+#: src/windows/preferences_window.vala:199
+msgid "Hide Nautilus thumbnail background"
+msgstr ""
+
+#: src/windows/preferences_window.vala:200
+msgid "Remove the alpha checkerboard behind thumbnails and icons"
+msgstr ""
+
+#: src/windows/preferences_window.vala:211
+msgid "GitHub"
+msgstr ""
+
+#: src/windows/preferences_window.vala:212
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr ""
+
+#: src/windows/preferences_window.vala:215
+msgid "Personal access token"
+msgstr ""
+
+#: src/windows/preferences_window.vala:226
+msgid "Apply token"
+msgstr ""
+
+#: src/windows/preferences_window.vala:229
+#: src/windows/preferences_window.vala:248
+msgid "GitHub token saved"
+msgstr ""
+
+#: src/windows/preferences_window.vala:235
+msgid "Clear token"
+msgstr ""
+
+#: src/windows/preferences_window.vala:239
+msgid "GitHub token cleared"
+msgstr ""
+
+#: src/windows/preferences_window.vala:255
+msgid "Test token"
+msgstr ""
+
+#: src/windows/preferences_window.vala:256
+msgid "Verify your token works and check rate limit status"
+msgstr ""
+
+#: src/windows/preferences_window.vala:260
+msgid "Test"
+msgstr ""
+
+#: src/windows/preferences_window.vala:269
+msgid "Testing…"
+msgstr ""
+
+#: src/windows/preferences_window.vala:284
+msgid "Create a token on GitHub"
+msgstr ""
+
+#: src/windows/preferences_window.vala:285
+msgid "Fine-grained token with read-only public repo access is sufficient"
+msgstr ""
+
+#: src/windows/preferences_window.vala:342
+msgid "Select Installation Directory"
+msgstr ""
+
+#: src/windows/preferences_window.vala:409
+msgid "Invalid Path"
+msgstr ""
+
+#: src/windows/preferences_window.vala:419
+msgid "Installation directory updated"
+msgstr ""
+
+#: src/windows/preferences_window.vala:429
+msgid "Move Installed Apps?"
+msgstr ""
+
+#: src/windows/preferences_window.vala:430
+#, c-format
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr ""
+
+#: src/windows/preferences_window.vala:433
+msgid "Move Apps"
+msgstr ""
+
+#: src/windows/preferences_window.vala:465
+msgid "Moving Apps…"
+msgstr ""
+
+#: src/windows/preferences_window.vala:465
+msgid "Please wait while your apps are being moved."
+msgstr ""
+
+#: src/windows/preferences_window.vala:502
+msgid "Apps moved successfully"
+msgstr ""
+
+#: src/windows/preferences_window.vala:504
+msgid "Migration Failed"
+msgstr ""
+
+#: src/windows/preferences_window.vala:504
+msgid "Unknown error occurred"
+msgstr ""
+
+#: src/windows/preferences_window.vala:522
+msgid "OK"
+msgstr ""
+
+#: src/windows/preferences_window.vala:560
+msgid "Authentication failed — token is invalid or expired"
+msgstr ""
+
+#: src/windows/preferences_window.vala:562
+msgid "Access forbidden — token lacks required permissions"
+msgstr ""
+
+#: src/windows/preferences_window.vala:568
+#, c-format
+msgid "Token is valid — %s / %s requests remaining"
+msgstr ""
+
+#: src/windows/preferences_window.vala:570
+msgid "Token is valid"
+msgstr ""
+
+#: src/windows/preferences_window.vala:573
+#, c-format
+msgid "Unexpected response (%u)"
+msgstr ""
+
+#: src/windows/preferences_window.vala:576
+#, c-format
+msgid "Connection error: %s"
+msgstr ""
+
+#: data/com.github.AppManager.metainfo.xml:6
+#: data/com.github.AppManager.metainfo.xml:8
+msgid "Arnis Kemlers"
+msgstr ""
+
+#: data/com.github.AppManager.metainfo.xml:9
+msgid "Drag-and-drop AppImage installer for GNOME"
+msgstr ""
+
+#: data/com.github.AppManager.metainfo.xml:35
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr ""
+
+#: data/com.github.AppManager.metainfo.xml:47
+msgid "Initial preview with drag-and-drop installs, dual install modes, Nautilus menus, and preferences UI."
+msgstr ""
+
+#: data/com.github.AppManager.metainfo.xml:48
+msgid "Added optional background update checks powered by the XDG Background portal. Users grant permission on first launch, can pick an interval, and receive a notification when updates are detected."
+msgstr ""
+
