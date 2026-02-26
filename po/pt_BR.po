@@ -1,33 +1,29 @@
-# Brazilian Portuguese translation for app-manager
-# Copyright (C) 2026 AppManager Contributors
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-02-14 22:42-0600\n"
+"PO-Revision-Date: 2026-02-26 09:50\n"
 "Last-Translator: \n"
-"Language-Team: Brazilian Portuguese\n"
+"Language-Team: Portuguese, Brazilian\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.7\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: pt-BR\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "AppImage incompatível"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
-msgstr ""
-"Este AppImage é incompatível ou está corrompido. Arquivos necessários "
-"ausentes (AppRun, .desktop ou ícone)"
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "Este AppImage é incompatível ou está corrompido. Arquivos necessários ausentes (AppRun, .desktop ou ícone)"
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -60,12 +56,8 @@ msgstr "Abrir %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
-msgstr ""
-"A origem do aplicativo %s não pôde ser verificada. Tem certeza de que deseja "
-"abri-lo?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "A origem do aplicativo %s não pôde ser verificada. Tem certeza de que deseja abri-lo?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
@@ -118,12 +110,8 @@ msgstr "Substituir %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Um item mais recente chamado %s já existe neste local. Deseja substituí-lo "
-"pelo mais antigo que você está copiando?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Um item mais recente chamado %s já existe neste local. Deseja substituí-lo pelo mais antigo que você está copiando?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -132,12 +120,8 @@ msgstr "Instalado: %s | Recebido: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Um item chamado %s já existe neste local. Deseja substituí-lo pelo que você "
-"está copiando?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Um item chamado %s já existe neste local. Deseja substituí-lo pelo que você está copiando?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -296,11 +280,9 @@ msgstr "Migrando %s (%d/%d)…"
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"Falha ao migrar alguns aplicativos:\n"
+msgstr "Falha ao migrar alguns aplicativos:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -354,26 +336,16 @@ msgid "Updated"
 msgstr "Atualizado"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Falha na autenticação do GitHub (401). Verifique seu token em Preferências → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Falha na autenticação do GitHub (401). Verifique seu token em Preferências → GitHub."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Limite de taxa da API do GitHub excedido. Adicione um token em Preferências "
-"→ GitHub para aumentar seu limite."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Limite de taxa da API do GitHub excedido. Adicione um token em Preferências → GitHub para aumentar seu limite."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Acesso ao GitHub proibido (403). Seu token pode não ter as permissões "
-"necessárias."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Acesso ao GitHub proibido (403). Seu token pode não ter as permissões necessárias."
 
 #: src/core/updater.vala:1286
 msgid "Unknown zsync source type"
@@ -407,7 +379,7 @@ msgstr "Extraído"
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
-msgstr "Terminal"
+msgstr ""
 
 #: src/windows/details_window.vala:192
 msgid "This app supports efficient delta updates"
@@ -529,22 +501,12 @@ msgid "Check Update"
 msgstr "Verificar atualização"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"As informações de atualização permitem que o AppManager obtenha novas "
-"versões para você. Cole o link de download e o AppManager fará o resto."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "As informações de atualização permitem que o AppManager obtenha novas versões para você. Cole o link de download e o AppManager fará o resto."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"Atualmente, os formatos de URL do GitHub e GitLab são totalmente suportados. "
-"Links de download direto também funcionam se o servidor fornecer cabeçalhos "
-"Last-Modified ou Content-Length."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "Atualmente, os formatos de URL do GitHub e GitLab são totalmente suportados. Links de download direto também funcionam se o servidor fornecer cabeçalhos Last-Modified ou Content-Length."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -555,13 +517,8 @@ msgid "Got it"
 msgstr "Entendi"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"A extração descompactará o aplicativo para que ele abra mais rápido, mas "
-"consumirá mais espaço em disco. Esta ação não pode ser revertida "
-"automaticamente."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "A extração descompactará o aplicativo para que ele abra mais rápido, mas consumirá mais espaço em disco. Esta ação não pode ser revertida automaticamente."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -598,9 +555,9 @@ msgid "SHA256 hash does not match. Verification failed."
 msgstr "O hash SHA256 não corresponde. A verificação falhou."
 
 #: src/windows/drop_window.vala:140
-#, fuzzy, c-format
+#, c-format
 msgid "Drag and drop to install into %s"
-msgstr "Arraste e solte para instalar em Aplicativos"
+msgstr ""
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
@@ -641,7 +598,7 @@ msgstr "Digite o hash SHA256 "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -868,8 +825,7 @@ msgstr "%d atualização(ões) falhou(aram)"
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Adicione endereços de atualização em Detalhes para habilitar atualizações"
+msgstr "Adicione endereços de atualização em Detalhes para habilitar atualizações"
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
@@ -1026,15 +982,11 @@ msgstr "Remover o padrão xadrez de transparência atrás de miniaturas e ícone
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
-msgstr ""
-"Autentique-se no GitHub para aumentar o limite da API de 60 para 5.000 "
-"requisições por hora"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr "Autentique-se no GitHub para aumentar o limite da API de 60 para 5.000 requisições por hora"
 
 #: src/windows/preferences_window.vala:215
 msgid "Personal access token"
@@ -1064,8 +1016,7 @@ msgstr "Testar token"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Verificar se o token funciona e checar o status do limite de requisições"
+msgstr "Verificar se o token funciona e checar o status do limite de requisições"
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1081,9 +1032,7 @@ msgstr "Criar um token no GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Um token de acesso refinado com permissão de leitura apenas para "
-"repositórios públicos é suficiente"
+msgstr "Um token de acesso refinado com permissão de leitura apenas para repositórios públicos é suficiente"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1103,12 +1052,8 @@ msgstr "Mover aplicativos instalados?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
-msgstr ""
-"Isso moverá %d aplicativo(s) instalado(s) para o novo local. Esta operação "
-"pode levar algum tempo, dependendo do tamanho dos seus aplicativos."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr "Isso moverá %d aplicativo(s) instalado(s) para o novo local. Esta operação pode levar algum tempo, dependendo do tamanho dos seus aplicativos."
 
 #: src/windows/preferences_window.vala:433
 msgid "Move Apps"
@@ -1139,7 +1084,7 @@ msgstr "Ocorreu um erro desconhecido"
 
 #: src/windows/preferences_window.vala:522
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 #: src/windows/preferences_window.vala:560
 msgid "Authentication failed — token is invalid or expired"
@@ -1171,47 +1116,13 @@ msgstr "Erro de conexão: %s"
 #: data/com.github.AppManager.metainfo.xml:6
 #: data/com.github.AppManager.metainfo.xml:8
 msgid "Arnis Kemlers"
-msgstr "Arnis Kemlers"
+msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "Instalador AppImage por \"arrastar e soltar\" para o GNOME"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"O AppManager permite instalar ou desinstalar AppImages com um fluxo de "
-"trabalho familiar de \"arrastar e soltar\" inspirado no macOS. Ele gerencia "
-"a integração com a área de trabalho, extração de ícones, permissões de "
-"execução e menus de contexto do Nautilus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "O AppManager permite instalar ou desinstalar AppImages com um fluxo de trabalho familiar de \"arrastar e soltar\" inspirado no macOS. Ele gerencia a integração com a área de trabalho, extração de ícones, permissões de execução e menus de contexto do Nautilus."
 
-#~ msgid "Applications"
-#~ msgstr "Aplicativos"
-
-#~ msgid ""
-#~ "Initial preview with drag-and-drop installs, dual install modes, Nautilus "
-#~ "menus, and preferences UI."
-#~ msgstr ""
-#~ "Versão prévia inicial com instalação por \"arrastar e soltar\", modos "
-#~ "duplos de instalação, menus do Nautilus e interface de preferências."
-
-#~ msgid ""
-#~ "Added optional background update checks powered by the XDG Background "
-#~ "portal. Users grant permission on first launch, can pick an interval, and "
-#~ "receive a notification when updates are detected."
-#~ msgstr ""
-#~ "Adicionada a verificação opcional de atualizações em segundo plano via "
-#~ "portal XDG Background. Os usuários concedem permissão no primeiro "
-#~ "lançamento, podem escolher um intervalo e recebem uma notificação quando "
-#~ "atualizações são detectadas."
-
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Nenhum aplicativo AppImage instalado"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr ""
-#~ "O link de atualização é gerenciado pelo zsync e não pode ser editado"
