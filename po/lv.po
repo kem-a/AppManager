@@ -1,33 +1,29 @@
-# Latvian translation for app-manager
-# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 09:50\n"
 "Last-Translator: \n"
 "Language-Team: Latvian\n"
-"Language: lv\n"
+"Language: lv_LV\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : "
-"2);\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2;\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: lv\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
-#, fuzzy
 msgid "Incompatible AppImage"
-msgstr "Atrast vairāk AppImage"
+msgstr "Nederīga aplikācija"
 
 #: src/application.vala:247
-#, fuzzy
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
-msgstr "Trūkst nepieciešamo failu (AppRun, .desktop vai ikona)"
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "Aplikācija ir nederīga vai bojāta. Trūkst nepieciešamo failu (AppRun, .desktop, vai ikona)."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -40,18 +36,17 @@ msgstr "Aizvērt"
 #. Check architecture
 #. Check architecture compatibility
 #: src/application.vala:256 src/windows/drop_window.vala:330
-#, fuzzy
 msgid "unknown"
-msgstr "Versija nezināma"
+msgstr "nezināms"
 
 #: src/application.vala:258
 msgid "Architecture Mismatch"
-msgstr ""
+msgstr "Arhitektūras Nesaderība"
 
 #: src/application.vala:259 src/windows/drop_window.vala:331
 #, c-format
 msgid "This app is built for %s and cannot run here"
-msgstr ""
+msgstr "Šī aplikācija ir taisīta priekš %s un šeit nedarbosies"
 
 #. Use app icon with warning badge overlay
 #: src/application.vala:356 src/windows/drop_window.vala:234
@@ -61,14 +56,12 @@ msgstr "Atvērt %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr "Lietotnes %s izcelsmi nevar pārbaudīt. Vai tiešām vēlaties to atvērt?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
-msgstr "Instalējiet AppImage, lai pievienotu to savām lietotnēm."
+msgstr "Instalējiet aplikāciju, lai pievienotu to savām lietotnēm."
 
 #: src/application.vala:365 src/windows/drop_window.vala:247
 msgid "Install"
@@ -117,12 +110,8 @@ msgstr "Aizstāt %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Jaunāks vienums ar nosaukumu %s jau pastāv šajā vietā. Vai vēlaties to "
-"aizstāt ar vecāko, ko kopējat?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Jaunāks vienums ar nosaukumu %s jau pastāv šajā vietā. Vai vēlaties to aizstāt ar vecāko, ko kopējat?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -131,12 +120,8 @@ msgstr "Instalēts: %s | Ienākošais: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Vienums ar nosaukumu %s jau pastāv šajā vietā. Vai vēlaties to aizstāt ar "
-"to, ko kopējat?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Vienums ar nosaukumu %s jau pastāv šajā vietā. Vai vēlaties to aizstāt ar to, ko kopējat?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -237,34 +222,34 @@ msgstr "Pārvietot uz miskasti"
 #. Check if path is absolute
 #: src/core/path_migration_service.vala:42
 msgid "Path must be absolute"
-msgstr ""
+msgstr "Ceļam jābūt absolūtam"
 
 #. Check if it's the same as current
 #: src/core/path_migration_service.vala:47
 msgid "This is already the current directory"
-msgstr ""
+msgstr "Šī jau ir pašreizējā mape"
 
 #: src/core/path_migration_service.vala:56
 msgid "Directory is not writable"
-msgstr ""
+msgstr "Nav rakstīšanas atļaujas šajā mapē"
 
 #: src/core/path_migration_service.vala:59
 #, c-format
 msgid "Cannot access directory: %s"
-msgstr ""
+msgstr "Nevar piekļūt mapei: %s"
 
 #. Check if it's a directory
 #: src/core/path_migration_service.vala:63
 msgid "Path exists but is not a directory"
-msgstr ""
+msgstr "Ceļš pastāv, bet tā nav mape"
 
 #: src/core/path_migration_service.vala:69
 msgid "Invalid path"
-msgstr ""
+msgstr "Nepareizs ceļš"
 
 #: src/core/path_migration_service.vala:72
 msgid "Parent directory does not exist"
-msgstr ""
+msgstr "Augstāka līmeņa mape nepastāv"
 
 #: src/core/path_migration_service.vala:77
 msgid "Cannot create directory: parent is not writable"
@@ -295,8 +280,7 @@ msgstr ""
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
 
@@ -315,7 +299,7 @@ msgstr "Nevar nolasīt izlaidumus"
 #: src/core/updater.vala:603 src/core/updater.vala:695
 #, c-format
 msgid "No matching AppImage found for %s"
-msgstr "Nav atrasts atbilstošs AppImage priekš %s"
+msgstr "Nav atrasta atbilstoša aplikācija priekš %s"
 
 #. Version comparison: if both have versions, compare them
 #. Remote version is same or older than current
@@ -331,9 +315,9 @@ msgstr "Jau atjaunināts"
 
 #: src/core/updater.vala:726 src/core/updater.vala:1527
 #: src/core/updater.vala:1614
-#, fuzzy, c-format
+#, c-format
 msgid "Updated to %s"
-msgstr "Atjaunināt %s?"
+msgstr ""
 
 #: src/core/updater.vala:797 src/core/updater.vala:827
 #: src/core/updater.vala:1367
@@ -347,24 +331,19 @@ msgstr ""
 
 #: src/core/updater.vala:858 src/core/updater.vala:1528
 #: src/core/updater.vala:1615
-#, fuzzy
 msgid "Updated"
-msgstr "Atjaunināt"
+msgstr ""
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr ""
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr ""
 
 #: src/core/updater.vala:1286
@@ -521,22 +500,12 @@ msgid "Check Update"
 msgstr "Pārbaudīt atjauninājumu"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Atjaunināšanas informācija ļauj AppManager iegūt jaunas versijas jūsu vietā. "
-"Ielīmējiet lejupielādes saiti un AppManager paveiks pārējo."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Atjaunināšanas informācija ļauj AppManager iegūt jaunas versijas jūsu vietā. Ielīmējiet lejupielādes saiti un AppManager paveiks pārējo."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"Pašlaik GitHub un GitLab URL formāti ir pilnībā atbalstīti. Tiešās "
-"lejupielādes saites arī darbojas, ja serveris nodrošina Last-Modified vai "
-"Content-Length galvenes."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "Pašlaik GitHub un GitLab URL formāti ir pilnībā atbalstīti. Tiešās lejupielādes saites arī darbojas, ja serveris nodrošina Last-Modified vai Content-Length galvenes."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -547,12 +516,8 @@ msgid "Got it"
 msgstr "Sapratu"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Izvilkšana izpakos lietotni, lai tā atvērtos ātrāk, bet tas patērēs vairāk "
-"diska vietas. Šo darbību nevar automātiski atgriezt."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Izvilkšana izpakos lietotni, lai tā atvērtos ātrāk, bet tas patērēs vairāk diska vietas. Šo darbību nevar automātiski atgriezt."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -589,9 +554,9 @@ msgid "SHA256 hash does not match. Verification failed."
 msgstr "SHA256 jaucējvērtība nesakrīt. Pārbaude neizdevās."
 
 #: src/windows/drop_window.vala:140
-#, fuzzy, c-format
+#, c-format
 msgid "Drag and drop to install into %s"
-msgstr "Velciet un nometiet, lai instalētu Lietotnēs"
+msgstr ""
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
@@ -632,7 +597,7 @@ msgstr "Ievadiet SHA256 jaucējvērtību "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -652,8 +617,7 @@ msgstr "Nav instalētu AppImage lietotņu"
 
 #: src/windows/main_window.vala:283
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Lejupielādējiet AppImage un dubultklikšķiniet, lai instalētu ar AppManager"
+msgstr "Lejupielādējiet AppImage un dubultklikšķiniet, lai instalētu ar AppManager"
 
 #: src/windows/main_window.vala:350
 msgid "No results found"
@@ -669,9 +633,8 @@ msgstr "Pieejams atjauninājums"
 
 #. App name label (same size as list view)
 #: src/windows/main_window.vala:575
-#, fuzzy
 msgid "Unknown"
-msgstr "Versija nezināma"
+msgstr ""
 
 #: src/windows/main_window.vala:634
 msgid "extracted"
@@ -732,9 +695,8 @@ msgid "Quit"
 msgstr "Iziet"
 
 #: src/windows/main_window.vala:745
-#, fuzzy
 msgid "Support AppManager"
-msgstr "Iziet no AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:760
 msgid "Buy Me a Coffee"
@@ -749,14 +711,12 @@ msgid "Sponsor Me ♡"
 msgstr ""
 
 #: src/windows/main_window.vala:795
-#, fuzzy
 msgid "Star AppManager on GitHub"
-msgstr "Iziet no AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:800
-#, fuzzy
 msgid "Star AppManager"
-msgstr "Iziet no AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:811
 msgid "View contributors on GitHub"
@@ -864,9 +824,7 @@ msgstr "%d atjauninājums(-i) neizdevās"
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Pievienojiet atjaunināšanas adreses sadaļā Detaļas, lai iespējotu "
-"atjauninājumus"
+msgstr "Pievienojiet atjaunināšanas adreses sadaļā Detaļas, lai iespējotu atjauninājumus"
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
@@ -920,32 +878,28 @@ msgstr "Pateicības"
 
 #. Installation directory group
 #: src/windows/preferences_window.vala:59
-#, fuzzy
 msgid "Installation"
-msgstr "Instalēšana neizdevās"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
 msgstr ""
 
 #: src/windows/preferences_window.vala:63
-#, fuzzy
 msgid "Installation directory"
-msgstr "Instalēšana neizdevās"
+msgstr ""
 
 #: src/windows/preferences_window.vala:78
 msgid "Browse for folder"
 msgstr ""
 
 #: src/windows/preferences_window.vala:86
-#, fuzzy
 msgid "Reset to default"
-msgstr "Atjaunot noklusējumu"
+msgstr ""
 
 #: src/windows/preferences_window.vala:96
-#, fuzzy
 msgid "Apply changes"
-msgstr "Lietotnes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:107
 msgid "Skip drag-and-drop window"
@@ -1014,8 +968,7 @@ msgstr "AppImage sīktēlu ģenerētājs"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Instalējiet appimage-thumbnailer, lai ģenerētu sīktēlus AppImage failiem"
+msgstr "Instalējiet appimage-thumbnailer, lai ģenerētu sīktēlus AppImage failiem"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1031,9 +984,7 @@ msgid "GitHub"
 msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr ""
 
 #: src/windows/preferences_window.vala:215
@@ -1041,9 +992,8 @@ msgid "Personal access token"
 msgstr ""
 
 #: src/windows/preferences_window.vala:226
-#, fuzzy
 msgid "Apply token"
-msgstr "Lietotnes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:229
 #: src/windows/preferences_window.vala:248
@@ -1084,18 +1034,16 @@ msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
 
 #: src/windows/preferences_window.vala:342
-#, fuzzy
 msgid "Select Installation Directory"
-msgstr "Instalēšana neizdevās"
+msgstr ""
 
 #: src/windows/preferences_window.vala:409
 msgid "Invalid Path"
 msgstr ""
 
 #: src/windows/preferences_window.vala:419
-#, fuzzy
 msgid "Installation directory updated"
-msgstr "Instalēšana neizdevās"
+msgstr ""
 
 #: src/windows/preferences_window.vala:429
 msgid "Move Installed Apps?"
@@ -1103,15 +1051,12 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr ""
 
 #: src/windows/preferences_window.vala:433
-#, fuzzy
 msgid "Move Apps"
-msgstr "Manas lietotnes"
+msgstr ""
 
 #. Kill background daemon if running - it may interfere with migration
 #. by monitoring folders and triggering reconciliation
@@ -1129,9 +1074,8 @@ msgid "Apps moved successfully"
 msgstr ""
 
 #: src/windows/preferences_window.vala:504
-#, fuzzy
 msgid "Migration Failed"
-msgstr "Izvilkšana neizdevās"
+msgstr ""
 
 #: src/windows/preferences_window.vala:504
 msgid "Unknown error occurred"
@@ -1178,18 +1122,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
 msgstr ""
 
-#~ msgid "Applications"
-#~ msgstr "Lietotnes"
-
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Nav instalētu AppImage lietotņu"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr "Atjaunināšanas saiti pārvalda zsync un to nevar rediģēt"
