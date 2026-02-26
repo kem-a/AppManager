@@ -1,32 +1,29 @@
-# Arabic translations for app-manager package.
-# Copyright (C) 2026 THE app-manager'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-# Automatically generated, 2026.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-02-26 10:50+0200\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
-"Language: ar\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
+"Last-Translator: \n"
+"Language-Team: Arabic\n"
+"Language: ar_SA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: ar\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "صورة التطبيق غير متوافقة"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
-msgstr ""
-"صورة التطبيق هذه غير متوافقة أو تالفة. الملفات المطلوبة مفقودة (AppRun، "
-".desktop، أو أيقونة)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "صورة التطبيق هذه غير متوافقة أو تالفة. الملفات المطلوبة مفقودة (AppRun، .desktop، أو أيقونة)."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -59,9 +56,7 @@ msgstr "فتح %s؟"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr "لا يمكن التحقق من أصول تطبيق %s. هل أنت متأكد أنك تريد فتحه؟"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
@@ -115,12 +110,8 @@ msgstr "هل تريد استبدال %s؟"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"يوجد عنصر أحدث باسم %s بالفعل في هذا الموقع. هل تريد استبداله بالأقدم الذي "
-"تنسخه؟"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "يوجد عنصر أحدث باسم %s بالفعل في هذا الموقع. هل تريد استبداله بالأقدم الذي تنسخه؟"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -129,11 +120,8 @@ msgstr "تم التثبيت: %s | الوارد: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"يوجد عنصر اسمه %s بالفعل في هذا الموقع. هل تريد استبداله بالآخر الذي تنسخه؟"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "يوجد عنصر اسمه %s بالفعل في هذا الموقع. هل تريد استبداله بالآخر الذي تنسخه؟"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -292,11 +280,9 @@ msgstr "ترحيل %s (%d/%d)..."
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"فشلت بعض التطبيقات في الترحيل:\n"
+msgstr "فشلت بعض التطبيقات في الترحيل:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -350,27 +336,16 @@ msgid "Updated"
 msgstr "تم التحديث"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
-msgstr ""
-"فشلت مصادقة GitHub (401). تحقق من الرمز المميز الخاص بك في التفضيلات → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "فشلت مصادقة GitHub (401). تحقق من الرمز المميز الخاص بك في التفضيلات → GitHub."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"تم تجاوز حد معدل GitHub API. أضف رمزًا مميزًا في التفضيلات → GitHub لزيادة "
-"الحد الخاص بك."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "تم تجاوز حد معدل GitHub API. أضف رمزًا مميزًا في التفضيلات → GitHub لزيادة الحد الخاص بك."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"الوصول إلى جيثب ممنوع (403). قد يفتقر الرمز المميز الخاص بك إلى الأذونات "
-"المطلوبة."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "الوصول إلى جيثب ممنوع (403). قد يفتقر الرمز المميز الخاص بك إلى الأذونات المطلوبة."
 
 #: src/core/updater.vala:1286
 msgid "Unknown zsync source type"
@@ -526,21 +501,12 @@ msgid "Check Update"
 msgstr "التحقق من التحديث"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"تتيح معلومات التحديث لـ AppManager جلب تصميمات جديدة لك. الصق رابط التنزيل "
-"وسيقوم AppManager بالباقي."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "تتيح معلومات التحديث لـ AppManager جلب تصميمات جديدة لك. الصق رابط التنزيل وسيقوم AppManager بالباقي."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"حاليًا، يتم دعم تنسيقات GitHub وGitLab URL بشكل كامل. تعمل روابط التنزيل "
-"المباشرة أيضًا إذا كان الخادم يوفر رؤوس Last-Modified أو Content-Length."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "حاليًا، يتم دعم تنسيقات GitHub وGitLab URL بشكل كامل. تعمل روابط التنزيل المباشرة أيضًا إذا كان الخادم يوفر رؤوس Last-Modified أو Content-Length."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -551,12 +517,8 @@ msgid "Got it"
 msgstr "فهمتها"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"سيؤدي الاستخراج إلى فك ضغط التطبيق بحيث يتم فتحه بشكل أسرع، ولكنه سيستهلك "
-"مساحة أكبر على القرص. لا يمكن التراجع عن هذا الإجراء تلقائيًا."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "سيؤدي الاستخراج إلى فك ضغط التطبيق بحيث يتم فتحه بشكل أسرع، ولكنه سيستهلك مساحة أكبر على القرص. لا يمكن التراجع عن هذا الإجراء تلقائيًا."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -1023,12 +985,8 @@ msgid "GitHub"
 msgstr "جيثب"
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
-msgstr ""
-"قم بالمصادقة باستخدام GitHub لرفع حد معدل واجهة برمجة التطبيقات (API) من 60 "
-"إلى 5000 طلب في الساعة"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr "قم بالمصادقة باستخدام GitHub لرفع حد معدل واجهة برمجة التطبيقات (API) من 60 إلى 5000 طلب في الساعة"
 
 #: src/windows/preferences_window.vala:215
 msgid "Personal access token"
@@ -1074,9 +1032,7 @@ msgstr "قم بإنشاء رمز مميز على GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"يعد الرمز المميز ذو التفاصيل الدقيقة مع إمكانية الوصول إلى الريبو العام "
-"للقراءة فقط كافيًا"
+msgstr "يعد الرمز المميز ذو التفاصيل الدقيقة مع إمكانية الوصول إلى الريبو العام للقراءة فقط كافيًا"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1096,12 +1052,8 @@ msgstr "هل تريد نقل التطبيقات المثبتة؟"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
-msgstr ""
-"سيؤدي هذا إلى نقل التطبيق (التطبيقات) المثبتة %d إلى الموقع الجديد. قد "
-"يستغرق هذا بعض الوقت حسب حجم تطبيقاتك."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr "سيؤدي هذا إلى نقل التطبيق (التطبيقات) المثبتة %d إلى الموقع الجديد. قد يستغرق هذا بعض الوقت حسب حجم تطبيقاتك."
 
 #: src/windows/preferences_window.vala:433
 msgid "Move Apps"
@@ -1171,11 +1123,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "أداة تثبيت AppImage بالسحب والإسقاط لـ GNOME"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"يتيح لك AppManager تثبيت AppImages أو إلغاء تثبيته باستخدام سير عمل سحب "
-"وإفلات مألوف مستوحى من نظام التشغيل macOS. فهو يتعامل مع تكامل سطح المكتب "
-"واستخراج الأيقونات والبتات القابلة للتنفيذ وقوائم سياق Nautilus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "يتيح لك AppManager تثبيت AppImages أو إلغاء تثبيته باستخدام سير عمل سحب وإفلات مألوف مستوحى من نظام التشغيل macOS. فهو يتعامل مع تكامل سطح المكتب واستخراج الأيقونات والبتات القابلة للتنفيذ وقوائم سياق Nautilus."
+
