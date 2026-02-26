@@ -1,32 +1,29 @@
-# Finnish translation for app-manager
-# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-13 15:55+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 07:50\n"
 "Last-Translator: \n"
 "Language-Team: Finnish\n"
-"Language: fi\n"
+"Language: fi_FI\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: fi\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
-#, fuzzy
 msgid "Incompatible AppImage"
-msgstr "Etsi lisää AppImageja"
+msgstr ""
 
 #: src/application.vala:247
-#, fuzzy
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
-msgstr "Puuttuvat vaaditut tiedostot (AppRun, .desktop tai kuvake)"
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr ""
 
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
 #: src/application.vala:835 src/application.vala:847
@@ -36,9 +33,8 @@ msgid "Close"
 msgstr "Sulje"
 
 #: src/application.vala:256 src/windows/drop_window.vala:317
-#, fuzzy
 msgid "unknown"
-msgstr "Versio tuntematon"
+msgstr ""
 
 #: src/application.vala:258
 msgid "Architecture Mismatch"
@@ -56,11 +52,8 @@ msgstr "Avataanko %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:224
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
-msgstr ""
-"Sovelluksen %s alkuperää ei voida vahvistaa. Haluatko varmasti avata sen?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "Sovelluksen %s alkuperää ei voida vahvistaa. Haluatko varmasti avata sen?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:231
 msgid "Install the AppImage to add it to your applications."
@@ -110,12 +103,8 @@ msgstr "Korvatanko %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:439
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Uudempi %s-niminen kohde on jo tässä sijainnissa. Haluatko korvata sen "
-"vanhemmalla versiolla, jota kopioit?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Uudempi %s-niminen kohde on jo tässä sijainnissa. Haluatko korvata sen vanhemmalla versiolla, jota kopioit?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:441
 #, c-format
@@ -124,11 +113,8 @@ msgstr "Asennettu: %s | Tuleva: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:445
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Kohde nimeltä %s on jo tässä sijainnissa. Haluatko korvata sen kopioimallasi?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Kohde nimeltä %s on jo tässä sijainnissa. Haluatko korvata sen kopioimallasi?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:449
 msgid "Stop"
@@ -278,8 +264,7 @@ msgstr ""
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
 
@@ -310,9 +295,9 @@ msgstr "Jo ajan tasalla"
 
 #: src/core/updater.vala:727 src/core/updater.vala:1434
 #: src/core/updater.vala:1499
-#, fuzzy, c-format
+#, c-format
 msgid "Updated to %s"
-msgstr "Päivitetäänkö %s?"
+msgstr ""
 
 #: src/core/updater.vala:798 src/core/updater.vala:828
 #: src/core/updater.vala:1313
@@ -326,24 +311,19 @@ msgstr ""
 
 #: src/core/updater.vala:855 src/core/updater.vala:1435
 #: src/core/updater.vala:1500
-#, fuzzy
 msgid "Updated"
-msgstr "Päivitä"
+msgstr ""
 
 #: src/core/updater.vala:962
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 
 #: src/core/updater.vala:967
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr ""
 
 #: src/core/updater.vala:969
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr ""
 
 #: src/core/updater.vala:1276
@@ -498,22 +478,12 @@ msgid "Check Update"
 msgstr "Tarkista päivitys"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Päivitystiedot mahdollistavat AppManagerin hakea uusia versioita puolestasi. "
-"Liitä latauslinkki ja AppManager hoitaa loput."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Päivitystiedot mahdollistavat AppManagerin hakea uusia versioita puolestasi. Liitä latauslinkki ja AppManager hoitaa loput."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"Tällä hetkellä GitHub- ja GitLab-URL-muodot ovat täysin tuettuja. Suorat "
-"latauslinkit toimivat myös, jos palvelin tarjoaa Last-Modified- tai Content-"
-"Length-otsikot."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "Tällä hetkellä GitHub- ja GitLab-URL-muodot ovat täysin tuettuja. Suorat latauslinkit toimivat myös, jos palvelin tarjoaa Last-Modified- tai Content-Length-otsikot."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -524,12 +494,8 @@ msgid "Got it"
 msgstr "Selvä"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Purkaminen purkaa sovelluksen, jotta se avautuu nopeammin, mutta se vie "
-"enemmän levytilaa. Tätä toimintoa ei voi automaattisesti peruuttaa."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Purkaminen purkaa sovelluksen, jotta se avautuu nopeammin, mutta se vie enemmän levytilaa. Tätä toimintoa ei voi automaattisesti peruuttaa."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -610,7 +576,7 @@ msgstr "Syötä SHA256-tiiviste "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:167
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:216
 msgid "Get more ..."
@@ -645,9 +611,8 @@ msgid "Update available"
 msgstr "Päivitys saatavilla"
 
 #: src/windows/main_window.vala:576
-#, fuzzy
 msgid "Unknown"
-msgstr "Versio tuntematon"
+msgstr ""
 
 #: src/windows/main_window.vala:635
 msgid "extracted"
@@ -708,9 +673,8 @@ msgid "Quit"
 msgstr "Lopeta"
 
 #: src/windows/main_window.vala:746
-#, fuzzy
 msgid "Support AppManager"
-msgstr "Lopeta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:761
 msgid "Buy Me a Coffee"
@@ -725,14 +689,12 @@ msgid "Sponsor Me ♡"
 msgstr ""
 
 #: src/windows/main_window.vala:796
-#, fuzzy
 msgid "Star AppManager on GitHub"
-msgstr "Lopeta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:801
-#, fuzzy
 msgid "Star AppManager"
-msgstr "Lopeta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:812
 msgid "View contributors on GitHub"
@@ -892,32 +854,28 @@ msgid "Credits"
 msgstr "Tekijät"
 
 #: src/windows/preferences_window.vala:59
-#, fuzzy
 msgid "Installation"
-msgstr "Asennus epäonnistui"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
 msgstr ""
 
 #: src/windows/preferences_window.vala:63
-#, fuzzy
 msgid "Installation directory"
-msgstr "Asennus epäonnistui"
+msgstr ""
 
 #: src/windows/preferences_window.vala:78
 msgid "Browse for folder"
 msgstr ""
 
 #: src/windows/preferences_window.vala:86
-#, fuzzy
 msgid "Reset to default"
-msgstr "Palauta oletus"
+msgstr ""
 
 #: src/windows/preferences_window.vala:96
-#, fuzzy
 msgid "Apply changes"
-msgstr "Sovellukset"
+msgstr ""
 
 #: src/windows/preferences_window.vala:107
 msgid "Skip drag-and-drop window"
@@ -996,9 +954,7 @@ msgid "GitHub"
 msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr ""
 
 #: src/windows/preferences_window.vala:215
@@ -1006,9 +962,8 @@ msgid "Personal access token"
 msgstr ""
 
 #: src/windows/preferences_window.vala:226
-#, fuzzy
 msgid "Apply token"
-msgstr "Sovellukset"
+msgstr ""
 
 #: src/windows/preferences_window.vala:229
 #: src/windows/preferences_window.vala:248
@@ -1048,18 +1003,16 @@ msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
 
 #: src/windows/preferences_window.vala:342
-#, fuzzy
 msgid "Select Installation Directory"
-msgstr "Asennus epäonnistui"
+msgstr ""
 
 #: src/windows/preferences_window.vala:409
 msgid "Invalid Path"
 msgstr ""
 
 #: src/windows/preferences_window.vala:419
-#, fuzzy
 msgid "Installation directory updated"
-msgstr "Asennus epäonnistui"
+msgstr ""
 
 #: src/windows/preferences_window.vala:429
 msgid "Move Installed Apps?"
@@ -1067,15 +1020,12 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr ""
 
 #: src/windows/preferences_window.vala:433
-#, fuzzy
 msgid "Move Apps"
-msgstr "Omat sovellukset"
+msgstr ""
 
 #: src/windows/preferences_window.vala:465
 msgid "Moving Apps…"
@@ -1090,9 +1040,8 @@ msgid "Apps moved successfully"
 msgstr ""
 
 #: src/windows/preferences_window.vala:504
-#, fuzzy
 msgid "Migration Failed"
-msgstr "Purkaminen epäonnistui"
+msgstr ""
 
 #: src/windows/preferences_window.vala:504
 msgid "Unknown error occurred"
@@ -1139,28 +1088,14 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:47
-msgid ""
-"Initial preview with drag-and-drop installs, dual install modes, Nautilus "
-"menus, and preferences UI."
+msgid "Initial preview with drag-and-drop installs, dual install modes, Nautilus menus, and preferences UI."
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:48
-msgid ""
-"Added optional background update checks powered by the XDG Background "
-"portal. Users grant permission on first launch, can pick an interval, and "
-"receive a notification when updates are detected."
+msgid "Added optional background update checks powered by the XDG Background portal. Users grant permission on first launch, can pick an interval, and receive a notification when updates are detected."
 msgstr ""
 
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Ei asennettuja AppImage-sovelluksia"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr "Päivityslinkkiä hallinnoi zsync eikä sitä voi muokata"
