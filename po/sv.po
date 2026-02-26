@@ -1,32 +1,29 @@
-# Swedish translation for app-manager
-# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 09:50\n"
 "Last-Translator: \n"
 "Language-Team: Swedish\n"
-"Language: sv\n"
+"Language: sv_SE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: sv-SE\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
-#, fuzzy
 msgid "Incompatible AppImage"
-msgstr "Hitta fler AppImages"
+msgstr ""
 
 #: src/application.vala:247
-#, fuzzy
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
-msgstr "Saknar nödvändiga filer (AppRun, .desktop eller ikon)"
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr ""
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -39,9 +36,8 @@ msgstr "Stäng"
 #. Check architecture
 #. Check architecture compatibility
 #: src/application.vala:256 src/windows/drop_window.vala:330
-#, fuzzy
 msgid "unknown"
-msgstr "Version okänd"
+msgstr ""
 
 #: src/application.vala:258
 msgid "Architecture Mismatch"
@@ -60,11 +56,8 @@ msgstr "Öppna %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
-msgstr ""
-"Ursprunget för %s kan inte verifieras. Är du säker på att du vill öppna den?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "Ursprunget för %s kan inte verifieras. Är du säker på att du vill öppna den?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
@@ -117,12 +110,8 @@ msgstr "Ersätt %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta "
-"det med det äldre du kopierar?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta det med det äldre du kopierar?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -131,12 +120,8 @@ msgstr "Installerad: %s | Inkommande: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med "
-"det du kopierar?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med det du kopierar?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -157,7 +142,7 @@ msgstr "Installerades framgångsrikt"
 #: src/application.vala:537 src/windows/drop_window.vala:559
 #, c-format
 msgid "Version %s"
-msgstr "Version %s"
+msgstr ""
 
 #: src/application.vala:541 src/windows/drop_window.vala:563
 msgid "Open"
@@ -295,8 +280,7 @@ msgstr ""
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
 
@@ -331,9 +315,9 @@ msgstr "Redan uppdaterad"
 
 #: src/core/updater.vala:726 src/core/updater.vala:1527
 #: src/core/updater.vala:1614
-#, fuzzy, c-format
+#, c-format
 msgid "Updated to %s"
-msgstr "Uppdatera %s?"
+msgstr ""
 
 #: src/core/updater.vala:797 src/core/updater.vala:827
 #: src/core/updater.vala:1367
@@ -347,24 +331,19 @@ msgstr ""
 
 #: src/core/updater.vala:858 src/core/updater.vala:1528
 #: src/core/updater.vala:1615
-#, fuzzy
 msgid "Updated"
-msgstr "Uppdatera"
+msgstr ""
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr ""
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr ""
 
 #: src/core/updater.vala:1286
@@ -382,8 +361,7 @@ msgstr ""
 #: src/windows/details_window.vala:100
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från terminalen"
+msgstr "⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från terminalen"
 
 #: src/windows/details_window.vala:160
 msgid "Show in Files"
@@ -400,7 +378,7 @@ msgstr "Extraherad"
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
-msgstr "Terminal"
+msgstr ""
 
 #: src/windows/details_window.vala:192
 msgid "This app supports efficient delta updates"
@@ -476,7 +454,7 @@ msgstr "Start WM-klass"
 
 #: src/windows/details_window.vala:625
 msgid "Version"
-msgstr "Version"
+msgstr ""
 
 #: src/windows/details_window.vala:637
 msgid "Hide from app drawer"
@@ -522,22 +500,12 @@ msgid "Check Update"
 msgstr "Sök uppdatering"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Uppdateringsinformation låter AppManager hämta nya versioner åt dig. Klistra "
-"in nedladdningslänken så gör AppManager resten."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Uppdateringsinformation låter AppManager hämta nya versioner åt dig. Klistra in nedladdningslänken så gör AppManager resten."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"För närvarande stöds GitHub och GitLab URL-format fullt ut. Direkta "
-"nedladdningslänkar fungerar också om servern tillhandahåller Last-Modified "
-"eller Content-Length-headers."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "För närvarande stöds GitHub och GitLab URL-format fullt ut. Direkta nedladdningslänkar fungerar också om servern tillhandahåller Last-Modified eller Content-Length-headers."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -548,12 +516,8 @@ msgid "Got it"
 msgstr "Förstått"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Extrahering packar upp applikationen så att den öppnas snabbare, men det tar "
-"mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Extrahering packar upp applikationen så att den öppnas snabbare, men det tar mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -590,14 +554,13 @@ msgid "SHA256 hash does not match. Verification failed."
 msgstr "SHA256-hash matchar inte. Verifiering misslyckades."
 
 #: src/windows/drop_window.vala:140
-#, fuzzy, c-format
+#, c-format
 msgid "Drag and drop to install into %s"
-msgstr "Dra och släpp för att installera i Program"
+msgstr ""
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Detta är en terminalapplikation och kommer att installeras i portabelt läge."
+msgstr "Detta är en terminalapplikation och kommer att installeras i portabelt läge."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -634,7 +597,7 @@ msgstr "Ange SHA256-hash "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -670,9 +633,8 @@ msgstr "Uppdatering tillgänglig"
 
 #. App name label (same size as list view)
 #: src/windows/main_window.vala:575
-#, fuzzy
 msgid "Unknown"
-msgstr "Version okänd"
+msgstr ""
 
 #: src/windows/main_window.vala:634
 msgid "extracted"
@@ -733,9 +695,8 @@ msgid "Quit"
 msgstr "Avsluta"
 
 #: src/windows/main_window.vala:745
-#, fuzzy
 msgid "Support AppManager"
-msgstr "Avsluta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:760
 msgid "Buy Me a Coffee"
@@ -750,14 +711,12 @@ msgid "Sponsor Me ♡"
 msgstr ""
 
 #: src/windows/main_window.vala:795
-#, fuzzy
 msgid "Star AppManager on GitHub"
-msgstr "Avsluta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:800
-#, fuzzy
 msgid "Star AppManager"
-msgstr "Avsluta AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:811
 msgid "View contributors on GitHub"
@@ -865,8 +824,7 @@ msgstr "%d uppdatering(ar) misslyckades"
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Lägg till uppdateringsadresser i Detaljer för att aktivera uppdateringar"
+msgstr "Lägg till uppdateringsadresser i Detaljer för att aktivera uppdateringar"
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
@@ -920,32 +878,28 @@ msgstr "Tack till"
 
 #. Installation directory group
 #: src/windows/preferences_window.vala:59
-#, fuzzy
 msgid "Installation"
-msgstr "Installation misslyckades"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
 msgstr ""
 
 #: src/windows/preferences_window.vala:63
-#, fuzzy
 msgid "Installation directory"
-msgstr "Installation misslyckades"
+msgstr ""
 
 #: src/windows/preferences_window.vala:78
 msgid "Browse for folder"
 msgstr ""
 
 #: src/windows/preferences_window.vala:86
-#, fuzzy
 msgid "Reset to default"
-msgstr "Återställ standard"
+msgstr ""
 
 #: src/windows/preferences_window.vala:96
-#, fuzzy
 msgid "Apply changes"
-msgstr "Program"
+msgstr ""
 
 #: src/windows/preferences_window.vala:107
 msgid "Skip drag-and-drop window"
@@ -1014,8 +968,7 @@ msgstr "AppImage-miniatyrgenerator"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installera appimage-thumbnailer för att generera miniatyrer för AppImages"
+msgstr "Installera appimage-thumbnailer för att generera miniatyrer för AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1031,9 +984,7 @@ msgid "GitHub"
 msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr ""
 
 #: src/windows/preferences_window.vala:215
@@ -1041,9 +992,8 @@ msgid "Personal access token"
 msgstr ""
 
 #: src/windows/preferences_window.vala:226
-#, fuzzy
 msgid "Apply token"
-msgstr "Program"
+msgstr ""
 
 #: src/windows/preferences_window.vala:229
 #: src/windows/preferences_window.vala:248
@@ -1084,18 +1034,16 @@ msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
 
 #: src/windows/preferences_window.vala:342
-#, fuzzy
 msgid "Select Installation Directory"
-msgstr "Installation misslyckades"
+msgstr ""
 
 #: src/windows/preferences_window.vala:409
 msgid "Invalid Path"
 msgstr ""
 
 #: src/windows/preferences_window.vala:419
-#, fuzzy
 msgid "Installation directory updated"
-msgstr "Installation misslyckades"
+msgstr ""
 
 #: src/windows/preferences_window.vala:429
 msgid "Move Installed Apps?"
@@ -1103,15 +1051,12 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr ""
 
 #: src/windows/preferences_window.vala:433
-#, fuzzy
 msgid "Move Apps"
-msgstr "Mina appar"
+msgstr ""
 
 #. Kill background daemon if running - it may interfere with migration
 #. by monitoring folders and triggering reconciliation
@@ -1129,9 +1074,8 @@ msgid "Apps moved successfully"
 msgstr ""
 
 #: src/windows/preferences_window.vala:504
-#, fuzzy
 msgid "Migration Failed"
-msgstr "Extrahering misslyckades"
+msgstr ""
 
 #: src/windows/preferences_window.vala:504
 msgid "Unknown error occurred"
@@ -1178,18 +1122,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
 msgstr ""
 
-#~ msgid "Applications"
-#~ msgstr "Program"
-
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Inga AppImage-appar installerade"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr "Uppdateringslänken hanteras av zsync och kan inte redigeras"
