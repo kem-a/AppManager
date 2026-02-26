@@ -1,32 +1,29 @@
-# German translation for app-manager
-# Copyright (C) 2026 AppManager Contributors
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
 "Last-Translator: \n"
 "Language-Team: German\n"
-"Language: de\n"
+"Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: de\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "Inkompatibles AppImage"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
-msgstr ""
-"Dieses AppImage ist inkompatibel oder beschädigt. Erforderliche Dateien "
-"fehlen (AppRun, .desktop oder Symbol)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "Dieses AppImage ist inkompatibel oder beschädigt. Erforderliche Dateien fehlen (AppRun, .desktop oder Symbol)."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -59,17 +56,12 @@ msgstr "%s öffnen?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
-msgstr ""
-"Die Herkunft der Anwendung %s kann nicht verifiziert werden. Möchten Sie sie"
-" trotzdem öffnen?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "Die Herkunft der Anwendung %s kann nicht verifiziert werden. Möchten Sie sie trotzdem öffnen?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
-msgstr ""
-"Installieren Sie das AppImage, um es zu Ihren Anwendungen hinzuzufügen."
+msgstr "Installieren Sie das AppImage, um es zu Ihren Anwendungen hinzuzufügen."
 
 #: src/application.vala:365 src/windows/drop_window.vala:247
 msgid "Install"
@@ -118,12 +110,8 @@ msgstr "%s ersetzen?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ein neueres Element namens %s existiert bereits an diesem Ort. Möchten Sie "
-"es durch das ältere ersetzen, das Sie kopieren?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Ein neueres Element namens %s existiert bereits an diesem Ort. Möchten Sie es durch das ältere ersetzen, das Sie kopieren?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -132,12 +120,8 @@ msgstr "Installiert: %s | Eingehend: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ein Element namens %s existiert bereits an diesem Ort. Möchten Sie es durch "
-"das ersetzen, das Sie kopieren?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Ein Element namens %s existiert bereits an diesem Ort. Möchten Sie es durch das ersetzen, das Sie kopieren?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -158,7 +142,7 @@ msgstr "Erfolgreich installiert"
 #: src/application.vala:537 src/windows/drop_window.vala:559
 #, c-format
 msgid "Version %s"
-msgstr "Version %s"
+msgstr ""
 
 #: src/application.vala:541 src/windows/drop_window.vala:563
 msgid "Open"
@@ -269,9 +253,7 @@ msgstr "Das übergeordnete Verzeichnis existiert nicht"
 
 #: src/core/path_migration_service.vala:77
 msgid "Cannot create directory: parent is not writable"
-msgstr ""
-"Verzeichnis kann nicht erstellt werden: Das übergeordnete Verzeichnis ist "
-"nicht beschreibbar"
+msgstr "Verzeichnis kann nicht erstellt werden: Das übergeordnete Verzeichnis ist nicht beschreibbar"
 
 #: src/core/path_migration_service.vala:80
 #, c-format
@@ -298,11 +280,9 @@ msgstr "%s (%d/%d) wird migriert…"
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"Einige Apps konnten nicht migriert werden:\n"
+msgstr "Einige Apps konnten nicht migriert werden:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -356,27 +336,16 @@ msgid "Updated"
 msgstr "Aktualisiert"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
-msgstr ""
-"GitHub-Authentifizierung fehlgeschlagen (401). Überprüfen Sie Ihr Token "
-"unter Einstellungen → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub-Authentifizierung fehlgeschlagen (401). Überprüfen Sie Ihr Token unter Einstellungen → GitHub."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Das GitHub-API-Ratenlimit wurde überschritten. Fügen Sie unter Einstellungen"
-" → GitHub ein Token hinzu, um Ihr Limit zu erhöhen."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Das GitHub-API-Ratenlimit wurde überschritten. Fügen Sie unter Einstellungen → GitHub ein Token hinzu, um Ihr Limit zu erhöhen."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub-Zugriff verboten (403). Möglicherweise fehlen Ihrem Token die "
-"erforderlichen Berechtigungen."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub-Zugriff verboten (403). Möglicherweise fehlen Ihrem Token die erforderlichen Berechtigungen."
 
 #: src/core/updater.vala:1286
 msgid "Unknown zsync source type"
@@ -410,7 +379,7 @@ msgstr "Entpackt"
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
-msgstr "Terminal"
+msgstr ""
 
 #: src/windows/details_window.vala:192
 msgid "This app supports efficient delta updates"
@@ -462,7 +431,7 @@ msgstr "Benutzerdefinierte Umgebungsvariablen für diese App festlegen"
 
 #: src/windows/details_window.vala:444
 msgid "NAME"
-msgstr "NAME"
+msgstr ""
 
 #: src/windows/details_window.vala:458
 msgid "value"
@@ -482,11 +451,11 @@ msgstr "Symbol-Name"
 
 #: src/windows/details_window.vala:615
 msgid "Startup WM Class"
-msgstr "Startup WM Class"
+msgstr ""
 
 #: src/windows/details_window.vala:625
 msgid "Version"
-msgstr "Version"
+msgstr ""
 
 #: src/windows/details_window.vala:637
 msgid "Hide from app drawer"
@@ -532,22 +501,12 @@ msgid "Check Update"
 msgstr "Update prüfen"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Update-Info ermöglicht AppManager, neue Versionen für Sie abzurufen. Fügen "
-"Sie den Download-Link ein und AppManager erledigt den Rest."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Update-Info ermöglicht AppManager, neue Versionen für Sie abzurufen. Fügen Sie den Download-Link ein und AppManager erledigt den Rest."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"Derzeit werden GitHub- und GitLab-URL-Formate vollständig unterstützt. "
-"Direkte Download-Links funktionieren auch, wenn der Server Last-Modified- "
-"oder Content-Length-Header bereitstellt."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "Derzeit werden GitHub- und GitLab-URL-Formate vollständig unterstützt. Direkte Download-Links funktionieren auch, wenn der Server Last-Modified- oder Content-Length-Header bereitstellt."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -558,13 +517,8 @@ msgid "Got it"
 msgstr "Verstanden"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Das Entpacken entpackt die Anwendung, sodass sie schneller öffnet, aber mehr"
-" Speicherplatz verbraucht. Diese Aktion kann nicht automatisch rückgängig "
-"gemacht werden."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Das Entpacken entpackt die Anwendung, sodass sie schneller öffnet, aber mehr Speicherplatz verbraucht. Diese Aktion kann nicht automatisch rückgängig gemacht werden."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -607,8 +561,7 @@ msgstr "Zur Installation per Drag-and-Drop in %s ziehen"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Dies ist eine Terminal-Anwendung und wird im portablen Modus installiert."
+msgstr "Dies ist eine Terminal-Anwendung und wird im portablen Modus installiert."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -645,7 +598,7 @@ msgstr "SHA256-Hash eingeben "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -657,8 +610,7 @@ msgstr "Weitere AppImages finden"
 
 #: src/windows/main_window.vala:228
 msgid "Browse these sources to discover and download AppImages"
-msgstr ""
-"Durchsuchen Sie diese Quellen, um AppImages zu entdecken und herunterzuladen"
+msgstr "Durchsuchen Sie diese Quellen, um AppImages zu entdecken und herunterzuladen"
 
 #: src/windows/main_window.vala:278 src/windows/main_window.vala:350
 msgid "No AppImage apps installed"
@@ -666,9 +618,7 @@ msgstr "Keine AppImage-Apps installiert"
 
 #: src/windows/main_window.vala:283
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Laden Sie ein AppImage herunter und doppelklicken Sie, um es mit AppManager "
-"zu installieren"
+msgstr "Laden Sie ein AppImage herunter und doppelklicken Sie, um es mit AppManager zu installieren"
 
 #: src/windows/main_window.vala:350
 msgid "No results found"
@@ -767,7 +717,7 @@ msgstr "Star AppManager auf GitHub"
 
 #: src/windows/main_window.vala:800
 msgid "Star AppManager"
-msgstr "Star AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:811
 msgid "View contributors on GitHub"
@@ -796,9 +746,7 @@ msgstr "Apps suchen..."
 #. FUSE is not installed warning banner
 #: src/windows/main_window.vala:878
 msgid "FUSE is not installed. Some AppImages may fail to run"
-msgstr ""
-"FUSE ist nicht installiert. Einige AppImages funktionieren möglicherweise "
-"nicht"
+msgstr "FUSE ist nicht installiert. Einige AppImages funktionieren möglicherweise nicht"
 
 #: src/windows/main_window.vala:880
 msgid "Learn More"
@@ -877,8 +825,7 @@ msgstr "%d Update(s) fehlgeschlagen"
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Fügen Sie Update-Adressen in den Details hinzu, um Updates zu aktivieren"
+msgstr "Fügen Sie Update-Adressen in den Details hinzu, um Updates zu aktivieren"
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
@@ -900,7 +847,7 @@ msgstr "Allgemein"
 
 #: src/windows/main_window.vala:1505
 msgid "Navigation"
-msgstr "Navigation"
+msgstr ""
 
 #: src/windows/main_window.vala:1509
 msgid "Window"
@@ -933,12 +880,11 @@ msgstr "Mitwirkende"
 #. Installation directory group
 #: src/windows/preferences_window.vala:59
 msgid "Installation"
-msgstr "Installation"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"Konfigurieren Sie, wo AppImages installiert sind (Standard: ~/Applications)"
+msgstr "Konfigurieren Sie, wo AppImages installiert sind (Standard: ~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1023,9 +969,7 @@ msgstr "AppImage-Vorschaubildgenerator"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installieren Sie appimage-thumbnailer, um Vorschaubilder für AppImages zu "
-"generieren"
+msgstr "Installieren Sie appimage-thumbnailer, um Vorschaubilder für AppImages zu generieren"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1033,22 +977,16 @@ msgstr "Nautilus-Vorschaubild-Hintergrund ausblenden"
 
 #: src/windows/preferences_window.vala:200
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
-msgstr ""
-"Entfernen Sie das Alpha-Schachbrettmuster hinter Vorschaubildern und "
-"Symbolen"
+msgstr "Entfernen Sie das Alpha-Schachbrettmuster hinter Vorschaubildern und Symbolen"
 
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
-msgstr ""
-"Authentifizieren Sie sich bei GitHub, um das API-Ratenlimit von 60 auf 5.000"
-" Anfragen pro Stunde zu erhöhen"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr "Authentifizieren Sie sich bei GitHub, um das API-Ratenlimit von 60 auf 5.000 Anfragen pro Stunde zu erhöhen"
 
 #: src/windows/preferences_window.vala:215
 msgid "Personal access token"
@@ -1078,9 +1016,7 @@ msgstr "Test-Token"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Überprüfen Sie, ob Ihr Token funktioniert, und prüfen Sie den Status der "
-"Ratenbegrenzung"
+msgstr "Überprüfen Sie, ob Ihr Token funktioniert, und prüfen Sie den Status der Ratenbegrenzung"
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1096,9 +1032,7 @@ msgstr "Erstellen Sie ein Token auf GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Ein feinkörniges Token mit schreibgeschütztem Zugriff auf das öffentliche "
-"Repo ist ausreichend"
+msgstr "Ein feinkörniges Token mit schreibgeschütztem Zugriff auf das öffentliche Repo ist ausreichend"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1118,12 +1052,8 @@ msgstr "Installierte Apps verschieben?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
-msgstr ""
-"Dadurch werden %d installierte Apps an den neuen Speicherort verschoben. "
-"Dies kann je nach Größe Ihrer Apps eine Weile dauern."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr "Dadurch werden %d installierte Apps an den neuen Speicherort verschoben. Dies kann je nach Größe Ihrer Apps eine Weile dauern."
 
 #: src/windows/preferences_window.vala:433
 msgid "Move Apps"
@@ -1154,7 +1084,7 @@ msgstr "Es ist ein unbekannter Fehler aufgetreten"
 
 #: src/windows/preferences_window.vala:522
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 #: src/windows/preferences_window.vala:560
 msgid "Authentication failed — token is invalid or expired"
@@ -1186,19 +1116,13 @@ msgstr "Verbindungsfehler: %s"
 #: data/com.github.AppManager.metainfo.xml:6
 #: data/com.github.AppManager.metainfo.xml:8
 msgid "Arnis Kemlers"
-msgstr "Arnis Kemlers"
+msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "Drag-and-Drop-AppImage-Installationsprogramm für GNOME"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"Mit AppManager können Sie AppImages mit einem vertrauten Drag-and-Drop-"
-"Workflow installieren oder deinstallieren, der von macOS inspiriert ist. Es "
-"übernimmt die Desktop-Integration, die Symbolextraktion, ausführbare Bits "
-"und Nautilus-Kontextmenüs."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "Mit AppManager können Sie AppImages mit einem vertrauten Drag-and-Drop-Workflow installieren oder deinstallieren, der von macOS inspiriert ist. Es übernimmt die Desktop-Integration, die Symbolextraktion, ausführbare Bits und Nautilus-Kontextmenüs."
+
