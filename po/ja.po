@@ -1,29 +1,28 @@
-# Japanese translation for app-manager
-# Copyright (C) 2026 AppManager Contributors
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
-"Language: ja\n"
+"Language: ja_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: ja\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "互換性のないAppImage"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
 msgstr "この AppImage は互換性がないか、壊れています。必要なファイル (AppRun、.desktop、またはアイコン) がありません。"
 
 #. Architecture mismatch banner
@@ -57,9 +56,7 @@ msgstr "%sを開きますか？"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr "アプリケーション%sの出所を確認できません。開いてもよろしいですか？"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
@@ -113,9 +110,7 @@ msgstr "%sを置き換えますか？"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
 msgstr "この場所には%sという名前の新しいアイテムが既に存在します。コピーしている古いもので置き換えますか？"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
@@ -125,9 +120,7 @@ msgstr "インストール済み: %s | 受信: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
 msgstr "この場所には%sという名前のアイテムが既に存在します。コピーしているもので置き換えますか？"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
@@ -287,11 +280,9 @@ msgstr "%s (%d/%d) を移行しています…"
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"一部のアプリは移行に失敗しました:\n"
+msgstr "一部のアプリは移行に失敗しました:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -345,20 +336,15 @@ msgid "Updated"
 msgstr "更新されました"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr "GitHub 認証に失敗しました (401)。 「設定」→「GitHub」でトークンを確認してください。"
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr "GitHub API のレート制限を超えました。制限を増やすには、[設定] → [GitHub] にトークンを追加します。"
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr "GitHub アクセスが禁止されています (403)。トークンに必要な権限が不足している可能性があります。"
 
 #: src/core/updater.vala:1286
@@ -515,19 +501,12 @@ msgid "Check Update"
 msgstr "更新を確認"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
 msgstr "更新情報を使うとAppManagerが新しいビルドを取得できます。ダウンロードリンクを貼り付けると、残りはAppManagerが行います。"
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"現在、GitHubとGitLabのURL形式が完全にサポートされています。サーバーがLast-ModifiedまたはContent-"
-"Lengthヘッダーを提供している場合、直接ダウンロードリンクも機能します。"
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "現在、GitHubとGitLabのURL形式が完全にサポートされています。サーバーがLast-ModifiedまたはContent-Lengthヘッダーを提供している場合、直接ダウンロードリンクも機能します。"
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -538,9 +517,7 @@ msgid "Got it"
 msgstr "了解"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
 msgstr "展開するとアプリケーションが解凍され、より速く開きますが、ディスク容量を多く消費します。この操作は自動的に元に戻せません。"
 
 #: src/windows/details_window.vala:910
@@ -621,7 +598,7 @@ msgstr "SHA256ハッシュを入力 "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -1005,12 +982,10 @@ msgstr "サムネイルとアイコンの後ろのアルファチェッカーボ
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr "GitHub で認証して API レート制限を 1 時間あたり 60 リクエストから 5,000 リクエストに引き上げます"
 
 #: src/windows/preferences_window.vala:215
@@ -1077,9 +1052,7 @@ msgstr "インストールされているアプリを移動しますか?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr "これにより、%d インストールされたアプリが新しい場所に移動されます。アプリのサイズによっては、これに時間がかかる場合があります。"
 
 #: src/windows/preferences_window.vala:433
@@ -1150,11 +1123,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "GNOME 用のドラッグ アンド ドロップ AppImage インストーラー"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"AppManager を使用すると、macOS からインスピレーションを得た使い慣れたドラッグ アンド ドロップ ワークフローで AppImage "
-"をインストールまたはアンインストールできます。デスクトップ統合、アイコン抽出、実行可能ビット、および Nautilus コンテキスト "
-"メニューを処理します。"
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "AppManager を使用すると、macOS からインスピレーションを得た使い慣れたドラッグ アンド ドロップ ワークフローで AppImage をインストールまたはアンインストールできます。デスクトップ統合、アイコン抽出、実行可能ビット、および Nautilus コンテキスト メニューを処理します。"
+
