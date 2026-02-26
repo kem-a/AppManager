@@ -1,32 +1,29 @@
-# Swedish translation for app-manager
-# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 10:22\n"
 "Last-Translator: \n"
 "Language-Team: Swedish\n"
-"Language: sv\n"
+"Language: sv_SE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: sv-SE\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
 msgid "Incompatible AppImage"
 msgstr "Inkompatibel AppImage"
 
 #: src/application.vala:247
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files (AppRun, "
-".desktop, or icon)."
-msgstr ""
-"Denna AppImage är inkompatibel eller skadad. Obligatoriska filer saknas "
-"(AppRun, .desktop eller ikon)."
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr "Denna AppImage är inkompatibel eller skadad. Obligatoriska filer saknas (AppRun, .desktop eller ikon)."
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -59,11 +56,8 @@ msgstr "Öppna %s?"
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open"
-" it?"
-msgstr ""
-"Ursprunget för %s kan inte verifieras. Är du säker på att du vill öppna den?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
+msgstr "Ursprunget för %s kan inte verifieras. Är du säker på att du vill öppna den?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
@@ -116,12 +110,8 @@ msgstr "Ersätt %s?"
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta "
-"det med det äldre du kopierar?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta det med det äldre du kopierar?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
@@ -130,12 +120,8 @@ msgstr "Installerad: %s | Inkommande: %s"
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med"
-" det du kopierar?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med det du kopierar?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -156,7 +142,7 @@ msgstr "Installerades framgångsrikt"
 #: src/application.vala:537 src/windows/drop_window.vala:559
 #, c-format
 msgid "Version %s"
-msgstr "Version %s"
+msgstr ""
 
 #: src/application.vala:541 src/windows/drop_window.vala:563
 msgid "Open"
@@ -294,11 +280,9 @@ msgstr "Migrerar %s (%d/%d)..."
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
-msgstr ""
-"Vissa appar kunde inte migreras:\n"
+msgstr "Vissa appar kunde inte migreras:\n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -352,27 +336,16 @@ msgid "Updated"
 msgstr "Uppdaterad"
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → "
-"GitHub."
-msgstr ""
-"GitHub-autentisering misslyckades (401). Kontrollera din token i "
-"Inställningar → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub-autentisering misslyckades (401). Kontrollera din token i Inställningar → GitHub."
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API-hastighetsgräns har överskridits. Lägg till en token i "
-"Inställningar → GitHub för att öka din gräns."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API-hastighetsgräns har överskridits. Lägg till en token i Inställningar → GitHub för att öka din gräns."
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub-åtkomst förbjuden (403). Din token kan sakna de nödvändiga "
-"behörigheterna."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub-åtkomst förbjuden (403). Din token kan sakna de nödvändiga behörigheterna."
 
 #: src/core/updater.vala:1286
 msgid "Unknown zsync source type"
@@ -389,8 +362,7 @@ msgstr "Kan inte fastställa nedladdnings-URL från zsync URL"
 #: src/windows/details_window.vala:100
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från terminalen"
+msgstr "⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från terminalen"
 
 #: src/windows/details_window.vala:160
 msgid "Show in Files"
@@ -407,7 +379,7 @@ msgstr "Extraherad"
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
-msgstr "Terminal"
+msgstr ""
 
 #: src/windows/details_window.vala:192
 msgid "This app supports efficient delta updates"
@@ -483,7 +455,7 @@ msgstr "Start WM-klass"
 
 #: src/windows/details_window.vala:625
 msgid "Version"
-msgstr "Version"
+msgstr ""
 
 #: src/windows/details_window.vala:637
 msgid "Hide from app drawer"
@@ -529,22 +501,12 @@ msgid "Check Update"
 msgstr "Sök uppdatering"
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
-msgstr ""
-"Uppdateringsinformation låter AppManager hämta nya versioner åt dig. Klistra"
-" in nedladdningslänken så gör AppManager resten."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
+msgstr "Uppdateringsinformation låter AppManager hämta nya versioner åt dig. Klistra in nedladdningslänken så gör AppManager resten."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download"
-" links also work if the server provides Last-Modified or Content-Length "
-"headers."
-msgstr ""
-"För närvarande stöds GitHub och GitLab URL-format fullt ut. Direkta "
-"nedladdningslänkar fungerar också om servern tillhandahåller Last-Modified "
-"eller Content-Length-headers."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
+msgstr "För närvarande stöds GitHub och GitLab URL-format fullt ut. Direkta nedladdningslänkar fungerar också om servern tillhandahåller Last-Modified eller Content-Length-headers."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
@@ -555,12 +517,8 @@ msgid "Got it"
 msgstr "Förstått"
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Extrahering packar upp applikationen så att den öppnas snabbare, men det tar"
-" mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Extrahering packar upp applikationen så att den öppnas snabbare, men det tar mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
@@ -603,8 +561,7 @@ msgstr "Dra och släpp för att installera i %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Detta är en terminalapplikation och kommer att installeras i portabelt läge."
+msgstr "Detta är en terminalapplikation och kommer att installeras i portabelt läge."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -641,7 +598,7 @@ msgstr "Ange SHA256-hash "
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
@@ -740,7 +697,7 @@ msgstr "Avsluta"
 
 #: src/windows/main_window.vala:745
 msgid "Support AppManager"
-msgstr "Support AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:760
 msgid "Buy Me a Coffee"
@@ -760,7 +717,7 @@ msgstr "Stjärna AppManager på GitHub"
 
 #: src/windows/main_window.vala:800
 msgid "Star AppManager"
-msgstr "Star AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:811
 msgid "View contributors on GitHub"
@@ -868,8 +825,7 @@ msgstr "%d uppdatering(ar) misslyckades"
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Lägg till uppdateringsadresser i Detaljer för att aktivera uppdateringar"
+msgstr "Lägg till uppdateringsadresser i Detaljer för att aktivera uppdateringar"
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
@@ -924,7 +880,7 @@ msgstr "Tack till"
 #. Installation directory group
 #: src/windows/preferences_window.vala:59
 msgid "Installation"
-msgstr "Installation"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
@@ -1013,8 +969,7 @@ msgstr "AppImage-miniatyrgenerator"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installera appimage-thumbnailer för att generera miniatyrer för AppImages"
+msgstr "Installera appimage-thumbnailer för att generera miniatyrer för AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1027,15 +982,11 @@ msgstr "Ta bort alfaschackbrädet bakom miniatyrer och ikoner"
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
 msgid "GitHub"
-msgstr "GitHub"
+msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
-msgstr ""
-"Autentisera med GitHub för att höja API-hastighetsgränsen från 60 till 5 000"
-" förfrågningar per timme"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
+msgstr "Autentisera med GitHub för att höja API-hastighetsgränsen från 60 till 5 000 förfrågningar per timme"
 
 #: src/windows/preferences_window.vala:215
 msgid "Personal access token"
@@ -1065,8 +1016,7 @@ msgstr "Testtoken"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Verifiera att din token fungerar och kontrollera hastighetsgränsstatus"
+msgstr "Verifiera att din token fungerar och kontrollera hastighetsgränsstatus"
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1102,12 +1052,8 @@ msgstr "Flytta installerade appar?"
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
-msgstr ""
-"Detta kommer att flytta %d installerade app(ar) till den nya platsen. Detta "
-"kan ta ett tag beroende på storleken på dina appar."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
+msgstr "Detta kommer att flytta %d installerade app(ar) till den nya platsen. Detta kan ta ett tag beroende på storleken på dina appar."
 
 #: src/windows/preferences_window.vala:433
 msgid "Move Apps"
@@ -1138,7 +1084,7 @@ msgstr "Okänt fel uppstod"
 
 #: src/windows/preferences_window.vala:522
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 #: src/windows/preferences_window.vala:560
 msgid "Authentication failed — token is invalid or expired"
@@ -1170,19 +1116,13 @@ msgstr "Anslutningsfel: %s"
 #: data/com.github.AppManager.metainfo.xml:6
 #: data/com.github.AppManager.metainfo.xml:8
 msgid "Arnis Kemlers"
-msgstr "Arnis Kemlers"
+msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr "Dra och släpp AppImage-installationsprogram för GNOME"
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
-msgstr ""
-"AppManager låter dig installera eller avinstallera AppImages med ett "
-"välbekant dra-och-släpp-arbetsflöde inspirerat av macOS. Den hanterar "
-"skrivbordsintegration, ikonextraktion, körbara bitar och Nautilus-"
-"kontextmenyer."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
+msgstr "AppManager låter dig installera eller avinstallera AppImages med ett välbekant dra-och-släpp-arbetsflöde inspirerat av macOS. Den hanterar skrivbordsintegration, ikonextraktion, körbara bitar och Nautilus-kontextmenyer."
+
