@@ -1,32 +1,29 @@
-# Norwegian Bokmål translation for app-manager
-# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the app-manager package.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: app-manager\n"
+"Project-Id-Version: appmanager-kem-a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-26 10:50+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-26 09:50\n"
 "Last-Translator: \n"
-"Language-Team: Norwegian Bokmål\n"
-"Language: nb\n"
+"Language-Team: Norwegian Bokmal\n"
+"Language: nb_NO\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: appmanager-kem-a\n"
+"X-Crowdin-Project-ID: 874216\n"
+"X-Crowdin-Language: nb\n"
+"X-Crowdin-File: /main/po/app-manager.pot\n"
+"X-Crowdin-File-ID: 6\n"
 
 #: src/application.vala:246
-#, fuzzy
 msgid "Incompatible AppImage"
-msgstr "Finn flere AppImages"
+msgstr ""
 
 #: src/application.vala:247
-#, fuzzy
-msgid ""
-"This AppImage is incompatible or corrupted. Missing required files "
-"(AppRun, .desktop, or icon)."
-msgstr "Mangler nødvendige filer (AppRun, .desktop eller ikon)"
+msgid "This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."
+msgstr ""
 
 #. Architecture mismatch banner
 #: src/application.vala:248 src/application.vala:260 src/application.vala:780
@@ -34,14 +31,13 @@ msgstr "Mangler nødvendige filer (AppRun, .desktop eller ikon)"
 #: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:99
 #: src/windows/drop_window.vala:109
 msgid "Close"
-msgstr "Lukk"
+msgstr ""
 
 #. Check architecture
 #. Check architecture compatibility
 #: src/application.vala:256 src/windows/drop_window.vala:330
-#, fuzzy
 msgid "unknown"
-msgstr "Versjon ukjent"
+msgstr ""
 
 #: src/application.vala:258
 msgid "Architecture Mismatch"
@@ -56,23 +52,20 @@ msgstr ""
 #: src/application.vala:356 src/windows/drop_window.vala:234
 #, c-format
 msgid "Open %s?"
-msgstr "Åpne %s?"
+msgstr ""
 
 #: src/application.vala:360 src/windows/drop_window.vala:237
 #, c-format
-msgid ""
-"Origins of %s application can not be verified. Are you sure you want to open "
-"it?"
+msgid "Origins of %s application can not be verified. Are you sure you want to open it?"
 msgstr ""
-"Opprinnelsen til %s kan ikke verifiseres. Er du sikker på at du vil åpne den?"
 
 #: src/application.vala:363 src/windows/drop_window.vala:244
 msgid "Install the AppImage to add it to your applications."
-msgstr "Installer AppImage for å legge den til i programmene dine."
+msgstr ""
 
 #: src/application.vala:365 src/windows/drop_window.vala:247
 msgid "Install"
-msgstr "Installer"
+msgstr ""
 
 #: src/application.vala:366 src/application.vala:397
 #: src/windows/details_window.vala:911 src/windows/drop_window.vala:248
@@ -80,159 +73,151 @@ msgstr "Installer"
 #: src/windows/preferences_window.vala:432
 #: src/windows/preferences_window.vala:466
 msgid "Cancel"
-msgstr "Avbryt"
+msgstr ""
 
 #. Use icon with verification badge overlay
 #: src/application.vala:384 src/windows/drop_window.vala:418
 #, c-format
 msgid "Update %s?"
-msgstr "Oppdatere %s?"
+msgstr ""
 
 #. App version
 #: src/application.vala:388 src/windows/details_window.vala:135
 #: src/windows/drop_window.vala:394
 msgid "Version unknown"
-msgstr "Versjon ukjent"
+msgstr ""
 
 #: src/application.vala:393 src/application.vala:536
 #: src/windows/drop_window.vala:401 src/windows/drop_window.vala:558
 msgid "Unknown version"
-msgstr "Ukjent versjon"
+msgstr ""
 
 #: src/application.vala:394 src/windows/drop_window.vala:402
 #, c-format
 msgid "Will update to version %s"
-msgstr "Vil oppdatere til versjon %s"
+msgstr ""
 
 #: src/application.vala:396 src/windows/details_window.vala:819
 #: src/windows/drop_window.vala:421
 msgid "Update"
-msgstr "Oppdater"
+msgstr ""
 
 #. Use icon with verification badge overlay
 #: src/application.vala:415 src/windows/drop_window.vala:448
 #, c-format
 msgid "Replace %s?"
-msgstr "Erstatte %s?"
+msgstr ""
 
 #: src/application.vala:421 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
 msgstr ""
-"Et nyere element med navnet %s finnes allerede på dette stedet. Vil du "
-"erstatte det med det eldre du kopierer?"
 
 #: src/application.vala:423 src/windows/drop_window.vala:454
 #, c-format
 msgid "Installed: %s | Incoming: %s"
-msgstr "Installert: %s | Innkommende: %s"
+msgstr ""
 
 #: src/application.vala:427 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
 msgstr ""
-"Et element med navnet %s finnes allerede på dette stedet. Vil du erstatte "
-"det med det du kopierer?"
 
 #: src/application.vala:432 src/windows/drop_window.vala:462
 msgid "Stop"
-msgstr "Stopp"
+msgstr ""
 
 #: src/application.vala:433 src/windows/drop_window.vala:463
 msgid "Replace"
-msgstr "Erstatt"
+msgstr ""
 
 #: src/application.vala:520 src/windows/drop_window.vala:541
 msgid "Successfully Updated"
-msgstr "Oppdatert"
+msgstr ""
 
 #: src/application.vala:520 src/windows/drop_window.vala:539
 msgid "Successfully Installed"
-msgstr "Installert"
+msgstr ""
 
 #: src/application.vala:537 src/windows/drop_window.vala:559
 #, c-format
 msgid "Version %s"
-msgstr "Versjon %s"
+msgstr ""
 
 #: src/application.vala:541 src/windows/drop_window.vala:563
 msgid "Open"
-msgstr "Åpne"
+msgstr ""
 
 #: src/application.vala:542 src/windows/drop_window.vala:564
 msgid "Done"
-msgstr "Ferdig"
+msgstr ""
 
 #: src/application.vala:567 src/windows/drop_window.vala:590
 msgid "Installation failed"
-msgstr "Installasjon mislyktes"
+msgstr ""
 
 #: src/application.vala:569 src/windows/drop_window.vala:600
 msgid "Dismiss"
-msgstr "Avvis"
+msgstr ""
 
 #: src/application.vala:777
 msgid "Uninstall failed"
-msgstr "Avinstallering mislyktes"
+msgstr ""
 
 #: src/application.vala:778
 #, c-format
 msgid "%s could not be removed: %s"
-msgstr "%s kunne ikke fjernes: %s"
+msgstr ""
 
 #: src/application.vala:785
 msgid "Moved to Trash"
-msgstr "Flyttet til papirkurven"
+msgstr ""
 
 #: src/application.vala:793
 msgid "Extraction is only available for portable installations."
-msgstr "Utpakking er bare tilgjengelig for portable installasjoner."
+msgstr ""
 
 #: src/application.vala:829
 msgid "Extracted for faster launch"
-msgstr "Pakket ut for raskere oppstart"
+msgstr ""
 
 #: src/application.vala:832
 msgid "Extraction complete"
-msgstr "Utpakking fullført"
+msgstr ""
 
 #: src/application.vala:833
 #, c-format
 msgid "%s was extracted and will open faster."
-msgstr "%s ble pakket ut og vil åpnes raskere."
+msgstr ""
 
 #: src/application.vala:844
 msgid "Extraction failed"
-msgstr "Utpakking mislyktes"
+msgstr ""
 
 #: src/application.vala:845
 #, c-format
 msgid "%s could not be extracted: %s"
-msgstr "%s kunne ikke pakkes ut: %s"
+msgstr ""
 
 #: src/core/background_update_service.vala:314
 msgid "App updates available"
-msgstr "Appoppdateringer tilgjengelige"
+msgstr ""
 
 #. Always show aggregate count
 #: src/core/background_update_service.vala:316
 #, c-format
 msgid "%d app update(s) available"
-msgstr "%d appoppdatering(er) tilgjengelig"
+msgstr ""
 
 #. Build actions array: pairs of (action_key, label)
 #. "default" action is invoked when user clicks the notification body
 #: src/core/background_update_service.vala:325
 msgid "Open AppManager"
-msgstr "Åpne AppManager"
+msgstr ""
 
 #: src/core/installer.vala:614 src/windows/details_window.vala:771
 msgid "Move to Trash"
-msgstr "Flytt til papirkurven"
+msgstr ""
 
 #. Check if path is absolute
 #: src/core/path_migration_service.vala:42
@@ -295,27 +280,26 @@ msgstr ""
 
 #: src/core/path_migration_service.vala:215
 #, c-format
-msgid ""
-"Some apps failed to migrate:\n"
+msgid "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
 msgid "No update address configured"
-msgstr "Ingen oppdateringsadresse konfigurert"
+msgstr ""
 
 #: src/core/updater.vala:582 src/core/updater.vala:651
 msgid "Update source not supported"
-msgstr "Oppdateringskilde støttes ikke"
+msgstr ""
 
 #: src/core/updater.vala:598 src/core/updater.vala:669
 msgid "Unable to read releases"
-msgstr "Kunne ikke lese utgivelser"
+msgstr ""
 
 #: src/core/updater.vala:603 src/core/updater.vala:695
 #, c-format
 msgid "No matching AppImage found for %s"
-msgstr "Ingen matchende AppImage funnet for %s"
+msgstr ""
 
 #. Version comparison: if both have versions, compare them
 #. Remote version is same or older than current
@@ -327,13 +311,13 @@ msgstr "Ingen matchende AppImage funnet for %s"
 #: src/core/updater.vala:1426 src/core/updater.vala:1437
 #: src/core/updater.vala:1461
 msgid "Already up to date"
-msgstr "Allerede oppdatert"
+msgstr ""
 
 #: src/core/updater.vala:726 src/core/updater.vala:1527
 #: src/core/updater.vala:1614
-#, fuzzy, c-format
+#, c-format
 msgid "Updated to %s"
-msgstr "Oppdatere %s?"
+msgstr ""
 
 #: src/core/updater.vala:797 src/core/updater.vala:827
 #: src/core/updater.vala:1367
@@ -347,24 +331,19 @@ msgstr ""
 
 #: src/core/updater.vala:858 src/core/updater.vala:1528
 #: src/core/updater.vala:1615
-#, fuzzy
 msgid "Updated"
-msgstr "Oppdater"
+msgstr ""
 
 #: src/core/updater.vala:965
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 
 #: src/core/updater.vala:970
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr ""
 
 #: src/core/updater.vala:972
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr ""
 
 #: src/core/updater.vala:1286
@@ -382,229 +361,214 @@ msgstr ""
 #: src/windows/details_window.vala:100
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr "⚠️ '%s' er ikke i $PATH. Appen vil ikke starte fra terminalen"
+msgstr ""
 
 #: src/windows/details_window.vala:160
 msgid "Show in Files"
-msgstr "Vis i Filer"
+msgstr ""
 
 #: src/windows/details_window.vala:162
 msgid "Portable"
-msgstr "Portabel"
+msgstr ""
 
 #: src/windows/details_window.vala:162
 msgid "Extracted"
-msgstr "Utpakket"
+msgstr ""
 
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:184
 msgid "Terminal"
-msgstr "Terminal"
+msgstr ""
 
 #: src/windows/details_window.vala:192
 msgid "This app supports efficient delta updates"
-msgstr "Denne appen støtter effektive deltaoppdateringer"
+msgstr ""
 
 #: src/windows/details_window.vala:199
 msgid "Hidden"
-msgstr "Skjult"
+msgstr ""
 
 #: src/windows/details_window.vala:209
 msgid "Properties"
-msgstr "Egenskaper"
+msgstr ""
 
 #: src/windows/details_window.vala:214
 msgid "Command line arguments"
-msgstr "Kommandolinjeargumenter"
+msgstr ""
 
 #: src/windows/details_window.vala:246
 msgid "Update info"
-msgstr "Oppdateringsinformasjon"
+msgstr ""
 
 #: src/windows/details_window.vala:252
 msgid "How update links work"
-msgstr "Hvordan oppdateringslenker fungerer"
+msgstr ""
 
 #: src/windows/details_window.vala:271
 msgid "Update Link"
-msgstr "Oppdateringslenke"
+msgstr ""
 
 #: src/windows/details_window.vala:320
 msgid "Web Page"
-msgstr "Nettside"
+msgstr ""
 
 #: src/windows/details_window.vala:349
 msgid "Open web page"
-msgstr "Åpne nettside"
+msgstr ""
 
 #: src/windows/details_window.vala:363
 msgid "Advanced"
-msgstr "Avansert"
+msgstr ""
 
 #: src/windows/details_window.vala:390
 msgid "Environment Variables"
-msgstr "Miljøvariabler"
+msgstr ""
 
 #: src/windows/details_window.vala:391
 msgid "Set custom environment variables for this app"
-msgstr "Angi egendefinerte miljøvariabler for denne appen"
+msgstr ""
 
 #: src/windows/details_window.vala:444
 msgid "NAME"
-msgstr "NAVN"
+msgstr ""
 
 #: src/windows/details_window.vala:458
 msgid "value"
-msgstr "verdi"
+msgstr ""
 
 #: src/windows/details_window.vala:470
 msgid "Remove variable"
-msgstr "Fjern variabel"
+msgstr ""
 
 #: src/windows/details_window.vala:595
 msgid "Keywords"
-msgstr "Nøkkelord"
+msgstr ""
 
 #: src/windows/details_window.vala:605
 msgid "Icon name"
-msgstr "Ikonnavn"
+msgstr ""
 
 #: src/windows/details_window.vala:615
 msgid "Startup WM Class"
-msgstr "Oppstart WM-klasse"
+msgstr ""
 
 #: src/windows/details_window.vala:625
 msgid "Version"
-msgstr "Versjon"
+msgstr ""
 
 #: src/windows/details_window.vala:637
 msgid "Hide from app drawer"
-msgstr "Skjul fra appskuffen"
+msgstr ""
 
 #: src/windows/details_window.vala:638
 msgid "Don't show in application menu"
-msgstr "Ikke vis i programmenyen"
+msgstr ""
 
 #: src/windows/details_window.vala:649
 msgid "Add to $PATH"
-msgstr "Legg til i $PATH"
+msgstr ""
 
 #: src/windows/details_window.vala:650
 #, c-format
 msgid "Create a launcher in %s so you can run it from the terminal"
-msgstr "Opprett en starter i %s slik at du kan kjøre den fra terminalen"
+msgstr ""
 
 #: src/windows/details_window.vala:711
 msgid "Actions"
-msgstr "Handlinger"
+msgstr ""
 
 #. Extract button
 #: src/windows/details_window.vala:750
 msgid "Extract AppImage"
-msgstr "Pakk ut AppImage"
+msgstr ""
 
 #: src/windows/details_window.vala:787
 msgid "Restore default"
-msgstr "Gjenopprett standard"
+msgstr ""
 
 #: src/windows/details_window.vala:799 src/windows/main_window.vala:493
 #: src/windows/main_window.vala:561
 msgid "Updating..."
-msgstr "Oppdaterer..."
+msgstr ""
 
 #: src/windows/details_window.vala:801
 msgid "Checking..."
-msgstr "Sjekker..."
+msgstr ""
 
 #: src/windows/details_window.vala:823
 msgid "Check Update"
-msgstr "Sjekk oppdatering"
+msgstr ""
 
 #: src/windows/details_window.vala:889
-msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
+msgid "Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest."
 msgstr ""
-"Oppdateringsinformasjon lar AppManager hente nye versjoner for deg. Lim inn "
-"nedlastingslenken, så gjør AppManager resten."
 
 #: src/windows/details_window.vala:890
-msgid ""
-"Currently GitHub and GitLab URL formats are fully supported. Direct download "
-"links also work if the server provides Last-Modified or Content-Length "
-"headers."
+msgid "Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers."
 msgstr ""
-"For øyeblikket støttes GitHub og GitLab URL-formater fullt ut. Direkte "
-"nedlastingslenker fungerer også hvis serveren gir Last-Modified eller "
-"Content-Length-overskrifter."
 
 #: src/windows/details_window.vala:891
 msgid "Update links"
-msgstr "Oppdateringslenker"
+msgstr ""
 
 #: src/windows/details_window.vala:892
 msgid "Got it"
-msgstr "Forstått"
+msgstr ""
 
 #: src/windows/details_window.vala:909
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
 msgstr ""
-"Utpakking vil pakke ut applikasjonen slik at den åpnes raskere, men den vil "
-"bruke mer diskplass. Denne handlingen kan ikke reverseres automatisk."
 
 #: src/windows/details_window.vala:910
 msgid "Extract application?"
-msgstr "Pakke ut applikasjon?"
+msgstr ""
 
 #: src/windows/details_window.vala:912
 msgid "Extract"
-msgstr "Pakk ut"
+msgstr ""
 
 #: src/windows/dialog_window.vala:86
 msgid "App removed"
-msgstr "App fjernet"
+msgstr ""
 
 #: src/windows/dialog_window.vala:94
 msgid "The application was uninstalled successfully."
-msgstr "Applikasjonen ble avinstallert."
+msgstr ""
 
 #: src/windows/drop_window.vala:56 src/windows/drop_window.vala:80
 msgid "AppImage Installer"
-msgstr "AppImage-installerer"
+msgstr ""
 
 #. Add Verify button to headerbar
 #: src/windows/drop_window.vala:91 src/windows/drop_window.vala:1014
 msgid "Verify"
-msgstr "Verifiser"
+msgstr ""
 
 #: src/windows/drop_window.vala:92
 msgid "Verify AppImage with SHA256 hash"
-msgstr "Verifiser AppImage med SHA256-hash"
+msgstr ""
 
 #. Verification failed banner
 #: src/windows/drop_window.vala:118
 msgid "SHA256 hash does not match. Verification failed."
-msgstr "SHA256-hash samsvarer ikke. Verifisering mislyktes."
+msgstr ""
 
 #: src/windows/drop_window.vala:140
-#, fuzzy, c-format
+#, c-format
 msgid "Drag and drop to install into %s"
-msgstr "Dra og slipp for å installere i Programmer"
+msgstr ""
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
 msgstr ""
-"Dette er en terminalapplikasjon og vil bli installert i portabel modus."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
-msgstr "Denne AppImage er inkompatibel eller ødelagt"
+msgstr ""
 
 #: src/windows/drop_window.vala:322
 msgid "Missing required files (AppRun, .desktop, or icon)"
-msgstr "Mangler nødvendige filer (AppRun, .desktop eller ikon)"
+msgstr ""
 
 #: src/windows/drop_window.vala:333
 msgid "Architecture mismatch"
@@ -612,129 +576,127 @@ msgstr ""
 
 #: src/windows/drop_window.vala:498
 msgid "Unable to prepare AppImage for installation"
-msgstr "Kunne ikke forberede AppImage for installasjon"
+msgstr ""
 
 #: src/windows/drop_window.vala:541
 msgid "Successfully Replaced"
-msgstr "Erstattet"
+msgstr ""
 
 #: src/windows/drop_window.vala:975
 msgid "Verify AppImage"
-msgstr "Verifiser AppImage"
+msgstr ""
 
 #: src/windows/drop_window.vala:993
 msgid "Verify the authenticity of this AppImage."
-msgstr "Verifiser ektheten av denne AppImage."
+msgstr ""
 
 #: src/windows/drop_window.vala:999
 msgid "Enter the SHA256 hash "
-msgstr "Skriv inn SHA256-hash "
+msgstr ""
 
 #: src/windows/main_window.vala:56 src/windows/main_window.vala:166
 #: data/com.github.AppManager.metainfo.xml:4
 msgid "AppManager"
-msgstr "AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:215
 msgid "Get more ..."
-msgstr "Hent flere ..."
+msgstr ""
 
 #: src/windows/main_window.vala:227
 msgid "Find more AppImages"
-msgstr "Finn flere AppImages"
+msgstr ""
 
 #: src/windows/main_window.vala:228
 msgid "Browse these sources to discover and download AppImages"
-msgstr "Bla gjennom disse kildene for å oppdage og laste ned AppImages"
+msgstr ""
 
 #: src/windows/main_window.vala:278 src/windows/main_window.vala:350
 msgid "No AppImage apps installed"
-msgstr "Ingen AppImage-apper installert"
+msgstr ""
 
 #: src/windows/main_window.vala:283
 msgid "Download AppImage and double click to install with AppManager"
-msgstr "Last ned AppImage og dobbeltklikk for å installere med AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:350
 msgid "No results found"
-msgstr "Ingen resultater funnet"
+msgstr ""
 
 #: src/windows/main_window.vala:429 src/windows/main_window.vala:892
 msgid "My Apps"
-msgstr "Mine apper"
+msgstr ""
 
 #: src/windows/main_window.vala:500 src/windows/main_window.vala:568
 msgid "Update available"
-msgstr "Oppdatering tilgjengelig"
+msgstr ""
 
 #. App name label (same size as list view)
 #: src/windows/main_window.vala:575
-#, fuzzy
 msgid "Unknown"
-msgstr "Versjon ukjent"
+msgstr ""
 
 #: src/windows/main_window.vala:634
 msgid "extracted"
-msgstr "utpakket"
+msgstr ""
 
 #: src/windows/main_window.vala:691
 msgid "Updated just now"
-msgstr "Oppdatert nettopp"
+msgstr ""
 
 #: src/windows/main_window.vala:691
 msgid "Installed just now"
-msgstr "Installert nettopp"
+msgstr ""
 
 #: src/windows/main_window.vala:699
 #, c-format
 msgid "Updated %d min ago"
-msgstr "Oppdatert for %d min siden"
+msgstr ""
 
 #: src/windows/main_window.vala:699
 #, c-format
 msgid "Installed %d min ago"
-msgstr "Installert for %d min siden"
+msgstr ""
 
 #: src/windows/main_window.vala:707
 #, c-format
 msgid "Updated %d hours ago"
-msgstr "Oppdatert for %d timer siden"
+msgstr ""
 
 #: src/windows/main_window.vala:707
 #, c-format
 msgid "Installed %d hours ago"
-msgstr "Installert for %d timer siden"
+msgstr ""
 
 #: src/windows/main_window.vala:714
 #, c-format
 msgid "Updated %d days ago"
-msgstr "Oppdatert for %d dager siden"
+msgstr ""
 
 #: src/windows/main_window.vala:714
 #, c-format
 msgid "Installed %d days ago"
-msgstr "Installert for %d dager siden"
+msgstr ""
 
 #: src/windows/main_window.vala:730 src/windows/preferences_window.vala:34
 msgid "Preferences"
-msgstr "Innstillinger"
+msgstr ""
 
 #: src/windows/main_window.vala:731
 msgid "Keyboard shortcuts"
-msgstr "Tastatursnarveier"
+msgstr ""
 
 #: src/windows/main_window.vala:732 src/windows/main_window.vala:1515
 msgid "About AppManager"
-msgstr "Om AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:733
 msgid "Quit"
-msgstr "Avslutt"
+msgstr ""
 
 #: src/windows/main_window.vala:745
-#, fuzzy
 msgid "Support AppManager"
-msgstr "Avslutt AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:760
 msgid "Buy Me a Coffee"
@@ -749,14 +711,12 @@ msgid "Sponsor Me ♡"
 msgstr ""
 
 #: src/windows/main_window.vala:795
-#, fuzzy
 msgid "Star AppManager on GitHub"
-msgstr "Avslutt AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:800
-#, fuzzy
 msgid "Star AppManager"
-msgstr "Avslutt AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:811
 msgid "View contributors on GitHub"
@@ -768,7 +728,7 @@ msgstr ""
 
 #: src/windows/main_window.vala:839 src/windows/main_window.vala:1513
 msgid "Search"
-msgstr "Søk"
+msgstr ""
 
 #: src/windows/main_window.vala:845
 msgid "Support this project"
@@ -776,20 +736,20 @@ msgstr ""
 
 #: src/windows/main_window.vala:855
 msgid "More actions"
-msgstr "Flere handlinger"
+msgstr ""
 
 #: src/windows/main_window.vala:870
 msgid "Search apps..."
-msgstr "Søk etter apper..."
+msgstr ""
 
 #. FUSE is not installed warning banner
 #: src/windows/main_window.vala:878
 msgid "FUSE is not installed. Some AppImages may fail to run"
-msgstr "FUSE er ikke installert. Noen AppImages kan mislykkes i å kjøre"
+msgstr ""
 
 #: src/windows/main_window.vala:880
 msgid "Learn More"
-msgstr "Les mer"
+msgstr ""
 
 #: src/windows/main_window.vala:926
 msgid "Switch to grid view"
@@ -801,149 +761,145 @@ msgstr ""
 
 #: src/windows/main_window.vala:999 src/windows/main_window.vala:1070
 msgid "Updates already running"
-msgstr "Oppdateringer kjører allerede"
+msgstr ""
 
 #: src/windows/main_window.vala:1047
 msgid "Cancel update"
-msgstr "Avbryt oppdatering"
+msgstr ""
 
 #: src/windows/main_window.vala:1078
 msgid "Cancelling..."
-msgstr "Avbryter..."
+msgstr ""
 
 #: src/windows/main_window.vala:1104
 msgid "Update check cancelled"
-msgstr "Oppdateringssjekk avbrutt"
+msgstr ""
 
 #: src/windows/main_window.vala:1134
 #, c-format
 msgid "%d app(s) have updates"
-msgstr "%d app(er) har oppdateringer"
+msgstr ""
 
 #: src/windows/main_window.vala:1137
 msgid "No updates available right now"
-msgstr "Ingen oppdateringer tilgjengelig akkurat nå"
+msgstr ""
 
 #: src/windows/main_window.vala:1144
 msgid "Nothing queued for updating"
-msgstr "Ingenting i kø for oppdatering"
+msgstr ""
 
 #: src/windows/main_window.vala:1171
 msgid "Update cancelled"
-msgstr "Oppdatering avbrutt"
+msgstr ""
 
 #: src/windows/main_window.vala:1308
 msgid "Checking updates"
-msgstr "Sjekker oppdateringer"
+msgstr ""
 
 #: src/windows/main_window.vala:1311
 msgid "Update Apps"
-msgstr "Oppdater apper"
+msgstr ""
 
 #: src/windows/main_window.vala:1314
 msgid "Updating apps"
-msgstr "Oppdaterer apper"
+msgstr ""
 
 #: src/windows/main_window.vala:1317
 msgid "Check updates"
-msgstr "Sjekk oppdateringer"
+msgstr ""
 
 #: src/windows/main_window.vala:1341
 msgid "No installed apps to update"
-msgstr "Ingen installerte apper å oppdatere"
+msgstr ""
 
 #: src/windows/main_window.vala:1381
 #, c-format
 msgid "Updated %d app(s)"
-msgstr "Oppdaterte %d app(er)"
+msgstr ""
 
 #: src/windows/main_window.vala:1384
 #, c-format
 msgid "%d update(s) failed"
-msgstr "%d oppdatering(er) mislyktes"
+msgstr ""
 
 #: src/windows/main_window.vala:1392
 msgid "Add update addresses in Details to enable updates"
-msgstr "Legg til oppdateringsadresser i Detaljer for å aktivere oppdateringer"
+msgstr ""
 
 #: src/windows/main_window.vala:1394
 msgid "All supported apps are already up to date"
-msgstr "Alle støttede apper er allerede oppdatert"
+msgstr ""
 
 #: src/windows/main_window.vala:1398
 #, c-format
 msgid "%d app(s) use unsupported update links"
-msgstr "%d app(er) bruker ustøttede oppdateringslenker"
+msgstr ""
 
 #: src/windows/main_window.vala:1461
 #, c-format
 msgid "Update available for %s"
-msgstr "Oppdatering tilgjengelig for %s"
+msgstr ""
 
 #: src/windows/main_window.vala:1501
 msgid "General"
-msgstr "Generelt"
+msgstr ""
 
 #: src/windows/main_window.vala:1505
 msgid "Navigation"
-msgstr "Navigasjon"
+msgstr ""
 
 #: src/windows/main_window.vala:1509
 msgid "Window"
-msgstr "Vindu"
+msgstr ""
 
 #: src/windows/main_window.vala:1511
 msgid "Check for updates"
-msgstr "Sjekk etter oppdateringer"
+msgstr ""
 
 #: src/windows/main_window.vala:1512
 msgid "Show main menu"
-msgstr "Vis hovedmeny"
+msgstr ""
 
 #: src/windows/main_window.vala:1514
 msgid "Show shortcuts"
-msgstr "Vis snarveier"
+msgstr ""
 
 #: src/windows/main_window.vala:1516
 msgid "Close window"
-msgstr "Lukk vindu"
+msgstr ""
 
 #: src/windows/main_window.vala:1517
 msgid "Quit AppManager"
-msgstr "Avslutt AppManager"
+msgstr ""
 
 #: src/windows/main_window.vala:1534
 msgid "Credits"
-msgstr "Takk til"
+msgstr ""
 
 #. Installation directory group
 #: src/windows/preferences_window.vala:59
-#, fuzzy
 msgid "Installation"
-msgstr "Installasjon mislyktes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
 msgstr ""
 
 #: src/windows/preferences_window.vala:63
-#, fuzzy
 msgid "Installation directory"
-msgstr "Installasjon mislyktes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:78
 msgid "Browse for folder"
 msgstr ""
 
 #: src/windows/preferences_window.vala:86
-#, fuzzy
 msgid "Reset to default"
-msgstr "Gjenopprett standard"
+msgstr ""
 
 #: src/windows/preferences_window.vala:96
-#, fuzzy
 msgid "Apply changes"
-msgstr "Programmer"
+msgstr ""
 
 #: src/windows/preferences_window.vala:107
 msgid "Skip drag-and-drop window"
@@ -956,72 +912,71 @@ msgstr ""
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
 msgid "Automatic updates"
-msgstr "Automatiske oppdateringer"
+msgstr ""
 
 #: src/windows/preferences_window.vala:118
 msgid "Configure automatic update checking"
-msgstr "Konfigurer automatisk oppdateringssjekk"
+msgstr ""
 
 #: src/windows/preferences_window.vala:124
 msgid "Open update log"
-msgstr "Åpne oppdateringslogg"
+msgstr ""
 
 #. Background update check expander row
 #: src/windows/preferences_window.vala:138
 msgid "Background update check"
-msgstr "Bakgrunnsoppdateringssjekk"
+msgstr ""
 
 #: src/windows/preferences_window.vala:139
 msgid "Will notify when new app updates are available"
-msgstr "Varsler når nye appoppdateringer er tilgjengelige"
+msgstr ""
 
 #. Auto update apps toggle (inside expander)
 #: src/windows/preferences_window.vala:150
 msgid "Auto update apps"
-msgstr "Oppdater apper automatisk"
+msgstr ""
 
 #: src/windows/preferences_window.vala:151
 msgid "Will update apps automatically in background"
-msgstr "Oppdaterer apper automatisk i bakgrunnen"
+msgstr ""
 
 #. Check interval (inside expander)
 #: src/windows/preferences_window.vala:157
 msgid "Check interval"
-msgstr "Sjekkintervall"
+msgstr ""
 
 #: src/windows/preferences_window.vala:159
 msgid "Daily"
-msgstr "Daglig"
+msgstr ""
 
 #: src/windows/preferences_window.vala:160
 msgid "Weekly"
-msgstr "Ukentlig"
+msgstr ""
 
 #: src/windows/preferences_window.vala:161
 msgid "Monthly"
-msgstr "Månedlig"
+msgstr ""
 
 #. Thumbnails group
 #: src/windows/preferences_window.vala:186
 msgid "Thumbnails"
-msgstr "Miniatyrbilder"
+msgstr ""
 
 #: src/windows/preferences_window.vala:189
 msgid "AppImage Thumbnailer"
-msgstr "AppImage-miniatyrgenerator"
+msgstr ""
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
 msgstr ""
-"Installer appimage-thumbnailer for å generere miniatyrbilder for AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
-msgstr "Skjul Nautilus miniatyrbakgrunn"
+msgstr ""
 
 #: src/windows/preferences_window.vala:200
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
-msgstr "Fjern alfasjakkmønsteret bak miniatyrbilder og ikoner"
+msgstr ""
 
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
@@ -1029,9 +984,7 @@ msgid "GitHub"
 msgstr ""
 
 #: src/windows/preferences_window.vala:212
-msgid ""
-"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
-"requests per hour"
+msgid "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour"
 msgstr ""
 
 #: src/windows/preferences_window.vala:215
@@ -1039,9 +992,8 @@ msgid "Personal access token"
 msgstr ""
 
 #: src/windows/preferences_window.vala:226
-#, fuzzy
 msgid "Apply token"
-msgstr "Programmer"
+msgstr ""
 
 #: src/windows/preferences_window.vala:229
 #: src/windows/preferences_window.vala:248
@@ -1082,18 +1034,16 @@ msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
 
 #: src/windows/preferences_window.vala:342
-#, fuzzy
 msgid "Select Installation Directory"
-msgstr "Installasjon mislyktes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:409
 msgid "Invalid Path"
 msgstr ""
 
 #: src/windows/preferences_window.vala:419
-#, fuzzy
 msgid "Installation directory updated"
-msgstr "Installasjon mislyktes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:429
 msgid "Move Installed Apps?"
@@ -1101,15 +1051,12 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:430
 #, c-format
-msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+msgid "This will move %d installed app(s) to the new location. This may take a while depending on the size of your apps."
 msgstr ""
 
 #: src/windows/preferences_window.vala:433
-#, fuzzy
 msgid "Move Apps"
-msgstr "Mine apper"
+msgstr ""
 
 #. Kill background daemon if running - it may interfere with migration
 #. by monitoring folders and triggering reconciliation
@@ -1127,9 +1074,8 @@ msgid "Apps moved successfully"
 msgstr ""
 
 #: src/windows/preferences_window.vala:504
-#, fuzzy
 msgid "Migration Failed"
-msgstr "Utpakking mislyktes"
+msgstr ""
 
 #: src/windows/preferences_window.vala:504
 msgid "Unknown error occurred"
@@ -1176,18 +1122,6 @@ msgid "Drag-and-drop AppImage installer for GNOME"
 msgstr ""
 
 #: data/com.github.AppManager.metainfo.xml:35
-msgid ""
-"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
-"drop workflow inspired by macOS. It handles desktop integration, icon "
-"extraction, executable bits, and Nautilus context menus."
+msgid "AppManager lets you install or uninstall AppImages with a familiar drag-and-drop workflow inspired by macOS. It handles desktop integration, icon extraction, executable bits, and Nautilus context menus."
 msgstr ""
 
-#~ msgid "Applications"
-#~ msgstr "Programmer"
-
-#, fuzzy
-#~ msgid "Only AppImage files can be installed"
-#~ msgstr "Ingen AppImage-apper installert"
-
-#~ msgid "Update link is managed by zsync and cannot be edited"
-#~ msgstr "Oppdateringslenken administreres av zsync og kan ikke redigeres"
