@@ -41,7 +41,6 @@ namespace AppManager {
         private string current_search_query = "";
         private bool has_installations = true;
         private StagedUpdatesManager staged_updates;
-        private bool shift_held = false;
 
         // Grid view fields
         private Gtk.FlowBox? grid_flow_box;
@@ -73,7 +72,6 @@ namespace AppManager {
             this.set_default_size(settings.get_int("window-width"), settings.get_int("window-height"));
             build_ui();
             setup_window_actions();
-            setup_shift_key_controller();
             setup_drag_drop();
             load_staged_updates();
             refresh_installations();
@@ -924,10 +922,21 @@ namespace AppManager {
                 apps_title_bar = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
                 apps_title_bar.add_css_class("apps-title-bar");
 
+                var title_column = new Gtk.Box(Gtk.Orientation.VERTICAL, 2);
+                title_column.set_hexpand(true);
+                title_column.set_halign(Gtk.Align.START);
+
                 apps_title_label = new Gtk.Label(_("My Apps"));
                 apps_title_label.add_css_class("heading");
-                apps_title_label.set_hexpand(true);
                 apps_title_label.set_halign(Gtk.Align.START);
+                title_column.append(apps_title_label);
+
+                var launch_hint_label = new Gtk.Label(_("Shift+click to launch"));
+                launch_hint_label.add_css_class("dim-label");
+                launch_hint_label.add_css_class("caption");
+                launch_hint_label.set_halign(Gtk.Align.START);
+                launch_hint_label.set_visible(view_mode == "grid");
+                title_column.append(launch_hint_label);
 
                 view_toggle_button = new Gtk.Button();
                 view_toggle_button.add_css_class("flat");
@@ -939,11 +948,12 @@ namespace AppManager {
                         view_mode = "list";
                     }
                     settings.set_string("app-list-view-mode", view_mode);
+                    launch_hint_label.set_visible(view_mode == "grid");
                     update_view_toggle_icon();
                     refresh_installations();
                 });
 
-                apps_title_bar.append(apps_title_label);
+                apps_title_bar.append(title_column);
                 apps_title_bar.append(view_toggle_button);
                 toolbar.add_top_bar(apps_title_bar);
             }
@@ -1014,32 +1024,6 @@ namespace AppManager {
                 }
             });
             add_window_action(show_menu_action);
-        }
-
-        private void setup_shift_key_controller() {
-            var key_controller = new Gtk.EventControllerKey();
-            key_controller.key_pressed.connect((keyval, keycode, state) => {
-                if (keyval == Gdk.Key.Shift_L || keyval == Gdk.Key.Shift_R) {
-                    shift_held = true;
-                }
-                return false;
-            });
-            key_controller.key_released.connect((keyval, keycode, state) => {
-                if (keyval == Gdk.Key.Shift_L || keyval == Gdk.Key.Shift_R) {
-                    shift_held = false;
-                }
-            });
-            ((Gtk.Widget) this).add_controller(key_controller);
-
-            // Show "Launch Application" tooltip only on hovered grid cell while Shift is held
-            grid_flow_box.set_has_tooltip(true);
-            grid_flow_box.query_tooltip.connect((x, y, keyboard_tooltip, tooltip) => {
-                if (!shift_held || view_mode != "grid") return false;
-                var child = grid_flow_box.get_child_at_pos((int) x, (int) y);
-                if (child == null) return false;
-                tooltip.set_text(_("Launch Application"));
-                return true;
-            });
         }
 
         private void add_window_action(GLib.Action action) {
