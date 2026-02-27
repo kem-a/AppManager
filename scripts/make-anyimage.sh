@@ -152,16 +152,19 @@ echo "---------------------------------------------------------------"
 # Additional notes:
 #   - unsquashfs is built by meson and installed to /usr/bin/unsquashfs
 #   - /usr/share/vala is needed for Vala runtime data (may be required by some Vala apps)
-#   - GIO modules for TLS and proxy are needed since the app uses libsoup3 for networking
+
 "$QS" \
     /usr/bin/app-manager \
     /usr/bin/dwarfsextract \
     /usr/bin/zsync2 \
     /usr/bin/unsquashfs \
-    /usr/share/vala \
-    /usr/lib/gio/modules/libgiognomeproxy.so \
-    /usr/lib/gio/modules/libgiognutls.so \
-    /usr/lib/gio/modules/libgiolibproxy.so
+    /usr/share/vala
+    
+#   - GIO modules for TLS and proxy are needed since the app uses libsoup3 for networking
+#   - this has been fixed upstream, but let's keep an eye on it https://github.com/pkgforge-dev/Anylinux-AppImages/pull/340   
+#   /usr/lib/gio/modules/libgiognomeproxy.so \
+#   /usr/lib/gio/modules/libgiognutls.so \
+#   /usr/lib/gio/modules/libgiolibproxy.so
 
 # ── Create AppImage ─────────────────────────────────────────────────
 "$QS" --make-appimage
