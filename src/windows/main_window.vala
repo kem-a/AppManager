@@ -48,7 +48,10 @@ namespace AppManager {
         private Gtk.Button? view_toggle_button;
         private Gtk.Box? apps_title_bar;
         private Gtk.Label? apps_title_label;
+        private Gtk.Label? launch_hint_label;
         private string view_mode = "list";
+        private bool _fullscreen_active = false;
+        private string pre_fullscreen_view_mode = "list";
 
         public MainWindow(Application app, InstallationRegistry registry, Installer installer, Settings settings) {
             Object(application: app);
@@ -76,6 +79,11 @@ namespace AppManager {
             load_staged_updates();
             refresh_installations();
             registry.changed.connect(on_registry_changed);
+
+            // Track fullscreen state changes (works on both X11 and Wayland)
+            this.notify["fullscreened"].connect(() => {
+                apply_fullscreen_state(this.fullscreened);
+            });
         }
 
         /**
@@ -168,7 +176,7 @@ namespace AppManager {
 
             // Show/hide bottom bar based on navigation depth
             navigation_view.popped.connect(() => {
-                if (navigation_view.navigation_stack.get_n_items() == 1) {
+                if (navigation_view.navigation_stack.get_n_items() == 1 && !_fullscreen_active) {
                     bottom_bar_widget.visible = true;
                 }
             });
@@ -614,27 +622,28 @@ namespace AppManager {
             var record = cell_box.get_data<InstallationRecord>("record");
             if (record == null) return;
 
-            // Shift+click opens app settings
+            // Shift+click launches the app
             var display = Gdk.Display.get_default();
             var seat = display.get_default_seat();
             var keyboard = seat.get_keyboard();
             if (keyboard != null) {
                 var mask = keyboard.get_modifier_state();
                 if (Gdk.ModifierType.SHIFT_MASK in mask) {
-                    show_detail_page(record);
+                    // Launch the app with icon spin animation
+                    var icon_overlay = cell_box.get_first_child();
+                    if (icon_overlay != null) {
+                        var icon_widget = icon_overlay.get_first_child();
+                        if (icon_widget != null) {
+                            UiUtils.spin_launch_icon(icon_widget);
+                        }
+                    }
+                    launch_app(record);
                     return;
                 }
             }
 
-            // Normal click launches the app
-            var icon_overlay = cell_box.get_first_child();
-            if (icon_overlay != null) {
-                var icon_widget = icon_overlay.get_first_child();
-                if (icon_widget != null) {
-                    UiUtils.spin_launch_icon(icon_widget);
-                }
-            }
-            launch_app(record);
+            // Normal click opens app details
+            show_detail_page(record);
         }
 
         private void launch_app(InstallationRecord record) {
@@ -760,10 +769,21 @@ namespace AppManager {
 
         private GLib.MenuModel build_menu_model() {
             var menu = new GLib.Menu();
-            menu.append(_("Preferences"), "app.show_preferences");
-            menu.append(_("Keyboard shortcuts"), "app.show_shortcuts");
-            menu.append(_("About AppManager"), "app.show_about");
-            menu.append(_("Quit"), "app.quit");
+
+            var fullscreen_section = new GLib.Menu();
+            fullscreen_section.append(_("Fullscreen"), "win.toggle_fullscreen");
+            menu.append_section(null, fullscreen_section);
+
+            var middle_section = new GLib.Menu();
+            middle_section.append(_("Preferences"), "app.show_preferences");
+            middle_section.append(_("Keyboard shortcuts"), "app.show_shortcuts");
+            middle_section.append(_("About AppManager"), "app.show_about");
+            menu.append_section(null, middle_section);
+
+            var quit_section = new GLib.Menu();
+            quit_section.append(_("Quit"), "app.quit");
+            menu.append_section(null, quit_section);
+
             return menu;
         }
 
@@ -931,7 +951,7 @@ namespace AppManager {
                 apps_title_label.set_halign(Gtk.Align.START);
                 title_column.append(apps_title_label);
 
-                var launch_hint_label = new Gtk.Label(_("Shift+click for app settings"));
+                launch_hint_label = new Gtk.Label(_("Shift+click to launch app"));
                 launch_hint_label.add_css_class("dim-label");
                 launch_hint_label.add_css_class("caption");
                 launch_hint_label.set_halign(Gtk.Align.START);
@@ -1024,6 +1044,10 @@ namespace AppManager {
                 }
             });
             add_window_action(show_menu_action);
+
+            var fullscreen_action = new GLib.SimpleAction("toggle_fullscreen", null);
+            fullscreen_action.activate.connect(on_toggle_fullscreen);
+            add_window_action(fullscreen_action);
         }
 
         private void add_window_action(GLib.Action action) {
@@ -1037,6 +1061,63 @@ namespace AppManager {
                 this.insert_action_group("win", window_actions);
             }
             return window_actions;
+        }
+
+        private void on_toggle_fullscreen() {
+            if (_fullscreen_active) {
+                unfullscreen();
+            } else {
+                fullscreen();
+            }
+        }
+
+        private void apply_fullscreen_state(bool entering) {
+            _fullscreen_active = entering;
+            if (entering) {
+                // Hide bottom sheet bar
+                bottom_sheet.open = false;
+                bottom_bar_widget.visible = false;
+
+                // Save current view mode and switch to grid
+                pre_fullscreen_view_mode = view_mode;
+                if (view_mode != "grid") {
+                    view_mode = "grid";
+                    update_view_toggle_icon();
+                    refresh_installations();
+                }
+
+                // Show hint label since we're in grid mode
+                if (launch_hint_label != null) {
+                    launch_hint_label.visible = true;
+                }
+
+                // Hide view toggle button
+                if (view_toggle_button != null) {
+                    view_toggle_button.visible = false;
+                }
+            } else {
+                // Restore bottom bar (only on main page)
+                if (navigation_view.navigation_stack.get_n_items() == 1) {
+                    bottom_bar_widget.visible = true;
+                }
+
+                // Restore previous view mode
+                if (pre_fullscreen_view_mode != view_mode) {
+                    view_mode = pre_fullscreen_view_mode;
+                    update_view_toggle_icon();
+                    refresh_installations();
+                }
+
+                // Show view toggle button
+                if (view_toggle_button != null) {
+                    view_toggle_button.visible = true;
+                }
+
+                // Update hint label visibility for restored view mode
+                if (launch_hint_label != null) {
+                    launch_hint_label.visible = (view_mode == "grid");
+                }
+            }
         }
 
         private void on_check_updates_accel() {
@@ -1560,6 +1641,7 @@ namespace AppManager {
                 assign_shortcut_title(builder, "shortcut_about", _("About AppManager"));
                 assign_shortcut_title(builder, "shortcut_close_window", _("Close window"));
                 assign_shortcut_title(builder, "shortcut_quit", _("Quit AppManager"));
+                assign_shortcut_title(builder, "shortcut_fullscreen", _("Toggle fullscreen"));
             } catch (Error e) {
                 warning("Failed to load shortcuts UI: %s", e.message);
             }

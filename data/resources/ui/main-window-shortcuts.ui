@@ -41,6 +41,11 @@
                                 <property name="accelerator">&lt;Primary&gt;q</property>
                             </object>
                         </child>
+                        <child>
+                            <object class="GtkShortcutsShortcut" id="shortcut_fullscreen">
+                                <property name="accelerator">F11</property>
+                            </object>
+                        </child>
                     </object>
                 </child>
             </object>
