@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-27 17:25+0200\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-02-28 12:00+0000\n"
 "Last-Translator: denisrennes\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -123,7 +123,7 @@ msgid ""
 "replace it with the older one you're copying?"
 msgstr ""
 "Un élément plus récent nommé %s existe déjà à cet emplacement. Voulez-vous "
-"le remplacer par celui-ci plus ancien ?"
+"le remplacer par celui-ci, plus ancien ?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
 #, c-format
@@ -136,8 +136,7 @@ msgid ""
 "An item named %s already exists in this location. Do you want to replace it "
 "with one you're copying?"
 msgstr ""
-"Un élément nommé %s existe déjà à cet emplacement. Voulez-vous le remplacer "
-"par celui que vous copiez ?"
+"Un élément nommé %s existe déjà à cet emplacement. Voulez-vous le remplacer ?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -177,9 +176,8 @@ msgid "Dismiss"
 msgstr "Ignorer"
 
 #: src/application.vala:810
-#, fuzzy
 msgid "Cannot move to trash"
-msgstr "Mettre à la corbeille"
+msgstr "Impossible de mettre à la corbeille"
 
 #: src/application.vala:811
 #, c-format
@@ -189,11 +187,15 @@ msgid ""
 "\n"
 "This action cannot be undone."
 msgstr ""
+"%s n'a pas pu être mis à la corbeille. Voulez-vous le supprimer "
+"définitivement ?\n"
+"\n"
+"Cette action ne peut être annulée."
 
 #: src/application.vala:814 src/windows/details_window.vala:1012
 #: src/windows/details_window.vala:1028
 msgid "Delete Permanently"
-msgstr ""
+msgstr "Supprimer définitivement"
 
 #: src/application.vala:826
 msgid "Uninstall failed"
@@ -206,7 +208,7 @@ msgstr "%s n'a pas pu être supprimé : %s"
 
 #: src/application.vala:835
 msgid "Deleted permanently"
-msgstr ""
+msgstr "Définitivement supprimé"
 
 #: src/application.vala:837
 msgid "Moved to Trash"
@@ -323,7 +325,7 @@ msgid ""
 "Some apps failed to migrate:\n"
 "%s"
 msgstr ""
-"Echec de la migration d'applis : \n"
+"Echec de la migration d'applications : \n"
 "%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:642
@@ -336,7 +338,7 @@ msgstr "Source de mise à jour non prise en charge"
 
 #: src/core/updater.vala:598 src/core/updater.vala:669
 msgid "Unable to read releases"
-msgstr "Impossible de lire les versions"
+msgstr "Impossible de lire les versions sorties (releases)"
 
 #: src/core/updater.vala:603 src/core/updater.vala:695
 #, c-format
@@ -420,13 +422,12 @@ msgstr ""
 "terminal"
 
 #: src/windows/details_window.vala:134
-#, fuzzy
 msgid "Launch Application"
-msgstr "Extraire l'application ?"
+msgstr "Lancer l'application"
 
 #: src/windows/details_window.vala:184
 msgid "Show in Files"
-msgstr "Afficher dans l'application Fichiers"
+msgstr "Afficher dans Fichiers"
 
 #: src/windows/details_window.vala:186
 msgid "Portable"
@@ -467,15 +468,15 @@ msgstr "Comment fonctionnent les liens de mise à jour"
 
 #: src/windows/details_window.vala:288
 msgid "Pre-release Updates"
-msgstr ""
+msgstr "Mises-à-jour de pré-production"
 
 #: src/windows/details_window.vala:289
 msgid "Include pre-release versions when checking for updates"
-msgstr ""
+msgstr "Inclure les mises-à-jour de pré-production lors de la recherche de mises-à-jour"
 
 #: src/windows/details_window.vala:304
 msgid "Update link is managed by the embedded zsync update mechanism"
-msgstr ""
+msgstr "Le lien de mise à jour est géré par le mécanisme de mise à jour zsync intégré"
 
 #: src/windows/details_window.vala:340
 msgid "Update Link"
@@ -563,7 +564,7 @@ msgstr "Restaurer par défaut"
 #: src/windows/details_window.vala:874 src/windows/main_window.vala:501
 #: src/windows/main_window.vala:569
 msgid "Updating..."
-msgstr "Mise à jour..."
+msgstr "Mise à jour en cours..."
 
 #: src/windows/details_window.vala:876
 msgid "Checking..."
@@ -602,16 +603,16 @@ msgstr "Compris"
 
 #: src/windows/details_window.vala:1017
 msgid "Hold Shift to delete permanently"
-msgstr ""
+msgstr "Maintenez la touche Maj enfoncée pour supprimer définitivement"
 
 #: src/windows/details_window.vala:1023
 #, c-format
 msgid "<b>%s</b> will be permanently deleted. This action cannot be undone."
-msgstr ""
+msgstr "<b>%s</b> sera supprimé définitivement. Cette action ne peut être annulée."
 
 #: src/windows/details_window.vala:1024
 msgid "Delete permanently?"
-msgstr ""
+msgstr "Supprimer définitivement ?"
 
 #: src/windows/details_window.vala:1041
 msgid ""
@@ -786,7 +787,7 @@ msgstr "Installé il y a %d jours"
 
 #: src/windows/main_window.vala:774
 msgid "Fullscreen"
-msgstr ""
+msgstr "Plein écran"
 
 #: src/windows/main_window.vala:778 src/windows/preferences_window.vala:34
 msgid "Preferences"
@@ -864,15 +865,15 @@ msgstr "En savoir plus"
 
 #: src/windows/main_window.vala:954
 msgid "Shift+click to launch app"
-msgstr ""
+msgstr "Touche Maj + clic pour lancer l'application"
 
 #: src/windows/main_window.vala:991
 msgid "Switch to grid view"
-msgstr "Passer à la vue en grille"
+msgstr "Basculer à la vue vue en grille"
 
 #: src/windows/main_window.vala:994
 msgid "Switch to list view"
-msgstr "Passer à la vue en liste"
+msgstr "Basculer à la vue en liste"
 
 #: src/windows/main_window.vala:1125 src/windows/main_window.vala:1196
 msgid "Updates already running"
@@ -888,7 +889,7 @@ msgstr "Annulation..."
 
 #: src/windows/main_window.vala:1230
 msgid "Update check cancelled"
-msgstr "Vérification des mises à jour annulée"
+msgstr "Recherche des mises à jour annulée"
 
 #: src/windows/main_window.vala:1260
 #, c-format
@@ -909,7 +910,7 @@ msgstr "Mise à jour annulée"
 
 #: src/windows/main_window.vala:1434
 msgid "Checking updates"
-msgstr "Vérification des mises à jour"
+msgstr "Rechercher des mises à jour"
 
 #: src/windows/main_window.vala:1437
 msgid "Update Apps"
@@ -921,7 +922,7 @@ msgstr "Mise à jour des applications"
 
 #: src/windows/main_window.vala:1443
 msgid "Check updates"
-msgstr "Vérifier les mises à jour"
+msgstr "Rechercher des mises à jour"
 
 #: src/windows/main_window.vala:1467
 msgid "No installed apps to update"
@@ -992,7 +993,7 @@ msgstr "Quitter AppManager"
 
 #: src/windows/main_window.vala:1644
 msgid "Toggle fullscreen"
-msgstr ""
+msgstr "Bascule plein écran"
 
 #: src/windows/main_window.vala:1661
 msgid "Credits"
@@ -1006,7 +1007,7 @@ msgstr "Installation"
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
 msgstr ""
-"Configurer l'emplacement d'installation des AppImages (par défaut: ~/"
+"Configurer l'emplacement d'installation des AppImages (par défaut : ~/"
 "Applications)"
 
 #: src/windows/preferences_window.vala:63
@@ -1019,7 +1020,7 @@ msgstr "Rechercher un dossier"
 
 #: src/windows/preferences_window.vala:86
 msgid "Reset to default"
-msgstr "Restaurer par défaut"
+msgstr "Restaurer les valeurs par défaut"
 
 #: src/windows/preferences_window.vala:96
 msgid "Apply changes"
@@ -1027,7 +1028,7 @@ msgstr "Appliquer les modifications"
 
 #: src/windows/preferences_window.vala:107
 msgid "Skip drag-and-drop window"
-msgstr "Passer la fenêtre glisser-déposer"
+msgstr "Eviter la fenêtre glisser-déposer"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
@@ -1041,7 +1042,7 @@ msgstr "Mises à jour automatiques"
 
 #: src/windows/preferences_window.vala:118
 msgid "Configure automatic update checking"
-msgstr "Configurer la vérification automatique des mises à jour"
+msgstr "Configurer la recherche automatique des mises à jour"
 
 #: src/windows/preferences_window.vala:124
 msgid "Open update log"
@@ -1050,7 +1051,7 @@ msgstr "Ouvrir le journal des mises à jour"
 #. Background update check expander row
 #: src/windows/preferences_window.vala:138
 msgid "Background update check"
-msgstr "Vérification des mises à jour en arrière-plan"
+msgstr "Recherche des mises à jour en arrière-plan"
 
 #: src/windows/preferences_window.vala:139
 msgid "Will notify when new app updates are available"
@@ -1132,11 +1133,11 @@ msgstr "Jeton GitHub enregistré"
 
 #: src/windows/preferences_window.vala:235
 msgid "Clear token"
-msgstr "Effacer le jeton"
+msgstr "Enlever le jeton"
 
 #: src/windows/preferences_window.vala:239
 msgid "GitHub token cleared"
-msgstr "Jeton GitHub effacé"
+msgstr "Jeton GitHub enlevé"
 
 #. Test token row
 #: src/windows/preferences_window.vala:255
@@ -1146,7 +1147,7 @@ msgstr "Tester le jeton"
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
 msgstr ""
-"Vérifiez que votre jeton fonctionne et tester la limite du taux de requêtes."
+"Vérifiez que votre jeton fonctionne et vérifier le taux de requêtes."
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1200,7 +1201,7 @@ msgstr "Déplacer les applications"
 #. Create progress dialog
 #: src/windows/preferences_window.vala:465
 msgid "Moving Apps…"
-msgstr "Applications en cours de déplacement…"
+msgstr "Déplacement d'applications en cours…"
 
 #: src/windows/preferences_window.vala:465
 msgid "Please wait while your apps are being moved."
@@ -1256,7 +1257,7 @@ msgstr "Arnis Kemlers"
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer for GNOME"
-msgstr "Installateur d'AppImage pour GNOME par glisser-déposer"
+msgstr "Installateur d'AppImage pour GNOME, par glisser-déposer"
 
 #: data/com.github.AppManager.metainfo.xml:35
 msgid ""
@@ -1264,7 +1265,7 @@ msgid ""
 "drop workflow inspired by macOS. It handles desktop integration, icon "
 "extraction, executable bits, and Nautilus context menus."
 msgstr ""
-"AppManager vous permet d'installer ou de désinstaller des AppImages grâce à "
-"un processus familier de glisser-déposer inspiré de macOS. Il gère "
+"AppManager vous permet d'installer ou de désinstaller des AppImages par "
+"simple glisser-déposer, inspiré de macOS. Il gère "
 "l'intégration au bureau, l'extraction d'icônes, les bits exécutables et les "
 "menus contextuels Nautilus."
