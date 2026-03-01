@@ -449,6 +449,7 @@ namespace AppManager.Core {
                         unsquashfs_path,
                         "-o", offset.to_string(),
                         "-no-progress",
+                        "-no-xattrs",
                         "-d", extract_dir,
                         appimage_path,
                         strip_leading_slash(pattern)
@@ -458,6 +459,7 @@ namespace AppManager.Core {
                         unsquashfs_path,
                         "-o", offset.to_string(),
                         "-no-progress",
+                        "-no-xattrs",
                         "-d", extract_dir,
                         appimage_path
                     };
