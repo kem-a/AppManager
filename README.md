@@ -15,6 +15,8 @@
 
 It also doesn't require FUSE to run, thanks to the [uruntime](https://github.com/VHSgunzo/uruntime)
 
+## Preview
+
 <img width="1600" height="1237" alt="Screenshot From 2026-01-11 00-24-35" src="https://github.com/user-attachments/assets/acc7d1b8-6e07-4540-af6c-cf3167345252" />
 
 ## Features
@@ -88,6 +90,14 @@ meson install -C build
 AppManager supports multiple languages. Want to help translate to your language? See the [translation guide](po/README.md) for instructions.
 
 Currently supported: German, Spanish, Estonian, Finnish, French, Italian, Japanese, Lithuanian, Latvian, Norwegian, Portuguese (Brazil), Swedish, Chinese (Simplified).
+
+## Reviews
+
+<a href="https://itsfoss.com/appmanager/">
+<img width="150" height="54" alt="itsfoss" src="https://itsfoss.com/content/images/size/w300/format/webp/2026/01/itsfoss-logo.png" />
+</a>
+
+*App of the Week*
 
 ## License
 
