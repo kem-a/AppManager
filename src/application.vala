@@ -787,10 +787,17 @@ Examples:
             SourceFunc callback = uninstall_record_async.callback;
             Error? error = null;
             bool trash_failed = false;
+            string? trash_path = null;
+            var installed_path = record.installed_path;
+            var app_name = record.name ?? Path.get_basename(installed_path);
 
             new Thread<void>("appmgr-uninstall", () => {
                 try {
                     installer.uninstall(record, permanently);
+                    // After successful trash, find the file in trash for undo support
+                    if (!permanently) {
+                        trash_path = Utils.FileUtils.find_in_trash(installed_path);
+                    }
                 } catch (Error e) {
                     error = e;
                     // Check if trash specifically failed (not a permanent delete failure)
@@ -805,7 +812,6 @@ Examples:
 
             if (trash_failed) {
                 // Offer to delete permanently as fallback
-                var app_name = record.name ?? Path.get_basename(record.installed_path);
                 var dialog = new Adw.AlertDialog(
                     _("Cannot move to trash"),
                     _("%s could not be moved to the trash. Do you want to delete it permanently instead?\n\nThis action cannot be undone.").printf(app_name)
@@ -833,9 +839,44 @@ Examples:
                 if (parent_window != null && parent_window is MainWindow) {
                     if (permanently) {
                         ((MainWindow)parent_window).add_toast(_("Deleted permanently"));
+                    } else if (trash_path != null) {
+                        var trash_msg = _("%s moved to Trash").printf(app_name);
+                        var toast = ((MainWindow)parent_window).add_toast_with_button(trash_msg, _("Undo"));
+                        toast.button_clicked.connect(() => {
+                            restore_from_trash(trash_path, parent_window);
+                        });
                     } else {
-                        ((MainWindow)parent_window).add_toast(_("Moved to Trash"));
+                        ((MainWindow)parent_window).add_toast(_("%s moved to Trash").printf(app_name));
                     }
+                }
+            }
+        }
+
+        private void restore_from_trash(string trash_path, Gtk.Window? parent_window) {
+            restore_from_trash_async.begin(trash_path, parent_window);
+        }
+
+        private async void restore_from_trash_async(string trash_path, Gtk.Window? parent_window) {
+            SourceFunc callback = restore_from_trash_async.callback;
+            Error? error = null;
+
+            new Thread<void>("appmgr-restore", () => {
+                try {
+                    installer.install(trash_path);
+                } catch (Error e) {
+                    error = e;
+                }
+                Idle.add((owned) callback);
+            });
+
+            yield;
+
+            if (parent_window != null && parent_window is MainWindow) {
+                if (error != null) {
+                    ((MainWindow)parent_window).add_toast(_("Undo failed"));
+                    warning("Restore from trash failed: %s", error.message);
+                } else {
+                    ((MainWindow)parent_window).add_toast(_("Restored"));
                 }
             }
         }

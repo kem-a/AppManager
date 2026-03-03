@@ -215,6 +215,13 @@ namespace AppManager {
             toast_overlay.add_toast(toast);
         }
 
+        public Adw.Toast add_toast_with_button(string message, string button_label) {
+            var toast = new Adw.Toast(message);
+            toast.set_button_label(button_label);
+            toast_overlay.add_toast(toast);
+            return toast;
+        }
+
         private Gtk.Widget build_get_more_bottom_bar() {
             var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
             box.halign = Gtk.Align.CENTER;

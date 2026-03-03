@@ -849,7 +849,7 @@ namespace AppManager {
             update_delete_button_label();
             delete_button.add_css_class("destructive-action");
             delete_button.clicked.connect(() => {
-                if (shift_held) {
+                if (shift_held || record.mode == InstallMode.EXTRACTED) {
                     present_permanent_delete_warning();
                 } else {
                     uninstall_requested(record, false);
@@ -1027,13 +1027,14 @@ namespace AppManager {
             if (delete_button == null) return;
             var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
             box.set_halign(Gtk.Align.CENTER);
-            if (shift_held) {
+            if (shift_held || record.mode == InstallMode.EXTRACTED) {
                 box.append(new Gtk.Label(_("Delete Permanently")));
+                delete_button.tooltip_text = null;
             } else {
                 box.append(new Gtk.Image.from_icon_name("user-trash-symbolic"));
                 box.append(new Gtk.Label(_("Move to Trash")));
+                delete_button.tooltip_text = _("Hold Shift to delete permanently");
             }
-            delete_button.tooltip_text = _("Hold Shift to delete permanently");
             delete_button.set_child(box);
         }
 

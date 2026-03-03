@@ -270,6 +270,57 @@ namespace AppManager.Utils {
             }
         }
 
+        /**
+         * Finds a trashed file by scanning XDG Trash info directory for a matching original path.
+         * Returns the path to the file in Trash/files/, or null if not found.
+         */
+        public static string? find_in_trash(string original_path) {
+            var trash_dir = Path.build_filename(Environment.get_user_data_dir(), "Trash");
+            var info_dir = Path.build_filename(trash_dir, "info");
+            var files_dir = Path.build_filename(trash_dir, "files");
+
+            if (!GLib.FileUtils.test(info_dir, FileTest.IS_DIR)) {
+                return null;
+            }
+
+            string? best_match = null;
+            string? best_date = null;
+
+            try {
+                var dir = Dir.open(info_dir);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    if (!name.has_suffix(".trashinfo")) continue;
+
+                    var info_path = Path.build_filename(info_dir, name);
+                    string contents;
+                    GLib.FileUtils.get_contents(info_path, out contents);
+
+                    string? path_value = null;
+                    string? date_value = null;
+                    foreach (var line in contents.split("\n")) {
+                        if (line.has_prefix("Path=")) {
+                            path_value = Uri.unescape_string(line.substring(5).strip());
+                        } else if (line.has_prefix("DeletionDate=")) {
+                            date_value = line.substring(13).strip();
+                        }
+                    }
+
+                    if (path_value == original_path) {
+                        if (best_date == null || (date_value != null && date_value > best_date)) {
+                            best_date = date_value;
+                            var trash_filename = name.substring(0, name.length - ".trashinfo".length);
+                            best_match = Path.build_filename(files_dir, trash_filename);
+                        }
+                    }
+                }
+            } catch (Error e) {
+                warning("Error scanning trash info: %s", e.message);
+            }
+
+            return best_match;
+        }
+
         public static string escape_exec_arg(string value) {
             return value.replace("\"", "\\\"");
         }
