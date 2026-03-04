@@ -1438,17 +1438,35 @@ namespace AppManager.Core {
             
             var zsync_source = source as ZsyncDirectSource;
             var remote_version = zsync_source.remote_version;
+            var current_version = record.version;
             
             debug("probe_zsync[%s]: remote_version=%s, current_version=%s, zsync_url=%s",
                 record.name ?? record.id,
                 remote_version ?? "(null)",
-                record.version ?? "(null)",
+                current_version ?? "(null)",
                 zsync_source.zsync_url);
             
             // Fetch zsync file info (contains version and SHA-1)
             var zsync_info = fetch_zsync_file_info(zsync_source.zsync_url, cancellable);
             
-            // SHA-1 comparison for zsync. This mirrors what appimageupdatetool does.
+            // If we have version info on both sides, use version comparison
+            if (remote_version != null && remote_version.strip() != "" &&
+                current_version != null && current_version.strip() != "") {
+                debug("probe_zsync[%s]: using VERSION comparison (remote=%s, current=%s)",
+                    record.name ?? record.id, remote_version, current_version);
+                var cmp = compare_versions(remote_version, current_version);
+                if (cmp <= 0) {
+                    // Remote version is same or older than current
+                    debug("probe_zsync[%s]: VERSION unchanged (cmp=%d), skipping", record.name ?? record.id, cmp);
+                    return new UpdateProbeResult(record, false, remote_version, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
+                }
+                // Remote version is newer
+                debug("probe_zsync[%s]: VERSION newer (cmp=%d), update available", record.name ?? record.id, cmp);
+                return new UpdateProbeResult(record, true, remote_version);
+            }
+            
+            // SHA-1 comparison: reliable method when version strings are missing
+            // The zsync file header contains SHA-1 of the remote AppImage
             if (zsync_info != null && zsync_info.sha1 != null && zsync_info.sha1.strip() != "") {
                 var remote_sha1 = zsync_info.sha1.strip().down();
                 var stored_sha1 = record.zsync_sha1;
@@ -1476,8 +1494,7 @@ namespace AppManager.Core {
                         return new UpdateProbeResult(record, true, remote_version ?? remote_sha1.substring(0, 8));
                     } catch (Error e) {
                         warning("probe_zsync[%s]: failed to compute local SHA-1: %s", record.name ?? record.id, e.message);
-                        // Cannot determine state: report no update to avoid false positives
-                        return new UpdateProbeResult(record, false, null, null, _("Failed to compute local checksum"));
+                        // Fall through to fingerprint comparison
                     }
                 } else if (stored_sha1.strip().down() == remote_sha1) {
                     debug("probe_zsync[%s]: SHA-1 unchanged, skipping", record.name ?? record.id);
@@ -1489,11 +1506,8 @@ namespace AppManager.Core {
                 }
             }
             
-            // No SHA-1 in zsync header — malformed zsync file
-            warning("probe_zsync[%s]: zsync header has no SHA-1, cannot determine update state", record.name ?? record.id);
-            
-            // Fallback to fingerprint comparison for zsync URLs without SHA-1 info
-            debug("probe_zsync[%s]: falling back to HTTP fingerprint",
+            // Fallback to fingerprint comparison for zsync URLs without version or SHA-1 info
+            debug("probe_zsync[%s]: falling back to HTTP fingerprint (no version or SHA-1 available)",
                 record.name ?? record.id);
             try {
                 var message = send_head(zsync_source.zsync_url, cancellable);
@@ -1549,9 +1563,20 @@ namespace AppManager.Core {
             }
             
             // Check if update is actually needed before downloading
+            var current_version = record.version;
             
-            // SHA-1 comparison for zsync. This mirrors what appimageupdatetool does.
-            if (remote_sha1 != null) {
+            // First, try version comparison if both versions available
+            if (new_version != null && new_version.strip() != "" &&
+                current_version != null && current_version.strip() != "") {
+                var cmp = compare_versions(new_version, current_version);
+                if (cmp <= 0) {
+                    // Remote version is same or older than current - skip
+                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                    log_update_event(record, "SKIP", "already current");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
+                }
+            } else if (remote_sha1 != null) {
+                // SHA-1 comparison: reliable method when version strings are missing
                 var stored_sha1 = record.zsync_sha1;
                 
                 if (stored_sha1 != null && stored_sha1.strip() != "" &&
@@ -1561,28 +1586,9 @@ namespace AppManager.Core {
                     log_update_event(record, "SKIP", "sha1 unchanged");
                     return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
                 }
-                
-                // No stored SHA-1: compute from local file
-                if (stored_sha1 == null || stored_sha1.strip() == "") {
-                    try {
-                        var local_sha1 = Utils.FileUtils.compute_sha1(record.installed_path).down();
-                        if (local_sha1 == remote_sha1) {
-                            record.zsync_sha1 = remote_sha1;
-                            registry.persist(false);
-                            record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                            log_update_event(record, "SKIP", "sha1 matches local file");
-                            return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
-                        }
-                    } catch (Error e) {
-                        // Non-fatal: fall through to version/fingerprint comparison
-                        warning("update_zsync[%s]: failed to compute local SHA-1: %s", record.name ?? record.id, e.message);
-                    }
-                }
-                // SHA-1 mismatch or couldn't compute: proceed with update
+                // SHA-1 mismatch or no stored SHA-1: proceed with update
             } else {
-                // No SHA-1 in zsync header — malformed zsync file
-                warning("update_zsync[%s]: zsync header has no SHA-1, cannot determine update state", record.name ?? record.id);
-                // Fallback to fingerprint comparison for zsync URLs without SHA-1 info
+                // Fallback to fingerprint comparison for zsync URLs without version or SHA-1 info
                 try {
                     var message = send_head(zsync_url, cancellable);
                     var fingerprint = build_direct_fingerprint(message);
