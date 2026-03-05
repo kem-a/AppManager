@@ -4,8 +4,7 @@
 # Automatically generated, 2026.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-26 10:50+0200\n"
@@ -117,11 +116,8 @@ msgstr "Zastąpić %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Nowszy element o nazwie %s już istnieje w tej lokalizacji. Czy chcesz go "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Nowszy element o nazwie %s już istnieje w tej lokalizacji. Czy chcesz go "
 "zastąpić starszym, który kopiujesz?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -131,11 +127,8 @@ msgstr "Zainstalowano: %s | Przychodzące: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Element o nazwie %s już istnieje w tej lokalizacji. Czy chcesz go zastąpić "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Element o nazwie %s już istnieje w tej lokalizacji. Czy chcesz go zastąpić "
 "tym, który kopiujesz?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -185,9 +178,7 @@ msgstr "Przenieś do Kosza"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -425,25 +416,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Uwierzytelnianie w GitHub nie powiodło się (401). Sprawdź swój token w "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Uwierzytelnianie w GitHub nie powiodło się (401). Sprawdź swój token w "
 "Preferencjach → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Przekroczono limit szybkości interfejsu API GitHub. Dodaj token w "
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Przekroczono limit szybkości interfejsu API GitHub. Dodaj token w "
 "Preferencje → GitHub, aby zwiększyć swój limit."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Zabroniony dostęp do GitHuba (403). Twój token może nie mieć wymaganych "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Zabroniony dostęp do GitHuba (403). Twój token może nie mieć wymaganych "
 "uprawnień."
 
 #: src/core/updater.vala:1436
@@ -461,8 +445,8 @@ msgstr "Nie można określić adresu URL pobierania z adresu URL zsync"
 #: src/windows/details_window.vala:110
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ „%s” nie znajduje się w $PATH. Aplikacja nie uruchamia się z terminala"
+msgstr "⚠️ „%s” nie znajduje się w $PATH. Aplikacja nie uruchamia się z "
+"terminala"
 
 #: src/windows/details_window.vala:236
 msgid "Show in Files"
@@ -662,13 +646,10 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Wyodrębnianie rozpakuje aplikację, dzięki czemu będzie otwierać się "
-"szybciej, ale zajmie więcej miejsca na dysku. Tego działania nie można "
-"cofnąć automatycznie."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Wyodrębnianie rozpakuje aplikację, dzięki czemu będzie otwierać się "
+"szybciej, ale zajmie więcej miejsca na dysku. Tego działania nie można cofnąć "
+"automatycznie."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -711,8 +692,7 @@ msgstr "Przeciągnij i upuść, aby zainstalować w %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Jest to aplikacja terminalowa, która zostanie zainstalowana w trybie "
+msgstr "Jest to aplikacja terminalowa, która zostanie zainstalowana w trybie "
 "przenośnym."
 
 #: src/windows/drop_window.vala:320
@@ -770,8 +750,8 @@ msgstr "Brak zainstalowanych aplikacji AppImage"
 
 #: src/windows/main_window.vala:300
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Pobierz AppImage i kliknij dwukrotnie, aby zainstalować za pomocą AppManager"
+msgstr "Pobierz AppImage i kliknij dwukrotnie, aby zainstalować za pomocą "
+"AppManager"
 
 #: src/windows/main_window.vala:367
 msgid "No results found"
@@ -903,8 +883,7 @@ msgstr "Wyszukaj aplikacje..."
 #. FUSE is not installed warning banner
 #: src/windows/main_window.vala:954
 msgid "FUSE is not installed. Some AppImages may fail to run"
-msgstr ""
-"FUSE nie jest zainstalowany. Niektóre obrazy aplikacji mogą nie działać"
+msgstr "FUSE nie jest zainstalowany. Niektóre obrazy aplikacji mogą nie działać"
 
 #: src/windows/main_window.vala:956
 msgid "Learn More"
@@ -992,8 +971,8 @@ msgstr "Aktualizacje %d nie powiodły się"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Dodaj adresy aktualizacji w obszarze Szczegóły, aby włączyć aktualizacje"
+msgstr "Dodaj adresy aktualizacji w obszarze Szczegóły, aby włączyć "
+"aktualizacje"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1080,8 +1059,8 @@ msgstr "Pomiń okno przeciągania i upuszczania"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Pokaż okno dialogowe instalacji bezpośrednio podczas otwierania AppImages"
+msgstr "Pokaż okno dialogowe instalacji bezpośrednio podczas otwierania "
+"AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
@@ -1142,8 +1121,8 @@ msgstr "Miniatura AppImage"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Zainstaluj appimage-thumbnailer, aby wygenerować miniatury dla AppImages"
+msgstr "Zainstaluj appimage-thumbnailer, aby wygenerować miniatury dla "
+"AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1210,9 +1189,8 @@ msgstr "Utwórz token w GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Wystarczy drobnoziarnisty token z publicznym dostępem do repozytorium tylko "
-"do odczytu"
+msgstr "Wystarczy drobnoziarnisty token z publicznym dostępem do repozytorium "
+"tylko do odczytu"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1272,8 +1250,7 @@ msgstr "OK"
 
 #: src/windows/preferences_window.vala:560
 msgid "Authentication failed — token is invalid or expired"
-msgstr ""
-"Uwierzytelnienie nie powiodło się — token jest nieprawidłowy lub wygasł"
+msgstr "Uwierzytelnienie nie powiodło się — token jest nieprawidłowy lub wygasł"
 
 #: src/windows/preferences_window.vala:562
 msgid "Access forbidden — token lacks required permissions"

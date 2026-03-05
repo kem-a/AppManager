@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -115,11 +114,8 @@ msgstr "Sostituire %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Un elemento più recente chiamato %s esiste già in questa posizione. Vuoi "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Un elemento più recente chiamato %s esiste già in questa posizione. Vuoi "
 "sostituirlo con quello più vecchio che stai copiando?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -129,11 +125,8 @@ msgstr "Installato: %s | In arrivo: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Un elemento chiamato %s esiste già in questa posizione. Vuoi sostituirlo con "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Un elemento chiamato %s esiste già in questa posizione. Vuoi sostituirlo con "
 "quello che stai copiando?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -183,9 +176,7 @@ msgstr "Sposta nel cestino"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -423,25 +414,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Autenticazione GitHub non riuscita (401). Controlla il tuo token in "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Autenticazione GitHub non riuscita (401). Controlla il tuo token in "
 "Preferenze → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Limite di velocità dell'API GitHub superato. Aggiungi un token in Preferenze "
-"→ GitHub per aumentare il tuo limite."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Limite di velocità dell'API GitHub superato. Aggiungi un token in "
+"Preferenze → GitHub per aumentare il tuo limite."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Accesso GitHub vietato (403). Il tuo token potrebbe non avere le "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Accesso GitHub vietato (403). Il tuo token potrebbe non avere le "
 "autorizzazioni richieste."
 
 #: src/core/updater.vala:1436
@@ -659,11 +643,8 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"L'estrazione scompatterà l'applicazione per aprirla più velocemente, ma "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "L'estrazione scompatterà l'applicazione per aprirla più velocemente, ma "
 "consumerà più spazio su disco. Questa azione non può essere annullata "
 "automaticamente."
 
@@ -708,8 +689,8 @@ msgstr "Trascina e rilascia per installare in %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Questa è un'applicazione terminale e verrà installata in modalità portatile."
+msgstr "Questa è un'applicazione terminale e verrà installata in modalità "
+"portatile."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -986,8 +967,7 @@ msgstr "%d aggiornamento/i fallito/i"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Aggiungi indirizzi di aggiornamento nei Dettagli per abilitare gli "
+msgstr "Aggiungi indirizzi di aggiornamento nei Dettagli per abilitare gli "
 "aggiornamenti"
 
 #: src/windows/main_window.vala:1544
@@ -1051,9 +1031,8 @@ msgstr "Installazione"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"Configura dove sono installate le AppImage (impostazione predefinita: ~/"
-"Applicazioni)"
+msgstr "Configura dove sono installate le AppImage (impostazione predefinita: "
+"~/Applicazioni)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1077,9 +1056,8 @@ msgstr "Salta la finestra di trascinamento della selezione"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Mostra la finestra di dialogo di installazione direttamente all'apertura di "
-"AppImages"
+msgstr "Mostra la finestra di dialogo di installazione direttamente "
+"all'apertura di AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
@@ -1191,8 +1169,7 @@ msgstr "Gettone di prova"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Verifica che il tuo token funzioni e controlla lo stato del limite di "
+msgstr "Verifica che il tuo token funzioni e controlla lo stato del limite di "
 "velocità"
 
 #: src/windows/preferences_window.vala:260
@@ -1209,9 +1186,8 @@ msgstr "Crea un token su GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"È sufficiente un token a grana fine con accesso al repository pubblico di "
-"sola lettura"
+msgstr "È sufficiente un token a grana fine con accesso al repository pubblico "
+"di sola lettura"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
@@ -1304,8 +1280,7 @@ msgstr "Arnis Kemlers"
 #: data/com.github.AppManager.metainfo.xml:9
 #, fuzzy
 msgid "Drag-and-drop AppImage installer and management application"
-msgstr ""
-"Trascina e rilascia il programma di installazione di AppImage per GNOME"
+msgstr "Trascina e rilascia il programma di installazione di AppImage per GNOME"
 
 #: data/com.github.AppManager.metainfo.xml:35
 #, fuzzy

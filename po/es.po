@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -115,11 +114,8 @@ msgstr "¿Reemplazar %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ya existe un elemento más nuevo llamado %s en esta ubicación. ¿Quieres "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Ya existe un elemento más nuevo llamado %s en esta ubicación. ¿Quieres "
 "reemplazarlo por el más antiguo que estás copiando?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -129,11 +125,8 @@ msgstr "Instalado: %s | Entrante: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ya existe un elemento llamado %s en esta ubicación. ¿Quieres reemplazarlo "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Ya existe un elemento llamado %s en esta ubicación. ¿Quieres reemplazarlo "
 "por el que estás copiando?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -183,9 +176,7 @@ msgstr "Mover a la papelera"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -317,8 +308,8 @@ msgstr "El directorio padre no existe"
 
 #: src/core/path_migration_service.vala:77
 msgid "Cannot create directory: parent is not writable"
-msgstr ""
-"No se puede crear el directorio: el directorio padre no puede ser escrito"
+msgstr "No se puede crear el directorio: el directorio padre no puede ser "
+"escrito"
 
 #: src/core/path_migration_service.vala:80
 #, c-format
@@ -422,25 +413,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"La autenticación de GitHub falló (401). Verifique su token en Preferencias → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "La autenticación de GitHub falló (401). Verifique su token en "
+"Preferencias → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Se superó el límite de velocidad de la API de GitHub. Agregue un token en "
-"Preferencias → GitHub para aumentar su límite."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Se superó el límite de velocidad de la API de GitHub. Agregue un token "
+"en Preferencias → GitHub para aumentar su límite."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Acceso a GitHub prohibido (403). Es posible que su token carezca de los "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Acceso a GitHub prohibido (403). Es posible que su token carezca de los "
 "permisos necesarios."
 
 #: src/core/updater.vala:1436
@@ -458,8 +442,8 @@ msgstr "No se puede determinar la URL de descarga a partir de la URL zsync"
 #: src/windows/details_window.vala:110
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ '%s' no está en $PATH. La aplicación no se ejecutará desde la terminal"
+msgstr "⚠️ '%s' no está en $PATH. La aplicación no se ejecutará desde la "
+"terminal"
 
 #: src/windows/details_window.vala:236
 msgid "Show in Files"
@@ -659,11 +643,8 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Extraer descomprimirá la aplicación para que se abra más rápido, pero "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Extraer descomprimirá la aplicación para que se abra más rápido, pero "
 "consumirá más espacio en disco. Esta acción no se puede revertir "
 "automáticamente."
 
@@ -985,8 +966,7 @@ msgstr "%d actualización(es) fallida(s)"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Añade direcciones de actualización en Detalles para habilitar las "
+msgstr "Añade direcciones de actualización en Detalles para habilitar las "
 "actualizaciones"
 
 #: src/windows/main_window.vala:1544
@@ -1074,8 +1054,8 @@ msgstr "Saltar ventana de arrastrar y soltar"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Mostrar el cuadro de diálogo de instalación directamente al abrir AppImages"
+msgstr "Mostrar el cuadro de diálogo de instalación directamente al abrir "
+"AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
@@ -1144,8 +1124,8 @@ msgstr "Ocultar fondo de miniatura de Nautilus"
 
 #: src/windows/preferences_window.vala:200
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
-msgstr ""
-"Eliminar el patrón de tablero de ajedrez detrás de las miniaturas e iconos"
+msgstr "Eliminar el patrón de tablero de ajedrez detrás de las miniaturas e "
+"iconos"
 
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:211
@@ -1188,8 +1168,8 @@ msgstr "ficha de prueba"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Verifique que su token funcione y verifique el estado del límite de tasa"
+msgstr "Verifique que su token funcione y verifique el estado del límite de "
+"tasa"
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1205,8 +1185,7 @@ msgstr "Crea un token en GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"El token detallado con acceso al repositorio público de solo lectura es "
+msgstr "El token detallado con acceso al repositorio público de solo lectura es "
 "suficiente"
 
 #: src/windows/preferences_window.vala:342

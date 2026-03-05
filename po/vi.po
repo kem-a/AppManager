@@ -5,8 +5,7 @@
 #
 #, fuzzy
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-14 18:04+0700\n"
@@ -117,11 +116,8 @@ msgstr "Thay thế %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Một mục mới hơn có tên %s đã tồn tại ở vị trí này. Bạn có muốn thay thế nó "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Một mục mới hơn có tên %s đã tồn tại ở vị trí này. Bạn có muốn thay thế nó "
 "bằng cái cũ hơn mà bạn đang sao chép không?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -131,11 +127,8 @@ msgstr "Đã cài đặt: %s | Đang đến: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Một mục có tên %s đã tồn tại ở vị trí này. Bạn có muốn thay thế nó bằng một "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Một mục có tên %s đã tồn tại ở vị trí này. Bạn có muốn thay thế nó bằng một "
 "cái bạn đang sao chép không?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -185,9 +178,7 @@ msgstr "Chuyển vào Thùng rác"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -425,25 +416,19 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Xác thực GitHub không thành công (401). Kiểm tra token của bạn trong Tùy "
-"chọn → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Xác thực GitHub không thành công (401). Kiểm tra token của bạn trong "
+"Tùy chọn → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Đã vượt quá giới hạn tốc độ API GitHub. Thêm token trong Tùy chọn → GitHub "
-"để tăng giới hạn của bạn."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Đã vượt quá giới hạn tốc độ API GitHub. Thêm token trong Tùy chọn → "
+"GitHub để tăng giới hạn của bạn."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Truy cập GitHub bị cấm (403). Token của bạn có thể thiếu các quyền cần thiết."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Truy cập GitHub bị cấm (403). Token của bạn có thể thiếu các quyền cần "
+"thiết."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -660,12 +645,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Việc giải nén sẽ giải nén ứng dụng để ứng dụng mở nhanh hơn nhưng sẽ tiêu "
-"tốn nhiều dung lượng ổ đĩa hơn. Hành động này không thể tự động đảo ngược "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Việc giải nén sẽ giải nén ứng dụng để ứng dụng mở nhanh hơn nhưng sẽ "
+"tiêu tốn nhiều dung lượng ổ đĩa hơn. Hành động này không thể tự động đảo ngược "
 "được."
 
 #: src/windows/details_window.vala:1119

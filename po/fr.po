@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-03-04 12:00+0000\n"
@@ -49,8 +48,8 @@ msgstr "Architecture incompatible"
 #: src/application.vala:273 src/windows/drop_window.vala:331
 #, c-format
 msgid "This app is built for %s and cannot run here"
-msgstr ""
-"Cette application est pour %s et ne peut être exécutée sur cette machine"
+msgstr "Cette application est pour %s et ne peut être exécutée sur cette "
+"machine"
 
 #. Use app icon with warning badge overlay
 #: src/application.vala:370 src/windows/drop_window.vala:234
@@ -116,11 +115,8 @@ msgstr "Remplacer %s ?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Un élément plus récent nommé %s existe déjà à cet emplacement. Voulez-vous "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Un élément plus récent nommé %s existe déjà à cet emplacement. Voulez-vous "
 "le remplacer par celui-ci, plus ancien ?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -130,11 +126,8 @@ msgstr "Installé : %s | Entrant : %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Un élément nommé %s existe déjà à cet emplacement. Voulez-vous le remplacer ?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Un élément nommé %s existe déjà à cet emplacement. Voulez-vous le remplacer ?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -182,9 +175,7 @@ msgstr "Impossible de mettre à la corbeille"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 "%s n'a pas pu être mis à la corbeille. Voulez-vous le supprimer "
@@ -423,26 +414,19 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr "Incohérence d'identité de l'application : reçu '%s' au lieu de '%s'"
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"L'authentification GitHub a échoué (401). Vérifiez votre jeton dans "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "L'authentification GitHub a échoué (401). Vérifiez votre jeton dans "
 "Préférences → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Limite GitHub API atteinte. Ajoutez un jeton dans Préférences → GitHub pour "
-"augmenter la limite."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Limite GitHub API atteinte. Ajoutez un jeton dans Préférences → GitHub "
+"pour augmenter la limite."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Accès GitHub interdit (403). Votre jeton manque peut-être des permissions "
-"requises."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Accès GitHub interdit (403). Votre jeton manque peut-être des "
+"permissions requises."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -454,14 +438,13 @@ msgstr "Source zsync inconnue"
 
 #: src/core/updater.vala:1718
 msgid "Cannot determine download URL from zsync URL"
-msgstr ""
-"Impossible de déterminer l'URL de téléchargement à partir de l'URL zsync"
+msgstr "Impossible de déterminer l'URL de téléchargement à partir de l'URL "
+"zsync"
 
 #: src/windows/details_window.vala:110
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ '%s' n'est pas dans $PATH. L'application ne se lancera pas depuis le "
+msgstr "⚠️ '%s' n'est pas dans $PATH. L'application ne se lancera pas depuis le "
 "terminal"
 
 #: src/windows/details_window.vala:236
@@ -515,14 +498,13 @@ msgstr "Mises-à-jour de pré-production"
 
 #: src/windows/details_window.vala:348
 msgid "Include pre-release versions when checking for updates"
-msgstr ""
-"Inclure les mises-à-jour de pré-production lors de la recherche de mises-à-"
-"jour"
+msgstr "Inclure les mises-à-jour de pré-production lors de la recherche de "
+"mises-à-jour"
 
 #: src/windows/details_window.vala:363
 msgid "Update link is managed by the embedded zsync update mechanism"
-msgstr ""
-"Le lien de mise à jour est géré par le mécanisme de mise à jour zsync intégré"
+msgstr "Le lien de mise à jour est géré par le mécanisme de mise à jour zsync "
+"intégré"
 
 #: src/windows/details_window.vala:399
 msgid "Update Link"
@@ -546,8 +528,8 @@ msgstr "Variables d'environnement"
 
 #: src/windows/details_window.vala:525
 msgid "Set custom environment variables for this app"
-msgstr ""
-"Définir des variables d'environnement personnalisées pour cette application"
+msgstr "Définir des variables d'environnement personnalisées pour cette "
+"application"
 
 #: src/windows/details_window.vala:578
 msgid "NAME"
@@ -658,19 +640,16 @@ msgstr "Maintenez la touche Maj enfoncée pour supprimer définitivement"
 #: src/windows/details_window.vala:1100
 #, c-format
 msgid "<b>%s</b> will be permanently deleted. This action cannot be undone."
-msgstr ""
-"<b>%s</b> sera supprimé définitivement. Cette action ne peut être annulée."
+msgstr "<b>%s</b> sera supprimé définitivement. Cette action ne peut être "
+"annulée."
 
 #: src/windows/details_window.vala:1101
 msgid "Delete permanently?"
 msgstr "Supprimer définitivement ?"
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"L'extraction décompressera l'application pour qu'elle s'ouvre plus "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "L'extraction décompressera l'application pour qu'elle s'ouvre plus "
 "rapidement, mais elle consommera plus d'espace disque. Cette action ne peut "
 "pas être annulée automatiquement."
 
@@ -715,8 +694,7 @@ msgstr "Glissez-déposez pour installer dans %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Ceci est une application de type Terminal, elle sera installée en mode "
+msgstr "Ceci est une application de type Terminal, elle sera installée en mode "
 "portable."
 
 #: src/windows/drop_window.vala:320
@@ -774,8 +752,8 @@ msgstr "Aucune application AppImage installée"
 
 #: src/windows/main_window.vala:300
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Téléchargez un AppImage et double-cliquez pour l'installer avec AppManager"
+msgstr "Téléchargez un AppImage et double-cliquez pour l'installer avec "
+"AppManager"
 
 #: src/windows/main_window.vala:367
 msgid "No results found"
@@ -907,8 +885,8 @@ msgstr "Rechercher des applications..."
 #. FUSE is not installed warning banner
 #: src/windows/main_window.vala:954
 msgid "FUSE is not installed. Some AppImages may fail to run"
-msgstr ""
-"FUSE n'est pas installé. Certains AppImages pourraient ne pas fonctionner"
+msgstr "FUSE n'est pas installé. Certains AppImages pourraient ne pas "
+"fonctionner"
 
 #: src/windows/main_window.vala:956
 msgid "Learn More"
@@ -995,9 +973,8 @@ msgstr "%d mise(s) à jour échouée(s)"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Ajoutez des adresses de mise à jour dans Détails pour activer les mises à "
-"jour"
+msgstr "Ajoutez des adresses de mise à jour dans Détails pour activer les mises "
+"à jour"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1006,8 +983,7 @@ msgstr "Toutes les applications prises en charge sont déjà à jour"
 #: src/windows/main_window.vala:1548
 #, c-format
 msgid "%d app(s) use unsupported update links"
-msgstr ""
-"%d application(s) utilisent des liens de mise à jour non pris en charge"
+msgstr "%d application(s) utilisent des liens de mise à jour non pris en charge"
 
 #: src/windows/main_window.vala:1615
 #, c-format
@@ -1061,9 +1037,8 @@ msgstr "Installation"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"Configurer l'emplacement d'installation des AppImages (par défaut : ~/"
-"Applications)"
+msgstr "Configurer l'emplacement d'installation des AppImages (par défaut : "
+"~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1087,8 +1062,8 @@ msgstr "Eviter la fenêtre glisser-déposer"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Afficher la fenêtre d'installation directement à l'ouverture d'AppImages"
+msgstr "Afficher la fenêtre d'installation directement à l'ouverture "
+"d'AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117
@@ -1149,8 +1124,8 @@ msgstr "Générateur de miniatures AppImage"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installer appimage-thumbnailer pour générer des miniatures pour les AppImages"
+msgstr "Installer appimage-thumbnailer pour générer des miniatures pour les "
+"AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1217,8 +1192,7 @@ msgstr "Créer un jeton sur GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Un jeton à granularité fine avec un accès en lecture seule aux dépôts "
+msgstr "Un jeton à granularité fine avec un accès en lecture seule aux dépôts "
 "publics est suffisant."
 
 #: src/windows/preferences_window.vala:342

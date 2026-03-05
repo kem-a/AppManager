@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -112,9 +111,7 @@ msgstr "替换 %s？"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
 msgstr "此位置已存在名为 %s 的较新项目。要用正在复制的旧版本替换它吗？"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -124,9 +121,7 @@ msgstr "已安装：%s | 传入：%s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
 msgstr "此位置已存在名为 %s 的项目。要用正在复制的版本替换它吗？"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -176,9 +171,7 @@ msgstr "移到回收站"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -416,19 +409,15 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr "GitHub 身份验证失败 (401)。在首选项 → GitHub 中检查您的令牌。"
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
 msgstr "超过 GitHub API 速率限制。在首选项 → GitHub 中添加令牌以增加您的限制。"
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr "GitHub 访问被禁止 (403)。您的令牌可能缺乏所需的权限。"
 
 #: src/core/updater.vala:1436
@@ -645,11 +634,8 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"解压将展开应用程序以便更快打开，但会占用更多磁盘空间。此操作无法自动撤销。"
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "解压将展开应用程序以便更快打开，但会占用更多磁盘空间。此操作无法自动撤销。"
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"

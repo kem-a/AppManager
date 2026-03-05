@@ -5,8 +5,7 @@
 #
 #, fuzzy
 msgid ""
-msgstr ""
-"Project-Id-Version: \n"
+msgstr "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-12 07:21+0500\n"
@@ -118,11 +117,8 @@ msgstr "%s алмастыру керек пе?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"%s атты жаңалау элемент осы орналасуда бар. Оны сіз көшіріп жатқан "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "%s атты жаңалау элемент осы орналасуда бар. Оны сіз көшіріп жатқан "
 "ескілеуімен алмастырғыңыз келе ме?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -132,11 +128,8 @@ msgstr "Орнатылғаны: %s | Келіп жатқаны: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"%s атты элемент осы орналасуда бар. Оны сіз көшіріп жатқанмен алмастырғыңыз "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "%s атты элемент осы орналасуда бар. Оны сіз көшіріп жатқанмен алмастырғыңыз "
 "келе ме?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -186,9 +179,7 @@ msgstr "Қоқыс шелегіне жылжыту"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -426,25 +417,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub аутентификациясы орындалмады (401). Теңшелімдер → GitHub ішінде "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub аутентификациясы орындалмады (401). Теңшелімдер → GitHub ішінде "
 "таңбалауышыңызды тексеріңіз."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API жылдамдығы шегінен асып кетті. Лимитіңізді ұлғайту үшін "
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API жылдамдығы шегінен асып кетті. Лимитіңізді ұлғайту үшін "
 "Теңшелімдер → GitHub ішінде таңбалауышты қосыңыз."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub кіруге тыйым салынған (403). Сіздің таңбалауышыңызда қажетті "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub кіруге тыйым салынған (403). Сіздің таңбалауышыңызда қажетті "
 "рұқсаттар болмауы мүмкін."
 
 #: src/core/updater.vala:1436
@@ -663,12 +647,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Тарқату қолданбаны жылдам ашылатындай етеді, бірақ ол дискіде көбірек орын "
-"алады. Бұл әрекетті автоматты түрде кері қайтару мүмкін емес."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Тарқату қолданбаны жылдам ашылатындай етеді, бірақ ол дискіде көбірек "
+"орын алады. Бұл әрекетті автоматты түрде кері қайтару мүмкін емес."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -768,9 +749,8 @@ msgstr "AppImage қолданбалары орнатылмаған"
 
 #: src/windows/main_window.vala:300
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"AppImage файлын жүктеп алыңыз және AppManager көмегімен орнату үшін екі рет "
-"шертіңіз"
+msgstr "AppImage файлын жүктеп алыңыз және AppManager көмегімен орнату үшін екі "
+"рет шертіңіз"
 
 #: src/windows/main_window.vala:367
 msgid "No results found"
@@ -990,8 +970,8 @@ msgstr "%d жаңарту сәтсіз аяқталды"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Жаңартуларды іске қосу үшін \"Толығырақ\" ішіне жаңарту адрестерін қосыңыз"
+msgstr "Жаңартуларды іске қосу үшін \"Толығырақ\" ішіне жаңарту адрестерін "
+"қосыңыз"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1054,8 +1034,8 @@ msgstr "Орнату"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"AppImage файлдарының қайда орнатылатынын баптау (бастапқы: ~/Applications)"
+msgstr "AppImage файлдарының қайда орнатылатынын баптау (бастапқы: "
+"~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1140,8 +1120,8 @@ msgstr "AppImage нобайлар жасаушысы"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"AppImage файлдары үшін нобайларды жасау үшін appimage-thumbnailer орнату"
+msgstr "AppImage файлдары үшін нобайларды жасау үшін appimage-thumbnailer "
+"орнату"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1208,8 +1188,7 @@ msgstr "GitHub жүйесінде таңбалауыш жасаңыз"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Тек оқуға арналған жалпы репо қатынасы бар ұсақ түйіршікті таңбалауыш "
+msgstr "Тек оқуға арналған жалпы репо қатынасы бар ұсақ түйіршікті таңбалауыш "
 "жеткілікті"
 
 #: src/windows/preferences_window.vala:342
@@ -1270,8 +1249,8 @@ msgstr "ОК"
 
 #: src/windows/preferences_window.vala:560
 msgid "Authentication failed — token is invalid or expired"
-msgstr ""
-"Аутентификация орындалмады — таңбалауыш жарамсыз немесе мерзімі өтіп кеткен"
+msgstr "Аутентификация орындалмады — таңбалауыш жарамсыз немесе мерзімі өтіп "
+"кеткен"
 
 #: src/windows/preferences_window.vala:562
 msgid "Access forbidden — token lacks required permissions"

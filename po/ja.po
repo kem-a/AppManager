@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -113,11 +112,8 @@ msgstr "%sを置き換えますか？"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"この場所には%sという名前の新しいアイテムが既に存在します。コピーしている古い"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "この場所には%sという名前の新しいアイテムが既に存在します。コピーしている古い"
 "もので置き換えますか？"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -127,11 +123,8 @@ msgstr "インストール済み: %s | 受信: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"この場所には%sという名前のアイテムが既に存在します。コピーしているもので置き"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "この場所には%sという名前のアイテムが既に存在します。コピーしているもので置き"
 "換えますか？"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -181,9 +174,7 @@ msgstr "ゴミ箱に移動"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -421,26 +412,16 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub 認証に失敗しました (401)。 「設定」→「GitHub」でトークンを確認してくだ"
-"さい。"
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub 認証に失敗しました (401)。 「設定」→「GitHub」でトークンを確認してください。"
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API のレート制限を超えました。制限を増やすには、[設定] → [GitHub] に"
-"トークンを追加します。"
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API のレート制限を超えました。制限を増やすには、[設定] → [GitHub] にトークンを追加します。"
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub アクセスが禁止されています (403)。トークンに必要な権限が不足している可"
-"能性があります。"
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub アクセスが禁止されています (403)。トークンに必要な権限が不足している可能性があります。"
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -657,12 +638,8 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"展開するとアプリケーションが解凍され、より速く開きますが、ディスク容量を多く"
-"消費します。この操作は自動的に元に戻せません。"
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "展開するとアプリケーションが解凍され、より速く開きますが、ディスク容量を多く消費します。この操作は自動的に元に戻せません。"
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -705,9 +682,7 @@ msgstr "ドラッグ アンド ドロップで %s にインストールします
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"これはターミナルアプリケーションであり、ポータブルモードでインストールされま"
-"す。"
+msgstr "これはターミナルアプリケーションであり、ポータブルモードでインストールされます。"
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -896,9 +871,7 @@ msgstr "アプリを検索..."
 #. FUSE is not installed warning banner
 #: src/windows/main_window.vala:954
 msgid "FUSE is not installed. Some AppImages may fail to run"
-msgstr ""
-"FUSEがインストールされていません。一部のAppImageが実行できない可能性がありま"
-"す"
+msgstr "FUSEがインストールされていません。一部のAppImageが実行できない可能性があります"
 
 #: src/windows/main_window.vala:956
 msgid "Learn More"
@@ -1049,8 +1022,7 @@ msgstr "インストール"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"AppImage がインストールされる場所を構成します (デフォルト: ~/Applications)"
+msgstr "AppImage がインストールされる場所を構成します (デフォルト: ~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1202,9 +1174,7 @@ msgstr "GitHub でトークンを作成する"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"読み取り専用のパブリック リポジトリ アクセスを備えたきめ細かいトークンで十分"
-"です"
+msgstr "読み取り専用のパブリック リポジトリ アクセスを備えたきめ細かいトークンで十分です"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"

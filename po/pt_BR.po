@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-14 22:42-0600\n"
@@ -116,11 +115,8 @@ msgstr "Substituir %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Um item mais recente chamado %s já existe neste local. Deseja substituí-lo "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Um item mais recente chamado %s já existe neste local. Deseja substituí-lo "
 "pelo mais antigo que você está copiando?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -130,11 +126,8 @@ msgstr "Instalado: %s | Recebido: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Um item chamado %s já existe neste local. Deseja substituí-lo pelo que você "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Um item chamado %s já existe neste local. Deseja substituí-lo pelo que você "
 "está copiando?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -184,9 +177,7 @@ msgstr "Mover para a lixeira"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -424,25 +415,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Falha na autenticação do GitHub (401). Verifique seu token em Preferências → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Falha na autenticação do GitHub (401). Verifique seu token em "
+"Preferências → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Limite de taxa da API do GitHub excedido. Adicione um token em Preferências "
-"→ GitHub para aumentar seu limite."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Limite de taxa da API do GitHub excedido. Adicione um token em "
+"Preferências → GitHub para aumentar seu limite."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Acesso ao GitHub proibido (403). Seu token pode não ter as permissões "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "Acesso ao GitHub proibido (403). Seu token pode não ter as permissões "
 "necessárias."
 
 #: src/core/updater.vala:1436
@@ -660,12 +644,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"A extração descompactará o aplicativo para que ele abra mais rápido, mas "
-"consumirá mais espaço em disco. Esta ação não pode ser revertida "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "A extração descompactará o aplicativo para que ele abra mais rápido, "
+"mas consumirá mais espaço em disco. Esta ação não pode ser revertida "
 "automaticamente."
 
 #: src/windows/details_window.vala:1119
@@ -986,8 +967,8 @@ msgstr "%d atualização(ões) falhou(aram)"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Adicione endereços de atualização em Detalhes para habilitar atualizações"
+msgstr "Adicione endereços de atualização em Detalhes para habilitar "
+"atualizações"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1186,8 +1167,8 @@ msgstr "Testar token"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Verificar se o token funciona e checar o status do limite de requisições"
+msgstr "Verificar se o token funciona e checar o status do limite de "
+"requisições"
 
 #: src/windows/preferences_window.vala:260
 msgid "Test"
@@ -1203,8 +1184,7 @@ msgstr "Criar um token no GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Um token de acesso refinado com permissão de leitura apenas para "
+msgstr "Um token de acesso refinado com permissão de leitura apenas para "
 "repositórios públicos é suficiente"
 
 #: src/windows/preferences_window.vala:342

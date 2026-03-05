@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -114,11 +113,8 @@ msgstr "Korvatanko %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Uudempi %s-niminen kohde on jo tässä sijainnissa. Haluatko korvata sen "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Uudempi %s-niminen kohde on jo tässä sijainnissa. Haluatko korvata sen "
 "vanhemmalla versiolla, jota kopioit?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -128,11 +124,8 @@ msgstr "Asennettu: %s | Tuleva: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Kohde nimeltä %s on jo tässä sijainnissa. Haluatko korvata sen kopioimallasi?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Kohde nimeltä %s on jo tässä sijainnissa. Haluatko korvata sen kopioimallasi?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -181,9 +174,7 @@ msgstr "Siirrä roskakoriin"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -421,25 +412,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub-todennus epäonnistui (401). Tarkista tunnuksesi kohdassa Asetukset → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub-todennus epäonnistui (401). Tarkista tunnuksesi kohdassa "
+"Asetukset → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API:n nopeusraja ylitetty. Lisää token kohdassa Asetukset → GitHub "
-"lisätäksesi rajaasi."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API:n nopeusraja ylitetty. Lisää token kohdassa Asetukset → "
+"GitHub lisätäksesi rajaasi."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub-käyttö kielletty (403). Tunnukseltasi ei ehkä ole vaadittuja "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub-käyttö kielletty (403). Tunnukseltasi ei ehkä ole vaadittuja "
 "käyttöoikeuksia."
 
 #: src/core/updater.vala:1436
@@ -657,11 +641,8 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Purkaminen purkaa sovelluksen, jotta se avautuu nopeammin, mutta se vie "
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Purkaminen purkaa sovelluksen, jotta se avautuu nopeammin, mutta se vie "
 "enemmän levytilaa. Tätä toimintoa ei voi automaattisesti peruuttaa."
 
 #: src/windows/details_window.vala:1119
@@ -1196,9 +1177,8 @@ msgstr "Luo tunnus GitHubissa"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Hienorakeinen tunnus, jossa on vain luku -käyttöoikeus, julkinen repo-oikeus "
-"riittää"
+msgstr "Hienorakeinen tunnus, jossa on vain luku -käyttöoikeus, julkinen "
+"repo-oikeus riittää"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"

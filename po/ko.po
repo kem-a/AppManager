@@ -4,8 +4,7 @@
 # Automatically generated, 2026.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-26 10:50+0200\n"
@@ -114,11 +113,8 @@ msgstr "%s을 바꾸시겠습니까?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"%s이라는 새로운 항목이 이미 이 위치에 있습니다. 복사 중인 이전 항목으로 바꾸"
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "%s이라는 새로운 항목이 이미 이 위치에 있습니다. 복사 중인 이전 항목으로 바꾸"
 "시겠습니까?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -128,11 +124,8 @@ msgstr "설치됨: %s | 수신: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"%s이라는 항목이 이 위치에 이미 존재합니다. 복사 중인 항목으로 바꾸시겠습니까?"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "%s이라는 항목이 이 위치에 이미 존재합니다. 복사 중인 항목으로 바꾸시겠습니까?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -181,9 +174,7 @@ msgstr "휴지통으로 이동"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -421,24 +412,16 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub 인증에 실패했습니다(401). 환경 설정 → GitHub에서 토큰을 확인하세요."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub 인증에 실패했습니다(401). 환경 설정 → GitHub에서 토큰을 확인하세요."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API 비율 제한을 초과했습니다. 한도를 늘리려면 환경 설정 → GitHub에 토"
-"큰을 추가하세요."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API 비율 제한을 초과했습니다. 한도를 늘리려면 환경 설정 → GitHub에 토큰을 추가하세요."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub 액세스가 금지되었습니다(403). 토큰에 필요한 권한이 부족할 수 있습니다."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub 액세스가 금지되었습니다(403). 토큰에 필요한 권한이 부족할 수 있습니다."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -654,12 +637,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"압축을 풀면 응용 프로그램의 압축이 풀려 더 빨리 열리지만 더 많은 디스크 공간"
-"을 소비하게 됩니다. 이 작업은 자동으로 되돌릴 수 없습니다."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "압축을 풀면 응용 프로그램의 압축이 풀려 더 빨리 열리지만 더 많은 디스크 공간을 소비하게 됩니다. 이 작업은 자동으로 되돌릴 "
+"수 없습니다."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"

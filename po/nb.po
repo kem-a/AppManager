@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -114,11 +113,8 @@ msgstr "Erstatte %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Et nyere element med navnet %s finnes allerede på dette stedet. Vil du "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Et nyere element med navnet %s finnes allerede på dette stedet. Vil du "
 "erstatte det med det eldre du kopierer?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -128,11 +124,8 @@ msgstr "Installert: %s | Innkommende: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Et element med navnet %s finnes allerede på dette stedet. Vil du erstatte "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Et element med navnet %s finnes allerede på dette stedet. Vil du erstatte "
 "det med det du kopierer?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -182,9 +175,7 @@ msgstr "Flytt til papirkurven"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -422,25 +413,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub-autentisering mislyktes (401). Sjekk tokenet ditt i Innstillinger → "
-"GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub-autentisering mislyktes (401). Sjekk tokenet ditt i "
+"Innstillinger → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API-hastighetsgrense er overskredet. Legg til et token i "
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API-hastighetsgrense er overskredet. Legg til et token i "
 "Innstillinger → GitHub for å øke grensen din."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub-tilgang forbudt (403). Tokenet ditt kan mangle de nødvendige "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub-tilgang forbudt (403). Tokenet ditt kan mangle de nødvendige "
 "tillatelsene."
 
 #: src/core/updater.vala:1436
@@ -658,12 +642,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Utpakking vil pakke ut applikasjonen slik at den åpnes raskere, men den vil "
-"bruke mer diskplass. Denne handlingen kan ikke reverseres automatisk."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Utpakking vil pakke ut applikasjonen slik at den åpnes raskere, men den "
+"vil bruke mer diskplass. Denne handlingen kan ikke reverseres automatisk."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -706,8 +687,7 @@ msgstr "Dra og slipp for å installere i %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Dette er en terminalapplikasjon og vil bli installert i portabel modus."
+msgstr "Dette er en terminalapplikasjon og vil bli installert i portabel modus."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -1132,8 +1112,8 @@ msgstr "AppImage-miniatyrgenerator"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installer appimage-thumbnailer for å generere miniatyrbilder for AppImages"
+msgstr "Installer appimage-thumbnailer for å generere miniatyrbilder for "
+"AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"
@@ -1200,8 +1180,8 @@ msgstr "Lag et token på GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Finkornet token med skrivebeskyttet offentlig repo-tilgang er tilstrekkelig"
+msgstr "Finkornet token med skrivebeskyttet offentlig repo-tilgang er "
+"tilstrekkelig"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"

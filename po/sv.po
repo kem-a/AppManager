@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -114,11 +113,8 @@ msgstr "Ersätt %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Ett nyare objekt med namnet %s finns redan på denna plats. Vill du ersätta "
 "det med det äldre du kopierar?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -128,11 +124,8 @@ msgstr "Installerad: %s | Inkommande: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Ett objekt med namnet %s finns redan på denna plats. Vill du ersätta det med "
 "det du kopierar?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -182,9 +175,7 @@ msgstr "Flytta till papperskorgen"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -422,25 +413,18 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHub-autentisering misslyckades (401). Kontrollera din token i "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHub-autentisering misslyckades (401). Kontrollera din token i "
 "Inställningar → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHub API-hastighetsgräns har överskridits. Lägg till en token i "
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHub API-hastighetsgräns har överskridits. Lägg till en token i "
 "Inställningar → GitHub för att öka din gräns."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHub-åtkomst förbjuden (403). Din token kan sakna de nödvändiga "
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHub-åtkomst förbjuden (403). Din token kan sakna de nödvändiga "
 "behörigheterna."
 
 #: src/core/updater.vala:1436
@@ -458,8 +442,8 @@ msgstr "Kan inte fastställa nedladdnings-URL från zsync URL"
 #: src/windows/details_window.vala:110
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
-msgstr ""
-"⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från terminalen"
+msgstr "⚠️ '%s' finns inte i $PATH. Appen kommer inte att starta från "
+"terminalen"
 
 #: src/windows/details_window.vala:236
 msgid "Show in Files"
@@ -659,12 +643,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Extrahering packar upp applikationen så att den öppnas snabbare, men det tar "
-"mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Extrahering packar upp applikationen så att den öppnas snabbare, men "
+"det tar mer diskutrymme. Denna åtgärd kan inte ångras automatiskt."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -707,8 +688,8 @@ msgstr "Dra och släpp för att installera i %s"
 
 #: src/windows/drop_window.vala:242
 msgid "This is a terminal application and will be installed in portable mode."
-msgstr ""
-"Detta är en terminalapplikation och kommer att installeras i portabelt läge."
+msgstr "Detta är en terminalapplikation och kommer att installeras i portabelt "
+"läge."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
@@ -985,8 +966,8 @@ msgstr "%d uppdatering(ar) misslyckades"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Lägg till uppdateringsadresser i Detaljer för att aktivera uppdateringar"
+msgstr "Lägg till uppdateringsadresser i Detaljer för att aktivera "
+"uppdateringar"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1134,8 +1115,8 @@ msgstr "AppImage-miniatyrgenerator"
 
 #: src/windows/preferences_window.vala:190
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
-msgstr ""
-"Installera appimage-thumbnailer för att generera miniatyrer för AppImages"
+msgstr "Installera appimage-thumbnailer för att generera miniatyrer för "
+"AppImages"
 
 #: src/windows/preferences_window.vala:199
 msgid "Hide Nautilus thumbnail background"

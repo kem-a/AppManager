@@ -116,11 +116,8 @@ msgstr "Замінити %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to replace it "
-"with the older one you're copying?"
-msgstr ""
-"Новіша версія програми під назвою %s вже існує в цьому місці. Бажаєте замінити її "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Новіша версія програми під назвою %s вже існує в цьому місці. Бажаєте замінити її "
 "старішою, котру ви зараз копіюєте?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -130,11 +127,8 @@ msgstr "Встановлено: %s | Вхідні: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it with "
-"one you're copying?"
-msgstr ""
-"Програма під назвою %s вже існує в цьому місці. Бажаєте замінити її тою, що ви "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Програма під назвою %s вже існує в цьому місці. Бажаєте замінити її тою, що ви "
 "зараз копіюєте?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -183,9 +177,7 @@ msgstr "Не вдалося перемістити в кошик"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -413,10 +405,9 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"Помилка автентифікації GitHub (401). Перевірте свій токен у Налаштування → GitHub."
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "Помилка автентифікації GitHub (401). Перевірте свій токен у "
+"Налаштування → GitHub."
 
 #: src/core/updater.vala:1111
 msgid ""
@@ -428,8 +419,8 @@ msgstr ""
 
 #: src/core/updater.vala:1113
 msgid "GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"Доступ до GitHub заборонено (403). Ваш токен може не мати необхідних дозволів."
+msgstr "Доступ до GitHub заборонено (403). Ваш токен може не мати необхідних "
+"дозволів."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -643,12 +634,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will consume "
-"more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Витяг розпакує програму, щоб вона відкривалася швидше, але займає більше місця на "
-"диску. Цю дію не можна скасувати автоматично."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Витяг розпакує програму, щоб вона відкривалася швидше, але займає "
+"більше місця на диску. Цю дію не можна скасувати автоматично."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -748,8 +736,8 @@ msgstr "Немає встановлених програм AppImage"
 
 #: src/windows/main_window.vala:300
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Завантажте AppImage і двічі клацніть, щоб установити за допомогою AppManager"
+msgstr "Завантажте AppImage і двічі клацніть, щоб установити за допомогою "
+"AppManager"
 
 #: src/windows/main_window.vala:367
 msgid "No results found"
@@ -1055,8 +1043,8 @@ msgstr "Пропустити вікно перетягування"
 
 #: src/windows/preferences_window.vala:108
 msgid "Show install dialog directly when opening AppImages"
-msgstr ""
-"Відображати діалогове вікно встановлення безпосередньо під час відкриття AppImages"
+msgstr "Відображати діалогове вікно встановлення безпосередньо під час "
+"відкриття AppImages"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:117

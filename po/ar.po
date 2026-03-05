@@ -4,8 +4,7 @@
 # Automatically generated, 2026.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-02-26 10:50+0200\n"
@@ -113,11 +112,8 @@ msgstr "هل تريد استبدال %s؟"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"يوجد عنصر أحدث باسم %s بالفعل في هذا الموقع. هل تريد استبداله بالأقدم الذي "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "يوجد عنصر أحدث باسم %s بالفعل في هذا الموقع. هل تريد استبداله بالأقدم الذي "
 "تنسخه؟"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -127,11 +123,8 @@ msgstr "تم التثبيت: %s | الوارد: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"يوجد عنصر اسمه %s بالفعل في هذا الموقع. هل تريد استبداله بالآخر الذي تنسخه؟"
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "يوجد عنصر اسمه %s بالفعل في هذا الموقع. هل تريد استبداله بالآخر الذي تنسخه؟"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
@@ -180,9 +173,7 @@ msgstr "الانتقال إلى سلة المهملات"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -420,26 +411,19 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"فشلت مصادقة GitHub (401). تحقق من الرمز المميز الخاص بك في التفضيلات → "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "فشلت مصادقة GitHub (401). تحقق من الرمز المميز الخاص بك في التفضيلات → "
 "GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"تم تجاوز حد معدل GitHub API. أضف رمزًا مميزًا في التفضيلات → GitHub لزيادة "
-"الحد الخاص بك."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "تم تجاوز حد معدل GitHub API. أضف رمزًا مميزًا في التفضيلات → GitHub "
+"لزيادة الحد الخاص بك."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"الوصول إلى جيثب ممنوع (403). قد يفتقر الرمز المميز الخاص بك إلى الأذونات "
-"المطلوبة."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "الوصول إلى جيثب ممنوع (403). قد يفتقر الرمز المميز الخاص بك إلى "
+"الأذونات المطلوبة."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -655,12 +639,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"سيؤدي الاستخراج إلى فك ضغط التطبيق بحيث يتم فتحه بشكل أسرع، ولكنه سيستهلك "
-"مساحة أكبر على القرص. لا يمكن التراجع عن هذا الإجراء تلقائيًا."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "سيؤدي الاستخراج إلى فك ضغط التطبيق بحيث يتم فتحه بشكل أسرع، ولكنه "
+"سيستهلك مساحة أكبر على القرص. لا يمكن التراجع عن هذا الإجراء تلقائيًا."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -1195,8 +1176,7 @@ msgstr "قم بإنشاء رمز مميز على GitHub"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"يعد الرمز المميز ذو التفاصيل الدقيقة مع إمكانية الوصول إلى الريبو العام "
+msgstr "يعد الرمز المميز ذو التفاصيل الدقيقة مع إمكانية الوصول إلى الريبو العام "
 "للقراءة فقط كافيًا"
 
 #: src/windows/preferences_window.vala:342

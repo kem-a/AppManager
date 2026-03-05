@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -115,11 +114,8 @@ msgstr "Pakeisti %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Naujesnė versija pavadinimu %s jau yra šioje vietoje. Ar norite ją pakeisti "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Naujesnė versija pavadinimu %s jau yra šioje vietoje. Ar norite ją pakeisti "
 "senesne, kurią kopijuojate?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -129,11 +125,8 @@ msgstr "Įdiegta: %s | Gaunama: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Elementas pavadinimu %s jau yra šioje vietoje. Ar norite jį pakeisti tuo, "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Elementas pavadinimu %s jau yra šioje vietoje. Ar norite jį pakeisti tuo, "
 "kurį kopijuojate?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -183,9 +176,7 @@ msgstr "Perkelti į šiukšlinę"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -423,26 +414,19 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"„GitHub“ autentifikavimas nepavyko (401). Patikrinkite prieigos raktą "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "„GitHub“ autentifikavimas nepavyko (401). Patikrinkite prieigos raktą "
 "skiltyje „Nuostatos“ → „GitHub“."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"Viršytas „GitHub“ API greičio limitas. Pridėkite prieigos raktą skiltyje "
-"„Nuostatos“ → „GitHub“, kad padidintumėte limitą."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "Viršytas „GitHub“ API greičio limitas. Pridėkite prieigos raktą "
+"skiltyje „Nuostatos“ → „GitHub“, kad padidintumėte limitą."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"„GitHub“ prieiga uždrausta (403). Jūsų prieigos raktui gali trūkti reikiamų "
-"leidimų."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "„GitHub“ prieiga uždrausta (403). Jūsų prieigos raktui gali trūkti "
+"reikiamų leidimų."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -659,12 +643,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Išskleidimas išpakuos programą, kad ji atsidarytų greičiau, tačiau užims "
-"daugiau vietos diske. Šio veiksmo negalima automatiškai atšaukti."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Išskleidimas išpakuos programą, kad ji atsidarytų greičiau, tačiau "
+"užims daugiau vietos diske. Šio veiksmo negalima automatiškai atšaukti."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -764,8 +745,8 @@ msgstr "Nėra įdiegtų AppImage programų"
 
 #: src/windows/main_window.vala:300
 msgid "Download AppImage and double click to install with AppManager"
-msgstr ""
-"Atsisiųskite AppImage ir dukart spustelėkite, kad įdiegtumėte su AppManager"
+msgstr "Atsisiųskite AppImage ir dukart spustelėkite, kad įdiegtumėte su "
+"AppManager"
 
 #: src/windows/main_window.vala:367
 msgid "No results found"
@@ -985,9 +966,8 @@ msgstr "%d atnaujinimas(-ai) nepavyko"
 
 #: src/windows/main_window.vala:1542
 msgid "Add update addresses in Details to enable updates"
-msgstr ""
-"Pridėkite atnaujinimų adresus skiltyje Išsami informacija, kad įgalintumėte "
-"atnaujinimus"
+msgstr "Pridėkite atnaujinimų adresus skiltyje Išsami informacija, kad "
+"įgalintumėte atnaujinimus"
 
 #: src/windows/main_window.vala:1544
 msgid "All supported apps are already up to date"
@@ -1050,9 +1030,8 @@ msgstr "Montavimas"
 
 #: src/windows/preferences_window.vala:60
 msgid "Configure where AppImages are installed (default: ~/Applications)"
-msgstr ""
-"Konfigūruoti, kur yra įdiegtos programos „AppImages“ (numatytasis: ~/"
-"Applications)"
+msgstr "Konfigūruoti, kur yra įdiegtos programos „AppImages“ (numatytasis: "
+"~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
@@ -1188,8 +1167,7 @@ msgstr "Bandomasis ženklas"
 
 #: src/windows/preferences_window.vala:256
 msgid "Verify your token works and check rate limit status"
-msgstr ""
-"Patikrinkite, ar jūsų prieigos raktas veikia, ir patikrinkite greičio "
+msgstr "Patikrinkite, ar jūsų prieigos raktas veikia, ir patikrinkite greičio "
 "apribojimo būseną"
 
 #: src/windows/preferences_window.vala:260
@@ -1206,8 +1184,7 @@ msgstr "Sukurkite prieigos raktą „GitHub“."
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Pakanka smulkiagrūdžio prieigos rakto su tik skaitymo viešąja atpirkimo "
+msgstr "Pakanka smulkiagrūdžio prieigos rakto su tik skaitymo viešąja atpirkimo "
 "prieiga"
 
 #: src/windows/preferences_window.vala:342

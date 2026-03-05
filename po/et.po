@@ -3,8 +3,7 @@
 # This file is distributed under the same license as the app-manager package.
 #
 msgid ""
-msgstr ""
-"Project-Id-Version: app-manager\n"
+msgstr "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-03 22:18+0200\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
@@ -115,11 +114,8 @@ msgstr "Asendada %s?"
 
 #: src/application.vala:435 src/windows/drop_window.vala:452
 #, c-format
-msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
-msgstr ""
-"Uuem fail nimega %s on selles asukohas juba olemas. Kas soovid selle "
+msgid "A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?"
+msgstr "Uuem fail nimega %s on selles asukohas juba olemas. Kas soovid selle "
 "asendada vanema versiooniga, mida kopeerid?"
 
 #: src/application.vala:437 src/windows/drop_window.vala:454
@@ -129,11 +125,8 @@ msgstr "Paigaldatud: %s | Sissetulev: %s"
 
 #: src/application.vala:441 src/windows/drop_window.vala:458
 #, c-format
-msgid ""
-"An item named %s already exists in this location. Do you want to replace it "
-"with one you're copying?"
-msgstr ""
-"Fail nimega %s on selles asukohas juba olemas. Kas soovid selle asendada "
+msgid "An item named %s already exists in this location. Do you want to replace it with one you're copying?"
+msgstr "Fail nimega %s on selles asukohas juba olemas. Kas soovid selle asendada "
 "sellega, mida kopeerid?"
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
@@ -183,9 +176,7 @@ msgstr "Teisalda prügikasti"
 #: src/application.vala:817
 #, c-format
 msgid ""
-"%s could not be moved to the trash. Do you want to delete it permanently "
-"instead?\n"
-"\n"
+"%s could not be moved to the trash. Do you want to delete it permanently instead?\n\n"
 "This action cannot be undone."
 msgstr ""
 
@@ -423,26 +414,19 @@ msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr ""
 
 #: src/core/updater.vala:1106
-msgid ""
-"GitHub authentication failed (401). Check your token in Preferences → GitHub."
-msgstr ""
-"GitHubi autentimine ebaõnnestus (401). Kontrollige oma luba jaotises "
+msgid "GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr "GitHubi autentimine ebaõnnestus (401). Kontrollige oma luba jaotises "
 "Eelistused → GitHub."
 
 #: src/core/updater.vala:1111
-msgid ""
-"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
-"increase your limit."
-msgstr ""
-"GitHubi API kiiruse limiit on ületatud. Limiidi suurendamiseks lisage tunnus "
-"jaotises Eelistused → GitHub."
+msgid "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to increase your limit."
+msgstr "GitHubi API kiiruse limiit on ületatud. Limiidi suurendamiseks lisage "
+"tunnus jaotises Eelistused → GitHub."
 
 #: src/core/updater.vala:1113
-msgid ""
-"GitHub access forbidden (403). Your token may lack the required permissions."
-msgstr ""
-"GitHubile juurdepääs keelatud (403). Teie märgil võivad puududa nõutavad "
-"õigused."
+msgid "GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr "GitHubile juurdepääs keelatud (403). Teie märgil võivad puududa "
+"nõutavad õigused."
 
 #: src/core/updater.vala:1436
 msgid "Unknown zsync source type"
@@ -658,12 +642,9 @@ msgid "Delete permanently?"
 msgstr ""
 
 #: src/windows/details_window.vala:1118
-msgid ""
-"Extracting will unpack the application so it opens faster, but it will "
-"consume more disk space. This action cannot be reversed automatically."
-msgstr ""
-"Ekstraheerimine pakib rakenduse lahti, et see kiiremini avaneks, kuid see "
-"võtab rohkem kettaruumi. Seda toimingut ei saa automaatselt tagasi võtta."
+msgid "Extracting will unpack the application so it opens faster, but it will consume more disk space. This action cannot be reversed automatically."
+msgstr "Ekstraheerimine pakib rakenduse lahti, et see kiiremini avaneks, kuid "
+"see võtab rohkem kettaruumi. Seda toimingut ei saa automaatselt tagasi võtta."
 
 #: src/windows/details_window.vala:1119
 msgid "Extract application?"
@@ -1197,8 +1178,8 @@ msgstr "Looge GitHubis tunnus"
 
 #: src/windows/preferences_window.vala:285
 msgid "Fine-grained token with read-only public repo access is sufficient"
-msgstr ""
-"Piisab kirjutuskaitstud avaliku repo juurdepääsuga peeneteralisest märgist"
+msgstr "Piisab kirjutuskaitstud avaliku repo juurdepääsuga peeneteralisest "
+"märgist"
 
 #: src/windows/preferences_window.vala:342
 msgid "Select Installation Directory"
