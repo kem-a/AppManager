@@ -167,17 +167,32 @@ echo "---------------------------------------------------------------"
 #   /usr/lib/gio/modules/libgiognutls.so \
 #   /usr/lib/gio/modules/libgiolibproxy.so
 
-# ── Restore library locale files removed by quick-sharun debloating ──
+# ── Restore toolkit locale files removed by quick-sharun debloating ──
 # quick-sharun's DEBLOAT_LOCALE deletes .mo files that don't match a
-# bundled binary name — this removes libadwaita translations.
-# Restore them only for languages the app actually ships (po/LINGUAS).
-echo "Restoring libadwaita locale files..."
-while IFS= read -r lang; do
-    case "$lang" in \#*|"") continue ;; esac
-    src="/usr/share/locale/$lang/LC_MESSAGES/libadwaita.mo"
-    dst="$APPDIR/share/locale/$lang/LC_MESSAGES"
-    [ -f "$src" ] && [ -d "$dst" ] && cp "$src" "$dst/"
-done < po/LINGUAS
+# bundled binary name. That strips toolkit translations such as GTK's
+# built-in text entry context menu labels along with libadwaita strings.
+# Restore only the locales the app actually ships (po/LINGUAS).
+echo "Restoring toolkit locale files..."
+
+restore_locale_domain() {
+    domain=$1
+    while IFS= read -r lang; do
+        case "$lang" in \#*|"") continue ;; esac
+        src="/usr/share/locale/$lang/LC_MESSAGES/$domain.mo"
+        dst="$APPDIR/share/locale/$lang/LC_MESSAGES"
+        if [ -f "$src" ]; then
+            mkdir -p "$dst"
+            cp "$src" "$dst/"
+        fi
+    done < po/LINGUAS
+}
+
+# GTK owns the standard text-edit popup menu strings. On Arch there is
+# no separate gio20.mo catalog; related framework strings come from
+# glib20.mo, so restore GTK, GLib, and libadwaita here.
+for domain in gtk40 glib20 libadwaita; do
+    restore_locale_domain "$domain"
+done
 
 # ── Create AppImage ─────────────────────────────────────────────────
 "$QS" --make-appimage
