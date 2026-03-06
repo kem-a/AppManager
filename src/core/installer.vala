@@ -307,21 +307,26 @@ namespace AppManager.Core {
                 if (desktop_entry.name != null && desktop_entry.name.strip() != "") {
                     desktop_name = desktop_entry.name.strip();
                 }
+                var desktop_id_hint = Path.get_basename(desktop_path);
+
                 if (desktop_entry.appimage_version != null) {
                     desktop_version = desktop_entry.appimage_version;
                 }
                 
                 // Fall back to metainfo if no version from desktop entry
                 if (desktop_version == null) {
-                    desktop_version = AppImageAssets.extract_version_from_metainfo(assets_path, temp_dir);
+                    desktop_version = AppImageAssets.extract_version_from_metainfo(assets_path, temp_dir, desktop_id_hint, desktop_name);
                 }
                 
                 is_terminal_app = desktop_entry.terminal;
 
-                // App description: prefer metainfo <summary>, fall back to desktop Comment
-                string? app_description = AppImageAssets.extract_summary_from_metainfo(assets_path, temp_dir);
-                if (app_description == null && desktop_entry.comment != null && desktop_entry.comment.strip() != "") {
+                // App description: prefer localized desktop Comment, fall back to matching metainfo summary.
+                string? app_description = null;
+                if (desktop_entry.comment != null && desktop_entry.comment.strip() != "") {
                     app_description = desktop_entry.comment.strip();
+                }
+                if (app_description == null) {
+                    app_description = AppImageAssets.extract_summary_from_metainfo(assets_path, temp_dir, desktop_id_hint, desktop_name);
                 }
                 
                 record.name = desktop_name;

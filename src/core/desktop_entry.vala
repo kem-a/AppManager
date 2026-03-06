@@ -37,10 +37,10 @@ namespace AppManager.Core {
             
             // Standard keys
             name = get_string("Name");
-            comment = get_string("Comment");
+            comment = get_localized_string("Comment");
             exec = get_string("Exec");
             icon = get_string("Icon");
-            keywords = get_string("Keywords");
+            keywords = get_localized_string("Keywords");
             categories = get_string("Categories");
             startup_wm_class = get_string("StartupWMClass");
             mime_type = get_string("MimeType");
@@ -126,6 +126,21 @@ namespace AppManager.Core {
                 debug("Failed to get string key %s from group %s: %s", key, group, e.message);
             }
             return null;
+        }
+
+        public string? get_localized_string(string key, string group = "Desktop Entry") {
+            try {
+                if (key_file.has_key(group, key)) {
+                    var val = key_file.get_locale_string(group, key, null);
+                    if (val != null && val.strip() != "") {
+                        return val.strip();
+                    }
+                }
+            } catch (Error e) {
+                debug("Failed to get localized key %s from group %s: %s", key, group, e.message);
+            }
+
+            return get_string(key, group);
         }
 
         public bool get_boolean(string key, string group = "Desktop Entry") {

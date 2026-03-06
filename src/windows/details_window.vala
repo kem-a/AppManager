@@ -150,9 +150,9 @@ namespace AppManager {
             info_box.append(name_label);
             
             // App description: from record (metainfo/desktop), fallback to desktop Comment
-            var app_description = record.description;
-            if (app_description == null) {
-                app_description = desktop_props.get("Comment");
+            var app_description = desktop_props.get("Comment");
+            if (app_description == null || app_description.strip() == "") {
+                app_description = record.description;
             }
             if (app_description != null) {
                 var desc_label = new Gtk.Label(app_description);

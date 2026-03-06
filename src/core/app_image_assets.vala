@@ -247,13 +247,21 @@ namespace AppManager.Core {
             return null;
         }
 
-        public static string? extract_version_from_metainfo(string appimage_path, string temp_root) {
+        public static string? extract_version_from_metainfo(string appimage_path, string temp_root, string? desktop_id_hint = null, string? app_name_hint = null) {
             var metainfo_root = ensure_metainfo_extracted(appimage_path, temp_root);
+            var best_match = find_best_metainfo_file(metainfo_root, desktop_id_hint, app_name_hint);
+            if (best_match != null) {
+                return parse_metainfo_version(best_match);
+            }
             return find_version_in_dir_recursive(metainfo_root);
         }
 
-        public static string? extract_summary_from_metainfo(string appimage_path, string temp_root) {
+        public static string? extract_summary_from_metainfo(string appimage_path, string temp_root, string? desktop_id_hint = null, string? app_name_hint = null) {
             var metainfo_root = ensure_metainfo_extracted(appimage_path, temp_root);
+            var best_match = find_best_metainfo_file(metainfo_root, desktop_id_hint, app_name_hint);
+            if (best_match != null) {
+                return parse_metainfo_summary(best_match);
+            }
             return find_summary_in_dir_recursive(metainfo_root);
         }
 
@@ -666,6 +674,91 @@ namespace AppManager.Core {
                 debug("Failed to search metainfo dir %s: %s", dir_path, e.message);
             }
             return null;
+        }
+
+        private static string? find_best_metainfo_file(string dir_path, string? desktop_id_hint, string? app_name_hint) {
+            string? best_path = null;
+            int best_score = 0;
+            collect_best_metainfo_file(dir_path, desktop_id_hint, app_name_hint, ref best_path, ref best_score);
+            return best_path;
+        }
+
+        private static void collect_best_metainfo_file(string dir_path, string? desktop_id_hint, string? app_name_hint, ref string? best_path, ref int best_score) {
+            try {
+                var dir = Dir.open(dir_path);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    var path = Path.build_filename(dir_path, name);
+
+                    if (FileUtils.test(path, FileTest.IS_DIR)) {
+                        collect_best_metainfo_file(path, desktop_id_hint, app_name_hint, ref best_path, ref best_score);
+                        continue;
+                    }
+
+                    if (!name.has_suffix(".metainfo.xml") && !name.has_suffix(".appdata.xml")) {
+                        continue;
+                    }
+
+                    var score = score_metainfo_file(path, desktop_id_hint, app_name_hint);
+                    if (score > best_score) {
+                        best_score = score;
+                        best_path = path;
+                    }
+                }
+            } catch (Error e) {
+                debug("Failed to scan metainfo dir %s: %s", dir_path, e.message);
+            }
+        }
+
+        private static int score_metainfo_file(string xml_path, string? desktop_id_hint, string? app_name_hint) {
+            int score = 1;
+            try {
+                string contents;
+                FileUtils.get_contents(xml_path, out contents);
+
+                var basename = Path.get_basename(xml_path);
+                var normalized_desktop_id = normalize_component_hint(desktop_id_hint);
+                var normalized_app_name = app_name_hint != null ? app_name_hint.strip() : null;
+
+                if (normalized_desktop_id != null && normalized_desktop_id != "") {
+                    if (basename == "%s.metainfo.xml".printf(normalized_desktop_id) || basename == "%s.appdata.xml".printf(normalized_desktop_id)) {
+                        score = 6;
+                    }
+
+                    if (contents.contains("<launchable type=\"desktop-id\">%s.desktop</launchable>".printf(normalized_desktop_id))) {
+                        score = int.max(score, 5);
+                    }
+
+                    if (contents.contains("<id>%s</id>".printf(normalized_desktop_id))) {
+                        score = int.max(score, 4);
+                    }
+                }
+
+                if (normalized_app_name != null && normalized_app_name != "" && contents.contains("<name>%s</name>".printf(normalized_app_name))) {
+                    score = int.max(score, 3);
+                }
+            } catch (Error e) {
+                debug("Failed to score metainfo file %s: %s", xml_path, e.message);
+            }
+
+            return score;
+        }
+
+        private static string? normalize_component_hint(string? desktop_id_hint) {
+            if (desktop_id_hint == null) {
+                return null;
+            }
+
+            var normalized = desktop_id_hint.strip();
+            if (normalized == "") {
+                return null;
+            }
+
+            if (normalized.has_suffix(".desktop")) {
+                normalized = normalized.substring(0, normalized.length - ".desktop".length);
+            }
+
+            return normalized;
         }
 
         private static string? parse_metainfo_summary(string xml_path) {
