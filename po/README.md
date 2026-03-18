@@ -16,6 +16,7 @@
 | Estonian | et | 94.2% (261/277) |
 | Finnish | fi | 94.2% (261/277) |
 | French | fr | 100% (277/277) |
+| Irish | ga | 100% (277/277) |
 | Italian | it | 94.2% (261/277) |
 | Japanese | ja | 94.2% (261/277) |
 | Kazakh | kk | 94.2% (261/277) |
