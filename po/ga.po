@@ -1,0 +1,1315 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the app-manager package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: app-manager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-03 22:18+0200\n"
+"PO-Revision-Date: 2026-03-18 14:06+0000\n"
+"Last-Translator: Aindriú Mac Giolla Eoin <aindriu80@yahoo.com>\n"
+"Language-Team: \n"
+"Language: ga\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.8\n"
+
+#: src/application.vala:260
+msgid "Incompatible AppImage"
+msgstr "Íomhá Aipe Neamh-chomhoiriúnach"
+
+#: src/application.vala:261
+msgid ""
+"This AppImage is incompatible or corrupted. Missing required files (AppRun, ."
+"desktop, or icon)."
+msgstr ""
+"Tá an AppImage seo neamh-chomhoiriúnach nó truaillithe. Comhaid riachtanacha "
+"ar iarraidh (AppRun, .desktop, nó deilbhín)."
+
+#. Architecture mismatch banner
+#: src/application.vala:262 src/application.vala:274 src/application.vala:835
+#: src/application.vala:929 src/application.vala:941
+#: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:99
+#: src/windows/drop_window.vala:109
+msgid "Close"
+msgstr "Dún"
+
+#. Check architecture
+#. Check architecture compatibility
+#: src/application.vala:270 src/windows/drop_window.vala:330
+msgid "unknown"
+msgstr "anaithnid"
+
+#: src/application.vala:272
+msgid "Architecture Mismatch"
+msgstr "Mí-oiriúnacht Ailtireachta"
+
+#: src/application.vala:273 src/windows/drop_window.vala:331
+#, c-format
+msgid "This app is built for %s and cannot run here"
+msgstr "Tá an aip seo tógtha do %s agus ní féidir í a rith anseo"
+
+#. Use app icon with warning badge overlay
+#: src/application.vala:370 src/windows/drop_window.vala:234
+#, c-format
+msgid "Open %s?"
+msgstr "Oscail %s?"
+
+#: src/application.vala:374 src/windows/drop_window.vala:237
+#, c-format
+msgid ""
+"Origins of %s application can not be verified. Are you sure you want to open "
+"it?"
+msgstr ""
+"Ní féidir bunús an fheidhmchláir %s a fhíorú. An bhfuil tú cinnte gur mian "
+"leat é a oscailt?"
+
+#: src/application.vala:377 src/windows/drop_window.vala:244
+msgid "Install the AppImage to add it to your applications."
+msgstr "Suiteáil an AppImage chun é a chur le d’fheidhmchláir."
+
+#: src/application.vala:379 src/windows/drop_window.vala:247
+msgid "Install"
+msgstr "Suiteáil"
+
+#: src/application.vala:380 src/application.vala:411 src/application.vala:819
+#: src/windows/details_window.vala:1104 src/windows/details_window.vala:1120
+#: src/windows/drop_window.vala:248 src/windows/drop_window.vala:422
+#: src/windows/drop_window.vala:1001 src/windows/preferences_window.vala:432
+#: src/windows/preferences_window.vala:466
+msgid "Cancel"
+msgstr "Cealaigh"
+
+#. Use icon with verification badge overlay
+#: src/application.vala:398 src/windows/drop_window.vala:418
+#, c-format
+msgid "Update %s?"
+msgstr "Nuashonraigh %s?"
+
+#: src/application.vala:402 src/windows/drop_window.vala:394
+msgid "Version unknown"
+msgstr "Leagan anaithnid"
+
+#: src/application.vala:407 src/application.vala:550
+#: src/windows/drop_window.vala:401 src/windows/drop_window.vala:558
+msgid "Unknown version"
+msgstr "Leagan anaithnid"
+
+#: src/application.vala:408 src/windows/drop_window.vala:402
+#, c-format
+msgid "Will update to version %s"
+msgstr "Nuashonrófar go leagan %s"
+
+#: src/application.vala:410 src/windows/details_window.vala:955
+#: src/windows/drop_window.vala:421
+msgid "Update"
+msgstr "Nuashonrú"
+
+#. Use icon with verification badge overlay
+#: src/application.vala:429 src/windows/drop_window.vala:448
+#, c-format
+msgid "Replace %s?"
+msgstr "%s a athsholáthar?"
+
+#: src/application.vala:435 src/windows/drop_window.vala:452
+#, c-format
+msgid ""
+"A newer item named %s already exists in this location. Do you want to "
+"replace it with the older one you're copying?"
+msgstr ""
+"Tá mír níos nuaí darb ainm %s ann cheana féin sa suíomh seo. Ar mhaith leat "
+"í a athsholáthar leis an gceann níos sine atá á chóipeáil agat?"
+
+#: src/application.vala:437 src/windows/drop_window.vala:454
+#, c-format
+msgid "Installed: %s | Incoming: %s"
+msgstr "Suiteáilte: %s | Isteach: %s"
+
+#: src/application.vala:441 src/windows/drop_window.vala:458
+#, c-format
+msgid ""
+"An item named %s already exists in this location. Do you want to replace it "
+"with one you're copying?"
+msgstr ""
+"Tá mír darb ainm %s ann cheana féin sa suíomh seo. Ar mhaith leat ceann atá "
+"á chóipeáil agat a athsholáthar?"
+
+#: src/application.vala:446 src/windows/drop_window.vala:462
+msgid "Stop"
+msgstr "Stop"
+
+#: src/application.vala:447 src/windows/drop_window.vala:463
+msgid "Replace"
+msgstr "Athsholáthair"
+
+#: src/application.vala:534 src/windows/drop_window.vala:541
+msgid "Successfully Updated"
+msgstr "Nuashonraithe go rathúil"
+
+#: src/application.vala:534 src/windows/drop_window.vala:539
+msgid "Successfully Installed"
+msgstr "Suiteáilte go rathúil"
+
+#: src/application.vala:551 src/windows/drop_window.vala:559
+#, c-format
+msgid "Version %s"
+msgstr "Leagan %s"
+
+#: src/application.vala:555 src/windows/details_window.vala:179
+#: src/windows/drop_window.vala:563
+msgid "Open"
+msgstr "Oscail"
+
+#: src/application.vala:556 src/windows/drop_window.vala:564
+msgid "Done"
+msgstr "Déanta"
+
+#: src/application.vala:581 src/windows/drop_window.vala:590
+msgid "Installation failed"
+msgstr "Theip ar an suiteáil"
+
+#: src/application.vala:583 src/windows/drop_window.vala:600
+msgid "Dismiss"
+msgstr "Díbhe"
+
+#. Offer to delete permanently as fallback
+#: src/application.vala:816
+msgid "Cannot move to trash"
+msgstr "Ní féidir bogadh chuig an mbruscar"
+
+#: src/application.vala:817
+#, c-format
+msgid ""
+"%s could not be moved to the trash. Do you want to delete it permanently "
+"instead?\n"
+"\n"
+"This action cannot be undone."
+msgstr ""
+"Níorbh fhéidir %s a bhogadh chuig an mbruscar. Ar mhaith leat é a scriosadh "
+"go buan ina ionad?\n"
+"\n"
+"Ní féidir an gníomh seo a chealú."
+
+#: src/application.vala:820 src/windows/details_window.vala:1088
+#: src/windows/details_window.vala:1105
+msgid "Delete Permanently"
+msgstr "Scrios go Buan"
+
+#: src/application.vala:832
+msgid "Uninstall failed"
+msgstr "Theip ar an díshuiteáil"
+
+#: src/application.vala:833
+#, c-format
+msgid "%s could not be removed: %s"
+msgstr "Níorbh fhéidir %s a bhaint: %s"
+
+#: src/application.vala:841
+msgid "Deleted permanently"
+msgstr "Scriosta go buan"
+
+#: src/application.vala:843 src/application.vala:849
+#, c-format
+msgid "%s moved to Trash"
+msgstr "%s bogtha go dtí an Bruscar"
+
+#: src/application.vala:844
+msgid "Undo"
+msgstr "Cuir ar ceal"
+
+#: src/application.vala:876
+msgid "Undo failed"
+msgstr "Theip ar an gcealú"
+
+#: src/application.vala:879
+msgid "Restored"
+msgstr "Athchóirithe"
+
+#: src/application.vala:887
+msgid "Extraction is only available for portable installations."
+msgstr "Níl eastóscadh ar fáil ach le haghaidh suiteálacha iniompartha."
+
+#: src/application.vala:923
+msgid "Extracted for faster launch"
+msgstr "Extracted for faster launch"
+
+#: src/application.vala:926
+msgid "Extraction complete"
+msgstr "Eastóscadh críochnaithe"
+
+#: src/application.vala:927
+#, c-format
+msgid "%s was extracted and will open faster."
+msgstr "Baineadh %s amach agus osclófar níos tapúla é."
+
+#: src/application.vala:938
+msgid "Extraction failed"
+msgstr "Theip ar an eastóscadh"
+
+#: src/application.vala:939
+#, c-format
+msgid "%s could not be extracted: %s"
+msgstr "Níorbh fhéidir %s a bhaint amach: %s"
+
+#: src/core/background_update_service.vala:261
+#: src/core/background_update_service.vala:418
+msgid "App updates available"
+msgstr "Nuashonruithe aip ar fáil"
+
+#: src/core/background_update_service.vala:262
+#: src/core/background_update_service.vala:419
+#, c-format
+msgid "%d app update(s) available"
+msgstr "%d nuashonrú(í) aip ar fáil"
+
+#: src/core/background_update_service.vala:312
+msgid "App updates failed"
+msgstr "Theip ar nuashonruithe aipeanna"
+
+#: src/core/background_update_service.vala:313
+#, c-format
+msgid "%d app update(s) failed"
+msgstr "Theip ar %d nuashonrú(í) aipeanna"
+
+#. Build actions array: pairs of (action_key, label)
+#. "default" action is invoked when user clicks the notification body
+#: src/core/background_update_service.vala:334
+msgid "Open AppManager"
+msgstr "Oscail AppManager"
+
+#: src/core/installer.vala:655 src/windows/details_window.vala:1092
+msgid "Move to Trash"
+msgstr "Bog go dtí an Bruscar"
+
+#. Check if path is absolute
+#: src/core/path_migration_service.vala:42
+msgid "Path must be absolute"
+msgstr "Ní mór don chonair a bheith absalóideach"
+
+#. Check if it's the same as current
+#: src/core/path_migration_service.vala:47
+msgid "This is already the current directory"
+msgstr "Seo an t-eolaire reatha cheana féin"
+
+#: src/core/path_migration_service.vala:56
+msgid "Directory is not writable"
+msgstr "Ní féidir scríobh san eolaire"
+
+#: src/core/path_migration_service.vala:59
+#, c-format
+msgid "Cannot access directory: %s"
+msgstr "Ní féidir rochtain a fháil ar an eolaire: %s"
+
+#. Check if it's a directory
+#: src/core/path_migration_service.vala:63
+msgid "Path exists but is not a directory"
+msgstr "Tá an cosán ann ach ní eolaire é"
+
+#: src/core/path_migration_service.vala:69
+msgid "Invalid path"
+msgstr "Cosán neamhbhailí"
+
+#: src/core/path_migration_service.vala:72
+msgid "Parent directory does not exist"
+msgstr "Níl an t-eolaire tuismitheora ann"
+
+#: src/core/path_migration_service.vala:77
+msgid "Cannot create directory: parent is not writable"
+msgstr "Ní féidir eolaire a chruthú: ní féidir scríobh ar an tuismitheoir"
+
+#: src/core/path_migration_service.vala:80
+#, c-format
+msgid "Cannot access parent directory: %s"
+msgstr "Ní féidir rochtain a fháil ar an eolaire tuismitheora: %s"
+
+#. Create new directory
+#. Exception path - clear flag since no signal will be emitted
+#: src/core/path_migration_service.vala:170
+#, c-format
+msgid "Failed to create directory: %s"
+msgstr "Theip ar chruthú eolaire: %s"
+
+#. Exception path - clear flag since no signal will be emitted
+#: src/core/path_migration_service.vala:178
+#, c-format
+msgid "Failed to create extracted directory: %s"
+msgstr "Theip ar chruthú an eolaire eastósctha: %s"
+
+#: src/core/path_migration_service.vala:189
+#, c-format
+msgid "Migrating %s (%d/%d)…"
+msgstr "Ag aistriú %s (%d/%d)…"
+
+#: src/core/path_migration_service.vala:215
+#, c-format
+msgid ""
+"Some apps failed to migrate:\n"
+"%s"
+msgstr ""
+"Theip ar roinnt aipeanna aistriú:\n"
+"%s"
+
+#: src/core/updater.vala:579 src/core/updater.vala:644
+msgid "No update address configured"
+msgstr "Níl aon seoladh nuashonraithe cumraithe"
+
+#: src/core/updater.vala:584 src/core/updater.vala:653
+msgid "Update source not supported"
+msgstr "Ní thacaítear le foinse an nuashonraithe"
+
+#: src/core/updater.vala:600 src/core/updater.vala:671
+msgid "Unable to read releases"
+msgstr "Ní féidir eisiúintí a léamh"
+
+#: src/core/updater.vala:605 src/core/updater.vala:697
+#, c-format
+msgid "No matching AppImage found for %s"
+msgstr "Níor aimsíodh aon AppImage comhoiriúnach do %s"
+
+#. Version comparison: if both have versions, compare them
+#. Remote version is same or older than current
+#: src/core/updater.vala:613 src/core/updater.vala:619
+#: src/core/updater.vala:681 src/core/updater.vala:689
+#: src/core/updater.vala:839 src/core/updater.vala:864
+#: src/core/updater.vala:1461 src/core/updater.vala:1489
+#: src/core/updater.vala:1501 src/core/updater.vala:1530
+#: src/core/updater.vala:1576 src/core/updater.vala:1587
+#: src/core/updater.vala:1611
+msgid "Already up to date"
+msgstr "Tá sé cothrom le dáta cheana féin"
+
+#: src/core/updater.vala:744 src/core/updater.vala:1677
+#: src/core/updater.vala:1764
+#, c-format
+msgid "Updated to %s"
+msgstr "Nuashonraithe go %s"
+
+#. All candidates failed identity verification
+#: src/core/updater.vala:754 src/core/updater.vala:756
+msgid "App identity mismatch"
+msgstr "Neamhoiriúnacht aitheantais aip"
+
+#: src/core/updater.vala:827 src/core/updater.vala:857
+#: src/core/updater.vala:1517
+msgid "Server does not provide change tracking headers"
+msgstr "Ní sholáthraíonn an freastalaí ceanntásca rianaithe athruithe"
+
+#: src/core/updater.vala:835 src/core/updater.vala:1526
+#: src/core/updater.vala:1605
+msgid "Baseline recorded"
+msgstr "Bonnlíne taifeadta"
+
+#: src/core/updater.vala:897 src/core/updater.vala:1678
+#: src/core/updater.vala:1765
+msgid "Updated"
+msgstr "Nuashonraithe"
+
+#: src/core/updater.vala:1012 src/core/updater.vala:1020
+msgid "Downloaded file is not a valid AppImage"
+msgstr "Ní AppImage bailí é an comhad a íoslódáladh"
+
+#: src/core/updater.vala:1023
+#, c-format
+msgid "AppImage architecture '%s' is incompatible with this system"
+msgstr "Tá ailtireacht AppImage '%s' neamh-chomhoiriúnach leis an gcóras seo"
+
+#. Match — verification passed
+#: src/core/updater.vala:1064
+#, c-format
+msgid "App identity mismatch: expected '%s' but got '%s'"
+msgstr ""
+"Neamhoiriúnacht aitheantais aip: bhíothas ag súil le '%s' ach fuarthas '%s'"
+
+#: src/core/updater.vala:1106
+msgid ""
+"GitHub authentication failed (401). Check your token in Preferences → GitHub."
+msgstr ""
+"Theip ar fhíordheimhniú GitHub (401). Seiceáil do chomhartha i Roghanna → "
+"GitHub."
+
+#: src/core/updater.vala:1111
+msgid ""
+"GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
+"increase your limit."
+msgstr ""
+"Sáraíodh teorainn ráta API GitHub. Cuir comhartha leis i Roghanna → GitHub "
+"chun do theorainn a mhéadú."
+
+#: src/core/updater.vala:1113
+msgid ""
+"GitHub access forbidden (403). Your token may lack the required permissions."
+msgstr ""
+"Rochtain GitHub toirmiscthe (403). B’fhéidir nach bhfuil na ceadanna "
+"riachtanacha ag do chomhartha."
+
+#: src/core/updater.vala:1436
+msgid "Unknown zsync source type"
+msgstr "Cineál foinse zsync anaithnid"
+
+#: src/core/updater.vala:1547
+msgid "Unknown zsync source"
+msgstr "Foinse zsync anaithnid"
+
+#: src/core/updater.vala:1718
+msgid "Cannot determine download URL from zsync URL"
+msgstr "Ní féidir URL íoslódála a chinneadh ó URL zsync"
+
+#: src/windows/details_window.vala:110
+#, c-format
+msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
+msgstr "⚠️ Níl '%s' i $PATH. Ní thosóidh an aip ón teirminéal."
+
+#: src/windows/details_window.vala:236
+msgid "Show in Files"
+msgstr "Taispeáin i gComhaid"
+
+#: src/windows/details_window.vala:238
+msgid "Portable"
+msgstr "Inaistrithe"
+
+#: src/windows/details_window.vala:238
+msgid "Extracted"
+msgstr "Bainte amach"
+
+#: src/windows/details_window.vala:256
+msgid "App version"
+msgstr "Leagan an aip"
+
+#. Terminal app card (only show if is_terminal)
+#: src/windows/details_window.vala:267
+msgid "Terminal"
+msgstr "Teirminéal"
+
+#: src/windows/details_window.vala:275
+msgid "This app supports efficient delta updates"
+msgstr "Tacaíonn an aip seo le nuashonruithe delta éifeachtacha"
+
+#: src/windows/details_window.vala:282
+msgid "Hidden"
+msgstr "I bhfolach"
+
+#: src/windows/details_window.vala:292
+msgid "Properties"
+msgstr "Airíonna"
+
+#: src/windows/details_window.vala:297
+msgid "Command line arguments"
+msgstr "Argóintí líne ordaithe"
+
+#: src/windows/details_window.vala:329
+msgid "Update info"
+msgstr "Nuashonraigh eolas"
+
+#: src/windows/details_window.vala:335
+msgid "How update links work"
+msgstr "Conas a oibríonn naisc nuashonraithe"
+
+#: src/windows/details_window.vala:347
+msgid "Pre-release Updates"
+msgstr "Nuashonruithe Réamh-eisiúna"
+
+#: src/windows/details_window.vala:348
+msgid "Include pre-release versions when checking for updates"
+msgstr ""
+"Cuir leaganacha réamh-eisiúna san áireamh agus tú ag seiceáil le haghaidh "
+"nuashonruithe"
+
+#: src/windows/details_window.vala:363
+msgid "Update link is managed by the embedded zsync update mechanism"
+msgstr ""
+"Déantar an nasc nuashonraithe a bhainistiú ag an sásra nuashonraithe zsync "
+"leabaithe"
+
+#: src/windows/details_window.vala:399
+msgid "Update Link"
+msgstr "Nuashonraigh an Nasc"
+
+#: src/windows/details_window.vala:454
+msgid "Web Page"
+msgstr "Leathanach Gréasáin"
+
+#: src/windows/details_window.vala:483
+msgid "Open web page"
+msgstr "Oscail leathanach gréasáin"
+
+#: src/windows/details_window.vala:497
+msgid "Advanced"
+msgstr "Ardleibhéil"
+
+#: src/windows/details_window.vala:524
+msgid "Environment Variables"
+msgstr "Athróga Timpeallachta"
+
+#: src/windows/details_window.vala:525
+msgid "Set custom environment variables for this app"
+msgstr "Socraigh athróga timpeallachta saincheaptha don aip seo"
+
+#: src/windows/details_window.vala:578
+msgid "NAME"
+msgstr "AINM"
+
+#: src/windows/details_window.vala:592
+msgid "value"
+msgstr "luach"
+
+#: src/windows/details_window.vala:604
+msgid "Remove variable"
+msgstr "Bain an athróg"
+
+#: src/windows/details_window.vala:729
+msgid "Keywords"
+msgstr "Eochairfhocail"
+
+#: src/windows/details_window.vala:739
+msgid "Icon name"
+msgstr "Ainm deilbhín"
+
+#: src/windows/details_window.vala:749
+msgid "Startup WM Class"
+msgstr "Rang WM Tosaithe"
+
+#: src/windows/details_window.vala:759
+msgid "Version"
+msgstr "Leagan"
+
+#: src/windows/details_window.vala:771
+msgid "Hide from app drawer"
+msgstr "Folaigh ón tarraiceán aipeanna"
+
+#: src/windows/details_window.vala:772
+msgid "Don't show in application menu"
+msgstr "Ná taispeáin i roghchlár an fheidhmchláir"
+
+#: src/windows/details_window.vala:783
+msgid "Add to $PATH"
+msgstr "Cuir le $PATH"
+
+#: src/windows/details_window.vala:784
+#, c-format
+msgid "Create a launcher in %s so you can run it from the terminal"
+msgstr "Cruthaigh lainseálaí i %s ionas gur féidir leat é a rith ón teirminéal"
+
+#: src/windows/details_window.vala:845
+msgid "Actions"
+msgstr "Gníomhartha"
+
+#. Extract button
+#: src/windows/details_window.vala:884
+msgid "Extract AppImage"
+msgstr "Sliocht Íomhá an Aip"
+
+#: src/windows/details_window.vala:921
+msgid "Restore default"
+msgstr "Athchóirigh réamhshocraithe"
+
+#: src/windows/details_window.vala:933 src/windows/main_window.vala:510
+#: src/windows/main_window.vala:584
+msgid "Updating..."
+msgstr "Ag nuashonrú..."
+
+#: src/windows/details_window.vala:935
+msgid "Checking..."
+msgstr "Ag seiceáil..."
+
+#: src/windows/details_window.vala:962
+msgid "Update Failed"
+msgstr "Theip ar an Nuashonrú"
+
+#: src/windows/details_window.vala:969
+msgid "Check Update"
+msgstr "Seiceáil Nuashonrú"
+
+#: src/windows/details_window.vala:1036
+msgid ""
+"Update info lets AppManager fetch new builds for you. Paste the download "
+"link and AppManager will do the rest."
+msgstr ""
+"Leis an eolas nuashonraithe, is féidir le AppManager leaganacha nua a fháil "
+"duit. Greamaigh an nasc íoslódála agus déanfaidh AppManager an chuid eile."
+
+#: src/windows/details_window.vala:1037
+msgid ""
+"Currently GitHub and GitLab URL formats are fully supported. Direct download "
+"links also work if the server provides Last-Modified or Content-Length "
+"headers."
+msgstr ""
+"Faoi láthair, tá tacaíocht iomlán á fáil do fhormáidí URL GitHub agus "
+"GitLab. Oibríonn naisc íoslódála díreacha freisin má sholáthraíonn an "
+"freastalaí ceanntásca Last-Modified nó Content-Length."
+
+#: src/windows/details_window.vala:1038
+msgid "Update links"
+msgstr "Nuashonraigh naisc"
+
+#: src/windows/details_window.vala:1039
+msgid "Got it"
+msgstr "Tuigim é"
+
+#: src/windows/details_window.vala:1093
+msgid "Hold Shift to delete permanently"
+msgstr "Coinnigh Shift síos chun scriosadh go buan"
+
+#: src/windows/details_window.vala:1100
+#, c-format
+msgid "<b>%s</b> will be permanently deleted. This action cannot be undone."
+msgstr "Scriosfar <b>%s</b> go buan. Ní féidir an gníomh seo a chealú."
+
+#: src/windows/details_window.vala:1101
+msgid "Delete permanently?"
+msgstr "Scriosadh go buan?"
+
+#: src/windows/details_window.vala:1118
+msgid ""
+"Extracting will unpack the application so it opens faster, but it will "
+"consume more disk space. This action cannot be reversed automatically."
+msgstr ""
+"Díphacáilfear an feidhmchlár nuair a bhaintear amach é ionas go n-osclófar é "
+"níos tapúla, ach úsáidfear níos mó spáis diosca dá bharr. Ní féidir an "
+"gníomh seo a aisiompú go huathoibríoch."
+
+#: src/windows/details_window.vala:1119
+msgid "Extract application?"
+msgstr "Feidhmchlár a bhaint amach?"
+
+#: src/windows/details_window.vala:1121
+msgid "Extract"
+msgstr "Sliocht"
+
+#: src/windows/dialog_window.vala:86
+msgid "App removed"
+msgstr "Aip bainte"
+
+#: src/windows/dialog_window.vala:94
+msgid "The application was uninstalled successfully."
+msgstr "Díshuiteáladh an feidhmchlár go rathúil."
+
+#: src/windows/drop_window.vala:56 src/windows/drop_window.vala:80
+msgid "AppImage Installer"
+msgstr "Suiteálaí AppImage"
+
+#. Add Verify button to headerbar
+#: src/windows/drop_window.vala:91 src/windows/drop_window.vala:1007
+msgid "Verify"
+msgstr "Fíoraigh"
+
+#: src/windows/drop_window.vala:92
+msgid "Verify AppImage with SHA256 hash"
+msgstr "Fíoraigh AppImage le hash SHA256"
+
+#. Verification failed banner
+#: src/windows/drop_window.vala:118
+msgid "SHA256 hash does not match. Verification failed."
+msgstr "Ní hionann an hais SHA256. Theip ar an bhfíorú."
+
+#: src/windows/drop_window.vala:140
+#, c-format
+msgid "Drag and drop to install into %s"
+msgstr "Tarraing agus scaoil le suiteáil i %s"
+
+#: src/windows/drop_window.vala:242
+msgid "This is a terminal application and will be installed in portable mode."
+msgstr "Is feidhmchlár críochfoirt é seo agus suiteálfar é i mód iniompartha."
+
+#: src/windows/drop_window.vala:320
+msgid "This AppImage is incompatible or corrupted"
+msgstr "Tá an AppImage seo neamh-chomhoiriúnach nó truaillithe"
+
+#: src/windows/drop_window.vala:322
+msgid "Missing required files (AppRun, .desktop, or icon)"
+msgstr "Comhaid riachtanacha ar iarraidh (AppRun, .desktop, nó deilbhín)"
+
+#: src/windows/drop_window.vala:333
+msgid "Architecture mismatch"
+msgstr "Mí-oiriúnacht ailtireachta"
+
+#: src/windows/drop_window.vala:498
+msgid "Unable to prepare AppImage for installation"
+msgstr "Ní féidir AppImage a ullmhú le haghaidh suiteála"
+
+#: src/windows/drop_window.vala:541
+msgid "Successfully Replaced"
+msgstr "Athsholáthar rathúil"
+
+#: src/windows/drop_window.vala:968
+msgid "Verify AppImage"
+msgstr "Fíoraigh AppImage"
+
+#: src/windows/drop_window.vala:986
+msgid "Verify the authenticity of this AppImage."
+msgstr "Fíoraigh barántúlacht an AppImage seo."
+
+#: src/windows/drop_window.vala:992
+msgid "Enter the SHA256 hash "
+msgstr "Cuir isteach an hais SHA256 "
+
+#: src/windows/main_window.vala:60 src/windows/main_window.vala:176
+#: data/com.github.AppManager.metainfo.xml:4
+msgid "AppManager"
+msgstr "AppManager"
+
+#: src/windows/main_window.vala:232
+msgid "Get more ..."
+msgstr "Faigh níos mó ..."
+
+#: src/windows/main_window.vala:244
+msgid "Find more AppImages"
+msgstr "Aimsigh níos mó AppImages"
+
+#: src/windows/main_window.vala:245
+msgid "Browse these sources to discover and download AppImages"
+msgstr "Brabhsáil na foinsí seo chun AppImages a aimsiú agus a íoslódáil"
+
+#: src/windows/main_window.vala:295 src/windows/main_window.vala:367
+msgid "No AppImage apps installed"
+msgstr "No AppImage apps installed"
+
+#: src/windows/main_window.vala:300
+msgid "Download AppImage and double click to install with AppManager"
+msgstr ""
+"Íoslódáil AppImage agus cliceáil faoi dhó chun é a shuiteáil le AppManager"
+
+#: src/windows/main_window.vala:367
+msgid "No results found"
+msgstr "Níor aimsíodh aon torthaí"
+
+#: src/windows/main_window.vala:446 src/windows/main_window.vala:972
+msgid "My Apps"
+msgstr "Mo Aipeanna"
+
+#: src/windows/main_window.vala:517 src/windows/main_window.vala:591
+msgid "Update available"
+msgstr "Nuashonrú ar fáil"
+
+#. App name label (same size as list view)
+#: src/windows/main_window.vala:606
+msgid "Unknown"
+msgstr "Anaithnid"
+
+#: src/windows/main_window.vala:699
+msgid "extracted"
+msgstr "eastósctha"
+
+#: src/windows/main_window.vala:756
+msgid "Updated just now"
+msgstr "Nuashonraithe díreach anois"
+
+#: src/windows/main_window.vala:756
+msgid "Installed just now"
+msgstr "Suiteáilte díreach anois"
+
+#: src/windows/main_window.vala:764
+#, c-format
+msgid "Updated %d min ago"
+msgstr "Nuashonraithe %d nóiméad ó shin"
+
+#: src/windows/main_window.vala:764
+#, c-format
+msgid "Installed %d min ago"
+msgstr "Suiteáilte %d nóiméad ó shin"
+
+#: src/windows/main_window.vala:772
+#, c-format
+msgid "Updated %d hours ago"
+msgstr "Nuashonraithe %d uair an chloig ó shin"
+
+#: src/windows/main_window.vala:772
+#, c-format
+msgid "Installed %d hours ago"
+msgstr "Suiteáilte %d uair an chloig ó shin"
+
+#: src/windows/main_window.vala:779
+#, c-format
+msgid "Updated %d days ago"
+msgstr "Nuashonraithe %d lá ó shin"
+
+#: src/windows/main_window.vala:779
+#, c-format
+msgid "Installed %d days ago"
+msgstr "Suiteáilte %d lá ó shin"
+
+#: src/windows/main_window.vala:797
+msgid "Fullscreen"
+msgstr "Lánscáileán"
+
+#: src/windows/main_window.vala:801 src/windows/preferences_window.vala:34
+msgid "Preferences"
+msgstr "Roghanna"
+
+#: src/windows/main_window.vala:802
+msgid "Keyboard shortcuts"
+msgstr "Aicearraí méarchláir"
+
+#: src/windows/main_window.vala:803 src/windows/main_window.vala:1675
+msgid "About AppManager"
+msgstr "Maidir le AppManager"
+
+#: src/windows/main_window.vala:807
+msgid "Quit"
+msgstr "Scoir"
+
+#: src/windows/main_window.vala:821
+msgid "Support AppManager"
+msgstr "Bainisteoir Feidhmchlár Tacaíochta"
+
+#: src/windows/main_window.vala:836
+msgid "Buy Me a Coffee"
+msgstr "Ceannaigh Caife Dom"
+
+#: src/windows/main_window.vala:855
+msgid "Become a sponsor on GitHub"
+msgstr "Bí i do urraitheoir ar GitHub"
+
+#: src/windows/main_window.vala:860
+msgid "Sponsor Me ♡"
+msgstr "Urraigh mé ♡"
+
+#: src/windows/main_window.vala:871
+msgid "Star AppManager on GitHub"
+msgstr "Bainisteoir Feidhmchlár Réalta ar GitHub"
+
+#: src/windows/main_window.vala:876
+msgid "Star AppManager"
+msgstr "Bainisteoir Aipeanna Réalta"
+
+#: src/windows/main_window.vala:887
+msgid "View contributors on GitHub"
+msgstr "Féach ar rannpháirtithe ar GitHub"
+
+#: src/windows/main_window.vala:892 src/windows/main_window.vala:1694
+msgid "Contributors"
+msgstr "Rannpháirtithe"
+
+#: src/windows/main_window.vala:915 src/windows/main_window.vala:1673
+msgid "Search"
+msgstr "Cuardaigh"
+
+#: src/windows/main_window.vala:921
+msgid "Support this project"
+msgstr "Tacaigh leis an tionscadal seo"
+
+#: src/windows/main_window.vala:931
+msgid "More actions"
+msgstr "Tuilleadh gníomhartha"
+
+#: src/windows/main_window.vala:946
+msgid "Search apps..."
+msgstr "Cuardaigh aipeanna..."
+
+#. FUSE is not installed warning banner
+#: src/windows/main_window.vala:954
+msgid "FUSE is not installed. Some AppImages may fail to run"
+msgstr "Níl FUSE suiteáilte. Seans nach n-éireoidh le roinnt AppImages"
+
+#: src/windows/main_window.vala:956
+msgid "Learn More"
+msgstr "Foghlaim Tuilleadh"
+
+#: src/windows/main_window.vala:977
+msgid "Shift+click to launch app"
+msgstr "Shift+cliceáil chun an aip a sheoladh"
+
+#: src/windows/main_window.vala:1014
+msgid "Switch to grid view"
+msgstr "Athraigh go dtí an radharc eangaí"
+
+#: src/windows/main_window.vala:1017
+msgid "Switch to list view"
+msgstr "Athraigh go dtí an radharc liosta"
+
+#: src/windows/main_window.vala:1148 src/windows/main_window.vala:1219
+msgid "Updates already running"
+msgstr "Nuashonruithe ag rith cheana féin"
+
+#: src/windows/main_window.vala:1196
+msgid "Cancel update"
+msgstr "Cealaigh an nuashonrú"
+
+#: src/windows/main_window.vala:1227
+msgid "Cancelling..."
+msgstr "Ag cealú..."
+
+#: src/windows/main_window.vala:1253
+msgid "Update check cancelled"
+msgstr "Cealaíodh seiceáil nuashonraithe"
+
+#: src/windows/main_window.vala:1283
+#, c-format
+msgid "%d app(s) have updates"
+msgstr "Tá nuashonruithe ag %d aip(eanna)"
+
+#: src/windows/main_window.vala:1286
+msgid "No updates available right now"
+msgstr "Níl aon nuashonruithe ar fáil faoi láthair"
+
+#: src/windows/main_window.vala:1293
+msgid "Nothing queued for updating"
+msgstr "Níl aon rud curtha i scuaine le haghaidh nuashonraithe"
+
+#: src/windows/main_window.vala:1320
+msgid "Update cancelled"
+msgstr "Nuashonrú curtha ar ceal"
+
+#: src/windows/main_window.vala:1385 src/windows/main_window.vala:1405
+msgid "Update failed"
+msgstr "Theip ar an nuashonrú"
+
+#: src/windows/main_window.vala:1458
+msgid "Checking updates"
+msgstr "Ag seiceáil nuashonruithe"
+
+#: src/windows/main_window.vala:1461
+msgid "Update Apps"
+msgstr "Nuashonraigh Aipeanna"
+
+#: src/windows/main_window.vala:1464
+msgid "Updating apps"
+msgstr "Nuashonrú aipeanna"
+
+#: src/windows/main_window.vala:1467
+msgid "Check updates"
+msgstr "Seiceáil nuashonruithe"
+
+#: src/windows/main_window.vala:1491
+msgid "No installed apps to update"
+msgstr "Gan aon aipeanna suiteáilte le nuashonrú"
+
+#: src/windows/main_window.vala:1531
+#, c-format
+msgid "Updated %d app(s)"
+msgstr "Nuashonraíodh %d aip(eanna)"
+
+#: src/windows/main_window.vala:1534
+#, c-format
+msgid "%d update(s) failed"
+msgstr "Theip ar %d nuashonrú(í)"
+
+#: src/windows/main_window.vala:1542
+msgid "Add update addresses in Details to enable updates"
+msgstr ""
+"Cuir seoltaí nuashonraithe leis sna Sonraí chun nuashonruithe a chumasú"
+
+#: src/windows/main_window.vala:1544
+msgid "All supported apps are already up to date"
+msgstr "Tá na haipeanna uile a dtacaítear leo cothrom le dáta cheana féin"
+
+#: src/windows/main_window.vala:1548
+#, c-format
+msgid "%d app(s) use unsupported update links"
+msgstr "Úsáideann %d aip(eanna) naisc nuashonraithe nach dtacaítear leo"
+
+#: src/windows/main_window.vala:1615
+#, c-format
+msgid "Update available for %s"
+msgstr "Nuashonrú ar fáil do %s"
+
+#: src/windows/main_window.vala:1661
+msgid "General"
+msgstr "Ginearálta"
+
+#: src/windows/main_window.vala:1665
+msgid "Navigation"
+msgstr "Loingseoireacht"
+
+#: src/windows/main_window.vala:1669
+msgid "Window"
+msgstr "Fuinneog"
+
+#: src/windows/main_window.vala:1671
+msgid "Check for updates"
+msgstr "Seiceáil le haghaidh nuashonruithe"
+
+#: src/windows/main_window.vala:1672
+msgid "Show main menu"
+msgstr "Taispeáin an príomh-roghchlár"
+
+#: src/windows/main_window.vala:1674
+msgid "Show shortcuts"
+msgstr "Taispeáin aicearraí"
+
+#: src/windows/main_window.vala:1676
+msgid "Close window"
+msgstr "Dún an fhuinneog"
+
+#: src/windows/main_window.vala:1677
+msgid "Quit AppManager"
+msgstr "Scoir AppManager"
+
+#: src/windows/main_window.vala:1678
+msgid "Toggle fullscreen"
+msgstr "Scoraigh lánscáileán"
+
+#: src/windows/main_window.vala:1695
+msgid "Credits"
+msgstr "Creidmheasanna"
+
+#. Installation directory group
+#: src/windows/preferences_window.vala:59
+msgid "Installation"
+msgstr "Suiteáil"
+
+#: src/windows/preferences_window.vala:60
+msgid "Configure where AppImages are installed (default: ~/Applications)"
+msgstr ""
+"Cumraigh cá bhfuil AppImages suiteáilte (réamhshocraithe: ~/Applications)"
+
+#: src/windows/preferences_window.vala:63
+msgid "Installation directory"
+msgstr "Eolaire suiteála"
+
+#: src/windows/preferences_window.vala:78
+msgid "Browse for folder"
+msgstr "Brabhsáil le haghaidh fillteáin"
+
+#: src/windows/preferences_window.vala:86
+msgid "Reset to default"
+msgstr "Athshocraigh go réamhshocraithe"
+
+#: src/windows/preferences_window.vala:96
+msgid "Apply changes"
+msgstr "Cuir athruithe i bhfeidhm"
+
+#: src/windows/preferences_window.vala:107
+msgid "Skip drag-and-drop window"
+msgstr "Seachain an fhuinneog tarraing agus scaoil"
+
+#: src/windows/preferences_window.vala:108
+msgid "Show install dialog directly when opening AppImages"
+msgstr "Taispeáin an dialóg suiteála go díreach agus AppImages á oscailt"
+
+#. Automatic updates group
+#: src/windows/preferences_window.vala:117
+msgid "Automatic updates"
+msgstr "Nuashonruithe uathoibríocha"
+
+#: src/windows/preferences_window.vala:118
+msgid "Configure automatic update checking"
+msgstr "Cumraigh seiceáil nuashonraithe uathoibríoch"
+
+#: src/windows/preferences_window.vala:124
+msgid "Open update log"
+msgstr "Oscail log nuashonraithe"
+
+#. Background update check expander row
+#: src/windows/preferences_window.vala:138
+msgid "Background update check"
+msgstr "Seiceáil nuashonraithe cúlra"
+
+#: src/windows/preferences_window.vala:139
+msgid "Will notify when new app updates are available"
+msgstr "Tabharfaidh sé fógra nuair a bheidh nuashonruithe nua ar fáil don aip"
+
+#. Auto update apps toggle (inside expander)
+#: src/windows/preferences_window.vala:150
+msgid "Auto update apps"
+msgstr "Nuashonraigh aipeanna go huathoibríoch"
+
+#: src/windows/preferences_window.vala:151
+msgid "Will update apps automatically in background"
+msgstr "Nuashonróidh sé aipeanna go huathoibríoch sa chúlra"
+
+#. Check interval (inside expander)
+#: src/windows/preferences_window.vala:157
+msgid "Check interval"
+msgstr "Seiceáil an t-eatramh"
+
+#: src/windows/preferences_window.vala:159
+msgid "Daily"
+msgstr "Laethúil"
+
+#: src/windows/preferences_window.vala:160
+msgid "Weekly"
+msgstr "Seachtainiúil"
+
+#: src/windows/preferences_window.vala:161
+msgid "Monthly"
+msgstr "Míosúil"
+
+#. Thumbnails group
+#: src/windows/preferences_window.vala:186
+msgid "Thumbnails"
+msgstr "Mionsamhlacha"
+
+#: src/windows/preferences_window.vala:189
+msgid "AppImage Thumbnailer"
+msgstr "Mionsamhail AppImage"
+
+#: src/windows/preferences_window.vala:190
+msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
+msgstr ""
+"Suiteáil appimage-thumbnailer chun mionsamhlacha a ghiniúint do AppImages"
+
+#: src/windows/preferences_window.vala:199
+msgid "Hide Nautilus thumbnail background"
+msgstr "Folaigh cúlra mionsamhail Nautilus"
+
+#: src/windows/preferences_window.vala:200
+msgid "Remove the alpha checkerboard behind thumbnails and icons"
+msgstr ""
+"Bain an clár seiceála alfa taobh thiar de na mionsamhlacha agus na ndeilbhíní"
+
+#. GitHub authentication group
+#: src/windows/preferences_window.vala:211
+msgid "GitHub"
+msgstr "GitHub"
+
+#: src/windows/preferences_window.vala:212
+msgid ""
+"Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
+"requests per hour"
+msgstr ""
+"Fíordheimhnigh le GitHub chun an teorainn ráta API a ardú ó 60 go 5,000 "
+"iarratas san uair"
+
+#: src/windows/preferences_window.vala:215
+msgid "Personal access token"
+msgstr "Comhartha rochtana pearsanta"
+
+#: src/windows/preferences_window.vala:226
+msgid "Apply token"
+msgstr "Cuir comhartha i bhfeidhm"
+
+#: src/windows/preferences_window.vala:229
+#: src/windows/preferences_window.vala:248
+msgid "GitHub token saved"
+msgstr "Comhartha GitHub sábháilte"
+
+#: src/windows/preferences_window.vala:235
+msgid "Clear token"
+msgstr "Glan an chomhartha"
+
+#: src/windows/preferences_window.vala:239
+msgid "GitHub token cleared"
+msgstr "Glanadh comhartha GitHub"
+
+#. Test token row
+#: src/windows/preferences_window.vala:255
+msgid "Test token"
+msgstr "Comhartha tástála"
+
+#: src/windows/preferences_window.vala:256
+msgid "Verify your token works and check rate limit status"
+msgstr ""
+"Fíoraigh go n-oibríonn do chomhartha agus seiceáil stádas na teorann ráta"
+
+#: src/windows/preferences_window.vala:260
+msgid "Test"
+msgstr "Tástáil"
+
+#: src/windows/preferences_window.vala:269
+msgid "Testing…"
+msgstr "Ag tástáil…"
+
+#: src/windows/preferences_window.vala:284
+msgid "Create a token on GitHub"
+msgstr "Cruthaigh comhartha ar GitHub"
+
+#: src/windows/preferences_window.vala:285
+msgid "Fine-grained token with read-only public repo access is sufficient"
+msgstr ""
+"Is leor comhartha mínmhionsonraithe le rochtain ar stór poiblí inléite amháin"
+
+#: src/windows/preferences_window.vala:342
+msgid "Select Installation Directory"
+msgstr "Roghnaigh Eolaire Suiteála"
+
+#: src/windows/preferences_window.vala:409
+msgid "Invalid Path"
+msgstr "Cosán Neamhbhailí"
+
+#: src/windows/preferences_window.vala:419
+msgid "Installation directory updated"
+msgstr "Eolaire suiteála nuashonraithe"
+
+#: src/windows/preferences_window.vala:429
+msgid "Move Installed Apps?"
+msgstr "Bog Aipeanna Suiteáilte?"
+
+#: src/windows/preferences_window.vala:430
+#, c-format
+msgid ""
+"This will move %d installed app(s) to the new location. This may take a "
+"while depending on the size of your apps."
+msgstr ""
+"Bogfaidh sé seo %d aip(eanna) suiteáilte go dtí an suíomh nua. D’fhéadfadh "
+"sé seo tamall a thógáil ag brath ar mhéid d’aipeanna."
+
+#: src/windows/preferences_window.vala:433
+msgid "Move Apps"
+msgstr "Bog Aipeanna"
+
+#. Kill background daemon if running - it may interfere with migration
+#. by monitoring folders and triggering reconciliation
+#. Create progress dialog
+#: src/windows/preferences_window.vala:465
+msgid "Moving Apps…"
+msgstr "Aipeanna á mbogadh…"
+
+#: src/windows/preferences_window.vala:465
+msgid "Please wait while your apps are being moved."
+msgstr "Fan le do thoil fad atá do chuid aipeanna á mbogadh."
+
+#: src/windows/preferences_window.vala:502
+msgid "Apps moved successfully"
+msgstr "Bogadh aipeanna go rathúil"
+
+#: src/windows/preferences_window.vala:504
+msgid "Migration Failed"
+msgstr "Theip ar an Imirce"
+
+#: src/windows/preferences_window.vala:504
+msgid "Unknown error occurred"
+msgstr "Tharla earráid anaithnid"
+
+#: src/windows/preferences_window.vala:522
+msgid "OK"
+msgstr "Ceart go leor"
+
+#: src/windows/preferences_window.vala:560
+msgid "Authentication failed — token is invalid or expired"
+msgstr "Theip ar fhíordheimhniú — tá an comhartha neamhbhailí nó imithe in éag"
+
+#: src/windows/preferences_window.vala:562
+msgid "Access forbidden — token lacks required permissions"
+msgstr "Rochtain toirmiscthe — níl ceadanna riachtanacha ag an gcomhartha"
+
+#: src/windows/preferences_window.vala:568
+#, c-format
+msgid "Token is valid — %s / %s requests remaining"
+msgstr "Tá an comhartha bailí — %s / %s iarratas fágtha"
+
+#: src/windows/preferences_window.vala:570
+msgid "Token is valid"
+msgstr "Tá an comhartha bailí"
+
+#: src/windows/preferences_window.vala:573
+#, c-format
+msgid "Unexpected response (%u)"
+msgstr "Freagra gan choinne (%u)"
+
+#: src/windows/preferences_window.vala:576
+#, c-format
+msgid "Connection error: %s"
+msgstr "Earráid ceangail: %s"
+
+#: data/com.github.AppManager.metainfo.xml:6
+#: data/com.github.AppManager.metainfo.xml:8
+msgid "Arnis Kemlers"
+msgstr "Arnis Kemlers"
+
+#: data/com.github.AppManager.metainfo.xml:9
+msgid "Drag-and-drop AppImage installer and management application"
+msgstr "Suiteálaí agus feidhmchlár bainistíochta AppImage tarraing-agus-titim"
+
+#: data/com.github.AppManager.metainfo.xml:35
+msgid ""
+"AppManager lets you install or uninstall AppImages with a familiar drag-and-"
+"drop workflow inspired by macOS. It handles desktop integration, icon "
+"extraction, executable bits, and app updates."
+msgstr ""
+"Le AppManager is féidir leat AppImages a shuiteáil nó a dhíshuiteáil le "
+"sreabhadh oibre tarraing-agus-titim atá coitianta agus atá spreagtha ag "
+"macOS. Láimhseálann sé comhtháthú deisce, eastóscadh deilbhíní, giotáin "
+"inrite, agus nuashonruithe aipeanna."
