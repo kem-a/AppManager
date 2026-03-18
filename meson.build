@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '3.4.3',
+  version: '3.4.4',
   meson_version: '>=0.64.0'
 )
 
@@ -28,7 +28,7 @@ add_project_arguments(['-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name())], 
 add_project_arguments(['-w'], language: 'c')
 
 # DwarFS tools bundling
-dwarfs_version = '0.14.1'
+dwarfs_version = '0.15.0'
 dwarfs_tools_dir = get_option('prefix') / get_option('bindir')
 
 host_cpu = host_machine.cpu_family()

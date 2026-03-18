@@ -4,7 +4,7 @@
 
 set -e
 
-VERSION="${1:-0.14.1}"
+VERSION="${1:-0.15.0}"
 ARCH="${2:-x86_64}"
 OUTPUT_DIR="${3:-.}"
 
