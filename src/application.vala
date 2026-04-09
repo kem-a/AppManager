@@ -753,7 +753,15 @@ Examples:
                         return 3;
                     }
                     
-                    installer.uninstall(record);
+                    try {
+                        installer.uninstall(record);
+                    } catch (Error e) {
+                        if (e.message.has_prefix("TRASH_FAILED:")) {
+                            installer.uninstall(record, true);
+                        } else {
+                            throw e;
+                        }
+                    }
 
                     command_line.print("Removed %s\n", record.name);
                     return 0;

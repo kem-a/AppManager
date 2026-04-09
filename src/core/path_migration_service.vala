@@ -320,6 +320,21 @@ namespace AppManager.Core {
                 // - Uninstall action (references AppManager's path in the same base directory)
                 // - Any other paths that reference the old installation directory
                 var updated = content.replace(old_base, new_base);
+
+                // Update the uninstall action label and icon based on whether
+                // the new location supports trash (paths under $HOME) or not
+                var home = Environment.get_home_dir();
+                var new_is_trashable = new_base.has_prefix(home + "/");
+                var old_is_trashable = old_base.has_prefix(home + "/");
+                if (new_is_trashable != old_is_trashable) {
+                    if (new_is_trashable) {
+                        updated = updated.replace("\nName=Delete Permanently\n", "\nName=Move to Trash\n");
+                        updated = updated.replace("\nIcon=edit-delete\n", "\nIcon=user-trash\n");
+                    } else {
+                        updated = updated.replace("\nName=Move to Trash\n", "\nName=Delete Permanently\n");
+                        updated = updated.replace("\nIcon=user-trash\n", "\nIcon=edit-delete\n");
+                    }
+                }
                 
                 if (updated != content) {
                     GLib.FileUtils.set_contents(desktop_path, updated);

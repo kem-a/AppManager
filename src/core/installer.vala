@@ -39,7 +39,17 @@ namespace AppManager.Core {
             // the currently installed version stays untouched.
             validate_appimage(file_path);
 
-            uninstall(old_record);
+            try {
+                uninstall(old_record);
+            } catch (Error e) {
+                // Trash may not be supported on some mounts (e.g. /opt).
+                // Fall back to permanent delete so the update can proceed.
+                if (e.message.has_prefix("TRASH_FAILED:")) {
+                    uninstall(old_record, true);
+                } else {
+                    throw e;
+                }
+            }
             return install_sync(file_path, mode, old_record);
         }
 
@@ -657,7 +667,11 @@ namespace AppManager.Core {
             // Check if this is a self-install (AppManager installing itself)
             var is_self_install = (entry.startup_wm_class == Core.APPLICATION_ID);
             var uninstall_exec = build_uninstall_exec(record.installed_path, is_self_install);
-            entry.set_action_group("Uninstall", _("Move to Trash"), uninstall_exec, "user-trash");
+            var home = Environment.get_home_dir();
+            var is_trashable = record.installed_path.has_prefix(home + "/");
+            var uninstall_label = is_trashable ? _("Move to Trash") : _("Delete Permanently");
+            var uninstall_icon = is_trashable ? "user-trash" : "edit-delete";
+            entry.set_action_group("Uninstall", uninstall_label, uninstall_exec, uninstall_icon);
             
             return entry.to_data();
         }
