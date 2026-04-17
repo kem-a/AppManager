@@ -15,6 +15,7 @@ AppDir/
 .directory
 *ns.md
 *RE.md
+*DE.md
 *.log
 .vscode/
 samples

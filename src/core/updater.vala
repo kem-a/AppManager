@@ -1265,6 +1265,24 @@ namespace AppManager.Core {
             return VersionUtils.compare(left, right);
         }
 
+        // Normalize a version string for zsync equality comparison. Keeps "-N"
+        // (pkgforge rebuild index) so bumps count as real updates, but strips
+        // suffixes known to differ between .desktop X-AppImage-Version and the
+        // git tag without a real change: "@<timestamp>" (pkgforge tag suffix),
+        // "+<build-meta>" (SemVer, e.g. claude-desktop-debian), and leading v/V.
+        private static string? normalize_zsync_version(string? value) {
+            if (value == null) return null;
+            var v = value.strip();
+            if (v.length == 0) return null;
+            int at_pos = v.index_of("@");
+            if (at_pos >= 0) v = v.substring(0, at_pos);
+            int plus_pos = v.index_of("+");
+            if (plus_pos >= 0) v = v.substring(0, plus_pos);
+            if (v.has_prefix("v") || v.has_prefix("V")) v = v.substring(1);
+            v = v.strip();
+            return v.length > 0 ? v : null;
+        }
+
         private DownloadArtifact download_file(string url, GLib.Cancellable? cancellable) throws Error {
             var temp_dir = AppManager.Utils.FileUtils.create_temp_dir("appmgr-update-");
             var target_name = derive_filename(url);
@@ -1461,51 +1479,43 @@ namespace AppManager.Core {
                 return new UpdateProbeResult(record, false, null, null, _("Malformed zsync file (no checksum)"));
             }
             
-            bool has_versions = remote_version != null && remote_version.strip() != "" &&
-                               current_version != null && current_version.strip() != "";
-            
-            // If version is null/empty on either side, fall directly to SHA-1 comparison.
-            // If both versions exist, require BOTH version AND SHA-1 to differ before
-            // reporting an update. This avoids false positives from:
-            //   - mismatched version formats (e.g. claude-desktop-debian)
-            //   - auto-repackaging repos that rebuild without upstream changes (e.g. pkgforge)
-            
-            if (has_versions) {
-                var cmp = compare_versions(remote_version, current_version);
-                debug("probe_zsync[%s]: version comparison (remote=%s, current=%s, cmp=%d)",
-                    record.name ?? record.id, remote_version, current_version, cmp);
-                
-                if (cmp <= 0) {
-                    // Version same or older — no update regardless of SHA-1
-                    debug("probe_zsync[%s]: version unchanged/older, skipping", record.name ?? record.id);
-                    return new UpdateProbeResult(record, false, remote_version, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
-                }
-                
-                // Version is newer — now also check SHA-1 to confirm the file actually changed
-                var sha1_changed = probe_zsync_sha1(record, remote_sha1);
-                if (sha1_changed == null) {
-                    // SHA-1 check inconclusive (e.g. can't compute local hash) — err on side of caution
-                    debug("probe_zsync[%s]: SHA-1 inconclusive, skipping to avoid false positive", record.name ?? record.id);
-                    return new UpdateProbeResult(record, false, null, null, _("Failed to compute local checksum"));
-                } else if (sha1_changed == false) {
-                    // SHA-1 same despite version difference — file unchanged, skip
-                    debug("probe_zsync[%s]: version differs but SHA-1 unchanged, skipping", record.name ?? record.id);
-                    return new UpdateProbeResult(record, false, remote_version, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
-                }
-                // Both version and SHA-1 differ — genuine update
-                debug("probe_zsync[%s]: both version and SHA-1 changed, update available", record.name ?? record.id);
-                return new UpdateProbeResult(record, true, remote_version);
-            }
-            
-            // No version info — use SHA-1 as sole indicator
-            debug("probe_zsync[%s]: no version info, using SHA-1 only", record.name ?? record.id);
+            // SHA-1 is the source of truth for zsync: an unchanged file never warrants
+            // an update, a changed file almost always does. Versions are only consulted
+            // to suppress auto-repackaging rebuild churn (e.g. pkgforge) where SHA-1
+            // flips but the upstream version is identical. Magnitude comparison is
+            // intentionally avoided — upstreams like claude-desktop-debian publish the
+            // packaging version and the upstream Claude version in different orderings
+            // across the .desktop file and the git tag, so greater-than/less-than is
+            // not meaningful.
+
             var sha1_changed = probe_zsync_sha1(record, remote_sha1);
             if (sha1_changed == null) {
-                // Can't determine — report no update to avoid false positives
+                debug("probe_zsync[%s]: SHA-1 inconclusive, skipping to avoid false positive", record.name ?? record.id);
                 return new UpdateProbeResult(record, false, null, null, _("Failed to compute local checksum"));
-            } else if (sha1_changed == false) {
+            }
+            if (sha1_changed == false) {
+                debug("probe_zsync[%s]: SHA-1 unchanged, skipping", record.name ?? record.id);
                 return new UpdateProbeResult(record, false, remote_version, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
             }
+
+            // SHA-1 differs. Only suppress if BOTH sides have a version AND they
+            // normalize to the same string — a genuine no-op rebuild (same tag,
+            // same X-AppImage-Version, just a new build artifact). Pkgforge "-N"
+            // bumps are preserved by normalize_for_equality and therefore treated
+            // as updates.
+            if (remote_version != null && remote_version.strip() != "" &&
+                current_version != null && current_version.strip() != "") {
+                var remote_norm = normalize_zsync_version(remote_version);
+                var current_norm = normalize_zsync_version(current_version);
+                if (remote_norm != null && current_norm != null &&
+                    remote_norm == current_norm) {
+                    debug("probe_zsync[%s]: SHA-1 differs but normalized versions match (%s), skipping as rebuild churn",
+                        record.name ?? record.id, remote_norm);
+                    return new UpdateProbeResult(record, false, remote_version, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
+                }
+            }
+
+            debug("probe_zsync[%s]: SHA-1 changed and versions not equal, update available", record.name ?? record.id);
             return new UpdateProbeResult(record, true, remote_version ?? remote_sha1.substring(0, 8));
         }
 
@@ -1578,33 +1588,25 @@ namespace AppManager.Core {
             }
             
             // Check if update is actually needed before downloading.
-            // Same dual-check logic as probe_zsync: if version exists, require
-            // BOTH version AND SHA-1 to differ; if no version, use SHA-1 alone.
+            // Mirror probe_zsync: SHA-1 is the source of truth; versions are only
+            // consulted (as sanitized equality) to suppress auto-rebuild churn.
             var current_version = record.version;
-            bool has_versions = new_version != null && new_version.strip() != "" &&
-                               current_version != null && current_version.strip() != "";
-            
-            if (has_versions) {
-                var cmp = compare_versions(new_version, current_version);
-                if (cmp <= 0) {
+
+            var sha1_changed = probe_zsync_sha1(record, remote_sha1);
+            if (sha1_changed != null && sha1_changed == false) {
+                record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                log_update_event(record, "SKIP", "sha1 unchanged");
+                return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
+            }
+
+            if (new_version != null && new_version.strip() != "" &&
+                current_version != null && current_version.strip() != "") {
+                var remote_norm = normalize_zsync_version(new_version);
+                var current_norm = normalize_zsync_version(current_version);
+                if (remote_norm != null && current_norm != null &&
+                    remote_norm == current_norm) {
                     record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                    log_update_event(record, "SKIP", "version unchanged/older");
-                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
-                }
-                // Version is newer — also verify SHA-1
-                var sha1_changed = probe_zsync_sha1(record, remote_sha1);
-                if (sha1_changed != null && sha1_changed == false) {
-                    // SHA-1 same despite version difference — file unchanged
-                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                    log_update_event(record, "SKIP", "version differs but sha1 unchanged");
-                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
-                }
-            } else {
-                // No version info — use SHA-1 as sole indicator
-                var sha1_changed = probe_zsync_sha1(record, remote_sha1);
-                if (sha1_changed != null && sha1_changed == false) {
-                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                    log_update_event(record, "SKIP", "sha1 unchanged");
+                    log_update_event(record, "SKIP", "normalized versions equal (rebuild churn)");
                     return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), new_version, UpdateSkipReason.ALREADY_CURRENT);
                 }
             }
