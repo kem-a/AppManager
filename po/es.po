@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-21 23:29+0300\n"
-"PO-Revision-Date: 2026-01-27 12:00+0000\n"
+"PO-Revision-Date: 2026-04-22 19:09-0400\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -15,6 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/application.vala:260
 msgid "Incompatible AppImage"
@@ -189,6 +190,9 @@ msgid ""
 "\n"
 "This action cannot be undone."
 msgstr ""
+"No se ha podido mover %s a la papelera. ¿Quiere eliminarlo definitivamente?\n"
+"\n"
+"Esta acción no se puede deshacer."
 
 #: src/application.vala:821 src/core/installer.vala:869
 #: src/core/path_migration_service.vala:350
@@ -212,7 +216,7 @@ msgstr "Eliminado permanentemente"
 #: src/application.vala:844 src/application.vala:850
 #, c-format
 msgid "%s moved to Trash"
-msgstr "Movido a la papelera"
+msgstr "%s movido a la papelera"
 
 #: src/application.vala:845
 msgid "Undo"
@@ -542,35 +546,37 @@ msgid "Advanced"
 msgstr "Avanzado"
 
 #: src/windows/details_window.vala:528
-#, fuzzy
 msgid "Portable .home folder"
-msgstr "Portable"
+msgstr "Carpeta .home portátil"
 
 #: src/windows/details_window.vala:529
 msgid "Store the app's home directory in a .home folder next to the AppImage"
 msgstr ""
+"Guarda el directorio de inicio de la aplicación en una carpeta .home junto "
+"al archivo AppImage"
 
 #: src/windows/details_window.vala:530
 msgid ".home"
-msgstr ""
+msgstr ".home"
 
 #: src/windows/details_window.vala:539
-#, fuzzy
 msgid "Portable .config folder"
-msgstr "Portable"
+msgstr "Carpeta .config portátil"
 
 #: src/windows/details_window.vala:540
 msgid "Store the app's config in a .config folder next to the AppImage"
 msgstr ""
+"Guarda la configuración de la aplicación en una carpeta .config junto al "
+"archivo AppImage"
 
 #: src/windows/details_window.vala:541
 msgid ".config"
-msgstr ""
+msgstr ".config"
 
 #: src/windows/details_window.vala:582
 #, c-format
 msgid "Remove portable %s folder?"
-msgstr ""
+msgstr "¿Desea eliminar la carpeta portátil %s?"
 
 #: src/windows/details_window.vala:583
 #, c-format
@@ -578,11 +584,12 @@ msgid ""
 "The %s folder next to this AppImage will be permanently removed, including "
 "any data it contains."
 msgstr ""
+"La carpeta %s que se encuentra junto a este archivo AppImage se eliminará de "
+"forma definitiva, incluidos todos los datos que contenga."
 
 #: src/windows/details_window.vala:586
-#, fuzzy
 msgid "Remove Data"
-msgstr "Eliminar variable"
+msgstr "Eliminar datos"
 
 #: src/windows/details_window.vala:604
 msgid "Environment Variables"
@@ -706,6 +713,7 @@ msgstr ""
 #: src/windows/details_window.vala:1188
 msgid "Portable data in .home and .config will also be removed."
 msgstr ""
+"También se eliminarán los datos portátiles de las carpetas .home y .config."
 
 #: src/windows/details_window.vala:1190
 msgid "Delete permanently?"
@@ -860,9 +868,8 @@ msgid "extracted"
 msgstr "extraído"
 
 #: src/windows/main_window.vala:840
-#, fuzzy
 msgid "Imported just now"
-msgstr "Actualizado hace un momento"
+msgstr "Importado hace un momento"
 
 #: src/windows/main_window.vala:840
 msgid "Updated just now"
@@ -873,9 +880,9 @@ msgid "Installed just now"
 msgstr "Instalado hace un momento"
 
 #: src/windows/main_window.vala:848
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d min ago"
-msgstr "Actualizado hace %d min"
+msgstr "Importado hace %d min"
 
 #: src/windows/main_window.vala:848
 #, c-format
@@ -888,9 +895,9 @@ msgid "Installed %d min ago"
 msgstr "Instalado hace %d min"
 
 #: src/windows/main_window.vala:856
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d hours ago"
-msgstr "Actualizado hace %d horas"
+msgstr "Importado hace %d horas"
 
 #: src/windows/main_window.vala:856
 #, c-format
@@ -903,9 +910,9 @@ msgid "Installed %d hours ago"
 msgstr "Instalado hace %d horas"
 
 #: src/windows/main_window.vala:863
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d days ago"
-msgstr "Actualizado hace %d días"
+msgstr "Importado hace %d días"
 
 #: src/windows/main_window.vala:863
 #, c-format
@@ -1195,9 +1202,9 @@ msgid "Imported %d app(s)"
 msgstr "%d aplicación(es) importada(s)"
 
 #: src/windows/main_window.vala:2080
-#, fuzzy, c-format
+#, c-format
 msgid "Skipped %d incompatible architecture app(s)"
-msgstr "Se omitieron %d aplicación(es) ya instalada(s)"
+msgstr "Se han omitido %d aplicaciones con arquitectura incompatible"
 
 #: src/windows/main_window.vala:2083
 #, c-format
@@ -1245,29 +1252,31 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:112
 msgid "Portable .home by default"
-msgstr ""
+msgstr ".home portátil por defecto"
 
 #: src/windows/preferences_window.vala:113
 msgid "Create a .home folder next to every newly installed AppImage"
-msgstr ""
+msgstr "Crear una carpeta .home junto a cada AppImage recién instalada"
 
 #: src/windows/preferences_window.vala:117
 msgid "Portable .config by default"
-msgstr ""
+msgstr ".config portátil por defecto"
 
 #: src/windows/preferences_window.vala:118
 msgid "Create a .config folder next to every newly installed AppImage"
-msgstr ""
+msgstr "Crear una carpeta .config junto a cada AppImage recién instalada"
 
 #: src/windows/preferences_window.vala:122
 msgid "Keep file extension name"
-msgstr ""
+msgstr "Mantener el nombre de la extensión del archivo"
 
 #: src/windows/preferences_window.vala:123
 msgid ""
 "Replace spaces with underscores in installed filenames and keep "
 "the .AppImage extension"
 msgstr ""
+"Sustituor los espacios por guiones bajos en los nombres de los archivos "
+"instalados y mantener la extensión .AppImage"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:135
@@ -1354,7 +1363,7 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:233
 msgid "Personal access token"
-msgstr "token de acceso personal"
+msgstr "Token de acceso personal"
 
 #: src/windows/preferences_window.vala:244
 msgid "Apply token"
@@ -1376,7 +1385,7 @@ msgstr "Token de GitHub borrado"
 #. Test token row
 #: src/windows/preferences_window.vala:273
 msgid "Test token"
-msgstr "ficha de prueba"
+msgstr "Token de prueba"
 
 #: src/windows/preferences_window.vala:274
 msgid "Verify your token works and check rate limit status"
@@ -1502,7 +1511,7 @@ msgstr ""
 "AppManager te permite instaladar o desinstalar AppImages con un flujo de "
 "trabajofamiliar de arrastrar y soltar inspirado en macOS. Maneja la "
 "integración con desktop, iconos, extracción, ejecutables y menus de contexto "
-"de Nautilus"
+"de Nautilus."
 
 #~ msgid "Launch Application"
 #~ msgstr "¿Extraer aplicación?"
