@@ -290,8 +290,8 @@ namespace AppManager.Core {
                 record.sandbox_microphone = old_record.sandbox_microphone;
                 record.sandbox_location = old_record.sandbox_location;
                 record.sandbox_network = old_record.sandbox_network;
-                record.sandbox_downloads = old_record.sandbox_downloads;
                 record.sandbox_pictures = old_record.sandbox_pictures;
+                record.sandbox_music = old_record.sandbox_music;
                 record.sandbox_files = old_record.sandbox_files;
                 // Note: original_* values will be updated from the new AppImage's .desktop
             }
@@ -797,6 +797,19 @@ namespace AppManager.Core {
             var args = effective_commandline_args ?? "";
             var env_vars = record.custom_env_vars;
 
+            // FUSE workaround: when sandboxing a portable-mode AppImage, force the
+            // AppImage runtime to extract to $TMPDIR instead of FUSE-mounting itself.
+            // bwrap's user namespace blocks the setuid fusermount helper on most
+            // kernels, so without this the app fails with "Cannot mount AppImage".
+            bool needs_extract_and_run = record.sandbox_enabled()
+                && AppPaths.bwrap_available
+                && record.mode == InstallMode.PORTABLE;
+            if (needs_extract_and_run) {
+                args = (args.strip() == "")
+                    ? "--appimage-extract-and-run"
+                    : "--appimage-extract-and-run " + args;
+            }
+
             string exec_line;
             if (env_vars != null && env_vars.length > 0) {
                 // Use 'env' command to set environment variables
@@ -1139,6 +1152,9 @@ namespace AppManager.Core {
                 }
                 content.append("    -- \\\n    ");
                 content.append(shell_quote(exec_path));
+                if (record.mode == InstallMode.PORTABLE) {
+                    content.append(" --appimage-extract-and-run");
+                }
                 content.append(" \"$@\"\n");
 
                 if (!GLib.FileUtils.set_contents(script_path, content.str)) {

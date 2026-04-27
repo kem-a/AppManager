@@ -92,17 +92,19 @@ namespace AppManager {
             var props_group = build_properties_group();
             // update_group will be handled inside build_app_updates_page()
             var advanced_row = build_advanced_action_row();
-            var security_row = build_security_action_row();
             // Portable .home/.config toggles only apply to portable (non-extracted) AppImages.
             if (record.mode == InstallMode.PORTABLE) {
                 props_group.add(build_portable_home_row());
                 props_group.add(build_portable_config_row());
             }
             props_group.add(advanced_row);
-            props_group.add(security_row);
-            
+
             detail_page.add(props_group);
-            
+
+            var security_group_replacement = new Adw.PreferencesGroup();
+            security_group_replacement.add(build_security_action_row());
+            detail_page.add(security_group_replacement);
+
             var update_group_replacement = new Adw.PreferencesGroup();
             update_group_replacement.add(build_update_info_action_row());
             detail_page.add(update_group_replacement);
@@ -628,7 +630,7 @@ namespace AppManager {
 
         private Adw.ActionRow build_security_action_row() {
             var row = new Adw.ActionRow();
-            row.title = _("Security & Permissions");
+            row.title = _("Security &amp; Permissions");
             row.subtitle = _("Sandbox the app and choose which devices and folders it can access");
 
             var status_label = new Gtk.Label(sandbox_status_label());
@@ -643,6 +645,17 @@ namespace AppManager {
                 var main_win = (MainWindow) this.get_root();
                 main_win.push_page(page);
             });
+            return row;
+        }
+
+        private Adw.SwitchRow build_sandbox_switch_row(string title, string? subtitle, string icon_name, bool initial_active) {
+            var row = new Adw.SwitchRow();
+            row.title = title;
+            if (subtitle != null) {
+                row.subtitle = subtitle;
+            }
+            row.add_prefix(new Gtk.Image.from_icon_name(icon_name));
+            row.active = initial_active;
             return row;
         }
 
@@ -667,10 +680,9 @@ namespace AppManager {
 
             var toggle_group = new Adw.ToggleGroup();
             toggle_group.homogeneous = true;
+            toggle_group.add_css_class("round");
             toggle_group.set_margin_top(6);
             toggle_group.set_margin_bottom(6);
-            toggle_group.set_margin_start(12);
-            toggle_group.set_margin_end(12);
 
             var off_toggle = new Adw.Toggle();
             off_toggle.label = _("Off");
@@ -692,63 +704,58 @@ namespace AppManager {
             custom_toggle.name = SandboxProfile.PROFILE_CUSTOM;
             toggle_group.add(custom_toggle);
 
-            // Wrap inside a row so it sits inside the PreferencesGroup nicely.
-            var profile_row = new Adw.PreferencesRow();
-            profile_row.set_activatable(false);
-            profile_row.set_child(toggle_group);
-            profile_group.add(profile_row);
+            profile_group.add(toggle_group);
             prefs_page.add(profile_group);
 
             // Devices group
             var devices_group = new Adw.PreferencesGroup();
             devices_group.title = _("Devices");
 
-            var camera_row = new Adw.SwitchRow();
-            camera_row.title = _("Camera");
-            camera_row.active = record.sandbox_camera;
+            var camera_row = build_sandbox_switch_row(_("Camera"), null, "camera-photo-symbolic", record.sandbox_camera);
             devices_group.add(camera_row);
 
-            var mic_row = new Adw.SwitchRow();
-            mic_row.title = _("Microphone");
-            mic_row.subtitle = _("Best-effort: PipeWire capture is enforced server-side and may not be fully blocked.");
-            mic_row.active = record.sandbox_microphone;
+            var mic_row = build_sandbox_switch_row(
+                _("Microphone"),
+                _("Best-effort: PipeWire capture is enforced server-side and may not be fully blocked."),
+                "audio-input-microphone-symbolic",
+                record.sandbox_microphone);
             devices_group.add(mic_row);
 
-            var location_row = new Adw.SwitchRow();
-            location_row.title = _("Location");
-            location_row.active = record.sandbox_location;
+            var location_row = build_sandbox_switch_row(_("Location"), null, "find-location-symbolic", record.sandbox_location);
             if (!AppPaths.xdg_dbus_proxy_available) {
                 location_row.sensitive = false;
                 location_row.subtitle = _("Requires xdg-dbus-proxy.");
             }
             devices_group.add(location_row);
 
-            var network_row = new Adw.SwitchRow();
-            network_row.title = _("Network & Bluetooth");
-            network_row.active = record.sandbox_network;
+            var network_row = build_sandbox_switch_row(
+                _("Network &amp; Bluetooth"),
+                _("Allow internet access and Bluetooth devices"),
+                "network-wireless-symbolic",
+                record.sandbox_network);
             devices_group.add(network_row);
 
             prefs_page.add(devices_group);
 
-            // Storage group
+            // Storage group. Downloads is always allowed and not surfaced as a toggle.
             var storage_group = new Adw.PreferencesGroup();
             storage_group.title = _("Storage");
 
-            var downloads_row = new Adw.SwitchRow();
-            downloads_row.title = _("Downloads");
-            downloads_row.active = record.sandbox_downloads;
-            storage_group.add(downloads_row);
-
-            var pictures_row = new Adw.SwitchRow();
-            pictures_row.title = _("Pictures");
-            pictures_row.subtitle = _("Includes Videos");
-            pictures_row.active = record.sandbox_pictures;
+            var pictures_row = build_sandbox_switch_row(
+                _("Pictures &amp; Videos"),
+                null,
+                "folder-pictures-symbolic",
+                record.sandbox_pictures);
             storage_group.add(pictures_row);
 
-            var files_row = new Adw.SwitchRow();
-            files_row.title = _("Files");
-            files_row.subtitle = _("Documents, Music, Desktop");
-            files_row.active = record.sandbox_files;
+            var music_row = build_sandbox_switch_row(_("Music"), null, "folder-music-symbolic", record.sandbox_music);
+            storage_group.add(music_row);
+
+            var files_row = build_sandbox_switch_row(
+                _("Files"),
+                _("Documents, Desktop"),
+                "folder-documents-symbolic",
+                record.sandbox_files);
             storage_group.add(files_row);
 
             prefs_page.add(storage_group);
@@ -781,8 +788,8 @@ namespace AppManager {
                 mic_row.active = record.sandbox_microphone;
                 location_row.active = record.sandbox_location;
                 network_row.active = record.sandbox_network;
-                downloads_row.active = record.sandbox_downloads;
                 pictures_row.active = record.sandbox_pictures;
+                music_row.active = record.sandbox_music;
                 files_row.active = record.sandbox_files;
                 suppress_handlers = false;
             }
@@ -819,8 +826,8 @@ namespace AppManager {
                 record.sandbox_microphone = mic_row.active;
                 record.sandbox_location = location_row.active;
                 record.sandbox_network = network_row.active;
-                record.sandbox_downloads = downloads_row.active;
                 record.sandbox_pictures = pictures_row.active;
+                record.sandbox_music = music_row.active;
                 record.sandbox_files = files_row.active;
                 if (record.sandbox_enabled()) {
                     record.sandbox_profile = SandboxProfile.detect_profile(record);
@@ -833,8 +840,8 @@ namespace AppManager {
             mic_row.notify["active"].connect(() => on_granular_toggled());
             location_row.notify["active"].connect(() => on_granular_toggled());
             network_row.notify["active"].connect(() => on_granular_toggled());
-            downloads_row.notify["active"].connect(() => on_granular_toggled());
             pictures_row.notify["active"].connect(() => on_granular_toggled());
+            music_row.notify["active"].connect(() => on_granular_toggled());
             files_row.notify["active"].connect(() => on_granular_toggled());
 
             if (!AppPaths.bwrap_available) {

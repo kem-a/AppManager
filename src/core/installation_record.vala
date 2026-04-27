@@ -66,8 +66,8 @@ namespace AppManager.Core {
         public bool sandbox_microphone { get; set; default = false; }
         public bool sandbox_location { get; set; default = false; }
         public bool sandbox_network { get; set; default = true; }
-        public bool sandbox_downloads { get; set; default = true; }
         public bool sandbox_pictures { get; set; default = false; }
+        public bool sandbox_music { get; set; default = false; }
         public bool sandbox_files { get; set; default = false; }
 
         public bool sandbox_enabled() {
@@ -259,10 +259,10 @@ namespace AppManager.Core {
                 builder.add_boolean_value(sandbox_location);
                 builder.set_member_name("sandbox_network");
                 builder.add_boolean_value(sandbox_network);
-                builder.set_member_name("sandbox_downloads");
-                builder.add_boolean_value(sandbox_downloads);
                 builder.set_member_name("sandbox_pictures");
                 builder.add_boolean_value(sandbox_pictures);
+                builder.set_member_name("sandbox_music");
+                builder.add_boolean_value(sandbox_music);
                 builder.set_member_name("sandbox_files");
                 builder.add_boolean_value(sandbox_files);
             }
@@ -399,11 +399,11 @@ namespace AppManager.Core {
             if (obj.has_member("sandbox_network")) {
                 record.sandbox_network = obj.get_boolean_member("sandbox_network");
             }
-            if (obj.has_member("sandbox_downloads")) {
-                record.sandbox_downloads = obj.get_boolean_member("sandbox_downloads");
-            }
             if (obj.has_member("sandbox_pictures")) {
                 record.sandbox_pictures = obj.get_boolean_member("sandbox_pictures");
+            }
+            if (obj.has_member("sandbox_music")) {
+                record.sandbox_music = obj.get_boolean_member("sandbox_music");
             }
             if (obj.has_member("sandbox_files")) {
                 record.sandbox_files = obj.get_boolean_member("sandbox_files");
@@ -458,8 +458,8 @@ namespace AppManager.Core {
                 if (obj.has_member("sandbox_microphone")) sandbox_microphone = obj.get_boolean_member("sandbox_microphone");
                 if (obj.has_member("sandbox_location")) sandbox_location = obj.get_boolean_member("sandbox_location");
                 if (obj.has_member("sandbox_network")) sandbox_network = obj.get_boolean_member("sandbox_network");
-                if (obj.has_member("sandbox_downloads")) sandbox_downloads = obj.get_boolean_member("sandbox_downloads");
                 if (obj.has_member("sandbox_pictures")) sandbox_pictures = obj.get_boolean_member("sandbox_pictures");
+                if (obj.has_member("sandbox_music")) sandbox_music = obj.get_boolean_member("sandbox_music");
                 if (obj.has_member("sandbox_files")) sandbox_files = obj.get_boolean_member("sandbox_files");
             }
         }

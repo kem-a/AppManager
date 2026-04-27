@@ -25,8 +25,8 @@ namespace AppManager.Core {
                     record.sandbox_microphone = false;
                     record.sandbox_location = false;
                     record.sandbox_network = true;
-                    record.sandbox_downloads = true;
                     record.sandbox_pictures = true;
+                    record.sandbox_music = true;
                     record.sandbox_files = true;
                     break;
                 case PROFILE_STRICT:
@@ -34,8 +34,8 @@ namespace AppManager.Core {
                     record.sandbox_microphone = false;
                     record.sandbox_location = false;
                     record.sandbox_network = false;
-                    record.sandbox_downloads = true;
                     record.sandbox_pictures = false;
+                    record.sandbox_music = false;
                     record.sandbox_files = false;
                     break;
                 case PROFILE_OFF:
@@ -54,20 +54,20 @@ namespace AppManager.Core {
             if (toggles_match(record, false, false, false, true, true, true, true)) {
                 return PROFILE_STANDARD;
             }
-            if (toggles_match(record, false, false, false, false, true, false, false)) {
+            if (toggles_match(record, false, false, false, false, false, false, false)) {
                 return PROFILE_STRICT;
             }
             return PROFILE_CUSTOM;
         }
 
         private static bool toggles_match(InstallationRecord r, bool cam, bool mic, bool loc,
-                                          bool net, bool dl, bool pic, bool files) {
+                                          bool net, bool pic, bool music, bool files) {
             return r.sandbox_camera == cam
                 && r.sandbox_microphone == mic
                 && r.sandbox_location == loc
                 && r.sandbox_network == net
-                && r.sandbox_downloads == dl
                 && r.sandbox_pictures == pic
+                && r.sandbox_music == music
                 && r.sandbox_files == files;
         }
 
@@ -181,8 +181,13 @@ namespace AppManager.Core {
             if (!record.sandbox_network) {
                 args.add("--unshare-net");
             } else {
-                // Make sure DNS works inside the sandbox even though /etc was bound.
-                add_pair(args, "--ro-bind-try", "/etc/resolv.conf", "/etc/resolv.conf");
+                // /etc/resolv.conf on systemd/NetworkManager systems is a symlink
+                // into /run; bind those source dirs so the symlink resolves inside
+                // the sandbox. /etc itself is already mounted read-only above.
+                add_pair(args, "--ro-bind-try", "/run/systemd/resolve", "/run/systemd/resolve");
+                add_pair(args, "--ro-bind-try", "/run/NetworkManager", "/run/NetworkManager");
+                add_pair(args, "--ro-bind-try", "/run/resolvconf", "/run/resolvconf");
+                add_pair(args, "--ro-bind-try", "/run/dbus", "/run/dbus");
             }
 
             // Camera
@@ -203,17 +208,18 @@ namespace AppManager.Core {
             // the UI grays it out when xdg-dbus-proxy is missing.
             // Future: spawn xdg-dbus-proxy and bind its filtered socket.
 
-            // Storage
-            if (record.sandbox_downloads) {
-                add_user_dir(args, UserDirectory.DOWNLOAD);
-            }
+            // Storage. Downloads is always bound regardless of profile so that the
+            // common "save here" target always works.
+            add_user_dir(args, UserDirectory.DOWNLOAD);
             if (record.sandbox_pictures) {
                 add_user_dir(args, UserDirectory.PICTURES);
                 add_user_dir(args, UserDirectory.VIDEOS);
             }
+            if (record.sandbox_music) {
+                add_user_dir(args, UserDirectory.MUSIC);
+            }
             if (record.sandbox_files) {
                 add_user_dir(args, UserDirectory.DOCUMENTS);
-                add_user_dir(args, UserDirectory.MUSIC);
                 add_user_dir(args, UserDirectory.DESKTOP);
             }
 
