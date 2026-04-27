@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-21 23:29+0300\n"
-"PO-Revision-Date: 2026-02-26 10:50+0200\n"
+"PO-Revision-Date: 2026-04-27 18:36+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: pl\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/application.vala:260
 msgid "Incompatible AppImage"
@@ -36,7 +37,7 @@ msgstr ""
 #: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:99
 #: src/windows/drop_window.vala:109
 msgid "Close"
-msgstr "Zamknąć"
+msgstr "Zamknij"
 
 #. Check architecture
 #. Check architecture compatibility
@@ -65,7 +66,7 @@ msgid ""
 "Origins of %s application can not be verified. Are you sure you want to open "
 "it?"
 msgstr ""
-"Nie można zweryfikować pochodzenia aplikacji %s. Czy na pewno chcesz to "
+"Nie można zweryfikować pochodzenia aplikacji %s. Czy na pewno chcesz ją "
 "otworzyć?"
 
 #: src/application.vala:377 src/windows/drop_window.vala:244
@@ -74,7 +75,7 @@ msgstr "Zainstaluj AppImage, aby dodać go do swoich aplikacji."
 
 #: src/application.vala:379 src/windows/drop_window.vala:247
 msgid "Install"
-msgstr "Zainstalować"
+msgstr "Zainstaluj"
 
 #: src/application.vala:380 src/application.vala:411 src/application.vala:820
 #: src/windows/details_window.vala:585 src/windows/details_window.vala:1193
@@ -84,7 +85,7 @@ msgstr "Zainstalować"
 #: src/windows/preferences_window.vala:450
 #: src/windows/preferences_window.vala:484
 msgid "Cancel"
-msgstr "Anulować"
+msgstr "Anuluj"
 
 #. Use icon with verification badge overlay
 #: src/application.vala:398 src/windows/drop_window.vala:418
@@ -109,7 +110,7 @@ msgstr "Zaktualizuje się do wersji %s"
 #: src/application.vala:410 src/windows/details_window.vala:1035
 #: src/windows/drop_window.vala:421
 msgid "Update"
-msgstr "Aktualizacja"
+msgstr "Aktualizuj"
 
 #. Use icon with verification badge overlay
 #: src/application.vala:429 src/windows/drop_window.vala:448
@@ -142,11 +143,11 @@ msgstr ""
 
 #: src/application.vala:446 src/windows/drop_window.vala:462
 msgid "Stop"
-msgstr "Zatrzymywać się"
+msgstr "Zatrzymaj"
 
 #: src/application.vala:447 src/windows/drop_window.vala:463
 msgid "Replace"
-msgstr "Zastępować"
+msgstr "Zastąp"
 
 #: src/application.vala:534 src/windows/drop_window.vala:541
 msgid "Successfully Updated"
@@ -164,7 +165,7 @@ msgstr "Wersja %s"
 #: src/application.vala:555 src/windows/details_window.vala:184
 #: src/windows/drop_window.vala:563
 msgid "Open"
-msgstr "Otwarte"
+msgstr "Otwórz"
 
 #: src/application.vala:556 src/windows/drop_window.vala:564
 msgid "Done"
@@ -176,12 +177,12 @@ msgstr "Instalacja nie powiodła się"
 
 #: src/application.vala:583 src/windows/drop_window.vala:600
 msgid "Dismiss"
-msgstr "Odrzucać"
+msgstr "Odrzuć"
 
 #. Offer to delete permanently as fallback
 #: src/application.vala:817
 msgid "Cannot move to trash"
-msgstr "Przenieś do Kosza"
+msgstr "Nie można przenieść do kosza"
 
 #: src/application.vala:818
 #, c-format
@@ -191,6 +192,9 @@ msgid ""
 "\n"
 "This action cannot be undone."
 msgstr ""
+"Nie udało się przenieść %s do kosza. Czy chcesz usunąć go trwale?\n"
+"\n"
+"Tej czynności nie można cofnąć."
 
 #: src/application.vala:821 src/core/installer.vala:869
 #: src/core/path_migration_service.vala:350
@@ -214,7 +218,7 @@ msgstr "Usunięto trwale"
 #: src/application.vala:844 src/application.vala:850
 #, c-format
 msgid "%s moved to Trash"
-msgstr "Przeniesiono do Kosza"
+msgstr "Przeniesiono do kosza: %s"
 
 #: src/application.vala:845
 msgid "Undo"
@@ -230,7 +234,7 @@ msgstr "Przywróć domyślne"
 
 #: src/application.vala:888
 msgid "Extraction is only available for portable installations."
-msgstr "Ekstrakcja jest dostępna tylko w przypadku instalacji przenośnych."
+msgstr "Wyodrębnienie jest dostępne tylko w przypadku instalacji przenośnych."
 
 #: src/application.vala:924
 msgid "Extracted for faster launch"
@@ -238,7 +242,7 @@ msgstr "Wyodrębniono w celu szybszego uruchomienia"
 
 #: src/application.vala:927
 msgid "Extraction complete"
-msgstr "Ekstrakcja zakończona"
+msgstr "Wyodrębnienie zakończone"
 
 #: src/application.vala:928
 #, c-format
@@ -247,7 +251,7 @@ msgstr "%s został wyodrębniony i otworzy się szybciej."
 
 #: src/application.vala:939
 msgid "Extraction failed"
-msgstr "Ekstrakcja nie powiodła się"
+msgstr "Wyodrębnienie nie powiodło się"
 
 #: src/application.vala:940
 #, c-format
@@ -380,7 +384,7 @@ msgstr "Nie znaleziono pasującego obrazu aplikacji dla %s"
 #: src/core/updater.vala:1491 src/core/updater.vala:1507
 #: src/core/updater.vala:1592 src/core/updater.vala:1603
 msgid "Already up to date"
-msgstr "Już aktualne"
+msgstr "Brak aktualizacji"
 
 #: src/core/updater.vala:746 src/core/updater.vala:1672
 #: src/core/updater.vala:1771
@@ -426,7 +430,7 @@ msgid ""
 "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr ""
 "Uwierzytelnianie w GitHub nie powiodło się (401). Sprawdź swój token w "
-"Preferencjach → GitHub."
+"Preferencje → GitHub."
 
 #: src/core/updater.vala:1113
 msgid ""
@@ -467,7 +471,7 @@ msgstr "Nie można określić adresu URL pobierania z adresu URL zsync"
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
 msgstr ""
-"⚠️ „%s” nie znajduje się w $PATH. Aplikacja nie uruchamia się z terminala"
+"⚠️ \"%s\" nie znajduje się w $PATH. Aplikacja nie uruchami się z terminala"
 
 #: src/windows/details_window.vala:241
 msgid "Show in Files"
@@ -479,7 +483,7 @@ msgstr "Przenośny"
 
 #: src/windows/details_window.vala:243
 msgid "Extracted"
-msgstr "Wytłoczony"
+msgstr "Wyodrębniony"
 
 #: src/windows/details_window.vala:262
 msgid "App version"
@@ -516,7 +520,7 @@ msgstr "Jak działają łącza aktualizacji"
 
 #: src/windows/details_window.vala:353
 msgid "Pre-release Updates"
-msgstr "Aktualizacje wstępne"
+msgstr "Aktualizacje pre-release"
 
 #: src/windows/details_window.vala:354
 msgid "Include pre-release versions when checking for updates"
@@ -540,38 +544,39 @@ msgstr "Otwórz stronę internetową"
 
 #: src/windows/details_window.vala:503
 msgid "Advanced"
-msgstr "Zaawansowany"
+msgstr "Zaawansowane"
 
 #: src/windows/details_window.vala:528
-#, fuzzy
 msgid "Portable .home folder"
-msgstr "Przenośny"
+msgstr "Przenośny folder .home"
 
 #: src/windows/details_window.vala:529
 msgid "Store the app's home directory in a .home folder next to the AppImage"
 msgstr ""
+"Zapisuj dane aplikacji w folderze .home w tej samej lokalizacji co AppImage"
 
 #: src/windows/details_window.vala:530
 msgid ".home"
-msgstr ""
+msgstr ".home"
 
 #: src/windows/details_window.vala:539
-#, fuzzy
 msgid "Portable .config folder"
-msgstr "Przenośny"
+msgstr "Przenośny katalog .config"
 
 #: src/windows/details_window.vala:540
 msgid "Store the app's config in a .config folder next to the AppImage"
 msgstr ""
+"Zapisuj ustawienia aplikacji w folderze .config w tej samej lokalizacji co "
+"AppImage"
 
 #: src/windows/details_window.vala:541
 msgid ".config"
-msgstr ""
+msgstr ".config"
 
 #: src/windows/details_window.vala:582
 #, c-format
 msgid "Remove portable %s folder?"
-msgstr ""
+msgstr "Usunąć przenośny folder %s?"
 
 #: src/windows/details_window.vala:583
 #, c-format
@@ -579,11 +584,12 @@ msgid ""
 "The %s folder next to this AppImage will be permanently removed, including "
 "any data it contains."
 msgstr ""
+"Folder %s obok tego AppImage zostanie nieodwołalnie usunięty, w tym "
+"wszystkie dane, które zawiera."
 
 #: src/windows/details_window.vala:586
-#, fuzzy
 msgid "Remove Data"
-msgstr "Usuń zmienną"
+msgstr "Usuń dane"
 
 #: src/windows/details_window.vala:604
 msgid "Environment Variables"
@@ -658,15 +664,15 @@ msgstr "Aktualizowanie..."
 
 #: src/windows/details_window.vala:1015
 msgid "Checking..."
-msgstr "Kontrola..."
+msgstr "Sprawdzanie..."
 
 #: src/windows/details_window.vala:1042
 msgid "Update Failed"
-msgstr "Dostępna aktualizacja"
+msgstr "Niepowodzenie aktualizacji"
 
 #: src/windows/details_window.vala:1049
 msgid "Check Update"
-msgstr "Sprawdź aktualizację"
+msgstr "Sprawdź aktualizacje"
 
 #: src/windows/details_window.vala:1116
 msgid ""
@@ -705,7 +711,7 @@ msgstr "<b>%s</b> zostanie trwale usunięty. Tej operacji nie można cofnąć."
 
 #: src/windows/details_window.vala:1188
 msgid "Portable data in .home and .config will also be removed."
-msgstr ""
+msgstr "Przenośne dane w .home i .config zostaną także usunięte."
 
 #: src/windows/details_window.vala:1190
 msgid "Delete permanently?"
@@ -726,7 +732,7 @@ msgstr "Wyodrębnić aplikację?"
 
 #: src/windows/details_window.vala:1210
 msgid "Extract"
-msgstr "Ekstrakt"
+msgstr "Wyodrębnij"
 
 #: src/windows/dialog_window.vala:86
 msgid "App removed"
@@ -743,7 +749,7 @@ msgstr "Instalator AppImage"
 #. Add Verify button to headerbar
 #: src/windows/drop_window.vala:91 src/windows/drop_window.vala:1007
 msgid "Verify"
-msgstr "Zweryfikować"
+msgstr "Weryfikuj"
 
 #: src/windows/drop_window.vala:92
 msgid "Verify AppImage with SHA256 hash"
@@ -795,7 +801,7 @@ msgstr "Sprawdź autentyczność tego obrazu aplikacji."
 
 #: src/windows/drop_window.vala:992
 msgid "Enter the SHA256 hash "
-msgstr "Wprowadź skrót SHA256"
+msgstr "Wprowadź skrót SHA256 "
 
 #: src/windows/main_window.vala:64 src/windows/main_window.vala:221
 #: data/com.github.AppManager.metainfo.xml:4
@@ -861,25 +867,24 @@ msgstr "Nieznany"
 
 #: src/windows/main_window.vala:782
 msgid "extracted"
-msgstr "wytłoczony"
+msgstr "wyodrębniony"
 
 #: src/windows/main_window.vala:840
-#, fuzzy
 msgid "Imported just now"
-msgstr "Zaktualizowano właśnie teraz"
+msgstr "Zaimportowano przed chwilą"
 
 #: src/windows/main_window.vala:840
 msgid "Updated just now"
-msgstr "Zaktualizowano właśnie teraz"
+msgstr "Zaktualizowano przed chwilą"
 
 #: src/windows/main_window.vala:840
 msgid "Installed just now"
-msgstr "Zainstalowano właśnie teraz"
+msgstr "Zainstalowano przed chwilą"
 
 #: src/windows/main_window.vala:848
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d min ago"
-msgstr "Zaktualizowano %d min temu"
+msgstr "Zaimportowano %d min temu"
 
 #: src/windows/main_window.vala:848
 #, c-format
@@ -892,9 +897,9 @@ msgid "Installed %d min ago"
 msgstr "Zainstalowano %d min temu"
 
 #: src/windows/main_window.vala:856
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d hours ago"
-msgstr "Zaktualizowano %d godzin temu"
+msgstr "Zaimportowano %d godzin temu"
 
 #: src/windows/main_window.vala:856
 #, c-format
@@ -907,9 +912,9 @@ msgid "Installed %d hours ago"
 msgstr "Zainstalowano %d godzin temu"
 
 #: src/windows/main_window.vala:863
-#, fuzzy, c-format
+#, c-format
 msgid "Imported %d days ago"
-msgstr "Zaktualizowano %d dni temu"
+msgstr "Zaimportowano %d dni temu"
 
 #: src/windows/main_window.vala:863
 #, c-format
@@ -935,7 +940,7 @@ msgstr "Preferencje"
 
 #: src/windows/main_window.vala:888
 msgid "Keyboard shortcuts"
-msgstr "Skróty klawiaturowe"
+msgstr "Skróty klawiszowe"
 
 #: src/windows/main_window.vala:889 src/windows/main_window.vala:1800
 msgid "About AppManager"
@@ -943,7 +948,7 @@ msgstr "Informacje o AppManagerze"
 
 #: src/windows/main_window.vala:893
 msgid "Quit"
-msgstr "Zrezygnować"
+msgstr "Zakończ"
 
 #: src/windows/main_window.vala:907
 msgid "Support AppManager"
@@ -963,11 +968,11 @@ msgstr "Sponsoruj mnie ♡"
 
 #: src/windows/main_window.vala:957
 msgid "Star AppManager on GitHub"
-msgstr "Gwiazda AppManager na GitHub"
+msgstr "Daj gwiazdkę dla AppManager na GitHub"
 
 #: src/windows/main_window.vala:962
 msgid "Star AppManager"
-msgstr "Gwiazdowy menedżer aplikacji"
+msgstr "Daj gwizadkę AppManager"
 
 #: src/windows/main_window.vala:973
 msgid "View contributors on GitHub"
@@ -1005,7 +1010,7 @@ msgstr "Dowiedz się więcej"
 
 #: src/windows/main_window.vala:1063
 msgid "Shift+click to launch app"
-msgstr "Shift+kliknięcie, aby uruchomić aplikację"
+msgstr "Shift+kliknięcie, uruchamia aplikację"
 
 #: src/windows/main_window.vala:1100
 msgid "Switch to grid view"
@@ -1017,7 +1022,7 @@ msgstr "Przełącz do widoku listy"
 
 #: src/windows/main_window.vala:1245 src/windows/main_window.vala:1316
 msgid "Updates already running"
-msgstr "Aktualizacje już działają"
+msgstr "Aktualizacje są uruchomione"
 
 #: src/windows/main_window.vala:1293
 msgid "Cancel update"
@@ -1042,7 +1047,7 @@ msgstr "W tej chwili nie są dostępne żadne aktualizacje"
 
 #: src/windows/main_window.vala:1390
 msgid "Nothing queued for updating"
-msgstr "Nic nie czekało w kolejce do aktualizacji"
+msgstr "Kolejka aktualizacji jest pusta"
 
 #: src/windows/main_window.vala:1417
 msgid "Update cancelled"
@@ -1050,7 +1055,7 @@ msgstr "Aktualizacja anulowana"
 
 #: src/windows/main_window.vala:1482 src/windows/main_window.vala:1502
 msgid "Update failed"
-msgstr "Dostępna aktualizacja"
+msgstr "Aktualizacja nie powiodła się"
 
 #: src/windows/main_window.vala:1555
 msgid "Checking updates"
@@ -1199,9 +1204,9 @@ msgid "Imported %d app(s)"
 msgstr "Zaimportowano %d aplikacji"
 
 #: src/windows/main_window.vala:2080
-#, fuzzy, c-format
+#, c-format
 msgid "Skipped %d incompatible architecture app(s)"
-msgstr "Pominięto %d już zainstalowaną aplikację"
+msgstr "Pominięto aplikacje z niekompatybilną architekturą: %d"
 
 #: src/windows/main_window.vala:2083
 #, c-format
@@ -1224,7 +1229,7 @@ msgstr "Skonfiguruj miejsce instalacji AppImages (domyślnie: ~/Applications)"
 
 #: src/windows/preferences_window.vala:63
 msgid "Installation directory"
-msgstr "Katalog instalacyjny"
+msgstr "Katalog instalacji"
 
 #: src/windows/preferences_window.vala:78
 msgid "Browse for folder"
@@ -1249,29 +1254,31 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:112
 msgid "Portable .home by default"
-msgstr ""
+msgstr "Przenośny .home domyślnie"
 
 #: src/windows/preferences_window.vala:113
 msgid "Create a .home folder next to every newly installed AppImage"
-msgstr ""
+msgstr "Twórz folder .home obok każdego nowo zainstalowanego AppImage"
 
 #: src/windows/preferences_window.vala:117
 msgid "Portable .config by default"
-msgstr ""
+msgstr "Portable .config by default"
 
 #: src/windows/preferences_window.vala:118
 msgid "Create a .config folder next to every newly installed AppImage"
-msgstr ""
+msgstr "Twórz folder .config obok każdego nowo zainstalowanego AppImage"
 
 #: src/windows/preferences_window.vala:122
 msgid "Keep file extension name"
-msgstr ""
+msgstr "Zachowaj nazwę rozszerzenia pliku"
 
 #: src/windows/preferences_window.vala:123
 msgid ""
 "Replace spaces with underscores in installed filenames and keep "
 "the .AppImage extension"
 msgstr ""
+"Zamieniaj spacje na podkreślniki w nazwach instalowanych plików, zachowując "
+"rozszerzenie .AppImage"
 
 #. Automatic updates group
 #: src/windows/preferences_window.vala:135
@@ -1293,21 +1300,21 @@ msgstr "Sprawdzanie aktualizacji w tle"
 
 #: src/windows/preferences_window.vala:157
 msgid "Will notify when new app updates are available"
-msgstr "Powiadomi, gdy dostępne będą nowe aktualizacje aplikacji"
+msgstr "Powiadom, gdy dostępne będą nowe aktualizacje"
 
 #. Auto update apps toggle (inside expander)
 #: src/windows/preferences_window.vala:168
 msgid "Auto update apps"
-msgstr "Automatyczna aktualizacja aplikacji"
+msgstr "Automatyczne aktualizacje aplikacji"
 
 #: src/windows/preferences_window.vala:169
 msgid "Will update apps automatically in background"
-msgstr "Automatycznie zaktualizuje aplikacje w tle"
+msgstr "Automatycznie zaktualizuj aplikacje w tle"
 
 #. Check interval (inside expander)
 #: src/windows/preferences_window.vala:175
 msgid "Check interval"
-msgstr "Sprawdź interwał"
+msgstr "Częstotliwość sprawdzania"
 
 #: src/windows/preferences_window.vala:177
 msgid "Daily"
@@ -1315,11 +1322,11 @@ msgstr "Codziennie"
 
 #: src/windows/preferences_window.vala:178
 msgid "Weekly"
-msgstr "Tygodnik"
+msgstr "Co tydzień"
 
 #: src/windows/preferences_window.vala:179
 msgid "Monthly"
-msgstr "Miesięczny"
+msgstr "Co miesiąc"
 
 #. Thumbnails group
 #: src/windows/preferences_window.vala:204
@@ -1328,7 +1335,7 @@ msgstr "Miniatury"
 
 #: src/windows/preferences_window.vala:207
 msgid "AppImage Thumbnailer"
-msgstr "Miniatura AppImage"
+msgstr "Miniatury AppImage"
 
 #: src/windows/preferences_window.vala:208
 msgid "Install appimage-thumbnailer to generate thumbnails for AppImages"
@@ -1337,11 +1344,11 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:217
 msgid "Hide Nautilus thumbnail background"
-msgstr "Ukryj tło miniatury Nautilusa"
+msgstr "Ukryj tło miniaturek w Nautilusie"
 
 #: src/windows/preferences_window.vala:218
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
-msgstr "Usuń szachownicę alfa za miniaturami i ikonami"
+msgstr "Usuń szachownicę przezroczystości pod miniaturkami i ikonami"
 
 #. GitHub authentication group
 #: src/windows/preferences_window.vala:229
@@ -1384,7 +1391,7 @@ msgstr "Token testowy"
 
 #: src/windows/preferences_window.vala:274
 msgid "Verify your token works and check rate limit status"
-msgstr "Sprawdź, czy Twój token działa i sprawdź stan limitu stawki"
+msgstr "Przetestuj, czy Twój token działa i sprawdź stan limitu stawki"
 
 #: src/windows/preferences_window.vala:278
 msgid "Test"
@@ -1401,12 +1408,12 @@ msgstr "Utwórz token w GitHub"
 #: src/windows/preferences_window.vala:303
 msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
-"Wystarczy drobnoziarnisty token z publicznym dostępem do repozytorium tylko "
-"do odczytu"
+"Wystarczy precyzyjny token (fine-grained) z uprawnieniami do odczytu "
+"publicznych repozytoriów"
 
 #: src/windows/preferences_window.vala:360
 msgid "Select Installation Directory"
-msgstr "Wybierz Katalog instalacyjny"
+msgstr "Wybierz katalog instalacji"
 
 #: src/windows/preferences_window.vala:427
 msgid "Invalid Path"
@@ -1414,7 +1421,7 @@ msgstr "Nieprawidłowa ścieżka"
 
 #: src/windows/preferences_window.vala:437
 msgid "Installation directory updated"
-msgstr "Katalog instalacyjny został zaktualizowany"
+msgstr "Katalog instalacji został zaktualizowany"
 
 #: src/windows/preferences_window.vala:447
 msgid "Move Installed Apps?"
@@ -1427,7 +1434,7 @@ msgid ""
 "while depending on the size of your apps."
 msgstr ""
 "Spowoduje to przeniesienie zainstalowanych aplikacji %d do nowej "
-"lokalizacji. Może to chwilę potrwać, w zależności od rozmiaru aplikacji."
+"lokalizacji. Może to chwilę potrwać w zależności od rozmiaru aplikacji."
 
 #: src/windows/preferences_window.vala:451
 msgid "Move Apps"
@@ -1442,7 +1449,7 @@ msgstr "Przenoszenie aplikacji…"
 
 #: src/windows/preferences_window.vala:483
 msgid "Please wait while your apps are being moved."
-msgstr "Poczekaj, aż Twoje aplikacje zostaną przeniesione."
+msgstr "Zaczekaj na przeniesienie aplikacji."
 
 #: src/windows/preferences_window.vala:520
 msgid "Apps moved successfully"
@@ -1472,11 +1479,11 @@ msgstr "Dostęp zabroniony — token nie ma wymaganych uprawnień"
 #: src/windows/preferences_window.vala:586
 #, c-format
 msgid "Token is valid — %s / %s requests remaining"
-msgstr "Token jest ważny — pozostało żądanie %s / %s"
+msgstr "Token jest ważny — pozostało żądań: %s / %s"
 
 #: src/windows/preferences_window.vala:588
 msgid "Token is valid"
-msgstr "Token jest ważny"
+msgstr "Token jest prawidłowy"
 
 #: src/windows/preferences_window.vala:591
 #, c-format
@@ -1495,7 +1502,8 @@ msgstr "Arnisa Kemlersa"
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer and management application"
-msgstr "Przeciągnij i upuść instalator AppImage dla GNOME"
+msgstr ""
+"Instalator i menedżer aplikacji AppImage typu „przeciągnij i upuść dla Gnome"
 
 #: data/com.github.AppManager.metainfo.xml:35
 msgid ""
@@ -1503,10 +1511,10 @@ msgid ""
 "drop workflow inspired by macOS. It handles desktop integration, icon "
 "extraction, executable bits, and app updates."
 msgstr ""
-"AppManager umożliwia instalowanie lub odinstalowywanie AppImages za pomocą "
-"znanego przepływu pracy typu „przeciągnij i upuść” inspirowanego systemem "
-"macOS. Obsługuje integrację pulpitu, wyodrębnianie ikon, pliki wykonywalne i "
-"menu kontekstowe Nautilusa."
+"AppManager umożliwia instalowanie i odinstalowywanie aplikacji AppImages "
+"metodą „przeciągnij i upuść” inspirowanego systemem macOS. Obsługuje "
+"integrację z pulpitem, wyodrębnianie ikon, pliki wykonywalne i menu "
+"kontekstowe w Nautilusie."
 
 #~ msgid "Launch Application"
 #~ msgstr "Wyodrębnić aplikację?"
