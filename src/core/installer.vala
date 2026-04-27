@@ -285,6 +285,14 @@ namespace AppManager.Core {
                 record.custom_update_link = old_record.custom_update_link;
                 record.custom_web_page = old_record.custom_web_page;
                 record.prerelease_enabled = old_record.prerelease_enabled;
+                record.sandbox_profile = old_record.sandbox_profile;
+                record.sandbox_camera = old_record.sandbox_camera;
+                record.sandbox_microphone = old_record.sandbox_microphone;
+                record.sandbox_location = old_record.sandbox_location;
+                record.sandbox_network = old_record.sandbox_network;
+                record.sandbox_downloads = old_record.sandbox_downloads;
+                record.sandbox_pictures = old_record.sandbox_pictures;
+                record.sandbox_files = old_record.sandbox_files;
                 // Note: original_* values will be updated from the new AppImage's .desktop
             }
             // Note: For fresh installs, history is applied in finalize_desktop_and_icon()
@@ -533,6 +541,14 @@ namespace AppManager.Core {
                 // but apply_history won't overwrite existing custom values (only fills in nulls)
                 registry.apply_history_to_record(record);
 
+                // Fresh-install default: apply the global Standard sandbox preset when
+                // the user has opted in via Preferences and no history overrode it.
+                if (!is_upgrade
+                    && record.sandbox_profile == null
+                    && settings.get_boolean("default-sandbox-enabled")) {
+                    SandboxProfile.apply_preset(record, SandboxProfile.PROFILE_STANDARD);
+                }
+
                 var slug = slugify_app_name(desktop_name);
                 if (slug == "") {
                     slug = metadata.sanitized_basename().down();
@@ -682,7 +698,7 @@ namespace AppManager.Core {
                 if (record.original_startup_wm_class == Core.APPLICATION_ID) {
                     symlink_name = "app-manager";
                 }
-                record.bin_symlink = create_bin_symlink(exec_path, symlink_name);
+                record.bin_symlink = create_bin_launcher(record, exec_path, symlink_name);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
@@ -776,11 +792,11 @@ namespace AppManager.Core {
 
         private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page) throws Error {
             var entry = new DesktopEntry(desktop_path);
-            
+
             // Update Exec with optional environment variables
             var args = effective_commandline_args ?? "";
             var env_vars = record.custom_env_vars;
-            
+
             string exec_line;
             if (env_vars != null && env_vars.length > 0) {
                 // Use 'env' command to set environment variables
@@ -811,6 +827,15 @@ namespace AppManager.Core {
                 } else {
                     exec_line = "\"%s\"".printf(exec_target);
                 }
+            }
+
+            // Sandbox prefix: prepend "bwrap <args> -- " when this record is sandboxed
+            // and bwrap is actually available. Silently skipped otherwise so the app
+            // still launches. The Uninstall action below is intentionally NOT wrapped.
+            if (record.sandbox_enabled() && AppPaths.bwrap_available) {
+                var bwrap_args = SandboxProfile.build_args(record);
+                var rendered = SandboxProfile.render_for_desktop(bwrap_args);
+                exec_line = "\"%s\" %s -- %s".printf(AppPaths.bwrap_path, rendered, exec_line);
             }
             entry.exec = exec_line;
             
@@ -1065,15 +1090,15 @@ namespace AppManager.Core {
         private string? create_bin_symlink(string exec_path, string slug) {
             try {
                 var bin_dir = AppPaths.local_bin_dir;
-                
+
                 var symlink_path = Path.build_filename(bin_dir, slug);
                 var symlink_file = File.new_for_path(symlink_path);
-                
+
                 // Remove existing symlink if it exists
                 if (symlink_file.query_exists()) {
                     symlink_file.delete(null);
                 }
-                
+
                 // Create symlink
                 symlink_file.make_symbolic_link(exec_path, null);
                 debug("Created symlink: %s -> %s", symlink_path, exec_path);
@@ -1084,12 +1109,73 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Writes a small shell wrapper script that exec's bwrap with the record's
+         * sandbox configuration. Used in place of a bare symlink when an app is
+         * sandboxed so terminal launches go through the same sandbox as desktop ones.
+         */
+        private string? create_bin_wrapper_script(InstallationRecord record, string exec_path, string slug) {
+            if (!AppPaths.bwrap_available) {
+                return create_bin_symlink(exec_path, slug);
+            }
+            try {
+                var bin_dir = AppPaths.local_bin_dir;
+                var script_path = Path.build_filename(bin_dir, slug);
+                var script_file = File.new_for_path(script_path);
+                if (script_file.query_exists()) {
+                    script_file.delete(null);
+                }
+
+                var bwrap_args = SandboxProfile.build_args(record);
+                var content = new StringBuilder("#!/bin/sh\n");
+                content.append("# Generated by AppManager — sandbox wrapper\n");
+                content.append("exec \"");
+                content.append(AppPaths.bwrap_path);
+                content.append("\" \\\n");
+                foreach (var arg in bwrap_args) {
+                    content.append("    ");
+                    content.append(shell_quote(arg));
+                    content.append(" \\\n");
+                }
+                content.append("    -- \\\n    ");
+                content.append(shell_quote(exec_path));
+                content.append(" \"$@\"\n");
+
+                if (!GLib.FileUtils.set_contents(script_path, content.str)) {
+                    warning("Failed to write sandbox wrapper at %s", script_path);
+                    return null;
+                }
+                Utils.FileUtils.ensure_executable(script_path);
+                debug("Created sandbox wrapper: %s", script_path);
+                return script_path;
+            } catch (Error e) {
+                warning("Failed to create sandbox wrapper for %s: %s", slug, e.message);
+                return null;
+            }
+        }
+
+        private static string shell_quote(string token) {
+            // Single-quote and escape any embedded single quotes via '\''
+            var escaped = token.replace("'", "'\\''");
+            return "'%s'".printf(escaped);
+        }
+
+        /**
+         * Picks symlink vs sandbox wrapper script based on the record's sandbox state.
+         */
+        private string? create_bin_launcher(InstallationRecord record, string exec_path, string slug) {
+            if (record.sandbox_enabled() && AppPaths.bwrap_available) {
+                return create_bin_wrapper_script(record, exec_path, slug);
+            }
+            return create_bin_symlink(exec_path, slug);
+        }
+
         public bool ensure_bin_symlink_for_record(InstallationRecord record, string exec_path, string slug) {
             if (exec_path.strip() == "") {
                 return false;
             }
 
-            var link = create_bin_symlink(exec_path, slug);
+            var link = create_bin_launcher(record, exec_path, slug);
             if (link == null) {
                 return false;
             }
@@ -1097,6 +1183,27 @@ namespace AppManager.Core {
             record.bin_symlink = link;
             registry.persist(false);
             return true;
+        }
+
+        /**
+         * Recreates the bin launcher to reflect the record's current sandbox state.
+         * Called after the user changes Security & Permissions toggles so the
+         * terminal-launchable wrapper stays in sync with the .desktop file.
+         */
+        public void refresh_bin_launcher_for_record(InstallationRecord record) {
+            if (record.bin_symlink == null || record.bin_symlink.strip() == "") {
+                return;
+            }
+            var slug = Path.get_basename(record.bin_symlink);
+            var exec_path = resolve_exec_path_for_record(record);
+            if (exec_path.strip() == "") {
+                return;
+            }
+            var link = create_bin_launcher(record, exec_path, slug);
+            if (link != null) {
+                record.bin_symlink = link;
+                registry.persist(false);
+            }
         }
 
         /**
@@ -1203,6 +1310,9 @@ namespace AppManager.Core {
             } catch (Error e) {
                 warning("Failed to rewrite desktop file %s: %s", desktop_path, e.message);
             }
+
+            // Keep the terminal-launchable wrapper in sync with sandbox state.
+            refresh_bin_launcher_for_record(record);
         }
 
         /**

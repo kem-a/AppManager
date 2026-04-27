@@ -76,5 +76,10 @@
       <summary>GitHub personal access token</summary>
       <description>A GitHub personal access token used to authenticate API requests. This raises the rate limit from 60 to 5,000 requests per hour. Only needs read-only access to public repositories.</description>
     </key>
+    <key name="default-sandbox-enabled" type="b">
+      <default>false</default>
+      <summary>Sandbox newly installed apps by default</summary>
+      <description>When enabled, new installations default to the Standard sandbox profile. Existing apps are unaffected.</description>
+    </key>
   </schema>
 </schemalist>

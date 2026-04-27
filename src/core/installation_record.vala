@@ -58,6 +58,24 @@ namespace AppManager.Core {
         public bool prerelease_enabled { get; set; default = false; }
         public bool updates_enabled { get; set; default = true; }
 
+        // Sandbox configuration. Profile is "off" | "standard" | "strict" | "custom".
+        // null is treated as "off" (no wrapping). The granular fields are only
+        // honored when profile != "off".
+        public string? sandbox_profile { get; set; }
+        public bool sandbox_camera { get; set; default = false; }
+        public bool sandbox_microphone { get; set; default = false; }
+        public bool sandbox_location { get; set; default = false; }
+        public bool sandbox_network { get; set; default = true; }
+        public bool sandbox_downloads { get; set; default = true; }
+        public bool sandbox_pictures { get; set; default = false; }
+        public bool sandbox_files { get; set; default = false; }
+
+        public bool sandbox_enabled() {
+            return sandbox_profile != null
+                && sandbox_profile != ""
+                && sandbox_profile != "off";
+        }
+
         public InstallationRecord(string id, string name, InstallMode mode) {
             Object(id: id, name: name, mode: mode, installed_at: (int64)GLib.get_real_time());
         }
@@ -106,7 +124,8 @@ namespace AppManager.Core {
                    custom_startup_wm_class != null ||
                    custom_update_link != null ||
                    custom_web_page != null ||
-                   (custom_env_vars != null && custom_env_vars.length > 0);
+                   (custom_env_vars != null && custom_env_vars.length > 0) ||
+                   sandbox_enabled();
         }
 
         public Json.Node to_json() {
@@ -227,6 +246,26 @@ namespace AppManager.Core {
                 }
                 builder.end_array();
             }
+
+            // Sandbox: serialize only when not in default-off state.
+            if (sandbox_enabled()) {
+                builder.set_member_name("sandbox_profile");
+                builder.add_string_value(sandbox_profile);
+                builder.set_member_name("sandbox_camera");
+                builder.add_boolean_value(sandbox_camera);
+                builder.set_member_name("sandbox_microphone");
+                builder.add_boolean_value(sandbox_microphone);
+                builder.set_member_name("sandbox_location");
+                builder.add_boolean_value(sandbox_location);
+                builder.set_member_name("sandbox_network");
+                builder.add_boolean_value(sandbox_network);
+                builder.set_member_name("sandbox_downloads");
+                builder.add_boolean_value(sandbox_downloads);
+                builder.set_member_name("sandbox_pictures");
+                builder.add_boolean_value(sandbox_pictures);
+                builder.set_member_name("sandbox_files");
+                builder.add_boolean_value(sandbox_files);
+            }
         }
 
         /**
@@ -342,7 +381,34 @@ namespace AppManager.Core {
                 }
                 record.custom_env_vars = env_list;
             }
-            
+
+            // Sandbox configuration
+            if (obj.has_member("sandbox_profile")) {
+                var profile = obj.get_string_member("sandbox_profile");
+                record.sandbox_profile = (profile != null && profile.strip() != "") ? profile : null;
+            }
+            if (obj.has_member("sandbox_camera")) {
+                record.sandbox_camera = obj.get_boolean_member("sandbox_camera");
+            }
+            if (obj.has_member("sandbox_microphone")) {
+                record.sandbox_microphone = obj.get_boolean_member("sandbox_microphone");
+            }
+            if (obj.has_member("sandbox_location")) {
+                record.sandbox_location = obj.get_boolean_member("sandbox_location");
+            }
+            if (obj.has_member("sandbox_network")) {
+                record.sandbox_network = obj.get_boolean_member("sandbox_network");
+            }
+            if (obj.has_member("sandbox_downloads")) {
+                record.sandbox_downloads = obj.get_boolean_member("sandbox_downloads");
+            }
+            if (obj.has_member("sandbox_pictures")) {
+                record.sandbox_pictures = obj.get_boolean_member("sandbox_pictures");
+            }
+            if (obj.has_member("sandbox_files")) {
+                record.sandbox_files = obj.get_boolean_member("sandbox_files");
+            }
+
             return record;
         }
 
@@ -382,6 +448,19 @@ namespace AppManager.Core {
                     env_list[i] = env_array.get_string_element(i);
                 }
                 custom_env_vars = env_list;
+            }
+
+            // Sandbox: only adopt history values when no profile is set on this record.
+            // Avoids clobbering an explicit reset back to "off".
+            if (sandbox_profile == null && obj.has_member("sandbox_profile")) {
+                sandbox_profile = obj.get_string_member("sandbox_profile");
+                if (obj.has_member("sandbox_camera")) sandbox_camera = obj.get_boolean_member("sandbox_camera");
+                if (obj.has_member("sandbox_microphone")) sandbox_microphone = obj.get_boolean_member("sandbox_microphone");
+                if (obj.has_member("sandbox_location")) sandbox_location = obj.get_boolean_member("sandbox_location");
+                if (obj.has_member("sandbox_network")) sandbox_network = obj.get_boolean_member("sandbox_network");
+                if (obj.has_member("sandbox_downloads")) sandbox_downloads = obj.get_boolean_member("sandbox_downloads");
+                if (obj.has_member("sandbox_pictures")) sandbox_pictures = obj.get_boolean_member("sandbox_pictures");
+                if (obj.has_member("sandbox_files")) sandbox_files = obj.get_boolean_member("sandbox_files");
             }
         }
 

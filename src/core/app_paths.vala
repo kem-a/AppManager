@@ -209,6 +209,46 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Path to the bubblewrap binary, or null if unavailable.
+         * Required for the AppImage sandbox feature.
+         */
+        public static string? bwrap_path {
+            owned get {
+                var found = Environment.find_program_in_path("bwrap");
+                if (found != null && found.strip() != "") {
+                    return found;
+                }
+                return null;
+            }
+        }
+
+        public static bool bwrap_available {
+            get {
+                return bwrap_path != null;
+            }
+        }
+
+        /**
+         * Path to xdg-dbus-proxy, or null if unavailable.
+         * Required to gate D-Bus name access (Location/GeoClue) inside the sandbox.
+         */
+        public static string? xdg_dbus_proxy_path {
+            owned get {
+                var found = Environment.find_program_in_path("xdg-dbus-proxy");
+                if (found != null && found.strip() != "") {
+                    return found;
+                }
+                return null;
+            }
+        }
+
+        public static bool xdg_dbus_proxy_available {
+            get {
+                return xdg_dbus_proxy_path != null;
+            }
+        }
+
         public static string? current_executable_path {
             owned get {
                 // If running as an AppImage, use the original AppImage path

@@ -92,12 +92,14 @@ namespace AppManager {
             var props_group = build_properties_group();
             // update_group will be handled inside build_app_updates_page()
             var advanced_row = build_advanced_action_row();
+            var security_row = build_security_action_row();
             // Portable .home/.config toggles only apply to portable (non-extracted) AppImages.
             if (record.mode == InstallMode.PORTABLE) {
                 props_group.add(build_portable_home_row());
                 props_group.add(build_portable_config_row());
             }
             props_group.add(advanced_row);
+            props_group.add(security_row);
             
             detail_page.add(props_group);
             
@@ -612,6 +614,240 @@ namespace AppManager {
                 });
             });
             return nav_page;
+        }
+
+        private string sandbox_status_label() {
+            if (!record.sandbox_enabled()) return _("Off");
+            switch (record.sandbox_profile) {
+                case SandboxProfile.PROFILE_STANDARD: return _("Standard");
+                case SandboxProfile.PROFILE_STRICT: return _("Strict");
+                case SandboxProfile.PROFILE_CUSTOM: return _("Custom");
+                default: return _("On");
+            }
+        }
+
+        private Adw.ActionRow build_security_action_row() {
+            var row = new Adw.ActionRow();
+            row.title = _("Security & Permissions");
+            row.subtitle = _("Sandbox the app and choose which devices and folders it can access");
+
+            var status_label = new Gtk.Label(sandbox_status_label());
+            status_label.add_css_class("dim-label");
+            row.add_suffix(status_label);
+
+            var icon = new Gtk.Image.from_icon_name("go-next-symbolic");
+            row.add_suffix(icon);
+            row.activatable = true;
+            row.activated.connect(() => {
+                var page = build_security_page(status_label);
+                var main_win = (MainWindow) this.get_root();
+                main_win.push_page(page);
+            });
+            return row;
+        }
+
+        private Adw.NavigationPage build_security_page(Gtk.Label status_label) {
+            var prefs_page = new Adw.PreferencesPage();
+
+            // Banner if bwrap is missing
+            if (!AppPaths.bwrap_available) {
+                var banner_group = new Adw.PreferencesGroup();
+                var banner_row = new Adw.ActionRow();
+                banner_row.title = _("Sandboxing requires bubblewrap");
+                banner_row.subtitle = _("Install the bubblewrap package to sandbox AppImages.");
+                banner_row.add_prefix(new Gtk.Image.from_icon_name("dialog-warning-symbolic"));
+                banner_group.add(banner_row);
+                prefs_page.add(banner_group);
+            }
+
+            // Profile group with Off / Standard / Strict / Custom toggle
+            var profile_group = new Adw.PreferencesGroup();
+            profile_group.title = _("Profile");
+            profile_group.description = _("Standard isolates this app from your other apps' data while keeping common folders accessible. Strict additionally turns off network access. Custom appears when you fine-tune the toggles below.");
+
+            var toggle_group = new Adw.ToggleGroup();
+            toggle_group.homogeneous = true;
+            toggle_group.set_margin_top(6);
+            toggle_group.set_margin_bottom(6);
+            toggle_group.set_margin_start(12);
+            toggle_group.set_margin_end(12);
+
+            var off_toggle = new Adw.Toggle();
+            off_toggle.label = _("Off");
+            off_toggle.name = SandboxProfile.PROFILE_OFF;
+            toggle_group.add(off_toggle);
+
+            var standard_toggle = new Adw.Toggle();
+            standard_toggle.label = _("Standard");
+            standard_toggle.name = SandboxProfile.PROFILE_STANDARD;
+            toggle_group.add(standard_toggle);
+
+            var strict_toggle = new Adw.Toggle();
+            strict_toggle.label = _("Strict");
+            strict_toggle.name = SandboxProfile.PROFILE_STRICT;
+            toggle_group.add(strict_toggle);
+
+            var custom_toggle = new Adw.Toggle();
+            custom_toggle.label = _("Custom");
+            custom_toggle.name = SandboxProfile.PROFILE_CUSTOM;
+            toggle_group.add(custom_toggle);
+
+            // Wrap inside a row so it sits inside the PreferencesGroup nicely.
+            var profile_row = new Adw.PreferencesRow();
+            profile_row.set_activatable(false);
+            profile_row.set_child(toggle_group);
+            profile_group.add(profile_row);
+            prefs_page.add(profile_group);
+
+            // Devices group
+            var devices_group = new Adw.PreferencesGroup();
+            devices_group.title = _("Devices");
+
+            var camera_row = new Adw.SwitchRow();
+            camera_row.title = _("Camera");
+            camera_row.active = record.sandbox_camera;
+            devices_group.add(camera_row);
+
+            var mic_row = new Adw.SwitchRow();
+            mic_row.title = _("Microphone");
+            mic_row.subtitle = _("Best-effort: PipeWire capture is enforced server-side and may not be fully blocked.");
+            mic_row.active = record.sandbox_microphone;
+            devices_group.add(mic_row);
+
+            var location_row = new Adw.SwitchRow();
+            location_row.title = _("Location");
+            location_row.active = record.sandbox_location;
+            if (!AppPaths.xdg_dbus_proxy_available) {
+                location_row.sensitive = false;
+                location_row.subtitle = _("Requires xdg-dbus-proxy.");
+            }
+            devices_group.add(location_row);
+
+            var network_row = new Adw.SwitchRow();
+            network_row.title = _("Network & Bluetooth");
+            network_row.active = record.sandbox_network;
+            devices_group.add(network_row);
+
+            prefs_page.add(devices_group);
+
+            // Storage group
+            var storage_group = new Adw.PreferencesGroup();
+            storage_group.title = _("Storage");
+
+            var downloads_row = new Adw.SwitchRow();
+            downloads_row.title = _("Downloads");
+            downloads_row.active = record.sandbox_downloads;
+            storage_group.add(downloads_row);
+
+            var pictures_row = new Adw.SwitchRow();
+            pictures_row.title = _("Pictures");
+            pictures_row.subtitle = _("Includes Videos");
+            pictures_row.active = record.sandbox_pictures;
+            storage_group.add(pictures_row);
+
+            var files_row = new Adw.SwitchRow();
+            files_row.title = _("Files");
+            files_row.subtitle = _("Documents, Music, Desktop");
+            files_row.active = record.sandbox_files;
+            storage_group.add(files_row);
+
+            prefs_page.add(storage_group);
+
+            // Wiring
+            bool suppress_handlers = false;
+
+            void update_granular_sensitivity() {
+                bool enabled = record.sandbox_enabled() && AppPaths.bwrap_available;
+                devices_group.sensitive = enabled;
+                storage_group.sensitive = enabled;
+                if (!AppPaths.xdg_dbus_proxy_available) {
+                    location_row.sensitive = false;
+                }
+            }
+
+            void sync_toggle_group_from_record() {
+                suppress_handlers = true;
+                if (!record.sandbox_enabled()) {
+                    toggle_group.active_name = SandboxProfile.PROFILE_OFF;
+                } else {
+                    toggle_group.active_name = record.sandbox_profile;
+                }
+                suppress_handlers = false;
+            }
+
+            void sync_rows_from_record() {
+                suppress_handlers = true;
+                camera_row.active = record.sandbox_camera;
+                mic_row.active = record.sandbox_microphone;
+                location_row.active = record.sandbox_location;
+                network_row.active = record.sandbox_network;
+                downloads_row.active = record.sandbox_downloads;
+                pictures_row.active = record.sandbox_pictures;
+                files_row.active = record.sandbox_files;
+                suppress_handlers = false;
+            }
+
+            void persist_and_refresh_status() {
+                persist_record_and_refresh_desktop();
+                status_label.set_label(sandbox_status_label());
+            }
+
+            // Initial state
+            sync_toggle_group_from_record();
+            update_granular_sensitivity();
+
+            toggle_group.notify["active-name"].connect(() => {
+                if (suppress_handlers) return;
+                var picked = toggle_group.active_name;
+                if (picked == null) return;
+                if (picked == SandboxProfile.PROFILE_CUSTOM) {
+                    // Visual indicator only; no preset to apply.
+                    record.sandbox_profile = SandboxProfile.PROFILE_CUSTOM;
+                    persist_and_refresh_status();
+                    return;
+                }
+                SandboxProfile.apply_preset(record, picked);
+                sync_rows_from_record();
+                update_granular_sensitivity();
+                persist_and_refresh_status();
+            });
+
+            // Granular toggle wiring — re-detect profile after each change.
+            void on_granular_toggled() {
+                if (suppress_handlers) return;
+                record.sandbox_camera = camera_row.active;
+                record.sandbox_microphone = mic_row.active;
+                record.sandbox_location = location_row.active;
+                record.sandbox_network = network_row.active;
+                record.sandbox_downloads = downloads_row.active;
+                record.sandbox_pictures = pictures_row.active;
+                record.sandbox_files = files_row.active;
+                if (record.sandbox_enabled()) {
+                    record.sandbox_profile = SandboxProfile.detect_profile(record);
+                }
+                sync_toggle_group_from_record();
+                persist_and_refresh_status();
+            }
+
+            camera_row.notify["active"].connect(() => on_granular_toggled());
+            mic_row.notify["active"].connect(() => on_granular_toggled());
+            location_row.notify["active"].connect(() => on_granular_toggled());
+            network_row.notify["active"].connect(() => on_granular_toggled());
+            downloads_row.notify["active"].connect(() => on_granular_toggled());
+            pictures_row.notify["active"].connect(() => on_granular_toggled());
+            files_row.notify["active"].connect(() => on_granular_toggled());
+
+            if (!AppPaths.bwrap_available) {
+                toggle_group.sensitive = false;
+                devices_group.sensitive = false;
+                storage_group.sensitive = false;
+            }
+
+            var toolbar = new Adw.ToolbarView();
+            toolbar.add_top_bar(new Adw.HeaderBar());
+            toolbar.set_content(prefs_page);
+
+            return new Adw.NavigationPage(toolbar, _("Security & Permissions"));
         }
 
         private Adw.SwitchRow build_portable_home_row() {
