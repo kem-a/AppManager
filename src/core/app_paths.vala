@@ -91,6 +91,18 @@ namespace AppManager.Core {
             return dir;
         }
 
+        /**
+         * Returns true if `path` is inside the configured applications directory
+         * or any of its subdirectories. Used to refuse installs sourced from the
+         * install folder itself (e.g. accidental re-drags of already-installed
+         * AppImages).
+         */
+        public static bool is_inside_applications_dir(string path) {
+            var src = File.new_for_path(path);
+            var apps = File.new_for_path(applications_dir);
+            return apps.equal(src) || src.has_prefix(apps);
+        }
+
         public static string extracted_root {
             owned get {
                 var dir = Path.build_filename(applications_dir, EXTRACTED_DIRNAME);

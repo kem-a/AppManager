@@ -284,13 +284,23 @@ Examples:
 
         private void show_drop_window(GLib.File file) {
             var path = file.get_path();
-            
+
             // Prevent duplicate windows using file-based locking
             if (!try_acquire_drop_window_lock(path)) {
                 debug("Drop window already open for %s (locked by another instance), ignoring", path);
                 return;
             }
-            
+
+            if (AppPaths.is_inside_applications_dir(path)) {
+                var err_dialog = new Adw.AlertDialog(
+                    _("Cannot install from this location"),
+                    _("This AppImage is already inside the install folder (%s). Move it elsewhere first to install it.").printf(AppPaths.applications_dir));
+                err_dialog.add_response("close", _("Close"));
+                err_dialog.present(this.get_active_window());
+                release_drop_window_lock(path);
+                return;
+            }
+
             if (settings.get_boolean("skip-drop-window")) {
                 show_quick_install_dialog(path);
                 return;
