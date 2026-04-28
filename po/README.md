@@ -25,7 +25,7 @@
 | Latvian | lv | 96.6% (309/320) |
 | Norwegian Bokmål | nb | 93.1% (298/320) |
 | Dutch | nl | 93.1% (298/320) |
-| Polish | pl | 93.1% (298/320) |
+| Polish | pl | 100% (320/320) |
 | Portuguese (Brazil) | pt_BR | 93.1% (298/320) |
 | Swedish | sv | 93.1% (298/320) |
 | Ukrainian | uk | 93.1% (298/320) |
