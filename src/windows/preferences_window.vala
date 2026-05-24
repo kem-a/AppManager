@@ -571,7 +571,9 @@ namespace AppManager {
                         message.request_headers.replace("Authorization", "Bearer %s".printf(token));
                     }
 
-                    session.send_and_read(message, null);
+                    Core.TlsSession.with_session(() => {
+                        session.send_and_read(message, null);
+                    });
                     var status = message.get_status();
 
                     if (status == 401) {

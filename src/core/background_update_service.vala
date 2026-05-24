@@ -214,12 +214,18 @@ X-XDP-Autostart=com.github.AppManager
 
             bool auto_update_enabled = settings.get_boolean("auto-update-apps");
 
-            if (auto_update_enabled) {
-                // Auto-update mode: download and install updates
-                perform_auto_updates(cancellable);
-            } else {
-                // Notify-only mode: probe for updates and send notification
-                perform_update_probe(cancellable);
+            try {
+                TlsSession.with_session(() => {
+                    if (auto_update_enabled) {
+                        // Auto-update mode: download and install updates
+                        perform_auto_updates(cancellable);
+                    } else {
+                        // Notify-only mode: probe for updates and send notification
+                        perform_update_probe(cancellable);
+                    }
+                });
+            } catch (Error e) {
+                warning("background_check: TLS session error: %s", e.message);
             }
 
             settings.set_int64("last-update-check", new GLib.DateTime.now_utc().to_unix());

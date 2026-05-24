@@ -160,12 +160,43 @@ echo "---------------------------------------------------------------"
     /usr/bin/dwarfsextract \
     /usr/bin/zsync2 \
     /usr/bin/unsquashfs
-    
+
 #   - GIO modules for TLS and proxy are needed since the app uses libsoup3 for networking
-#   - this has been fixed upstream, but let's keep an eye on it https://github.com/pkgforge-dev/Anylinux-AppImages/pull/340   
+#   - this has been fixed upstream, but let's keep an eye on it https://github.com/pkgforge-dev/Anylinux-AppImages/pull/340
 #   /usr/lib/gio/modules/libgiognomeproxy.so \
 #   /usr/lib/gio/modules/libgiognutls.so \
 #   /usr/lib/gio/modules/libgiolibproxy.so
+
+# ── Neutralize quick-sharun's startup /tmp symlink creation ──────────
+# quick-sharun's path-mapping hook creates fixed /tmp/<token> symlinks at
+# AppRun startup. On multi-user hosts the second user is blocked by /tmp's
+# sticky bit. AppManager now manages these symlinks on demand inside Vala
+# (src/core/tls_session.vala) — they only exist while a network fetch is
+# active, and the app cleans them up afterward. See appmanager-tls-issue.md.
+echo "Neutralizing startup TLS symlinks (managed on-demand by app)..."
+
+# 1) Keep the _tmp_* variable assignments so TlsSession can read the
+#    tokens; strip the if/ln -sfn blocks so AppRun startup writes nothing.
+path_hook="$APPDIR/bin/01-path-mapping-hardcoded.src.hook"
+if [ -f "$path_hook" ]; then
+    awk '
+        /^if \[ -n "\$_tmp_/ { skip=1; next }
+        skip && /^fi$/        { skip=0; next }
+        skip                  { next }
+        { print }
+    ' "$path_hook" > "$path_hook.tmp" && mv "$path_hook.tmp" "$path_hook"
+fi
+
+# 2) Replace the cert hook with a comment-only stub. TlsSession picks the
+#    host CA bundle from the same candidate list at acquire() time.
+cert_hook="$APPDIR/bin/01-check-ca-certs.src.hook"
+if [ -f "$cert_hook" ]; then
+    cat > "$cert_hook" <<'HOOK_EOF'
+#!/bin/sh
+# AppManager: the host CA symlink is created on-demand by the app
+# (src/core/tls_session.vala). This hook is intentionally a no-op.
+HOOK_EOF
+fi
 
 # ── Restore toolkit locale files removed by quick-sharun debloating ──
 # quick-sharun's DEBLOAT_LOCALE deletes .mo files that don't match a

@@ -167,6 +167,12 @@ Examples:
         protected override void startup() {
             base.startup();
 
+            // Clean up any TLS symlinks we own that are stale from a prior
+            // crash. The TlsSession manages these on demand around active
+            // fetches; anything left over now is dead state. See
+            // src/core/tls_session.vala.
+            TlsSession.cleanup_stale();
+
             // Add bundled icons to the theme search path so symbolic update icon is always available
             var display = Gdk.Display.get_default();
             if (display != null) {

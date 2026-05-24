@@ -127,11 +127,27 @@ namespace AppManager.Core {
             if (filtered.size == 0) {
                 return new ArrayList<UpdateProbeResult>();
             }
-            return probe_updates_parallel(filtered.to_array(), cancellable);
+            ArrayList<UpdateProbeResult> result = new ArrayList<UpdateProbeResult>();
+            try {
+                TlsSession.with_session(() => {
+                    result = probe_updates_parallel(filtered.to_array(), cancellable);
+                });
+            } catch (Error e) {
+                warning("probe_updates: TLS session error: %s", e.message);
+            }
+            return result;
         }
 
         public UpdateProbeResult probe_single(InstallationRecord record, GLib.Cancellable? cancellable = null) {
-            return probe_record(record, cancellable);
+            UpdateProbeResult? result = null;
+            try {
+                TlsSession.with_session(() => {
+                    result = probe_record(record, cancellable);
+                });
+            } catch (Error e) {
+                warning("probe_single: TLS session error: %s", e.message);
+            }
+            return result ?? new UpdateProbeResult(record, false, null, UpdateSkipReason.API_UNAVAILABLE, "TLS session error");
         }
 
         public ArrayList<UpdateResult> update_all(GLib.Cancellable? cancellable = null) {
@@ -145,11 +161,27 @@ namespace AppManager.Core {
             if (filtered.size == 0) {
                 return new ArrayList<UpdateResult>();
             }
-            return update_records_parallel(filtered.to_array(), cancellable);
+            ArrayList<UpdateResult> result = new ArrayList<UpdateResult>();
+            try {
+                TlsSession.with_session(() => {
+                    result = update_records_parallel(filtered.to_array(), cancellable);
+                });
+            } catch (Error e) {
+                warning("update_all: TLS session error: %s", e.message);
+            }
+            return result;
         }
 
         public UpdateResult update_single(InstallationRecord record, GLib.Cancellable? cancellable = null) {
-            return update_record(record, cancellable);
+            UpdateResult? result = null;
+            try {
+                TlsSession.with_session(() => {
+                    result = update_record(record, cancellable);
+                });
+            } catch (Error e) {
+                warning("update_single: TLS session error: %s", e.message);
+            }
+            return result ?? new UpdateResult(record, UpdateStatus.FAILED, "TLS session error");
         }
 
         // ─────────────────────────────────────────────────────────────────────
