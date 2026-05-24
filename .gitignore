@@ -11,3 +11,4 @@ appimagetool
 .c[a-z]*/
 *.log
 samples/
+ToDo.md
