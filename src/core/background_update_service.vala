@@ -139,15 +139,17 @@ X-XDP-Autostart=com.github.AppManager
          */
         public static void kill_daemon() {
             try {
-                // Use pkill with SIGKILL (-9) to ensure the daemon is terminated
+                // Send SIGTERM (pkill's default) so the daemon runs its shutdown
+                // handler and exits cleanly, letting the AppImage runtime unmount
+                // its dwarfs mount. SIGKILL (-9) would orphan that mount in /tmp.
                 // Match just "--background-update" to avoid issues with path variations
                 // Use "--" to indicate end of options since pattern starts with "-"
-                string[] argv = { "pkill", "-9", "-f", "--", "--background-update" };
+                string[] argv = { "pkill", "-f", "--", "--background-update" };
                 int exit_status;
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
-                debug("Killed background daemon (exit status: %d)", exit_status);
+                debug("Stopped background daemon (exit status: %d)", exit_status);
             } catch (SpawnError e) {
-                warning("Failed to kill background daemon: %s", e.message);
+                warning("Failed to stop background daemon: %s", e.message);
             }
         }
 
@@ -172,7 +174,17 @@ X-XDP-Autostart=com.github.AppManager
                 Thread.usleep(100000); // 100ms
             }
             
-            warning("Background daemon did not terminate within 5 seconds");
+            // Migration must not race a live daemon. If the graceful SIGTERM
+            // didn't land in time (e.g. daemon blocked mid update-check), escalate
+            // to SIGKILL. This can orphan the dwarfs mount, but a safe migration
+            // outweighs a stale /tmp symlink that cleanup_stale() reaps next launch.
+            warning("Background daemon did not terminate within 5 seconds; sending SIGKILL");
+            try {
+                string[] argv = { "pkill", "-9", "-f", "--", "--background-update" };
+                Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, null);
+            } catch (SpawnError e) {
+                warning("Failed to force-kill background daemon: %s", e.message);
+            }
             return true;
         }
 
@@ -490,6 +502,24 @@ X-XDP-Autostart=com.github.AppManager
         public void run_daemon() {
             log_debug("background daemon: starting persistent service");
 
+            var loop = new MainLoop();
+
+            // Quit cleanly when the session manager / systemd asks us to stop.
+            // GApplication installs no signal handlers and this daemon runs its
+            // own MainLoop, so without this it would ignore SIGTERM on shutdown
+            // and be SIGKILLed after the stop timeout (issue #114). Install the
+            // handlers first so a stop request during the initial check is honored.
+            Unix.signal_add(Posix.Signal.TERM, () => {
+                log_debug("background daemon: SIGTERM received, stopping");
+                loop.quit();
+                return Source.REMOVE;
+            });
+            Unix.signal_add(Posix.Signal.INT, () => {
+                log_debug("background daemon: SIGINT received, stopping");
+                loop.quit();
+                return Source.REMOVE;
+            });
+
             // On login, re-notify about staged updates (notify-only mode only)
             check_staged_updates_on_login();
 
@@ -503,7 +533,7 @@ X-XDP-Autostart=com.github.AppManager
 
             // Check periodically whether we should perform an update check
             // This allows the daemon to respect interval changes without restart
-            Timeout.add_seconds(DAEMON_CHECK_INTERVAL, () => {
+            var check_source_id = Timeout.add_seconds(DAEMON_CHECK_INTERVAL, () => {
                 if (!settings.get_boolean("auto-check-updates")) {
                     log_debug("background daemon: auto-check disabled, skipping");
                     return Source.CONTINUE;
@@ -517,9 +547,17 @@ X-XDP-Autostart=com.github.AppManager
                 return Source.CONTINUE;
             });
 
-            // Run the main loop - this blocks until the session ends
-            var loop = new MainLoop();
+            // Run the main loop - this blocks until a stop signal quits it
             loop.run();
+
+            // Clean shutdown: drop the periodic check and any D-Bus subscription
+            // so we exit promptly instead of leaking sources and getting killed.
+            Source.remove(check_source_id);
+            if (dbus_connection != null && action_signal_id != 0) {
+                dbus_connection.signal_unsubscribe(action_signal_id);
+                action_signal_id = 0;
+            }
+            log_debug("background daemon: stopped");
         }
 
         private void log_debug(string message) {
