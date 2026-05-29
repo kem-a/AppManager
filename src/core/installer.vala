@@ -696,6 +696,10 @@ namespace AppManager.Core {
                 } else {
                     record.bin_symlink = null;
                 }
+
+                // Install additional desktop entries from usr/share/applications/ (issue #106).
+                // No-op when AppImage has no sub-entries; never aborts the install on failure.
+                install_extra_desktop_entries(record, exec_path, assets_path, temp_dir);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
@@ -737,6 +741,20 @@ namespace AppManager.Core {
                 }
                 if (record.bin_symlink != null && File.new_for_path(record.bin_symlink).query_exists()) {
                     File.new_for_path(record.bin_symlink).delete(null);
+                }
+
+                // Extra desktop entries / icons / symlinks installed for multi-component apps (issue #106)
+                foreach (var path in record.extra_desktop_files ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                }
+                foreach (var path in record.extra_icon_paths ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                }
+                foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
                 }
 
                 // Remove AppImage portable folders (.home/.config) unless the caller is
@@ -781,6 +799,18 @@ namespace AppManager.Core {
                 }
                 if (record.bin_symlink != null && File.new_for_path(record.bin_symlink).query_exists()) {
                     File.new_for_path(record.bin_symlink).delete(null);
+                }
+                foreach (var path in record.extra_desktop_files ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                }
+                foreach (var path in record.extra_icon_paths ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                }
+                foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
                 }
             } catch (Error e) {
                 warning("Failed to cleanup after installation error: %s", e.message);
@@ -926,6 +956,204 @@ namespace AppManager.Core {
             entry.set_action_group("Uninstall", uninstall_label, uninstall_exec, uninstall_icon, locale_code, localized_label);
             
             return entry.to_data();
+        }
+
+        /**
+         * Rewrites a sub-desktop file (extracted from usr/share/applications/) to:
+         *  - replace Exec with the per-component bin symlink + preserved original args
+         *  - replace Icon with the resolved icon name (already extracted by caller)
+         *  - inject the same Uninstall action as the primary entry (tears down whole app)
+         *  - strip TryExec / DBusActivatable
+         * Other fields (StartupWMClass, Categories, MimeType, NoDisplay, localized Name[xx])
+         * are intentionally left untouched — these are what distinguish each component.
+         */
+        private string rewrite_sub_desktop(string sub_desktop_path, string sub_binary_symlink_path, string? sub_icon_name, InstallationRecord record) throws Error {
+            var entry = new DesktopEntry(sub_desktop_path);
+
+            var original_exec = entry.exec ?? "";
+            var args = DesktopEntry.extract_exec_arguments(original_exec) ?? "";
+            string exec_line;
+            if (args.strip() != "") {
+                exec_line = "\"%s\" %s".printf(sub_binary_symlink_path, args);
+            } else {
+                exec_line = "\"%s\"".printf(sub_binary_symlink_path);
+            }
+            entry.exec = exec_line;
+
+            if (sub_icon_name != null && sub_icon_name.strip() != "") {
+                entry.icon = sub_icon_name;
+            }
+
+            entry.remove_key("TryExec");
+            entry.remove_key("DBusActivatable");
+
+            // Inject Uninstall action that targets the whole installed app
+            var actions_str = entry.actions ?? "";
+            var actions = new Gee.ArrayList<string>();
+            foreach (var part in actions_str.split(";")) {
+                var action = part.strip();
+                if (action != "" && action != "Uninstall") {
+                    actions.add(action);
+                }
+            }
+            actions.add("Uninstall");
+            var action_builder = new StringBuilder();
+            foreach (var action_name in actions) {
+                action_builder.append(action_name);
+                action_builder.append(";");
+            }
+            entry.actions = action_builder.str;
+
+            var is_self_install = (entry.startup_wm_class == Core.APPLICATION_ID);
+            var uninstall_exec = build_uninstall_exec(record.installed_path, is_self_install);
+            var home = Environment.get_home_dir();
+            var is_trashable = record.installed_path.has_prefix(home + "/");
+            var uninstall_label = is_trashable ? "Move to Trash" : "Delete Permanently";
+            var uninstall_icon = is_trashable ? "user-trash" : "edit-delete";
+            var locale_code = Core.get_locale_code();
+            var localized_label = is_trashable ? _("Move to Trash") : _("Delete Permanently");
+            entry.set_action_group("Uninstall", uninstall_label, uninstall_exec, uninstall_icon, locale_code, localized_label);
+
+            return entry.to_data();
+        }
+
+        /**
+         * Removes previously-installed extra desktop entries / icons / symlinks for this record.
+         * Called before re-installing extras on upgrade so stale paths don't linger.
+         */
+        private void remove_extra_entries(InstallationRecord record) {
+            foreach (var path in record.extra_desktop_files ?? new string[0]) {
+                try {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                } catch (Error e) {
+                    debug("Failed to remove extra desktop %s: %s", path, e.message);
+                }
+            }
+            foreach (var path in record.extra_icon_paths ?? new string[0]) {
+                try {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                } catch (Error e) {
+                    debug("Failed to remove extra icon %s: %s", path, e.message);
+                }
+            }
+            foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
+                try {
+                    var f = File.new_for_path(path);
+                    if (f.query_exists()) f.delete(null);
+                } catch (Error e) {
+                    debug("Failed to remove extra bin symlink %s: %s", path, e.message);
+                }
+            }
+            record.extra_desktop_files = null;
+            record.extra_icon_paths = null;
+            record.extra_bin_symlinks = null;
+        }
+
+        /**
+         * Install all .desktop entries from usr/share/applications/ inside the AppImage
+         * (issue #106 — multi-component AppImages like WPS Office). For each sub-entry:
+         *  - resolve sub-binary name from its Exec
+         *  - create a ~/.local/bin/<name> symlink to the AppImage (multi-call dispatch via argv[0])
+         *  - extract its referenced icon from usr/share/icons/hicolor or usr/share/pixmaps
+         *  - rewrite the .desktop (Exec/Icon/Uninstall) and install to ~/.local/share/applications/
+         * Tracks all created paths on the record for clean uninstall. No-op when no extras present.
+         */
+        private void install_extra_desktop_entries(InstallationRecord record, string exec_path, string assets_path, string temp_root) {
+            string[] extras;
+            try {
+                extras = AppImageAssets.extract_extra_desktop_entries(assets_path, temp_root);
+            } catch (Error e) {
+                warning("Failed to extract extra desktop entries: %s", e.message);
+                return;
+            }
+            if (extras.length == 0) {
+                return;
+            }
+
+            // Clear any prior extras (upgrade path) — files on disk are stale.
+            remove_extra_entries(record);
+
+            var installed_desktops = new Gee.ArrayList<string>();
+            var installed_icons    = new Gee.ArrayList<string>();
+            var installed_symlinks = new Gee.ArrayList<string>();
+
+            foreach (var sub_path in extras) {
+                try {
+                    var sub_entry = new DesktopEntry(sub_path);
+                    var sub_exec = sub_entry.exec ?? "";
+
+                    var base_token = DesktopEntry.extract_base_exec_token(sub_exec);
+                    if (base_token == null || base_token.strip() == "") {
+                        debug("Skipping sub-desktop %s: empty Exec", sub_path);
+                        continue;
+                    }
+                    var sub_bin = Path.get_basename(DesktopEntry.strip_appdir_prefix(base_token));
+                    if (sub_bin == "" || DesktopEntry.is_apprun_token(sub_bin)) {
+                        debug("Skipping sub-desktop %s: unusable binary token %s", sub_path, base_token);
+                        continue;
+                    }
+
+                    var sym = create_bin_symlink(exec_path, sub_bin);
+                    if (sym == null) {
+                        warning("Failed to create symlink for sub-binary %s; skipping %s", sub_bin, sub_path);
+                        continue;
+                    }
+
+                    string? installed_icon_path = null;
+                    string? icon_name_for_desktop = sub_entry.icon;
+                    if (icon_name_for_desktop != null && icon_name_for_desktop.strip() != "") {
+                        var extracted_icon = AppImageAssets.extract_named_icon(assets_path, temp_root, icon_name_for_desktop);
+                        if (extracted_icon != null) {
+                            var ext = detect_icon_extension(extracted_icon);
+                            var stored = Path.build_filename(AppPaths.icons_dir, "%s%s".printf(icon_name_for_desktop, ext));
+                            try {
+                                Utils.FileUtils.ensure_parent(stored);
+                                Utils.FileUtils.file_copy(extracted_icon, stored);
+                                installed_icon_path = stored;
+                            } catch (Error e) {
+                                debug("Failed to copy sub-icon %s: %s", extracted_icon, e.message);
+                            }
+                        }
+                    }
+
+                    var contents = rewrite_sub_desktop(sub_path, sym, icon_name_for_desktop, record);
+                    var dest = Path.build_filename(AppPaths.desktop_dir, Path.get_basename(sub_path));
+                    Utils.FileUtils.ensure_parent(dest);
+                    if (!GLib.FileUtils.set_contents(dest, contents)) {
+                        warning("Failed to write sub-desktop %s", dest);
+                        // Roll back the symlink we just created for this entry
+                        try {
+                            var sym_file = File.new_for_path(sym);
+                            if (sym_file.query_exists()) sym_file.delete(null);
+                        } catch (Error e) {
+                            debug("Cleanup of failed sub-symlink %s: %s", sym, e.message);
+                        }
+                        if (installed_icon_path != null) {
+                            try {
+                                var icon_file = File.new_for_path(installed_icon_path);
+                                if (icon_file.query_exists()) icon_file.delete(null);
+                            } catch (Error e) {
+                                debug("Cleanup of failed sub-icon %s: %s", installed_icon_path, e.message);
+                            }
+                        }
+                        continue;
+                    }
+
+                    installed_desktops.add(dest);
+                    installed_symlinks.add(sym);
+                    if (installed_icon_path != null) {
+                        installed_icons.add(installed_icon_path);
+                    }
+                } catch (Error e) {
+                    warning("Failed to process sub-desktop %s: %s", sub_path, e.message);
+                }
+            }
+
+            record.extra_desktop_files = installed_desktops.size > 0 ? installed_desktops.to_array() : null;
+            record.extra_icon_paths    = installed_icons.size    > 0 ? installed_icons.to_array()    : null;
+            record.extra_bin_symlinks  = installed_symlinks.size > 0 ? installed_symlinks.to_array() : null;
         }
 
         private string build_uninstall_exec(string installed_path, bool is_self_install) {

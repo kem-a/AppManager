@@ -17,6 +17,12 @@ namespace AppManager.Core {
         public string desktop_file { get; set; }
         public string? icon_path { get; set; }
         public string? bin_symlink { get; set; }
+        // Additional desktop entries installed from usr/share/applications/ inside the AppImage
+        // (issue #106 — multi-component apps like WPS Office). Sub-entries are frozen at install
+        // time (no custom_* propagation); these arrays track files for cleanup on uninstall/upgrade.
+        public string[]? extra_desktop_files { get; set; }   // ~/.local/share/applications/<name>.desktop
+        public string[]? extra_icon_paths    { get; set; }   // ~/.local/share/icons/<name>.<ext>
+        public string[]? extra_bin_symlinks  { get; set; }   // ~/.local/bin/<sub-binary>
         public int64 installed_at { get; set; }
         public int64 updated_at { get; set; default = 0; }
         public string? version { get; set; }
@@ -195,6 +201,31 @@ namespace AppManager.Core {
                 builder.end_array();
             }
 
+            if (extra_desktop_files != null && extra_desktop_files.length > 0) {
+                builder.set_member_name("extra_desktop_files");
+                builder.begin_array();
+                foreach (var p in extra_desktop_files) {
+                    builder.add_string_value(p);
+                }
+                builder.end_array();
+            }
+            if (extra_icon_paths != null && extra_icon_paths.length > 0) {
+                builder.set_member_name("extra_icon_paths");
+                builder.begin_array();
+                foreach (var p in extra_icon_paths) {
+                    builder.add_string_value(p);
+                }
+                builder.end_array();
+            }
+            if (extra_bin_symlinks != null && extra_bin_symlinks.length > 0) {
+                builder.set_member_name("extra_bin_symlinks");
+                builder.begin_array();
+                foreach (var p in extra_bin_symlinks) {
+                    builder.add_string_value(p);
+                }
+                builder.end_array();
+            }
+
             // Pre-release channel preference
             builder.set_member_name("prerelease_enabled");
             builder.add_boolean_value(prerelease_enabled);
@@ -340,6 +371,31 @@ namespace AppManager.Core {
                     list[i] = arr.get_string_element(i);
                 }
                 record.original_action_args = list;
+            }
+
+            if (obj.has_member("extra_desktop_files")) {
+                var arr = obj.get_array_member("extra_desktop_files");
+                var list = new string[arr.get_length()];
+                for (uint i = 0; i < arr.get_length(); i++) {
+                    list[i] = arr.get_string_element(i);
+                }
+                record.extra_desktop_files = list;
+            }
+            if (obj.has_member("extra_icon_paths")) {
+                var arr = obj.get_array_member("extra_icon_paths");
+                var list = new string[arr.get_length()];
+                for (uint i = 0; i < arr.get_length(); i++) {
+                    list[i] = arr.get_string_element(i);
+                }
+                record.extra_icon_paths = list;
+            }
+            if (obj.has_member("extra_bin_symlinks")) {
+                var arr = obj.get_array_member("extra_bin_symlinks");
+                var list = new string[arr.get_length()];
+                for (uint i = 0; i < arr.get_length(); i++) {
+                    list[i] = arr.get_string_element(i);
+                }
+                record.extra_bin_symlinks = list;
             }
 
             // Legacy support: migrate old update_link/web_page to original_* fields

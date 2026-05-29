@@ -200,6 +200,98 @@ namespace AppManager.Core {
             return resolve_symlink(desktop_path, appimage_path, desktop_root);
         }
 
+        /**
+         * Extract all .desktop files from usr/share/applications/ inside the AppImage.
+         * Returns an array of paths to extracted files (empty if none present).
+         * Used by issue #106 multi-desktop-entry support (e.g. WPS Office components).
+         */
+        public static string[] extract_extra_desktop_entries(string appimage_path, string temp_root) throws Error {
+            var extra_root = Path.build_filename(temp_root, "extra_desktop");
+            DirUtils.create_with_parents(extra_root, 0755);
+
+            if (!extract_entry(appimage_path, extra_root, "usr/share/applications/*.desktop")) {
+                return new string[0];
+            }
+
+            var apps_dir = Path.build_filename(extra_root, "usr", "share", "applications");
+            if (!FileUtils.test(apps_dir, FileTest.IS_DIR)) {
+                return new string[0];
+            }
+
+            var results = new ArrayList<string>();
+            try {
+                var dir = Dir.open(apps_dir);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    if (!name.has_suffix(".desktop")) continue;
+                    var path = Path.build_filename(apps_dir, name);
+                    if (FileUtils.test(path, FileTest.IS_DIR)) continue;
+
+                    var file = File.new_for_path(path);
+                    var type = file.query_file_type(FileQueryInfoFlags.NONE);
+                    if (type == FileType.SYMBOLIC_LINK) {
+                        try {
+                            results.add(resolve_symlink(path, appimage_path, extra_root));
+                        } catch (Error e) {
+                            debug("Skipping unresolvable extra desktop symlink %s: %s", path, e.message);
+                        }
+                    } else {
+                        results.add(path);
+                    }
+                }
+            } catch (Error e) {
+                debug("Failed to list extra desktop entries in %s: %s", apps_dir, e.message);
+            }
+
+            return results.to_array();
+        }
+
+        /**
+         * Look up a named icon inside the AppImage's icon themes.
+         * Tries usr/share/icons/hicolor/<size>/apps/<icon>.{png,svg} (largest size first),
+         * then usr/share/pixmaps/<icon>.{png,svg}. Returns the extracted file path or null.
+         */
+        public static string? extract_named_icon(string appimage_path, string temp_root, string icon_name) {
+            if (icon_name.strip() == "") return null;
+
+            var icon_root = Path.build_filename(temp_root, "named_icons", icon_name);
+            DirUtils.create_with_parents(icon_root, 0755);
+
+            // Try hicolor PNGs at all sizes; pick the largest available
+            string[] sizes = { "512x512", "256x256", "192x192", "128x128", "96x96", "64x64", "48x48", "32x32", "24x24", "16x16" };
+            foreach (var size in sizes) {
+                var pattern = "usr/share/icons/hicolor/%s/apps/%s.png".printf(size, icon_name);
+                if (extract_entry(appimage_path, icon_root, pattern)) {
+                    var path = Path.build_filename(icon_root, "usr", "share", "icons", "hicolor", size, "apps", "%s.png".printf(icon_name));
+                    if (FileUtils.test(path, FileTest.IS_REGULAR)) {
+                        return path;
+                    }
+                }
+            }
+
+            // Try hicolor scalable SVG
+            var svg_pattern = "usr/share/icons/hicolor/scalable/apps/%s.svg".printf(icon_name);
+            if (extract_entry(appimage_path, icon_root, svg_pattern)) {
+                var path = Path.build_filename(icon_root, "usr", "share", "icons", "hicolor", "scalable", "apps", "%s.svg".printf(icon_name));
+                if (FileUtils.test(path, FileTest.IS_REGULAR)) {
+                    return path;
+                }
+            }
+
+            // Try pixmaps PNG then SVG
+            foreach (var ext in new string[] { "png", "svg" }) {
+                var pattern = "usr/share/pixmaps/%s.%s".printf(icon_name, ext);
+                if (extract_entry(appimage_path, icon_root, pattern)) {
+                    var path = Path.build_filename(icon_root, "usr", "share", "pixmaps", "%s.%s".printf(icon_name, ext));
+                    if (FileUtils.test(path, FileTest.IS_REGULAR)) {
+                        return path;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public static string extract_icon(string appimage_path, string temp_root) throws Error {
             var icon_root = Path.build_filename(temp_root, "icon");
             DirUtils.create_with_parents(icon_root, 0755);
