@@ -49,8 +49,20 @@ namespace AppManager.Core {
         public static TlsSession get_default() {
             if (_instance == null) {
                 _instance = new TlsSession();
+                // Reap our /tmp symlinks on any normal process exit (GUI
+                // close, daemon stop, CLI one-shot) so a session that ends
+                // before reaching release() — e.g. the window closed
+                // mid-fetch — doesn't orphan them. Signals/crashes aren't
+                // covered; cleanup_stale() reaps those next launch.
+                Posix.atexit(at_exit_cleanup);
             }
             return _instance;
+        }
+
+        private static void at_exit_cleanup() {
+            if (_instance != null) {
+                _instance.remove_symlinks();
+            }
         }
 
         private Mutex mutex = Mutex();
@@ -92,7 +104,7 @@ namespace AppManager.Core {
                 return;
             }
 
-            var hook = Path.build_filename(appdir, "bin", "01-path-mapping-hardcoded.src.hook");
+            var hook = Path.build_filename(appdir, "bin", "01-path-mapping-hardcoded.hook");
             string contents;
             try {
                 if (FileUtils.get_contents(hook, out contents)) {

@@ -177,26 +177,26 @@ echo "Neutralizing startup TLS symlinks (managed on-demand by app)..."
 
 # 1) Keep the _tmp_* variable assignments so TlsSession can read the
 #    tokens; strip the if/ln -sfn blocks so AppRun startup writes nothing.
-path_hook="$APPDIR/bin/01-path-mapping-hardcoded.src.hook"
-if [ -f "$path_hook" ]; then
-    awk '
-        /^if \[ -n "\$_tmp_/ { skip=1; next }
-        skip && /^fi$/        { skip=0; next }
-        skip                  { next }
-        { print }
-    ' "$path_hook" > "$path_hook.tmp" && mv "$path_hook.tmp" "$path_hook"
-fi
+#    Abort if the hook is missing: a silent skip here ships the symlink
+#    leak unnoticed (the .src.hook misnaming that did exactly that).
+path_hook="$APPDIR/bin/01-path-mapping-hardcoded.hook"
+[ -f "$path_hook" ] || { echo "Error: $path_hook missing; TLS neutralization aborted." >&2; exit 1; }
+awk '
+    /^if \[ -n "\$_tmp_/ { skip=1; next }
+    skip && /^fi$/        { skip=0; next }
+    skip                  { next }
+    { print }
+' "$path_hook" > "$path_hook.tmp" && mv "$path_hook.tmp" "$path_hook"
 
 # 2) Replace the cert hook with a comment-only stub. TlsSession picks the
 #    host CA bundle from the same candidate list at acquire() time.
-cert_hook="$APPDIR/bin/01-check-ca-certs.src.hook"
-if [ -f "$cert_hook" ]; then
-    cat > "$cert_hook" <<'HOOK_EOF'
+cert_hook="$APPDIR/bin/01-check-ca-certs.hook"
+[ -f "$cert_hook" ] || { echo "Error: $cert_hook missing; TLS neutralization aborted." >&2; exit 1; }
+cat > "$cert_hook" <<'HOOK_EOF'
 #!/bin/sh
 # AppManager: the host CA symlink is created on-demand by the app
 # (src/core/tls_session.vala). This hook is intentionally a no-op.
 HOOK_EOF
-fi
 
 # ── Restore toolkit locale files removed by quick-sharun debloating ──
 # quick-sharun's DEBLOAT_LOCALE deletes .mo files that don't match a
