@@ -18,8 +18,8 @@ namespace AppManager.Core {
         public string? icon_path { get; set; }
         public string? bin_symlink { get; set; }
         // Additional desktop entries installed from usr/share/applications/ inside the AppImage
-        // (issue #106 — multi-component apps like WPS Office). Sub-entries are frozen at install
-        // time (no custom_* propagation); these arrays track files for cleanup on uninstall/upgrade.
+        // (issue #106 — multi-component apps like WPS Office). Custom env vars and command-line
+        // args propagate to sub-entries too; these arrays track files for cleanup on uninstall/upgrade.
         public string[]? extra_desktop_files { get; set; }   // ~/.local/share/applications/<name>.desktop
         public string[]? extra_icon_paths    { get; set; }   // ~/.local/share/icons/<name>.<ext>
         public string[]? extra_bin_symlinks  { get; set; }   // ~/.local/bin/<sub-binary>
@@ -49,6 +49,10 @@ namespace AppManager.Core {
         // Per-action original Exec args from the bundled .desktop, captured at install/update.
         // Each entry is "action_name=args" (mirroring custom_env_vars storage shape).
         public string[]? original_action_args { get; set; }
+        // Per-sub-entry pristine Exec args from the bundled .desktop, captured at install/update.
+        // Each entry is "<installed_desktop_basename>=<args>"; used to re-apply custom env vars and
+        // command-line args to sub-entries on live edits without compounding previously-added args.
+        public string[]? original_sub_args { get; set; }
         public string? entry_exec { get; set; }
         public bool is_terminal { get; set; default = false; }
 
@@ -196,6 +200,15 @@ namespace AppManager.Core {
                 builder.set_member_name("original_action_args");
                 builder.begin_array();
                 foreach (var pair in original_action_args) {
+                    builder.add_string_value(pair);
+                }
+                builder.end_array();
+            }
+
+            if (original_sub_args != null && original_sub_args.length > 0) {
+                builder.set_member_name("original_sub_args");
+                builder.begin_array();
+                foreach (var pair in original_sub_args) {
                     builder.add_string_value(pair);
                 }
                 builder.end_array();
@@ -371,6 +384,15 @@ namespace AppManager.Core {
                     list[i] = arr.get_string_element(i);
                 }
                 record.original_action_args = list;
+            }
+
+            if (obj.has_member("original_sub_args")) {
+                var arr = obj.get_array_member("original_sub_args");
+                var list = new string[arr.get_length()];
+                for (uint i = 0; i < arr.get_length(); i++) {
+                    list[i] = arr.get_string_element(i);
+                }
+                record.original_sub_args = list;
             }
 
             if (obj.has_member("extra_desktop_files")) {

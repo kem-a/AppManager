@@ -333,6 +333,9 @@ namespace AppManager {
             });
             exec_row.add_suffix(restore_exec_button);
             
+            // Update the record on each keystroke (in-memory, cheap), but defer the .desktop
+            // file write to focus-leave / Enter so it isn't rewritten letter-by-letter. The
+            // flush reads only the record, so it is safe even during window teardown.
             exec_row.changed.connect(() => {
                 var new_val = exec_row.text.strip();
                 var original_val = record.original_commandline_args ?? "";
@@ -343,9 +346,12 @@ namespace AppManager {
                 } else {
                     record.custom_commandline_args = new_val;
                 }
-                persist_record_and_refresh_desktop();
                 restore_exec_button.set_visible(record.custom_commandline_args != null);
             });
+            var exec_focus = new Gtk.EventControllerFocus();
+            exec_focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            exec_row.add_controller(exec_focus);
+            exec_row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
             props_group.add(exec_row);
             
             return props_group;
@@ -504,6 +510,7 @@ namespace AppManager {
         }
 
         private void apply_update_link_value(Adw.EntryRow row, Gtk.Button restore_button) {
+            if (row.text == null) return;
             var raw_val = row.text.strip();
             var normalized = Updater.normalize_update_url(raw_val);
             var new_val = normalized ?? raw_val;
@@ -538,6 +545,8 @@ namespace AppManager {
             });
             webpage_row.add_suffix(restore_webpage_button);
             
+            // Update the record on each keystroke (in-memory), defer the .desktop file write to
+            // focus-leave / Enter. The flush reads only the record, so it is safe during teardown.
             webpage_row.changed.connect(() => {
                 var new_val = webpage_row.text.strip();
                 var original_val = record.original_web_page ?? "";
@@ -548,9 +557,12 @@ namespace AppManager {
                 } else {
                     record.custom_web_page = new_val;
                 }
-                persist_record_and_refresh_desktop();
                 restore_webpage_button.set_visible(record.custom_web_page != null);
             });
+            var webpage_focus = new Gtk.EventControllerFocus();
+            webpage_focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            webpage_row.add_controller(webpage_focus);
+            webpage_row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
             
             var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
             open_web_button.add_css_class("flat");
@@ -701,7 +713,9 @@ namespace AppManager {
             // Track all env var rows for management
             var env_rows = new Gee.ArrayList<Gtk.Widget>();
 
-            // Helper to rebuild the record's env vars from current rows
+            // Rebuild the record's env vars from current rows (in-memory only, no disk write).
+            // Called on each keystroke while rows are alive; the .desktop write is deferred to
+            // focus-leave / Enter via flush_env_vars(), which reads only the record.
             void save_env_vars_from_rows() {
                 var new_env_vars = new Gee.ArrayList<string>();
                 foreach (var widget in env_rows) {
@@ -715,10 +729,12 @@ namespace AppManager {
                             while (child != null) {
                                 if (child is Gtk.Entry) {
                                     var entry = (Gtk.Entry) child;
+                                    // .text can be null during teardown; treat as empty.
+                                    var entry_text = entry.text ?? "";
                                     if (name_val == null) {
-                                        name_val = entry.text.strip();
+                                        name_val = entry_text.strip();
                                     } else {
-                                        value_val = entry.text.strip();
+                                        value_val = entry_text.strip();
                                     }
                                 }
                                 child = child.get_next_sibling();
@@ -731,6 +747,11 @@ namespace AppManager {
                     }
                 }
                 record.custom_env_vars = new_env_vars.size > 0 ? new_env_vars.to_array() : null;
+            }
+
+            // Flush the current record to disk. Reads only the record (never the row widgets),
+            // so it is safe to call from focus-leave even during window teardown.
+            void flush_env_vars() {
                 persist_record_and_refresh_desktop();
             }
 
@@ -750,9 +771,11 @@ namespace AppManager {
                 name_entry.set_hexpand(true);
                 name_entry.set_max_length(64);
                 name_entry.text = initial_name ?? "";
-                name_entry.changed.connect(() => {
-                    save_env_vars_from_rows();
-                });
+                name_entry.changed.connect(() => { save_env_vars_from_rows(); });
+                var name_focus = new Gtk.EventControllerFocus();
+                name_focus.leave.connect(() => { flush_env_vars(); });
+                name_entry.add_controller(name_focus);
+                name_entry.activate.connect(() => { flush_env_vars(); });
                 content_box.append(name_entry);
                 
                 var equals_label = new Gtk.Label("=");
@@ -764,9 +787,11 @@ namespace AppManager {
                 value_entry.set_hexpand(true);
                 value_entry.set_max_length(256);
                 value_entry.text = initial_value ?? "";
-                value_entry.changed.connect(() => {
-                    save_env_vars_from_rows();
-                });
+                value_entry.changed.connect(() => { save_env_vars_from_rows(); });
+                var value_focus = new Gtk.EventControllerFocus();
+                value_focus.leave.connect(() => { flush_env_vars(); });
+                value_entry.add_controller(value_focus);
+                value_entry.activate.connect(() => { flush_env_vars(); });
                 content_box.append(value_entry);
                 
                 var delete_button = new Gtk.Button.from_icon_name("user-trash-symbolic");
@@ -777,6 +802,7 @@ namespace AppManager {
                     env_rows.remove(row);
                     env_expander.remove(row);
                     save_env_vars_from_rows();
+                    flush_env_vars();
                     // Re-enable add button if under limit
                     if (env_rows.size < MAX_ENV_VARS) {
                         add_button.sensitive = true;
@@ -878,6 +904,8 @@ namespace AppManager {
             });
             row.add_suffix(restore_button);
             
+            // Update the record on each keystroke (in-memory), defer the .desktop file write to
+            // focus-leave / Enter. The flush reads only the record, so it is safe during teardown.
             row.changed.connect(() => {
                 var new_val = row.text.strip();
                 var original_val = get_original() ?? "";
@@ -888,10 +916,13 @@ namespace AppManager {
                 } else {
                     set_custom(new_val);
                 }
-                persist_record_and_refresh_desktop();
                 restore_button.set_visible(get_custom() != null);
             });
-            
+            var focus = new Gtk.EventControllerFocus();
+            focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            row.add_controller(focus);
+            row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
+
             return row;
         }
 
@@ -929,11 +960,19 @@ namespace AppManager {
             var version_row = new Adw.EntryRow();
             version_row.title = _("Version");
             version_row.text = record.version ?? "";
+            // Update the record on each keystroke (in-memory), defer the .desktop file write to
+            // focus-leave / Enter. The flush reads only the record, so it is safe during teardown.
             version_row.changed.connect(() => {
                 record.version = version_row.text.strip() == "" ? null : version_row.text;
+            });
+            void flush_version() {
                 registry.update(record);
                 installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
-            });
+            }
+            var version_focus = new Gtk.EventControllerFocus();
+            version_focus.leave.connect(flush_version);
+            version_row.add_controller(version_focus);
+            version_row.entry_activated.connect(flush_version);
             return version_row;
         }
 
