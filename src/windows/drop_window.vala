@@ -278,12 +278,7 @@ namespace AppManager {
 
             var existing = detect_existing_installation();
             if (existing != null) {
-                var relation = determine_version_relation(existing);
-                if (relation == VersionRelation.CANDIDATE_NEWER) {
-                    present_update_dialog(existing);
-                } else {
-                    present_replace_dialog(existing, relation == VersionRelation.INSTALLED_NEWER);
-                }
+                present_replace_dialog(existing, determine_version_relation(existing));
             } else {
                 // If app is verified, skip warning dialog and install directly
                 if (verification_state == VerificationState.VERIFIED) {
@@ -375,39 +370,7 @@ namespace AppManager {
             }
         }
 
-        private Gtk.Widget build_update_dialog_content(InstallationRecord record) {
-            var column = new Gtk.Box(Gtk.Orientation.VERTICAL, 10);
-            column.margin_top = 0;
-            column.margin_bottom = 8;
-            column.margin_start = 12;
-            column.margin_end = 12;
-            column.halign = Gtk.Align.FILL;
-            column.hexpand = true;
-
-            var name_label = new Gtk.Label(null);
-            name_label.use_markup = true;
-            name_label.set_markup("<b>%s</b>".printf(GLib.Markup.escape_text(record.name, -1)));
-            name_label.halign = Gtk.Align.CENTER;
-            name_label.wrap = true;
-            column.append(name_label);
-
-            var version_text = record.version ?? _("Version unknown");
-            var current_label = new Gtk.Label(version_text);
-            current_label.add_css_class("dim-label");
-            current_label.halign = Gtk.Align.CENTER;
-            current_label.wrap = true;
-            column.append(current_label);
-
-            var new_version_label = resolved_app_version ?? _("Unknown version");
-            var update_label = new Gtk.Label(_("Will update to version %s").printf(new_version_label));
-            update_label.halign = Gtk.Align.CENTER;
-            update_label.wrap = true;
-            column.append(update_label);
-
-            return column;
-        }
-
-        private void present_update_dialog(InstallationRecord record) {
+        private void present_replace_dialog(InstallationRecord record, VersionRelation relation) {
             if (install_prompt_visible) {
                 return;
             }
@@ -415,50 +378,25 @@ namespace AppManager {
             // Use icon with verification badge overlay
             var icon_overlay = create_dialog_icon_with_badge(record, true);
 
-            var dialog = new DialogWindow(app_ref, this, _("Update %s?").printf(record.name), null);
-            dialog.append_body(icon_overlay);
-            dialog.append_body(build_update_dialog_content(record));
-            dialog.add_option("update", _("Update"), true);
-            dialog.add_option("cancel", _("Cancel"));
-
-            install_prompt_visible = true;
-            dialog.close_request.connect(() => {
-                install_prompt_visible = false;
-                return false;
-            });
-
-            dialog.option_selected.connect((response) => {
-                install_prompt_visible = false;
-                if (response == "update") {
-                    run_installation(record.mode, record, InstallIntent.UPDATE);
-                }
-            });
-
-            dialog.present();
-        }
-
-        private void present_replace_dialog(InstallationRecord record, bool installed_newer) {
-            if (install_prompt_visible) {
-                return;
-            }
-
-            // Use icon with verification badge overlay
-            var icon_overlay = create_dialog_icon_with_badge(record, true);
-
+            bool installed_newer = relation == VersionRelation.INSTALLED_NEWER;
             var dialog = new DialogWindow(app_ref, this, _("Replace %s?").printf(record.name), null);
             dialog.append_body(icon_overlay);
             string replace_text;
-            if (installed_newer) {
+            if (relation == VersionRelation.CANDIDATE_NEWER) {
+                replace_text = _("An older item named \"%s\" already exists in this location. Do you want to replace it with newer one you're copying?").printf(record.name);
+            } else if (installed_newer) {
                 replace_text = _("A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?").printf(record.name);
-                if (record.version != null && resolved_app_version != null) {
-                    var versions = _("Installed: %s | Incoming: %s").printf(record.version, resolved_app_version);
-                    dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
-                }
             } else {
                 replace_text = _("An item named %s already exists in this location. Do you want to replace it with one you're copying?").printf(record.name);
             }
+            if (relation != VersionRelation.SAME && relation != VersionRelation.UNKNOWN
+                && record.version != null && resolved_app_version != null) {
+                var versions = _("Installed: %s | Incoming: %s").printf(record.version, resolved_app_version);
+                dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
+            }
             dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(replace_text, -1), true));
             var replace_is_default = !installed_newer;
+            dialog.add_option("keep-both", _("Keep Both"));
             dialog.add_option("stop", _("Stop"), !replace_is_default);
             dialog.add_option("replace", _("Replace"), replace_is_default);
 
@@ -471,7 +409,12 @@ namespace AppManager {
             dialog.option_selected.connect((response) => {
                 install_prompt_visible = false;
                 if (response == "replace") {
-                    run_installation(record.mode, record, InstallIntent.REPLACE);
+                    var intent = relation == VersionRelation.CANDIDATE_NEWER
+                        ? InstallIntent.UPDATE
+                        : InstallIntent.REPLACE;
+                    run_installation(record.mode, record, intent);
+                } else if (response == "keep-both") {
+                    run_installation(InstallMode.PORTABLE, null, InstallIntent.NEW_INSTALL);
                 }
             });
 

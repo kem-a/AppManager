@@ -23,6 +23,8 @@ It also doesn't require FUSE to run, thanks to the [uruntime](https://github.com
 
 - **Drag-and-drop installer**: Mimics the familiar macOS Applications install flow.
 - **Smart install modes**: Can choose between portable (move the AppImage) and extracted (unpack to `~/Applications/.installed/AppRun`) while letting you override it.
+- **True isolated portable mode**: Optionally creates `.home` and `.config` folders next to the AppImage so the app stores all its data alongside itself — fully self-contained and portable.
+- **Side-by-side installs**: Install multiple copies or versions of the same app; extra copies get a numbered suffix (e.g. `Bitwarden` and `Bitwarden 2`) with their own desktop entries and icons.
 - **Desktop integration**: Extracts the bundled `.desktop` file via `unsquashfs` or `dwarfsextract`, rewrites `Exec` and `Icon`, and stores it in `~/.local/share/applications`.
 - **Simple uninstall**: Right click in app drawer and choose `Move to Trash`, can uninstall in AppManager or simply delete from `~/Applications` folder.
 - **Install registry + preferences**: Main window lists installed apps, default mode, and cleanup behaviors, all stored with GSettings.
@@ -102,6 +104,7 @@ meson install -C build
 ## CLI helpers
 
 - Install an AppImage: `app-manager install /path/to/app.AppImage`
+- Install side by side, keeping the existing app: `app-manager install --keep-both /path/to/app.AppImage`
 - Uninstall by path or checksum: `app-manager uninstall /path/or/checksum`
 - Update a single installed AppImage: `app-manager update /path/or/checksum`
 - Update all installed AppImages: `app-manager --update-all`
@@ -123,7 +126,3 @@ Currently supported: German, Spanish, Estonian, Finnish, French, Italian, Japane
 </a>
 
 *App of the Week*
-
-## License
-
-GPL-3.0-or-later. See [LICENSE](./LICENSE).

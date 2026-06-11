@@ -25,6 +25,9 @@ namespace AppManager.Core {
         public string[]? extra_bin_symlinks  { get; set; }   // ~/.local/bin/<sub-binary>
         public int64 installed_at { get; set; }
         public int64 updated_at { get; set; default = 0; }
+        // Copy index for side-by-side installs of the same app. 0 means the primary
+        // install (no suffix); >=2 means a secondary copy shown as "Name N".
+        public int copy_index { get; set; default = 0; }
         public string? version { get; set; }
         public string? description { get; set; }  // App description from metainfo <summary> or desktop Comment
         public string? last_modified { get; set; }  // HTTP Last-Modified header for change detection
@@ -40,6 +43,9 @@ namespace AppManager.Core {
         public string? zsync_sha1 { get; set; }
         
         // Original values captured from AppImage's .desktop during install/update
+        // original_name is the name AppManager assigns at install (base name, plus the
+        // " N" suffix for secondary copies); it is the restore target for custom_name.
+        public string? original_name { get; set; }
         public string? original_commandline_args { get; set; }
         public string? original_keywords { get; set; }
         public string? original_icon_name { get; set; }
@@ -57,6 +63,7 @@ namespace AppManager.Core {
         public bool is_terminal { get; set; default = false; }
 
         // Custom values set by user (null means use original, CLEARED_VALUE means user cleared it, other means user set custom value)
+        public string? custom_name { get; set; }
         public string? custom_commandline_args { get; set; }
         public string? custom_keywords { get; set; }
         public string? custom_icon_name { get; set; }
@@ -89,6 +96,15 @@ namespace AppManager.Core {
             return custom ?? original;
         }
 
+        public string? get_effective_name() {
+            // Name must never resolve to empty: fall back to original_name, then the
+            // current record name so older records (no original_name) still work.
+            if (custom_name != null && custom_name != CLEARED_VALUE && custom_name.strip() != "") {
+                return custom_name;
+            }
+            return (original_name != null && original_name.strip() != "") ? original_name : name;
+        }
+
         public string? get_effective_commandline_args() {
             return get_effective(custom_commandline_args, original_commandline_args);
         }
@@ -119,6 +135,7 @@ namespace AppManager.Core {
         public bool has_custom_values() {
             return !updates_enabled ||
                    prerelease_enabled ||
+                   custom_name != null ||
                    custom_commandline_args != null ||
                    custom_keywords != null ||
                    custom_icon_name != null ||
@@ -155,6 +172,8 @@ namespace AppManager.Core {
             builder.add_int_value(installed_at);
             builder.set_member_name("updated_at");
             builder.add_int_value(updated_at);
+            builder.set_member_name("copy_index");
+            builder.add_int_value(copy_index);
             builder.set_member_name("version");
             builder.add_string_value(version ?? "");
             builder.set_member_name("description");
@@ -183,6 +202,8 @@ namespace AppManager.Core {
             }
             
             // Original values from AppImage's .desktop
+            builder.set_member_name("original_name");
+            builder.add_string_value(original_name ?? "");
             builder.set_member_name("original_commandline_args");
             builder.add_string_value(original_commandline_args ?? "");
             builder.set_member_name("original_keywords");
@@ -259,6 +280,10 @@ namespace AppManager.Core {
             builder.set_member_name("prerelease_enabled");
             builder.add_boolean_value(prerelease_enabled);
 
+            if (custom_name != null) {
+                builder.set_member_name("custom_name");
+                builder.add_string_value(custom_name);
+            }
             if (custom_commandline_args != null) {
                 builder.set_member_name("custom_commandline_args");
                 builder.add_string_value(custom_commandline_args);
@@ -330,6 +355,7 @@ namespace AppManager.Core {
             record.bin_symlink = bin == "" ? null : bin;
             record.installed_at = (int64)obj.get_int_member("installed_at");
             record.updated_at = (int64)obj.get_int_member_with_default("updated_at", 0);
+            record.copy_index = (int)obj.get_int_member_with_default("copy_index", 0);
             var version = obj.get_string_member_with_default("version", "");
             record.version = version == "" ? null : version;
             var description = obj.get_string_member_with_default("description", "");
@@ -364,6 +390,10 @@ namespace AppManager.Core {
             }
             
             // Original values from AppImage's .desktop
+            var original_name = obj.get_string_member_with_default("original_name", "");
+            // Older records have no original_name; fall back to the stored name so the
+            // editable App Name field always has a sensible restore target.
+            record.original_name = original_name == "" ? name : original_name;
             var original_commandline_args = obj.get_string_member_with_default("original_commandline_args", "");
             record.original_commandline_args = original_commandline_args == "" ? null : original_commandline_args;
             var original_keywords = obj.get_string_member_with_default("original_keywords", "");
@@ -431,6 +461,9 @@ namespace AppManager.Core {
             }
             
             // Custom values set by user - only present if explicitly set
+            if (obj.has_member("custom_name")) {
+                record.custom_name = obj.get_string_member("custom_name");
+            }
             if (obj.has_member("custom_commandline_args")) {
                 record.custom_commandline_args = obj.get_string_member("custom_commandline_args");
             }
@@ -477,6 +510,9 @@ namespace AppManager.Core {
             }
             if (obj.has_member("prerelease_enabled")) {
                 prerelease_enabled = obj.get_boolean_member("prerelease_enabled");
+            }
+            if (custom_name == null && obj.has_member("custom_name")) {
+                custom_name = obj.get_string_member("custom_name");
             }
             if (custom_commandline_args == null && obj.has_member("custom_commandline_args")) {
                 custom_commandline_args = obj.get_string_member("custom_commandline_args");

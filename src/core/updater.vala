@@ -1107,6 +1107,15 @@ namespace AppManager.Core {
                 return null; // Match — verification passed
             }
 
+            // Secondary copies carry a " N" suffix that the candidate's bundled
+            // .desktop Name won't have — compare against the base name instead.
+            if (record.copy_index >= 2) {
+                var base_name = InstallationRegistry.base_name_of(record.original_name ?? record_name);
+                if (normalize_app_name(desktop_name) == normalize_app_name(base_name)) {
+                    return null;
+                }
+            }
+
             return _("App identity mismatch: expected '%s' but got '%s'").printf(record_name, desktop_name.strip());
         }
 

@@ -22,6 +22,7 @@ namespace AppManager {
         private static string? opt_install = null;
         private static string? opt_uninstall = null;
         private static string? opt_is_installed = null;
+        private static bool opt_keep_both = false;
 
         private const OptionEntry[] options = {
             { "help", 'h', 0, OptionArg.NONE, ref opt_help, "Show help options", null },
@@ -30,6 +31,7 @@ namespace AppManager {
             { "update-all", 0, 0, OptionArg.NONE, ref opt_update_all, "Update all installed apps and exit", null },
             { "update-check", 0, 0, OptionArg.NONE, ref opt_update_check, "List available updates and exit", null },
             { "install", 0, OptionFlags.HIDDEN, OptionArg.FILENAME, ref opt_install, null, "PATH" },
+            { "keep-both", 0, 0, OptionArg.NONE, ref opt_keep_both, "With install: keep the existing app and install side by side", null },
             { "uninstall", 0, OptionFlags.HIDDEN, OptionArg.STRING, ref opt_uninstall, null, "PATH" },
             { "is-installed", 0, 0, OptionArg.FILENAME, ref opt_is_installed, "Check if an AppImage is installed", "PATH" },
             { null }
@@ -69,11 +71,13 @@ Options:
   --update-all                Update all installed apps and exit
   --update-check              List available updates and exit
   --is-installed PATH         Check if an AppImage is installed
+  --keep-both                 With install: keep the existing app and install side by side
 
 Examples:
   app-manager                             Launch the GUI
   app-manager app.AppImage                Open installer for app.AppImage
   app-manager install app.AppImage        Install app.AppImage
+  app-manager install app.AppImage --keep-both   Install as a new copy next to the existing app
   app-manager uninstall app.AppImage      Uninstall app.AppImage
   app-manager update app.AppImage         Update app.AppImage
   app-manager --update-all                Update all installed apps
@@ -391,13 +395,7 @@ Examples:
             var existing = registry.detect_existing(appimage_path, metadata.checksum, resolved_name);
             if (existing != null) {
                 var relation = quick_install_version_relation(existing, resolved_version);
-                if (relation == 1) {
-                    // Candidate is newer -> update dialog
-                    quick_install_present_update(appimage_path, existing, resolved_version);
-                } else {
-                    // Same or older -> replace dialog
-                    quick_install_present_replace(appimage_path, existing, resolved_version, relation == -1);
-                }
+                quick_install_present_replace(appimage_path, existing, resolved_version, relation);
             } else {
                 quick_install_present_warning(appimage_path, resolved_name);
             }
@@ -479,56 +477,29 @@ Examples:
             dialog.present();
         }
 
-        private void quick_install_present_update(string appimage_path, InstallationRecord record, string? candidate_version) {
-            var parent = this.get_active_window();
-            var dialog = new DialogWindow(this, parent, _("Update %s?").printf(record.name), null);
-
-            dialog.append_body(quick_install_build_icon_with_badge(appimage_path, record));
-
-            var version_text = record.version ?? _("Version unknown");
-            var current_label = UiUtils.create_wrapped_label(version_text, false);
-            current_label.add_css_class("dim-label");
-            dialog.append_body(current_label);
-
-            var new_version = candidate_version ?? _("Unknown version");
-            dialog.append_body(UiUtils.create_wrapped_label(_("Will update to version %s").printf(new_version), false));
-
-            dialog.add_option("update", _("Update"), true);
-            dialog.add_option("cancel", _("Cancel"));
-
-            dialog.close_request.connect(() => {
-                release_drop_window_lock(appimage_path);
-                return false;
-            });
-
-            dialog.option_selected.connect((response) => {
-                if (response == "update") {
-                    quick_install_run(appimage_path, record.mode, record);
-                }
-            });
-
-            dialog.present();
-        }
-
-        private void quick_install_present_replace(string appimage_path, InstallationRecord record, string? candidate_version, bool installed_newer) {
+        private void quick_install_present_replace(string appimage_path, InstallationRecord record, string? candidate_version, int relation) {
             var parent = this.get_active_window();
             var dialog = new DialogWindow(this, parent, _("Replace %s?").printf(record.name), null);
 
             dialog.append_body(quick_install_build_icon_with_badge(appimage_path, record));
 
+            bool installed_newer = relation == -1;
             string replace_text;
-            if (installed_newer) {
+            if (relation == 1) {
+                replace_text = _("An older item named \"%s\" already exists in this location. Do you want to replace it with newer one you're copying?").printf(record.name);
+            } else if (installed_newer) {
                 replace_text = _("A newer item named %s already exists in this location. Do you want to replace it with the older one you're copying?").printf(record.name);
-                if (record.version != null && candidate_version != null) {
-                    var versions = _("Installed: %s | Incoming: %s").printf(record.version, candidate_version);
-                    dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
-                }
             } else {
                 replace_text = _("An item named %s already exists in this location. Do you want to replace it with one you're copying?").printf(record.name);
+            }
+            if (relation != 0 && record.version != null && candidate_version != null) {
+                var versions = _("Installed: %s | Incoming: %s").printf(record.version, candidate_version);
+                dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(versions, -1), true, true));
             }
             dialog.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(replace_text, -1), true));
 
             var replace_is_default = !installed_newer;
+            dialog.add_option("keep-both", _("Keep Both"));
             dialog.add_option("stop", _("Stop"), !replace_is_default);
             dialog.add_option("replace", _("Replace"), replace_is_default);
 
@@ -540,6 +511,8 @@ Examples:
             dialog.option_selected.connect((response) => {
                 if (response == "replace") {
                     quick_install_run(appimage_path, record.mode, record);
+                } else if (response == "keep-both") {
+                    quick_install_run(appimage_path, InstallMode.PORTABLE, null);
                 }
             });
 
@@ -818,7 +791,8 @@ Examples:
             if (cmd_install != null) {
                 try {
                     bool is_upgrade;
-                    var record = installer.install_or_upgrade(cmd_install, out is_upgrade);
+                    bool keep_both = opts.contains("keep-both");
+                    var record = installer.install_or_upgrade(cmd_install, out is_upgrade, keep_both);
                     if (is_upgrade) {
                         command_line.print("Updated %s\n", record.name);
                     } else {
