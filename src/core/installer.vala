@@ -903,7 +903,6 @@ namespace AppManager.Core {
             return env_builder.str;
         }
 
-        private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page, string? effective_name = null) throws Error {
         // The portion of custom_commandline_args the user added beyond the root entry's default
         // args (original_commandline_args). The root's defaults (e.g. %F) belong only to the
         // primary Exec; appending them to entries that have their own field codes would duplicate
@@ -936,7 +935,7 @@ namespace AppManager.Core {
             return kept.str;
         }
 
-        private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page) throws Error {
+        private string rewrite_desktop(string desktop_path, string exec_target, InstallationRecord record, bool is_terminal, string slug, bool is_upgrade, string? effective_icon_name, string? effective_keywords, string? effective_startup_wm_class, string? effective_commandline_args, string? effective_update_link, string? effective_web_page, string? effective_name = null) throws Error {
             var entry = new DesktopEntry(desktop_path);
 
             // Update Name (secondary-copy suffix or user-customized app name). Leaving it
