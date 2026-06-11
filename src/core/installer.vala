@@ -534,23 +534,10 @@ namespace AppManager.Core {
                 record.description = app_description;
                 record.is_terminal = is_terminal_app;
                 
-                // For fresh installs or upgrades, apply history now that we have the real app name
-                // This restores user's custom settings if they uninstalled and are reinstalling,
-                // or if for some reason the old_record didn't have custom values
-                // Note: During upgrade, custom values were already copied from old_record in install_sync(),
-                // but apply_history won't overwrite existing custom values (only fills in nulls)
-                registry.apply_history_to_record(record);
-
                 // Secondary copies get a frozen "Name N" suffix. Fresh installs compute
                 // the next free index; upgrades keep the carried one.
                 if (!is_upgrade) {
                     record.copy_index = registry.next_copy_index(desktop_name);
-                    // History applied above is keyed by the base name; a custom name
-                    // restored from it would drop the suffix and collide with the
-                    // primary install, so fresh copies start with the assigned name.
-                    if (record.copy_index >= 2) {
-                        record.custom_name = null;
-                    }
                 }
                 // naming_name drives slugs/filenames; record.name is the (custom-overridable)
                 // display name. original_name is the auto-assigned restore target.
@@ -558,6 +545,20 @@ namespace AppManager.Core {
                     ? "%s %d".printf(desktop_name, record.copy_index)
                     : desktop_name;
                 var copy_suffix = record.copy_index >= 2 ? "-%d".printf(record.copy_index) : "";
+
+                // Apply history keyed by the suffixed name so secondary copies restore
+                // their own customizations instead of inheriting the primary install's.
+                // This restores user's custom settings if they uninstalled and are reinstalling.
+                // Note: During upgrade, custom values were already copied from old_record in install_sync(),
+                // but apply_history won't overwrite existing custom values (only fills in nulls)
+                record.name = naming_name;
+                registry.apply_history_to_record(record);
+                // A custom name restored from history could collide with another
+                // install, so fresh copies always start with the assigned name.
+                if (!is_upgrade && record.copy_index >= 2) {
+                    record.custom_name = null;
+                }
+
                 record.original_name = naming_name;
                 record.name = record.get_effective_name();
 
