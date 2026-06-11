@@ -1554,11 +1554,25 @@ namespace AppManager.Core {
                 pristine.set(pair.substring(0, eq), pair.substring(eq + 1));
             }
 
+            bool backfilled = false;
             for (int i = 0; i < desktops.length; i++) {
                 var sub_desktop = desktops[i];
+                // Records written by older versions can list the primary desktop file among
+                // the extras; rewriting it here would clobber the primary Exec just written.
+                if (sub_desktop == record.desktop_file) continue;
                 if (!File.new_for_path(sub_desktop).query_exists()) continue;
-                var args = pristine.has_key(Path.get_basename(sub_desktop))
-                    ? pristine.get(Path.get_basename(sub_desktop)) : "";
+                var basename = Path.get_basename(sub_desktop);
+                string args;
+                if (pristine.has_key(basename)) {
+                    args = pristine.get(basename);
+                } else {
+                    // Records from versions that didn't capture original_sub_args: derive the
+                    // pristine args from the on-disk Exec (minus any user-added args) and
+                    // backfill the record so later rewrites don't compound.
+                    args = derive_pristine_sub_args(sub_desktop, record);
+                    pristine.set(basename, args);
+                    backfilled = true;
+                }
                 try {
                     // sub_icon_name = null preserves the icon already written at install.
                     var contents = rewrite_sub_desktop(sub_desktop, symlinks[i], null, args, record);
@@ -1569,6 +1583,36 @@ namespace AppManager.Core {
                     warning("Failed to rewrite sub-desktop %s: %s", sub_desktop, e.message);
                 }
             }
+
+            if (backfilled) {
+                var entries = new Gee.ArrayList<string>();
+                foreach (var e in pristine.entries) {
+                    entries.add("%s=%s".printf(e.key, e.value));
+                }
+                record.original_sub_args = entries.to_array();
+                registry.persist(false);
+            }
+        }
+
+        // Pristine args for a sub-desktop whose record predates original_sub_args capture:
+        // the current on-disk Exec args minus tokens the user added via custom args.
+        private string derive_pristine_sub_args(string sub_desktop_path, InstallationRecord record) {
+            var entry = new DesktopEntry(sub_desktop_path);
+            var current = DesktopEntry.extract_exec_arguments(entry.exec ?? "") ?? "";
+            if (current.strip() == "") return "";
+            var user_tokens = new Gee.HashSet<string>();
+            foreach (var tok in user_added_commandline_args(record).split(" ")) {
+                var t = tok.strip();
+                if (t != "") user_tokens.add(t);
+            }
+            var kept = new StringBuilder();
+            foreach (var tok in current.split(" ")) {
+                var t = tok.strip();
+                if (t == "" || user_tokens.contains(t)) continue;
+                if (kept.len > 0) kept.append(" ");
+                kept.append(t);
+            }
+            return kept.str;
         }
 
         /**
