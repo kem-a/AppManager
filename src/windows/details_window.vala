@@ -990,9 +990,9 @@ namespace AppManager {
                 installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
             }
             var version_focus = new Gtk.EventControllerFocus();
-            version_focus.leave.connect(flush_version);
+            version_focus.leave.connect(() => { flush_version(); });
             version_row.add_controller(version_focus);
-            version_row.entry_activated.connect(flush_version);
+            version_row.entry_activated.connect(() => { flush_version(); });
             return version_row;
         }
 
