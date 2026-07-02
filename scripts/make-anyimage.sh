@@ -81,6 +81,7 @@ pacman -Syu --noconfirm \
     gvfs \
     desktop-file-utils \
     squashfs-tools \
+    patchelf \
     wget \
     xorg-server-xvfb \
     zsync
