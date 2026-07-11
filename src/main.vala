@@ -17,16 +17,31 @@ static void neutralize_portable_dirs() {
 
     var home = GLib.Environment.get_variable("HOME");
     if (home != null && home == appimage + ".home") {
-        unowned Posix.Passwd? pw = Posix.getpwuid(Posix.getuid());
-        if (pw != null && pw.pw_dir != null && pw.pw_dir != "") {
-            GLib.Environment.set_variable("HOME", pw.pw_dir, true);
-            warning("Portable .home redirection detected and neutralized; HOME reset to %s", pw.pw_dir);
+        // Prefer HOST_HOME (exported by the uruntime/sharun hooks with the exact
+        // pre-redirection value); fall back to the passwd database for builds
+        // using the standard type-2 runtime, which exports no HOST_* variables.
+        var host_home = GLib.Environment.get_variable("HOST_HOME");
+        if (host_home != null && host_home.strip() != "" && host_home != home) {
+            GLib.Environment.set_variable("HOME", host_home, true);
+            warning("Portable .home redirection detected and neutralized; HOME restored to %s", host_home);
+        } else {
+            unowned Posix.Passwd? pw = Posix.getpwuid(Posix.getuid());
+            if (pw != null && pw.pw_dir != null && pw.pw_dir != "") {
+                GLib.Environment.set_variable("HOME", pw.pw_dir, true);
+                warning("Portable .home redirection detected and neutralized; HOME reset to %s", pw.pw_dir);
+            }
         }
     }
 
     var config = GLib.Environment.get_variable("XDG_CONFIG_HOME");
     if (config != null && config == appimage + ".config") {
-        GLib.Environment.unset_variable("XDG_CONFIG_HOME");
+        // Same preference: exact pre-redirection value when the hooks provide it.
+        var host_config = GLib.Environment.get_variable("HOST_XDG_CONFIG_HOME");
+        if (host_config != null && host_config.strip() != "" && host_config != config) {
+            GLib.Environment.set_variable("XDG_CONFIG_HOME", host_config, true);
+        } else {
+            GLib.Environment.unset_variable("XDG_CONFIG_HOME");
+        }
         warning("Portable .config redirection detected and neutralized");
     }
 }
