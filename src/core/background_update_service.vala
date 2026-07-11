@@ -10,6 +10,7 @@ namespace AppManager.Core {
         private uint32 notification_id = 0;
         private DBusConnection? dbus_connection = null;
         private uint action_signal_id = 0;
+        private bool check_in_progress = false;
 
         public BackgroundUpdateService(GLib.Settings settings, InstallationRegistry registry, Installer installer) {
             this.settings = settings;
@@ -217,6 +218,11 @@ X-XDP-Autostart=com.github.AppManager
                 return;
             }
 
+            if (!NetworkMonitor.get_default().get_network_available()) {
+                log_debug("background update: network unavailable; skipping (will retry)");
+                return;
+            }
+
             var records = registry.list();
             if (records.length == 0) {
                 log_debug("background update: no installed records");
@@ -225,6 +231,7 @@ X-XDP-Autostart=com.github.AppManager
             }
 
             bool auto_update_enabled = settings.get_boolean("auto-update-apps");
+            bool check_completed = false;
 
             try {
                 TlsSession.with_session(() => {
@@ -235,12 +242,20 @@ X-XDP-Autostart=com.github.AppManager
                         // Notify-only mode: probe for updates and send notification
                         perform_update_probe(cancellable);
                     }
+                    check_completed = true;
                 });
             } catch (Error e) {
                 warning("background_check: TLS session error: %s", e.message);
             }
 
-            settings.set_int64("last-update-check", new GLib.DateTime.now_utc().to_unix());
+            // Only stamp on a completed check. A failed run (TLS error, no
+            // network) must retry on the next tick instead of consuming the
+            // full update-check-interval (issue #141).
+            if (check_completed) {
+                settings.set_int64("last-update-check", new GLib.DateTime.now_utc().to_unix());
+            } else {
+                log_debug("background update: check did not complete; will retry on next tick");
+            }
         }
 
         /**
@@ -483,6 +498,25 @@ X-XDP-Autostart=com.github.AppManager
             }
         }
 
+        /**
+         * Runs a background check if one is due and none is already running.
+         * Single entry point for all triggers: periodic tick, resume from
+         * suspend, and network reconnection.
+         */
+        private void maybe_check() {
+            if (check_in_progress) {
+                return;
+            }
+            if (!should_check_now()) {
+                return;
+            }
+            check_in_progress = true;
+            perform_background_check.begin(null, (obj, res) => {
+                perform_background_check.end(res);
+                check_in_progress = false;
+            });
+        }
+
         public bool should_check_now() {
             if (!settings.get_boolean("auto-check-updates")) {
                 return false;
@@ -524,28 +558,56 @@ X-XDP-Autostart=com.github.AppManager
             check_staged_updates_on_login();
 
             // Check immediately on startup if interval has elapsed
-            if (should_check_now()) {
-                log_debug("background daemon: interval elapsed, checking now");
-                perform_background_check.begin(null);
-            } else {
-                log_debug("background daemon: not yet time to check, waiting");
-            }
+            log_debug("background daemon: startup check");
+            maybe_check();
 
             // Check periodically whether we should perform an update check
             // This allows the daemon to respect interval changes without restart
             var check_source_id = Timeout.add_seconds(DAEMON_CHECK_INTERVAL, () => {
-                if (!settings.get_boolean("auto-check-updates")) {
-                    log_debug("background daemon: auto-check disabled, skipping");
-                    return Source.CONTINUE;
-                }
-
-                if (should_check_now()) {
-                    log_debug("background daemon: interval elapsed, checking now");
-                    perform_background_check.begin(null);
-                }
-
+                maybe_check();
                 return Source.CONTINUE;
             });
+
+            // Re-check as soon as the network comes back, so an overdue check
+            // blocked by offline state doesn't wait for the next tick.
+            var network_monitor = NetworkMonitor.get_default();
+            ulong network_handler_id = network_monitor.network_changed.connect((available) => {
+                if (available) {
+                    log_debug("background daemon: network available, evaluating check");
+                    maybe_check();
+                }
+            });
+
+            // Re-evaluate after resume from suspend. GLib timers run on
+            // CLOCK_MONOTONIC and freeze while the machine sleeps, so without
+            // this a laptop that mostly suspends almost never reaches the
+            // periodic tick (issue #141).
+            DBusConnection? system_bus = null;
+            uint sleep_signal_id = 0;
+            try {
+                system_bus = Bus.get_sync(BusType.SYSTEM);
+                sleep_signal_id = system_bus.signal_subscribe(
+                    "org.freedesktop.login1",
+                    "org.freedesktop.login1.Manager",
+                    "PrepareForSleep",
+                    "/org/freedesktop/login1",
+                    null,
+                    DBusSignalFlags.NONE,
+                    (conn, sender, object_path, interface_name, signal_name, parameters) => {
+                        bool sleeping;
+                        parameters.get("(b)", out sleeping);
+                        if (!sleeping) {
+                            log_debug("background daemon: resumed from suspend, scheduling check");
+                            Timeout.add_seconds(RESUME_CHECK_DELAY, () => {
+                                maybe_check();
+                                return Source.REMOVE;
+                            });
+                        }
+                    }
+                );
+            } catch (Error e) {
+                warning("background daemon: could not subscribe to PrepareForSleep: %s", e.message);
+            }
 
             // Run the main loop - this blocks until a stop signal quits it
             loop.run();
@@ -553,6 +615,10 @@ X-XDP-Autostart=com.github.AppManager
             // Clean shutdown: drop the periodic check and any D-Bus subscription
             // so we exit promptly instead of leaking sources and getting killed.
             Source.remove(check_source_id);
+            network_monitor.disconnect(network_handler_id);
+            if (system_bus != null && sleep_signal_id != 0) {
+                system_bus.signal_unsubscribe(sleep_signal_id);
+            }
             if (dbus_connection != null && action_signal_id != 0) {
                 dbus_connection.signal_unsubscribe(action_signal_id);
                 action_signal_id = 0;

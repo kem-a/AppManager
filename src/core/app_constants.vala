@@ -10,6 +10,12 @@ namespace AppManager.Core {
     public const string SQUASHFS_ROOT_DIR = "squashfs-root";
     public const string LOCAL_BIN_DEFAULT_DIRNAME = ".local/bin";
 
-    // Background update daemon check frequency (in seconds). Default: 1 hour. One lightweight timestamp comparison
-    public const uint DAEMON_CHECK_INTERVAL = 3600;
+    // Background update daemon check frequency (in seconds). One lightweight
+    // timestamp comparison per tick, so a short interval is cheap. Kept short
+    // because GLib timers do not advance during suspend (issue #141).
+    public const uint DAEMON_CHECK_INTERVAL = 600;
+
+    // Delay (in seconds) after resume-from-suspend before attempting an update
+    // check, giving the network time to reconnect.
+    public const uint RESUME_CHECK_DELAY = 10;
 }
