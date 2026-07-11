@@ -66,7 +66,6 @@ namespace AppManager.Core {
         private const int MAX_PARALLEL_JOBS = 5;
         private const int MAX_ASSET_VERIFY_DEPTH = 3;
         private static string? _system_arch = null;
-        private GLib.Settings? app_settings = null;
 
         public Updater(InstallationRegistry registry, Installer installer) {
             this.registry = registry;
@@ -75,19 +74,17 @@ namespace AppManager.Core {
             user_agent = "AppManager/%s".printf(Core.APPLICATION_VERSION);
             session.user_agent = user_agent;
             session.timeout = 60;
-            app_settings = new GLib.Settings(Core.APPLICATION_ID);
         }
 
         /**
-         * Get the GitHub token from GSettings, falling back to
-         * GITHUB_TOKEN or GH_TOKEN environment variables.
+         * Get the GitHub token from the secure store (keyring or encrypted
+         * fallback), falling back to GITHUB_TOKEN or GH_TOKEN environment
+         * variables.
          */
         private string? get_github_token() {
-            if (app_settings != null) {
-                var token = app_settings.get_string("github-token");
-                if (token != null && token.strip() != "") {
-                    return token.strip();
-                }
+            var token = TokenStore.get_token();
+            if (token != null && token.strip() != "") {
+                return token.strip();
             }
             var env_token = GLib.Environment.get_variable("GITHUB_TOKEN");
             if (env_token != null && env_token.strip() != "") {

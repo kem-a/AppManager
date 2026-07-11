@@ -78,6 +78,8 @@ pacman -Syu --noconfirm \
     json-glib \
     libgee \
     libsoup3 \
+    libsecret \
+    gnutls \
     gvfs \
     desktop-file-utils \
     squashfs-tools \

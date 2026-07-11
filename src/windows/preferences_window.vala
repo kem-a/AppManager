@@ -232,7 +232,7 @@ namespace AppManager {
             var token_row = new Adw.PasswordEntryRow();
             token_row.title = _( "Personal access token");
 
-            var current_token = settings.get_string("github-token");
+            var current_token = TokenStore.get_token();
             if (current_token != null && current_token.strip() != "") {
                 token_row.text = current_token;
             }
@@ -243,7 +243,7 @@ namespace AppManager {
             token_apply_button.add_css_class("success");
             token_apply_button.tooltip_text = _( "Apply token");
             token_apply_button.clicked.connect(() => {
-                settings.set_string("github-token", token_row.text.strip());
+                TokenStore.set_token(token_row.text.strip());
                 show_info_toast(_( "GitHub token saved"));
             });
 
@@ -253,7 +253,7 @@ namespace AppManager {
             token_clear_button.tooltip_text = _( "Clear token");
             token_clear_button.clicked.connect(() => {
                 token_row.text = "";
-                settings.set_string("github-token", "");
+                TokenStore.clear_token();
                 show_info_toast(_( "GitHub token cleared"));
             });
 
@@ -262,7 +262,7 @@ namespace AppManager {
 
             // Allow Enter key to apply
             token_row.entry_activated.connect(() => {
-                settings.set_string("github-token", token_row.text.strip());
+                TokenStore.set_token(token_row.text.strip());
                 show_info_toast(_( "GitHub token saved"));
             });
 
@@ -280,7 +280,7 @@ namespace AppManager {
             test_button.add_css_class("flat");
             test_button.clicked.connect(() => {
                 // Save the current token first
-                settings.set_string("github-token", token_row.text.strip());
+                TokenStore.set_token(token_row.text.strip());
                 test_button.sensitive = false;
                 test_spinner.visible = true;
                 test_spinner.spinning = true;

@@ -14,6 +14,8 @@
 , json-glib
 , libgee
 , libsoup_3
+, libsecret
+, gnutls
 , zstd
 , squashfsTools
 , squashfuse
@@ -47,6 +49,8 @@ stdenv.mkDerivation(finalAttrs: {
     json-glib
     libgee
     libsoup_3
+    libsecret
+    gnutls
     zstd
   ];
 

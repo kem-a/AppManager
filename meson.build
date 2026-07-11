@@ -14,8 +14,17 @@ gtk_dep = dependency('gtk4')
 json_glib_dep = dependency('json-glib-1.0')
 gee_dep = dependency('gee-0.8')
 libsoup_dep = dependency('libsoup-3.0')
+libsecret_dep = dependency('libsecret-1')
+# gnutls >=3.6.13 provides the HKDF API used by the tier-2 crypto shim.
+gnutls_dep = dependency('gnutls', version: '>=3.6.13')
 
 add_project_arguments(['--target-glib=2.74', '--pkg=posix'], language: 'vala')
+
+# Local vapi for the tier-2 crypto shim (GnuTLS has no shipped Vala binding).
+add_project_arguments(
+  ['--vapidir', meson.current_source_dir() / 'src' / 'vapi', '--pkg', 'crypto-shim'],
+  language: 'vala'
+)
 
 # Define GETTEXT_PACKAGE for C code (required by gi18n-lib.h)
 add_project_arguments(['-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name())], language: 'c')
@@ -76,6 +85,7 @@ core_sources = files(
   'src/core/installer.vala',
   'src/core/update_sources.vala',
   'src/core/tls_session.vala',
+  'src/core/token_store.vala',
   'src/core/updater.vala',
   'src/core/update_log.vala',
   'src/core/background_update_service.vala',
@@ -95,6 +105,24 @@ build_info = configure_file(
 )
 
 core_sources += build_info
+
+# Tier-2 crypto shim built as a C static library. Kept out of the Vala target's
+# `dependencies` so meson does not try to load a (non-existent) gnutls vapi;
+# gnutls links transitively through this library instead.
+crypto_shim_inc = include_directories('src/core')
+crypto_shim_lib = static_library('crypto-shim',
+  'src/core/crypto_shim.c',
+  dependencies: [glib_dep, gnutls_dep],
+  include_directories: crypto_shim_inc
+)
+
+crypto_shim_test = executable('crypto-shim-test',
+  'tests/crypto_shim_test.c',
+  link_with: crypto_shim_lib,
+  include_directories: crypto_shim_inc,
+  dependencies: [glib_dep]
+)
+test('crypto-shim', crypto_shim_test)
 
 # Fetch and install DwarFS tools if requested and supported
 if bundle_dwarfs and dwarfs_arch != ''

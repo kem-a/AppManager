@@ -88,8 +88,13 @@
     </key>
     <key name="github-token" type="s">
       <default>''</default>
-      <summary>GitHub personal access token</summary>
-      <description>A GitHub personal access token used to authenticate API requests. This raises the rate limit from 60 to 5,000 requests per hour. Only needs read-only access to public repositories.</description>
+      <summary>GitHub personal access token (legacy, no longer written)</summary>
+      <description>Legacy plaintext GitHub token key. Kept only so a token stored by an older version can be migrated into the keyring or the encrypted key below, and for downgrade safety. New versions never write here. See TokenStore.</description>
+    </key>
+    <key name="github-token-cipher" type="s">
+      <default>''</default>
+      <summary>Encrypted GitHub token (tier-2 fallback)</summary>
+      <description>Machine+user-bound AES-256-GCM blob holding the GitHub token, used only when no freedesktop Secret Service is available. Prefixed 'AMTC1:'. Useless off its origin machine. See TokenStore / crypto_shim.</description>
     </key>
   </schema>
 </schemalist>
