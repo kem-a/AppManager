@@ -52,6 +52,10 @@ namespace AppManager.Core {
             return record.mode == InstallMode.PORTABLE && record.installed_path != null && record.installed_path.strip() != "";
         }
 
+        private static bool is_self_record(InstallationRecord record) {
+            return record.original_startup_wm_class == Core.APPLICATION_ID;
+        }
+
         /**
          * True when the .home folder exists next to the AppImage.
          */
@@ -84,7 +88,7 @@ namespace AppManager.Core {
          * Creates the .home folder next to the AppImage. Safe to call if it already exists.
          */
         public void create_portable_home(InstallationRecord record) {
-            if (!portable_mode_applicable(record)) {
+            if (!portable_mode_applicable(record) || is_self_record(record)) {
                 return;
             }
             DirUtils.create_with_parents(get_portable_home_path(record), 0755);
@@ -94,7 +98,7 @@ namespace AppManager.Core {
          * Creates the .config folder next to the AppImage. Safe to call if it already exists.
          */
         public void create_portable_config(InstallationRecord record) {
-            if (!portable_mode_applicable(record)) {
+            if (!portable_mode_applicable(record) || is_self_record(record)) {
                 return;
             }
             DirUtils.create_with_parents(get_portable_config_path(record), 0755);
@@ -305,7 +309,7 @@ namespace AppManager.Core {
                     install_portable(metadata, record, is_upgrade);
                     // For fresh installs, apply the global portable-mode defaults (home/config independently).
                     // Upgrades inherit existing portable folders (they stayed in place during reinstall).
-                    if (old_record == null) {
+                    if (old_record == null && !is_self_record(record)) {
                         if (settings.get_boolean("portable-home-default")) {
                             create_portable_home(record);
                         }

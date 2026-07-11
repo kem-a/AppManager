@@ -87,6 +87,35 @@ namespace AppManager.Utils {
             }
         }
 
+        /**
+         * True when the directory tree at `path` contains no regular files or
+         * symlinks — only (possibly nested) empty directories. Used to decide
+         * whether a leftover portable folder is safe to remove silently. On any
+         * error it returns false (conservative: never treat as empty).
+         */
+        public static bool dir_is_effectively_empty(string path) {
+            try {
+                var enumerator = File.new_for_path(path).enumerate_children(
+                    "standard::name,standard::type", FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+                FileInfo info;
+                while ((info = enumerator.next_file()) != null) {
+                    if (info.get_file_type() == FileType.DIRECTORY) {
+                        var child = enumerator.get_child(info);
+                        if (!dir_is_effectively_empty(child.get_path())) {
+                            return false;
+                        }
+                    } else {
+                        // A regular file or symlink means the tree holds real content.
+                        return false;
+                    }
+                }
+            } catch (Error e) {
+                warning("Failed to inspect %s: %s", path, e.message);
+                return false;
+            }
+            return true;
+        }
+
         public static int64 get_path_size(string path) throws Error {
             var file = File.new_for_path(path);
             if (!file.query_exists()) {

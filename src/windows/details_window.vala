@@ -93,7 +93,11 @@ namespace AppManager {
             // update_group will be handled inside build_app_updates_page()
             var advanced_row = build_advanced_action_row();
             // Portable .home/.config toggles only apply to portable (non-extracted) AppImages.
-            if (record.mode == InstallMode.PORTABLE) {
+            // They are never offered for AppManager itself: the AppImage runtime would
+            // redirect $HOME and AppManager would lose its own registry and settings
+            // (self-install loop, issue #140).
+            var is_self = record.original_startup_wm_class == Core.APPLICATION_ID;
+            if (record.mode == InstallMode.PORTABLE && !is_self) {
                 props_group.add(build_portable_home_row());
                 props_group.add(build_portable_config_row());
             }

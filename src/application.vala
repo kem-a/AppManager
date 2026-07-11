@@ -14,6 +14,8 @@ namespace AppManager {
         private PreferencesDialog? preferences_dialog;
         // Track lock files owned by this instance to clean up on exit
         private HashSet<string> owned_lock_files = new HashSet<string>();
+        // Stale self portable folders already flagged to the user (notice fires once per dir)
+        private HashSet<string> notified_stale_dirs = new HashSet<string>();
         private static bool opt_version = false;
         private static bool opt_help = false;
         private static bool opt_background_update = false;
@@ -269,6 +271,10 @@ Examples:
                     debug("Found %d orphaned installation(s) on launch", orphaned.size);
                 }
             }
+
+            // Remove or flag any leftover .home/.config folder next to AppManager's
+            // own AppImage, left behind by the pre-fix self-install loop (issue #140).
+            cleanup_stale_self_portable_dirs();
 
             // Self-install: if running as AppImage and not yet installed, show installer
             if (AppPaths.is_running_as_appimage && !is_self_installed()) {
@@ -716,6 +722,64 @@ Examples:
                 }
                 main_window.present();
             }
+        }
+
+        /**
+         * Handles leftover .home/.config folders next to AppManager's own AppImage,
+         * created by the pre-fix self-install loop (issue #140). Empty scaffolding is
+         * removed silently; folders with real content (apps installed while HOME was
+         * redirected) are flagged to the user once instead of being deleted.
+         */
+        private void cleanup_stale_self_portable_dirs() {
+            var appimage = AppPaths.appimage_path;
+            if (appimage == null) {
+                return;
+            }
+            string[] stale = { appimage + ".home", appimage + ".config" };
+            foreach (var dir in stale) {
+                if (!GLib.FileUtils.test(dir, FileTest.IS_DIR)) {
+                    continue;
+                }
+                if (Utils.FileUtils.dir_is_effectively_empty(dir)) {
+                    // Only empty scaffolding left behind — remove silently.
+                    Utils.FileUtils.remove_dir_recursive(dir);
+                    debug("Removed stale portable folder %s", dir);
+                } else {
+                    // Contains real files (possibly apps installed while HOME was
+                    // redirected). Never delete silently — tell the user once.
+                    present_stale_portable_dir_notice(dir);
+                }
+            }
+        }
+
+        private void present_stale_portable_dir_notice(string dir) {
+            if (notified_stale_dirs.contains(dir)) {
+                return;
+            }
+            notified_stale_dirs.add(dir);
+            // Defer to idle so a window (main or self-install) exists to parent the dialog.
+            Idle.add(() => {
+                var dialog = new Adw.AlertDialog(
+                    _("Leftover portable folder found"),
+                    _("A leftover portable folder was found next to AppManager (%s). AppManager does not support portable mode for itself. The folder may contain apps installed while this bug was active — move anything you need out of it (e.g. AppImages under its Applications subfolder), then delete it.").printf(dir)
+                );
+                dialog.add_response("ignore", _("Ignore"));
+                dialog.add_response("trash", _("Move to Trash"));
+                dialog.set_response_appearance("trash", Adw.ResponseAppearance.DESTRUCTIVE);
+                dialog.set_close_response("ignore");
+                dialog.set_default_response("ignore");
+                dialog.response.connect((response) => {
+                    if (response == "trash") {
+                        try {
+                            File.new_for_path(dir).trash(null);
+                        } catch (Error e) {
+                            warning("Failed to move stale portable folder %s to trash: %s", dir, e.message);
+                        }
+                    }
+                });
+                dialog.present(this.get_active_window() ?? main_window);
+                return Source.REMOVE;
+            });
         }
 
         protected override int command_line(GLib.ApplicationCommandLine command_line) {
