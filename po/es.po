@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-21 23:29+0300\n"
-"PO-Revision-Date: 2026-04-22 19:09-0400\n"
+"PO-Revision-Date: 2026-07-15 03:16-0400\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: src/application.vala:260
 msgid "Incompatible AppImage"
-msgstr "Imagen de aplicación incompatible"
+msgstr "AppImage incompatible"
 
 #: src/application.vala:261
 msgid ""
@@ -269,7 +269,7 @@ msgstr "%d actualización(es) de aplicación disponible(s)"
 
 #: src/core/background_update_service.vala:314
 msgid "App updates failed"
-msgstr "Actualizaciones de aplicaciones disponibles"
+msgstr "Las actualizaciones de la aplicación han fallado"
 
 #: src/core/background_update_service.vala:315
 #, c-format
@@ -301,7 +301,7 @@ msgstr "Este ya es el directorio actual"
 
 #: src/core/path_migration_service.vala:56
 msgid "Directory is not writable"
-msgstr "El directorio no puede ser escrito"
+msgstr "El directorio no es escribible"
 
 #: src/core/path_migration_service.vala:59
 #, c-format
@@ -342,7 +342,7 @@ msgstr "Error al crear el directorio: %s"
 #: src/core/path_migration_service.vala:178
 #, c-format
 msgid "Failed to create extracted directory: %s"
-msgstr "Error al crear el directorio extraido: %s"
+msgstr "Error al crear el directorio extraído: %s"
 
 #: src/core/path_migration_service.vala:189
 #, c-format
@@ -354,7 +354,9 @@ msgstr "Migrando %s (%d/%d)…"
 msgid ""
 "Some apps failed to migrate:\n"
 "%s"
-msgstr "Algunas apps han sufrido un error en la migración%s"
+msgstr ""
+"Algunas apps han sufrido un error en la migración:\n"
+"%s"
 
 #: src/core/updater.vala:577 src/core/updater.vala:644
 msgid "No update address configured"
@@ -486,7 +488,7 @@ msgstr "Extraído"
 
 #: src/windows/details_window.vala:262
 msgid "App version"
-msgstr "Versión"
+msgstr "Versión de la aplicación"
 
 #. Terminal app card (only show if is_terminal)
 #: src/windows/details_window.vala:273
@@ -668,7 +670,7 @@ msgstr "Comprobando..."
 
 #: src/windows/details_window.vala:1042
 msgid "Update Failed"
-msgstr "Actualización disponible"
+msgstr "Error en la actualización"
 
 #: src/windows/details_window.vala:1049
 msgid "Check Update"
@@ -773,7 +775,7 @@ msgstr "Esta es una aplicación de terminal y se instalará en modo portable."
 
 #: src/windows/drop_window.vala:320
 msgid "This AppImage is incompatible or corrupted"
-msgstr "Este AppImage es incompatible o está dañado"
+msgstr "Esta AppImage es incompatible o está dañada"
 
 #: src/windows/drop_window.vala:322
 msgid "Missing required files (AppRun, .desktop, or icon)"
@@ -950,11 +952,11 @@ msgstr "Salir"
 
 #: src/windows/main_window.vala:907
 msgid "Support AppManager"
-msgstr "Administrador de aplicaciones de soporte"
+msgstr "Apoya a AppManager"
 
 #: src/windows/main_window.vala:922
 msgid "Buy Me a Coffee"
-msgstr "Comprame un café"
+msgstr "Cómprame un café"
 
 #: src/windows/main_window.vala:941
 msgid "Become a sponsor on GitHub"
@@ -962,15 +964,15 @@ msgstr "Conviertete en patrocinador en Github"
 
 #: src/windows/main_window.vala:946
 msgid "Sponsor Me ♡"
-msgstr "Patrocíname"
+msgstr "Patrocíname ♡"
 
 #: src/windows/main_window.vala:957
 msgid "Star AppManager on GitHub"
-msgstr "Administrador de aplicaciones estrella en GitHub"
+msgstr "Dar una estrella a AppManager en GitHub"
 
 #: src/windows/main_window.vala:962
 msgid "Star AppManager"
-msgstr "Administrador de aplicaciones estrella"
+msgstr "Dar una estrella a AppManager"
 
 #: src/windows/main_window.vala:973
 msgid "View contributors on GitHub"
@@ -1052,7 +1054,7 @@ msgstr "Actualización cancelada"
 
 #: src/windows/main_window.vala:1482 src/windows/main_window.vala:1502
 msgid "Update failed"
-msgstr "Actualización disponible"
+msgstr "La actualización ha fallado"
 
 #: src/windows/main_window.vala:1555
 msgid "Checking updates"
@@ -1275,7 +1277,7 @@ msgid ""
 "Replace spaces with underscores in installed filenames and keep "
 "the .AppImage extension"
 msgstr ""
-"Sustituor los espacios por guiones bajos en los nombres de los archivos "
+"Sustituir los espacios por guiones bajos en los nombres de los archivos "
 "instalados y mantener la extensión .AppImage"
 
 #. Automatic updates group
@@ -1376,7 +1378,7 @@ msgstr "Token de GitHub guardado"
 
 #: src/windows/preferences_window.vala:253
 msgid "Clear token"
-msgstr "Borrar ficha"
+msgstr "Borrar token"
 
 #: src/windows/preferences_window.vala:257
 msgid "GitHub token cleared"
@@ -1448,7 +1450,7 @@ msgstr "Moviendo Apps…"
 
 #: src/windows/preferences_window.vala:483
 msgid "Please wait while your apps are being moved."
-msgstr "Por favor espera mientras tus apps se mueven."
+msgstr "Por favor, espera mientras se transfieren tus aplicaciones."
 
 #: src/windows/preferences_window.vala:520
 msgid "Apps moved successfully"
@@ -1500,7 +1502,8 @@ msgstr "Arnis Kemlers"
 
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer and management application"
-msgstr "Instalador de AppImage de arrastrar y soltar para GNOME"
+msgstr ""
+"Aplicación de instalación y gestión de AppImage mediante arrastrar y soltar"
 
 #: data/com.github.AppManager.metainfo.xml:35
 msgid ""
@@ -1509,9 +1512,9 @@ msgid ""
 "extraction, executable bits, and app updates."
 msgstr ""
 "AppManager te permite instaladar o desinstalar AppImages con un flujo de "
-"trabajofamiliar de arrastrar y soltar inspirado en macOS. Maneja la "
-"integración con desktop, iconos, extracción, ejecutables y menus de contexto "
-"de Nautilus."
+"trabajo familiar de arrastrar y soltar inspirado en macOS. Maneja la "
+"integración con el escritorio, iconos, extracción, ejecutables y menus de "
+"contexto de Nautilus."
 
 #~ msgid "Launch Application"
 #~ msgstr "¿Extraer aplicación?"
