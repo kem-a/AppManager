@@ -13,7 +13,7 @@
 
 > **This AppImage bundles everything and it should work on any Linux distro, including old and musl-based ones.**
 
-It also doesn't require FUSE to run, thanks to the [uruntime](https://github.com/VHSgunzo/uruntime)
+AppManager doesn't require FUSE to run, thanks to the [uruntime](https://github.com/VHSgunzo/uruntime)
 
 ## Preview
 
