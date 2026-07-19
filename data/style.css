@@ -98,6 +98,17 @@
 .update-failed-button {
     color: @warning_color;
 }
+.clickable-icon-column {
+    padding: 8px 14px;
+    border-radius: 12px;
+    transition: background-color 100ms ease;
+}
+.clickable-icon-column.selected {
+    background-color: alpha(@accent_bg_color, 0.3);
+}
+.clickable-icon-column.selected label {
+    color: @accent_fg_color;
+}
 .drop-target-highlight {
     background-color: alpha(@accent_bg_color, 0.15);
     border-radius: 12px;
