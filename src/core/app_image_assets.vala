@@ -23,8 +23,6 @@ namespace AppManager.Core {
 
         // ELF magic: 0x7f E L F
         private const uint8[] ELF_MAGIC = { 0x7f, 'E', 'L', 'F' };
-        // AppImage magic: "AI" at ELF e_ident[8..9]
-        private const uint8[] AI_MAGIC = { 0x41, 0x49 };
         // SquashFS little-endian magic: "hsqs"
         private const uint8[] SQFS_MAGIC = { 'h', 's', 'q', 's' };
         // DwarFS magic: "DWARFS"
@@ -101,10 +99,10 @@ namespace AppManager.Core {
                     return -1;
                 }
 
-                // Verify AppImage magic
-                if (ident[8] != AI_MAGIC[0] || ident[9] != AI_MAGIC[1]) {
-                    return -1;
-                }
+                // Note: the legacy AppImage magic ("AI" at e_ident[8..9]) is not
+                // required. Newer static-pie runtimes leave the ELF e_ident padding
+                // zeroed (spec-compliant), so we rely on the SquashFS/DwarFS magic
+                // at the computed payload offset (see detect_format) to validate.
 
                 int elf_class = ident[4];  // 1 = 32-bit, 2 = 64-bit
                 int elf_data = ident[5];   // 1 = little-endian, 2 = big-endian
