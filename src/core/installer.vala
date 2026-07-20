@@ -438,6 +438,15 @@ namespace AppManager.Core {
             }
             
             record.installed_path = dest_dir;
+            // Capture the source AppImage's SHA-1 as the zsync update baseline.
+            // installed_path is now a directory, so the updater cannot recompute
+            // this from disk later (see updater probe_zsync_sha1); the source file
+            // still exists at this point (it is deleted by the caller afterwards).
+            try {
+                record.zsync_sha1 = Utils.FileUtils.compute_sha1(metadata.path);
+            } catch (Error e) {
+                debug("install_extracted: could not compute source SHA-1 baseline: %s", e.message);
+            }
                 finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run);
         }
 

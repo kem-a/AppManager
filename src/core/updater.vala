@@ -1593,7 +1593,18 @@ namespace AppManager.Core {
                 return true;
             }
             
-            // No stored SHA-1: compute from local file
+            // No stored SHA-1: compute from local file.
+            // Extracted installs point installed_path at the extracted directory
+            // tree, not a single AppImage, so there is nothing to hash. The source
+            // AppImage was consumed and deleted at install time, so a comparable
+            // local hash cannot be recomputed here. Defer to the caller's version
+            // comparison by reporting the SHA-1 as (potentially) changed rather
+            // than failing on the directory (see issue #144).
+            var installed_file = File.new_for_path(record.installed_path);
+            if (installed_file.query_file_type(FileQueryInfoFlags.NONE) != FileType.REGULAR) {
+                debug("probe_zsync[%s]: installed_path is not a regular file (extracted install), deferring to version comparison", record.name ?? record.id);
+                return true;
+            }
             debug("probe_zsync[%s]: no stored SHA-1, computing local file hash", record.name ?? record.id);
             try {
                 var local_sha1 = Utils.FileUtils.compute_sha1(record.installed_path).down();
@@ -1894,12 +1905,25 @@ namespace AppManager.Core {
 
             // Build zsync2 command
             // zsync2 -i <seed> -o <output> <zsync_arg>   (zsync_arg may be a URL or a local file path)
-            string[] argv = {
-                zsync_path,
-                "-i", seed_path,
-                "-o", output_path,
-                zsync_arg
-            };
+            // Only seed from a regular file. Extracted installs pass a directory as
+            // the seed path (no single AppImage exists), which zsync2 cannot use;
+            // omit -i so it downloads in full rather than erroring into the fallback.
+            var seed_file = File.new_for_path(seed_path);
+            string[] argv;
+            if (seed_file.query_file_type(FileQueryInfoFlags.NONE) == FileType.REGULAR) {
+                argv = {
+                    zsync_path,
+                    "-i", seed_path,
+                    "-o", output_path,
+                    zsync_arg
+                };
+            } else {
+                argv = {
+                    zsync_path,
+                    "-o", output_path,
+                    zsync_arg
+                };
+            }
 
             debug("Running zsync2: %s", string.joinv(" ", argv));
 
