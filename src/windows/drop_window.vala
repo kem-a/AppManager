@@ -28,6 +28,7 @@ namespace AppManager {
         private Gtk.Label app_name_label;
         private Gtk.Label folder_name_label;
         private Gtk.Box drag_box;
+        private Gtk.Box app_column;
         private Gtk.Box folder_column;
         private Gtk.Spinner drag_spinner;
         private Adw.Banner incompatibility_banner;
@@ -136,6 +137,15 @@ namespace AppManager {
             outer.vexpand = true;
             clamp.child = outer;
 
+            // Clicking anywhere clears icon selection first (capture phase);
+            // the icon's own click handler then re-selects itself if clicked.
+            var deselect_click = new Gtk.GestureClick();
+            deselect_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
+            deselect_click.pressed.connect((n_press, x, y) => {
+                clear_icon_selection();
+            });
+            ((Gtk.Widget) this).add_controller(deselect_click);
+
             var install_dir_name = Path.get_basename(AppPaths.applications_dir);
             subtitle = new Gtk.Label(_("Drag and drop to install into %s").printf(install_dir_name));
             subtitle.add_css_class("dim-label");
@@ -167,8 +177,9 @@ namespace AppManager {
             verification_badge.visible = false;
             app_icon_overlay.add_overlay(verification_badge);
             
-            var app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true);
+            app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true);
             drag_box.append(app_column);
+            setup_double_click(app_column, run_appimage_standalone);
 
             arrow_icon = new Gtk.Image.from_icon_name("go-next-symbolic");
             arrow_icon.set_pixel_size(48);
@@ -194,6 +205,9 @@ namespace AppManager {
             folder_icon = create_applications_icon();
             folder_column = build_icon_column(folder_icon, out folder_name_label, install_dir_name);
             drag_box.append(folder_column);
+            setup_double_click(folder_column, () => {
+                UiUtils.open_folder(AppPaths.applications_dir, this);
+            });
 
             drag_overlay = new Gtk.Overlay();
             drag_overlay.child = drag_box;
@@ -219,7 +233,7 @@ namespace AppManager {
             drag_overlay.set_clip_overlay(ghost_container, false);
 
             outer.append(drag_overlay);
-            setup_drag_install(drag_box);
+            setup_drag_install(drag_box, app_column);
             sync_drag_ghost();
         }
 
@@ -602,38 +616,77 @@ namespace AppManager {
             set_drag_spinner_icon_active(false);
         }
 
-        private void setup_drag_install(Gtk.Box drag_container) {
+        private void clear_icon_selection() {
+            if (app_column != null) {
+                app_column.remove_css_class("selected");
+            }
+            if (folder_column != null) {
+                folder_column.remove_css_class("selected");
+            }
+        }
+
+        private void setup_double_click(Gtk.Widget widget, DialogCallback on_double_click) {
+            widget.add_css_class("clickable-icon-column");
+            var click = new Gtk.GestureClick();
+            click.pressed.connect((n_press, x, y) => {
+                widget.add_css_class("selected");
+                if (n_press == 2) {
+                    on_double_click();
+                }
+            });
+            widget.add_controller(click);
+        }
+
+        private void run_appimage_standalone() {
+            if (installing) {
+                return;
+            }
+            try {
+                Utils.FileUtils.ensure_executable(appimage_path);
+                string[] argv = { appimage_path };
+                Pid child_pid;
+                Process.spawn_async(null, argv, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out child_pid);
+                ChildWatch.add(child_pid, (pid, status) => {
+                    Process.close_pid(pid);
+                });
+            } catch (Error e) {
+                warning("Failed to run AppImage: %s", e.message);
+            }
+        }
+
+        private const double DRAG_START_THRESHOLD = 24.0;
+
+        private void setup_drag_install(Gtk.Box drag_container, Gtk.Widget drag_handle) {
+            bool drag_visible = false;
             var gesture = new Gtk.GestureDrag();
             gesture.drag_begin.connect((start_x, start_y) => {
-                drag_container.add_css_class("drag-active");
-                show_drag_ghost(0, 0);
+                drag_visible = false;
             });
             gesture.drag_update.connect((offset_x, offset_y) => {
+                if (!drag_visible) {
+                    if (offset_x * offset_x + offset_y * offset_y < DRAG_START_THRESHOLD * DRAG_START_THRESHOLD) {
+                        return;
+                    }
+                    drag_visible = true;
+                    drag_container.add_css_class("drag-active");
+                    show_drag_ghost(offset_x, offset_y);
+                }
                 update_drag_visual(offset_x, offset_y);
             });
             gesture.drag_end.connect((offset_x, offset_y) => {
+                if (!drag_visible) {
+                    return;
+                }
                 drag_container.remove_css_class("drag-active");
                 if (is_ghost_over_folder()) {
                     start_install();
                 }
                 reset_drag_visual();
             });
-            drag_container.add_controller(gesture);
+            drag_handle.add_controller(gesture);
         }
 
         private void update_drag_visual(double offset_x, double offset_y) {
-            // Horizontal progress drives arrow/folder opacity
-            var h_clamped = offset_x;
-            if (h_clamped < 0) {
-                h_clamped = 0;
-            }
-            if (h_clamped > DRAG_VISUAL_RANGE) {
-                h_clamped = DRAG_VISUAL_RANGE;
-            }
-            var h_progress = h_clamped / DRAG_VISUAL_RANGE;
-            arrow_icon.set_opacity(0.3 + h_progress * 0.7);
-            folder_icon.set_opacity(0.7 + h_progress * 0.3);
-
             if (drag_ghost != null) {
                 drag_ghost.visible = true;
 
@@ -671,7 +724,6 @@ namespace AppManager {
                 point.init(ghost_center_x, ghost_center_y);
                 
                 if (folder_bounds.contains_point(point)) {
-                    folder_icon.set_opacity(1.0);
                     if (folder_name_label != null) {
                         folder_name_label.add_css_class("accent");
                     }
@@ -701,8 +753,6 @@ namespace AppManager {
         }
 
         private void reset_drag_visual() {
-            arrow_icon.set_opacity(1.0);
-            folder_icon.set_opacity(1.0);
             if (app_icon != null) {
                 app_icon.set_opacity(1.0);
             }
