@@ -299,6 +299,22 @@ namespace AppManager.Utils {
             }
         }
 
+        public static uint32 get_file_mode(string path) {
+            try {
+                var info = File.new_for_path(path).query_info("unix::mode", FileQueryInfoFlags.NONE);
+                return info.get_attribute_uint32("unix::mode");
+            } catch (Error e) {
+                warning("Failed to query mode for %s: %s", path, e.message);
+                return 0;
+            }
+        }
+
+        public static void set_file_mode(string path, uint32 mode) {
+            if (Posix.chmod(path, (Posix.mode_t) mode) != 0) {
+                warning("Failed to chmod %s", path);
+            }
+        }
+
         /**
          * Finds a trashed file by scanning XDG Trash info directory for a matching original path.
          * Returns the path to the file in Trash/files/, or null if not found.

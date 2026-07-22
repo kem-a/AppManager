@@ -30,6 +30,10 @@ namespace AppManager {
         private Gtk.Box drag_box;
         private Gtk.Box app_column;
         private Gtk.Box folder_column;
+        private Gtk.Box footer_bar;
+        private Gtk.Label footer_label;
+        private Gtk.PopoverMenu context_popover;
+        private Adw.TimedAnimation? ghost_return_animation = null;
         private Gtk.Spinner drag_spinner;
         private Adw.Banner incompatibility_banner;
         private Adw.Banner architecture_banner;
@@ -38,6 +42,11 @@ namespace AppManager {
         private string appimage_path;
         private bool installing = false;
         private bool install_prompt_visible = false;
+        private bool install_completed = false;
+        // Tracks a temporary executable bit set by a standalone "run without installing"
+        // launch, so it can be reverted if the user closes the window without installing.
+        private bool exec_bit_added = false;
+        private uint32 original_file_mode = 0;
         private string resolved_app_name;
         private string? resolved_app_version = null;
         private bool is_terminal_app = false;
@@ -56,8 +65,8 @@ namespace AppManager {
             Object(application: app,
                 title: _("AppImage Installer"),
                 modal: true,
-                default_width: 500,
-                default_height: 300,
+                default_width: 600,
+                default_height: 420,
                 destroy_with_parent: true);
             this.app_ref = app;
             this.registry = registry;
@@ -78,8 +87,18 @@ namespace AppManager {
         }
 
         private void build_ui() {
-            title = _("AppImage Installer");
+            title = compute_window_title();
             //add_css_class("devel");
+
+            // Revert a temporary executable bit if the user closes without installing.
+            this.close_request.connect(() => {
+                restore_original_exec_state();
+                if (context_popover != null) {
+                    context_popover.unparent();
+                    context_popover = null;
+                }
+                return false;
+            });
 
             var toolbar_view = new Adw.ToolbarView();
             content = toolbar_view;
@@ -164,6 +183,7 @@ namespace AppManager {
             app_icon = new Gtk.Image();
             app_icon.set_pixel_size(96);
             app_icon.set_from_icon_name("application-x-executable");
+            app_icon.add_css_class("depth-icon");
             
             // Create overlay for app icon with verification badge
             app_icon_overlay = new Gtk.Overlay();
@@ -179,7 +199,8 @@ namespace AppManager {
             
             app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true);
             drag_box.append(app_column);
-            setup_double_click(app_column, run_appimage_standalone);
+            setup_double_click(app_column, appimage_path, run_appimage_standalone);
+            setup_context_menu(app_column);
 
             arrow_icon = new Gtk.Image.from_icon_name("go-next-symbolic");
             arrow_icon.set_pixel_size(48);
@@ -203,9 +224,10 @@ namespace AppManager {
             drag_box.append(arrow_overlay);
 
             folder_icon = create_applications_icon();
+            folder_icon.add_css_class("depth-icon");
             folder_column = build_icon_column(folder_icon, out folder_name_label, install_dir_name);
             drag_box.append(folder_column);
-            setup_double_click(folder_column, () => {
+            setup_double_click(folder_column, null, () => {
                 UiUtils.open_folder(AppPaths.applications_dir, this);
             });
 
@@ -221,6 +243,7 @@ namespace AppManager {
             drag_ghost = new Gtk.Image();
             drag_ghost.set_pixel_size(96);
             drag_ghost.add_css_class("drag-ghost");
+            drag_ghost.add_css_class("depth-icon");
             drag_ghost.set_opacity(0.0);
             drag_ghost.visible = false;
             drag_ghost.set_sensitive(false);
@@ -235,6 +258,30 @@ namespace AppManager {
             outer.append(drag_overlay);
             setup_drag_install(drag_box, app_column);
             sync_drag_ghost();
+
+            // Footer showing the full path of the selected icon (hidden until selection).
+            footer_bar = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
+            footer_bar.margin_start = 12;
+            footer_bar.margin_end = 12;
+            footer_bar.margin_top = 4;
+            footer_bar.margin_bottom = 4;
+            var footer_icon = new Gtk.Image.from_icon_name("document-open-symbolic");
+            footer_icon.add_css_class("dim-label");
+            footer_bar.append(footer_icon);
+            footer_label = new Gtk.Label("");
+            footer_label.ellipsize = Pango.EllipsizeMode.MIDDLE;
+            footer_label.halign = Gtk.Align.START;
+            footer_label.xalign = 0;
+            footer_label.hexpand = true;
+            footer_label.add_css_class("caption");
+            footer_label.add_css_class("dim-label");
+            footer_bar.append(footer_label);
+            footer_label.set_text(appimage_path);
+            // Reserve the footer height at all times (toggle opacity, not visibility)
+            // so the icons never shift; the path is revealed only when the app icon
+            // is selected.
+            footer_bar.set_opacity(0.0);
+            toolbar_view.add_bottom_bar(footer_bar);
         }
 
         private void present_install_warning_dialog() {
@@ -490,6 +537,7 @@ namespace AppManager {
 
         private void handle_install_success(InstallationRecord record, bool upgraded, InstallIntent intent, string? staging_dir) {
             installing = false;
+            install_completed = true;
             set_drag_spinner_install_active(false);
             cleanup_staging_dir(staging_dir);
             remove_source_appimage();
@@ -623,13 +671,29 @@ namespace AppManager {
             if (folder_column != null) {
                 folder_column.remove_css_class("selected");
             }
+            if (footer_bar != null) {
+                footer_bar.set_opacity(0.0);
+            }
         }
 
-        private void setup_double_click(Gtk.Widget widget, DialogCallback on_double_click) {
+        private void select_column(Gtk.Widget widget, string? footer_path) {
+            widget.add_css_class("selected");
+            // Only the app icon reveals the footer path; the folder does not.
+            if (footer_path != null) {
+                if (footer_label != null) {
+                    footer_label.set_text(footer_path);
+                }
+                if (footer_bar != null) {
+                    footer_bar.set_opacity(1.0);
+                }
+            }
+        }
+
+        private void setup_double_click(Gtk.Widget widget, string? footer_path, DialogCallback on_double_click) {
             widget.add_css_class("clickable-icon-column");
             var click = new Gtk.GestureClick();
             click.pressed.connect((n_press, x, y) => {
-                widget.add_css_class("selected");
+                select_column(widget, footer_path);
                 if (n_press == 2) {
                     on_double_click();
                 }
@@ -637,11 +701,86 @@ namespace AppManager {
             widget.add_controller(click);
         }
 
+        private void setup_context_menu(Gtk.Widget widget) {
+            var menu = new GLib.Menu();
+            var primary = new GLib.Menu();
+            primary.append(_("Open"), "appicon.open");
+            primary.append(_("Get Info"), "appicon.info");
+            primary.append(_("Copy"), "appicon.copy");
+            menu.append_section(null, primary);
+            var secondary = new GLib.Menu();
+            secondary.append(_("Show in Files"), "appicon.reveal");
+            // Only offer this when a terminal we know how to drive is installed.
+            if (UiUtils.terminal_available()) {
+                secondary.append(_("New Terminal at Folder"), "appicon.terminal");
+            }
+            menu.append_section(null, secondary);
+
+            var actions = new GLib.SimpleActionGroup();
+            var open_action = new GLib.SimpleAction("open", null);
+            open_action.activate.connect(() => run_appimage_standalone());
+            actions.add_action(open_action);
+            var info_action = new GLib.SimpleAction("info", null);
+            info_action.activate.connect(() => show_info_window());
+            actions.add_action(info_action);
+            var copy_action = new GLib.SimpleAction("copy", null);
+            copy_action.activate.connect(() => copy_appimage_to_clipboard());
+            actions.add_action(copy_action);
+            var reveal_action = new GLib.SimpleAction("reveal", null);
+            reveal_action.activate.connect(() => UiUtils.reveal_file(appimage_path, this));
+            actions.add_action(reveal_action);
+            var terminal_action = new GLib.SimpleAction("terminal", null);
+            terminal_action.activate.connect(() => UiUtils.open_terminal(Path.get_dirname(appimage_path)));
+            actions.add_action(terminal_action);
+            widget.insert_action_group("appicon", actions);
+
+            var popover = new Gtk.PopoverMenu.from_model(menu);
+            popover.set_parent(widget);
+            popover.set_has_arrow(true);
+            context_popover = popover;
+
+            var gesture = new Gtk.GestureClick();
+            gesture.set_button(Gdk.BUTTON_SECONDARY);
+            gesture.pressed.connect((n_press, x, y) => {
+                select_column(widget, appimage_path);
+                var rect = Gdk.Rectangle();
+                rect.x = (int) x;
+                rect.y = (int) y;
+                rect.width = 1;
+                rect.height = 1;
+                popover.set_pointing_to(rect);
+                popover.popup();
+            });
+            widget.add_controller(gesture);
+        }
+
+        private void show_info_window() {
+            var info_window = new AppImageInfoWindow(app_ref, this, appimage_path,
+                resolved_app_name, resolved_app_version, metadata, app_icon.get_paintable());
+            info_window.present();
+        }
+
+        private void copy_appimage_to_clipboard() {
+            GLib.File[] files = { File.new_for_path(appimage_path) };
+            var file_list = new Gdk.FileList.from_array(files);
+            var value = Value(typeof(Gdk.FileList));
+            value.set_boxed(file_list);
+            get_clipboard().set_value(value);
+        }
+
         private void run_appimage_standalone() {
             if (installing) {
                 return;
             }
             try {
+                // Remember the original mode so we can revert if the user closes
+                // the window without installing (only if it was not already executable).
+                if (!exec_bit_added) {
+                    original_file_mode = Utils.FileUtils.get_file_mode(appimage_path);
+                    if ((original_file_mode & 0111) == 0) {
+                        exec_bit_added = true;
+                    }
+                }
                 Utils.FileUtils.ensure_executable(appimage_path);
                 string[] argv = { appimage_path };
                 Pid child_pid;
@@ -654,6 +793,24 @@ namespace AppManager {
             }
         }
 
+        private void restore_original_exec_state() {
+            if (!exec_bit_added || install_completed) {
+                return;
+            }
+            if (!File.new_for_path(appimage_path).query_exists()) {
+                return;
+            }
+            Utils.FileUtils.set_file_mode(appimage_path, original_file_mode);
+        }
+
+        private string compute_window_title() {
+            var name = Path.get_basename(appimage_path);
+            if (name.down().has_suffix(".appimage")) {
+                name = name.substring(0, name.length - ".AppImage".length);
+            }
+            return name.strip() == "" ? _("AppImage Installer") : name;
+        }
+
         private const double DRAG_START_THRESHOLD = 24.0;
 
         private void setup_drag_install(Gtk.Box drag_container, Gtk.Widget drag_handle) {
@@ -661,6 +818,7 @@ namespace AppManager {
             var gesture = new Gtk.GestureDrag();
             gesture.drag_begin.connect((start_x, start_y) => {
                 drag_visible = false;
+                stop_ghost_return_animation();
             });
             gesture.drag_update.connect((offset_x, offset_y) => {
                 if (!drag_visible) {
@@ -678,12 +836,60 @@ namespace AppManager {
                     return;
                 }
                 drag_container.remove_css_class("drag-active");
+                if (folder_name_label != null) {
+                    folder_name_label.remove_css_class("accent");
+                }
+                if (folder_column != null) {
+                    folder_column.remove_css_class("drop-target-highlight");
+                }
                 if (is_ghost_over_folder()) {
                     start_install();
+                    reset_drag_visual();
+                } else {
+                    // Dropped outside the target: let the ghost spring back to place.
+                    animate_ghost_return();
                 }
-                reset_drag_visual();
             });
             drag_handle.add_controller(gesture);
+        }
+
+        private void stop_ghost_return_animation() {
+            if (ghost_return_animation != null) {
+                ghost_return_animation.pause();
+                ghost_return_animation = null;
+            }
+        }
+
+        private void animate_ghost_return() {
+            if (drag_ghost == null || ghost_container == null) {
+                reset_drag_visual();
+                return;
+            }
+
+            int base_x, base_y;
+            compute_icon_position(out base_x, out base_y);
+            double start_dx = ghost_x - base_x;
+            double start_dy = ghost_y - base_y;
+
+            // Negligible displacement: no animation needed.
+            if (start_dx * start_dx + start_dy * start_dy < 1.0) {
+                reset_drag_visual();
+                return;
+            }
+
+            var target = new Adw.CallbackAnimationTarget((value) => {
+                ghost_x = base_x + start_dx * value;
+                ghost_y = base_y + start_dy * value;
+                ghost_container.move(drag_ghost, ghost_x, ghost_y);
+            });
+
+            ghost_return_animation = new Adw.TimedAnimation(drag_ghost, 1.0, 0.0, 750, target);
+            ghost_return_animation.easing = Adw.Easing.EASE_OUT_CUBIC;
+            ghost_return_animation.done.connect(() => {
+                ghost_return_animation = null;
+                reset_drag_visual();
+            });
+            ghost_return_animation.play();
         }
 
         private void update_drag_visual(double offset_x, double offset_y) {

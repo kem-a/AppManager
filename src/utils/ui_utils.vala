@@ -29,7 +29,7 @@ namespace AppManager.Utils {
                 temp_dir = FileUtils.create_temp_dir("appmgr-icon-");
                 var icon_path = AppImageAssets.extract_icon(path, temp_dir);
                 if (icon_path != null) {
-                    return Gdk.Texture.from_file(File.new_for_path(icon_path));
+                    return load_icon_texture(icon_path);
                 }
             } catch (Error e) {
                 warning("Icon extraction error: %s", e.message);
@@ -39,6 +39,23 @@ namespace AppManager.Utils {
                 }
             }
             return null;
+        }
+
+        // Gdk.Texture.from_file rasterizes an SVG at its (often tiny) intrinsic size,
+        // which then gets upscaled to the display size and looks blurry. Render SVGs at
+        // a generous size via GdkPixbuf (librsvg) so they stay crisp; raster icons keep
+        // their native resolution.
+        private static Gdk.Texture load_icon_texture(string icon_path) throws Error {
+            if (FileUtils.detect_image_extension(icon_path) == ".svg") {
+                var pixbuf = new Gdk.Pixbuf.from_file_at_size(icon_path, 512, 512);
+                var format = pixbuf.get_has_alpha()
+                    ? Gdk.MemoryFormat.R8G8B8A8
+                    : Gdk.MemoryFormat.R8G8B8;
+                var bytes = new GLib.Bytes(pixbuf.get_pixels_with_length());
+                return new Gdk.MemoryTexture(pixbuf.get_width(), pixbuf.get_height(),
+                                             format, bytes, pixbuf.get_rowstride());
+            }
+            return Gdk.Texture.from_file(File.new_for_path(icon_path));
         }
 
         public static Gtk.Image? load_app_icon(string icon_path, int pixel_size = 48) {
@@ -114,6 +131,81 @@ namespace AppManager.Utils {
                     warning("Failed to open folder %s: %s", path, e.message);
                 }
             });
+        }
+
+        public static void reveal_file(string path, Gtk.Window? parent) {
+            var file = File.new_for_path(path);
+            var launcher = new Gtk.FileLauncher(file);
+            launcher.open_containing_folder.begin(parent, null, (obj, res) => {
+                try {
+                    launcher.open_containing_folder.end(res);
+                } catch (Error e) {
+                    warning("Failed to reveal file %s: %s", path, e.message);
+                    open_folder(Path.get_dirname(path), parent);
+                }
+            });
+        }
+
+        // Build an argv that opens a terminal at `dir`, or null if no known terminal
+        // is installed. Each terminal needs its own working-directory flag: relying on
+        // the spawn cwd alone fails for single-instance terminals (ptyxis, kgx, ...)
+        // that hand the request to an already-running primary instance.
+        private static string[]? terminal_command(string dir) {
+            string? p;
+            if ((p = Environment.find_program_in_path("xdg-terminal-exec")) != null) {
+                return { p };  // freedesktop launcher, opens in cwd
+            }
+            if ((p = Environment.find_program_in_path("ptyxis")) != null) {
+                return { p, "--new-window", "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("kgx")) != null) {
+                return { p, "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("gnome-terminal")) != null) {
+                return { p, "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("konsole")) != null) {
+                return { p, "--workdir", dir };
+            }
+            if ((p = Environment.find_program_in_path("xfce4-terminal")) != null) {
+                return { p, "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("tilix")) != null) {
+                return { p, "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("alacritty")) != null) {
+                return { p, "--working-directory", dir };
+            }
+            if ((p = Environment.find_program_in_path("kitty")) != null) {
+                return { p, "--directory", dir };
+            }
+            if ((p = Environment.find_program_in_path("foot")) != null) {
+                return { p, "--working-directory=" + dir };
+            }
+            if ((p = Environment.find_program_in_path("wezterm")) != null) {
+                return { p, "start", "--cwd", dir };
+            }
+            if ((p = Environment.find_program_in_path("xterm")) != null) {
+                return { p };  // opens in cwd
+            }
+            return null;
+        }
+
+        public static bool terminal_available() {
+            return terminal_command(Environment.get_home_dir()) != null;
+        }
+
+        public static void open_terminal(string dir) {
+            var argv = terminal_command(dir);
+            if (argv == null) {
+                warning("No terminal emulator found to open %s", dir);
+                return;
+            }
+            try {
+                Process.spawn_async(dir, argv, null, SpawnFlags.SEARCH_PATH, null, null);
+            } catch (Error e) {
+                warning("Failed to launch terminal: %s", e.message);
+            }
         }
 
         public static void open_url(string url) {
