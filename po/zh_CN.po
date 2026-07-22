@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-21 23:29+0300\n"
+"POT-Creation-Date: 2026-07-22 11:40+0300\n"
 "PO-Revision-Date: 2026-01-27 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Chinese (Simplified)\n"
@@ -16,165 +16,184 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/application.vala:260
+#: src/application.vala:312
+msgid "Cannot install from this location"
+msgstr ""
+
+#: src/application.vala:313
+#, c-format
+msgid ""
+"This AppImage is already inside the install folder (%s). Move it elsewhere "
+"first to install it."
+msgstr ""
+
+#: src/application.vala:314 src/application.vala:358 src/application.vala:370
+#: src/application.vala:1001 src/application.vala:1112
+#: src/application.vala:1124 src/windows/dialog_window.vala:95
+#: src/windows/drop_window.vala:119 src/windows/drop_window.vala:129
+#: src/windows/main_window.vala:2015
+msgid "Close"
+msgstr "关闭"
+
+#: src/application.vala:356
 msgid "Incompatible AppImage"
 msgstr "不兼容的应用程序图像"
 
-#: src/application.vala:261
+#: src/application.vala:357
 msgid ""
 "This AppImage is incompatible or corrupted. Missing required files "
 "(AppRun, .desktop, or icon)."
 msgstr ""
 "此 AppImage 不兼容或已损坏。缺少必需的文件（AppRun、.desktop 或图标）。"
 
-#. Architecture mismatch banner
-#: src/application.vala:262 src/application.vala:274 src/application.vala:836
-#: src/application.vala:930 src/application.vala:942
-#: src/windows/dialog_window.vala:95 src/windows/drop_window.vala:99
-#: src/windows/drop_window.vala:109
-msgid "Close"
-msgstr "关闭"
-
-#. Check architecture
-#. Check architecture compatibility
-#: src/application.vala:270 src/windows/drop_window.vala:330
+#: src/application.vala:366 src/windows/drop_window.vala:386
 msgid "unknown"
 msgstr "未知"
 
-#: src/application.vala:272
+#: src/application.vala:368
 msgid "Architecture Mismatch"
 msgstr "架构不匹配"
 
-#: src/application.vala:273 src/windows/drop_window.vala:331
+#: src/application.vala:369 src/windows/drop_window.vala:387
 #, c-format
 msgid "This app is built for %s and cannot run here"
 msgstr "此应用程序是为 %s 构建的，无法在此处运行"
 
-#. Use app icon with warning badge overlay
-#: src/application.vala:370 src/windows/drop_window.vala:234
+#: src/application.vala:460 src/windows/drop_window.vala:295
 #, c-format
 msgid "Open %s?"
 msgstr "打开 %s？"
 
-#: src/application.vala:374 src/windows/drop_window.vala:237
+#: src/application.vala:464 src/windows/drop_window.vala:298
 #, c-format
 msgid ""
 "Origins of %s application can not be verified. Are you sure you want to open "
 "it?"
 msgstr "无法验证应用程序 %s 的来源。确定要打开它吗？"
 
-#: src/application.vala:377 src/windows/drop_window.vala:244
+#: src/application.vala:467 src/windows/drop_window.vala:305
 msgid "Install the AppImage to add it to your applications."
 msgstr "安装 AppImage 以将其添加到您的应用程序。"
 
-#: src/application.vala:379 src/windows/drop_window.vala:247
+#: src/application.vala:469 src/windows/drop_window.vala:308
 msgid "Install"
 msgstr "安装"
 
-#: src/application.vala:380 src/application.vala:411 src/application.vala:820
-#: src/windows/details_window.vala:585 src/windows/details_window.vala:1193
-#: src/windows/details_window.vala:1209 src/windows/drop_window.vala:248
-#: src/windows/drop_window.vala:422 src/windows/drop_window.vala:1001
-#: src/windows/main_window.vala:1931 src/windows/main_window.vala:1980
+#: src/application.vala:470 src/application.vala:985
+#: src/windows/details_window.vala:698 src/windows/details_window.vala:1345
+#: src/windows/details_window.vala:1412 src/windows/details_window.vala:1429
+#: src/windows/drop_window.vala:309 src/windows/drop_window.vala:1200
+#: src/windows/main_window.vala:2034 src/windows/main_window.vala:2083
 #: src/windows/preferences_window.vala:450
 #: src/windows/preferences_window.vala:484
 msgid "Cancel"
 msgstr "取消"
 
-#. Use icon with verification badge overlay
-#: src/application.vala:398 src/windows/drop_window.vala:418
-#, c-format
-msgid "Update %s?"
-msgstr "更新 %s？"
-
-#: src/application.vala:402 src/windows/drop_window.vala:394
-msgid "Version unknown"
-msgstr "版本未知"
-
-#: src/application.vala:407 src/application.vala:550
-#: src/windows/drop_window.vala:401 src/windows/drop_window.vala:558
-msgid "Unknown version"
-msgstr "未知版本"
-
-#: src/application.vala:408 src/windows/drop_window.vala:402
-#, c-format
-msgid "Will update to version %s"
-msgstr "将更新到版本 %s"
-
-#: src/application.vala:410 src/windows/details_window.vala:1035
-#: src/windows/drop_window.vala:421
-msgid "Update"
-msgstr "更新"
-
-#. Use icon with verification badge overlay
-#: src/application.vala:429 src/windows/drop_window.vala:448
+#: src/application.vala:488 src/windows/drop_window.vala:443
 #, c-format
 msgid "Replace %s?"
 msgstr "替换 %s？"
 
-#: src/application.vala:435 src/windows/drop_window.vala:452
+#: src/application.vala:495 src/windows/drop_window.vala:447
+#, c-format
+msgid ""
+"An older item named \"%s\" already exists in this location. Do you want to "
+"replace it with newer one you're copying?"
+msgstr ""
+
+#: src/application.vala:497 src/windows/drop_window.vala:449
 #, c-format
 msgid ""
 "A newer item named %s already exists in this location. Do you want to "
 "replace it with the older one you're copying?"
 msgstr "此位置已存在名为 %s 的较新项目。要用正在复制的旧版本替换它吗？"
 
-#: src/application.vala:437 src/windows/drop_window.vala:454
-#, c-format
-msgid "Installed: %s | Incoming: %s"
-msgstr "已安装：%s | 传入：%s"
-
-#: src/application.vala:441 src/windows/drop_window.vala:458
+#: src/application.vala:499 src/windows/drop_window.vala:451
 #, c-format
 msgid ""
 "An item named %s already exists in this location. Do you want to replace it "
 "with one you're copying?"
 msgstr "此位置已存在名为 %s 的项目。要用正在复制的版本替换它吗？"
 
-#: src/application.vala:446 src/windows/drop_window.vala:462
+#: src/application.vala:502 src/windows/drop_window.vala:455
+#, c-format
+msgid "Installed: %s | Incoming: %s"
+msgstr "已安装：%s | 传入：%s"
+
+#: src/application.vala:508 src/windows/drop_window.vala:460
+msgid "Keep Both"
+msgstr ""
+
+#: src/application.vala:509 src/windows/drop_window.vala:461
 msgid "Stop"
 msgstr "停止"
 
-#: src/application.vala:447 src/windows/drop_window.vala:463
+#: src/application.vala:510 src/windows/drop_window.vala:462
 msgid "Replace"
 msgstr "替换"
 
-#: src/application.vala:534 src/windows/drop_window.vala:541
+#: src/application.vala:599 src/windows/drop_window.vala:546
 msgid "Successfully Updated"
 msgstr "更新成功"
 
-#: src/application.vala:534 src/windows/drop_window.vala:539
+#: src/application.vala:599 src/windows/drop_window.vala:544
 msgid "Successfully Installed"
 msgstr "安装成功"
 
-#: src/application.vala:551 src/windows/drop_window.vala:559
+#: src/application.vala:615 src/windows/drop_window.vala:563
+msgid "Unknown version"
+msgstr "未知版本"
+
+#: src/application.vala:616 src/windows/drop_window.vala:564
 #, c-format
 msgid "Version %s"
 msgstr "版本 %s"
 
-#: src/application.vala:555 src/windows/details_window.vala:184
-#: src/windows/drop_window.vala:563
+#: src/application.vala:620 src/windows/details_window.vala:189
+#: src/windows/drop_window.vala:568 src/windows/drop_window.vala:707
 msgid "Open"
 msgstr "打开"
 
-#: src/application.vala:556 src/windows/drop_window.vala:564
+#: src/application.vala:621 src/windows/drop_window.vala:569
 msgid "Done"
 msgstr "完成"
 
-#: src/application.vala:581 src/windows/drop_window.vala:590
+#: src/application.vala:646 src/windows/drop_window.vala:595
 msgid "Installation failed"
 msgstr "安装失败"
 
-#: src/application.vala:583 src/windows/drop_window.vala:600
+#: src/application.vala:648 src/windows/drop_window.vala:605
 msgid "Dismiss"
 msgstr "关闭"
 
-#. Offer to delete permanently as fallback
-#: src/application.vala:817
+#: src/application.vala:763
+msgid "Leftover portable folder found"
+msgstr ""
+
+#: src/application.vala:764
+#, c-format
+msgid ""
+"A leftover portable folder was found next to AppManager (%s). AppManager "
+"does not support portable mode for itself. The folder may contain apps "
+"installed while this bug was active — move anything you need out of it (e.g. "
+"AppImages under its Applications subfolder), then delete it."
+msgstr ""
+
+#: src/application.vala:766
+msgid "Ignore"
+msgstr ""
+
+#: src/application.vala:767 src/core/installer.vala:1053
+#: src/core/installer.vala:1118 src/core/path_migration_service.vala:350
+#: src/windows/details_window.vala:1333 src/windows/details_window.vala:1374
+msgid "Move to Trash"
+msgstr "移到回收站"
+
+#: src/application.vala:982
 msgid "Cannot move to trash"
 msgstr "移到回收站"
 
-#: src/application.vala:818
+#: src/application.vala:983
 #, c-format
 msgid ""
 "%s could not be moved to the trash. Do you want to delete it permanently "
@@ -183,107 +202,98 @@ msgid ""
 "This action cannot be undone."
 msgstr ""
 
-#: src/application.vala:821 src/core/installer.vala:869
-#: src/core/path_migration_service.vala:350
-#: src/windows/details_window.vala:1174 src/windows/details_window.vala:1194
+#: src/application.vala:986 src/core/installer.vala:1053
+#: src/core/installer.vala:1118 src/core/path_migration_service.vala:350
+#: src/windows/details_window.vala:1329 src/windows/details_window.vala:1346
+#: src/windows/details_window.vala:1368
 msgid "Delete Permanently"
 msgstr "永久删除"
 
-#: src/application.vala:833
+#: src/application.vala:998
 msgid "Uninstall failed"
 msgstr "卸载失败"
 
-#: src/application.vala:834
+#: src/application.vala:999
 #, c-format
 msgid "%s could not be removed: %s"
 msgstr "无法删除 %s：%s"
 
-#: src/application.vala:842
+#: src/application.vala:1007
 msgid "Deleted permanently"
 msgstr "已永久删除"
 
-#: src/application.vala:844 src/application.vala:850
+#: src/application.vala:1009 src/application.vala:1015
 #, c-format
+#, fuzzy
 msgid "%s moved to Trash"
 msgstr "已移至回收站"
 
-#: src/application.vala:845
+#: src/application.vala:1010
 msgid "Undo"
 msgstr "撤销"
 
-#: src/application.vala:877
+#: src/application.vala:1047
 msgid "Undo failed"
 msgstr "卸载失败"
 
-#: src/application.vala:880
+#: src/application.vala:1050
 msgid "Restored"
 msgstr "恢复默认"
 
-#: src/application.vala:888
+#: src/application.vala:1070
 msgid "Extraction is only available for portable installations."
 msgstr "解压仅适用于便携安装。"
 
-#: src/application.vala:924
+#: src/application.vala:1106
 msgid "Extracted for faster launch"
 msgstr "已解压以加快启动速度"
 
-#: src/application.vala:927
+#: src/application.vala:1109
 msgid "Extraction complete"
 msgstr "解压完成"
 
-#: src/application.vala:928
+#: src/application.vala:1110
 #, c-format
 msgid "%s was extracted and will open faster."
 msgstr "%s 已解压，将更快打开。"
 
-#: src/application.vala:939
+#: src/application.vala:1121
 msgid "Extraction failed"
 msgstr "解压失败"
 
-#: src/application.vala:940
+#: src/application.vala:1122
 #, c-format
 msgid "%s could not be extracted: %s"
 msgstr "无法解压 %s：%s"
 
-#: src/core/background_update_service.vala:263
-#: src/core/background_update_service.vala:420
+#: src/core/background_update_service.vala:296
+#: src/core/background_update_service.vala:453
 msgid "App updates available"
 msgstr "有应用更新"
 
-#: src/core/background_update_service.vala:264
-#: src/core/background_update_service.vala:421
+#: src/core/background_update_service.vala:297
+#: src/core/background_update_service.vala:454
 #, c-format
 msgid "%d app update(s) available"
 msgstr "%d 个应用更新可用"
 
-#: src/core/background_update_service.vala:314
+#: src/core/background_update_service.vala:347
 msgid "App updates failed"
 msgstr "有应用更新"
 
-#: src/core/background_update_service.vala:315
+#: src/core/background_update_service.vala:348
 #, c-format
 msgid "%d app update(s) failed"
 msgstr "%d 个更新失败"
 
-#. Build actions array: pairs of (action_key, label)
-#. "default" action is invoked when user clicks the notification body
-#: src/core/background_update_service.vala:336
+#: src/core/background_update_service.vala:369
 msgid "Open AppManager"
 msgstr "打开 AppManager"
 
-#. Update the localized uninstall label using KeyFile for safety
-#. (avoids clobbering Name[xx]= in other groups via raw string replace)
-#: src/core/installer.vala:869 src/core/path_migration_service.vala:350
-#: src/windows/details_window.vala:1178
-msgid "Move to Trash"
-msgstr "移到回收站"
-
-#. Check if path is absolute
 #: src/core/path_migration_service.vala:42
 msgid "Path must be absolute"
 msgstr "路径必须是绝对路径"
 
-#. Check if it's the same as current
 #: src/core/path_migration_service.vala:47
 msgid "This is already the current directory"
 msgstr "这已经是当前目录"
@@ -297,7 +307,6 @@ msgstr "目录不可写"
 msgid "Cannot access directory: %s"
 msgstr "无法访问目录：%s"
 
-#. Check if it's a directory
 #: src/core/path_migration_service.vala:63
 msgid "Path exists but is not a directory"
 msgstr "路径存在但不是目录"
@@ -319,14 +328,11 @@ msgstr "无法创建目录：父目录不可写"
 msgid "Cannot access parent directory: %s"
 msgstr "无法访问父目录：%s"
 
-#. Create new directory
-#. Exception path - clear flag since no signal will be emitted
 #: src/core/path_migration_service.vala:170
 #, c-format
 msgid "Failed to create directory: %s"
 msgstr "无法创建目录：%s"
 
-#. Exception path - clear flag since no signal will be emitted
 #: src/core/path_migration_service.vala:178
 #, c-format
 msgid "Failed to create extracted directory: %s"
@@ -346,313 +352,166 @@ msgstr ""
 "部分应用程序迁移失败：\n"
 "%s"
 
-#: src/core/updater.vala:577 src/core/updater.vala:644
+#: src/core/updater.vala:633 src/core/updater.vala:700
 msgid "No update address configured"
 msgstr "未配置更新地址"
 
-#: src/core/updater.vala:582 src/core/updater.vala:653
+#: src/core/updater.vala:638 src/core/updater.vala:709
 msgid "Update source not supported"
 msgstr "不支持的更新源"
 
-#: src/core/updater.vala:598 src/core/updater.vala:671
+#: src/core/updater.vala:654 src/core/updater.vala:727
 msgid "Unable to read releases"
 msgstr "无法读取版本信息"
 
-#: src/core/updater.vala:603 src/core/updater.vala:699
+#: src/core/updater.vala:659 src/core/updater.vala:755
 #, c-format
 msgid "No matching AppImage found for %s"
 msgstr "找不到 %s 的匹配 AppImage"
 
-#. Sanitize current version — treat unparseable values (e.g. "UNKNOWN") as null
-#. Version comparison: if both have valid versions, compare them
-#: src/core/updater.vala:613 src/core/updater.vala:619
-#: src/core/updater.vala:683 src/core/updater.vala:691
-#: src/core/updater.vala:841 src/core/updater.vala:866
-#: src/core/updater.vala:1491 src/core/updater.vala:1507
-#: src/core/updater.vala:1592 src/core/updater.vala:1603
+#: src/core/updater.vala:669 src/core/updater.vala:675
+#: src/core/updater.vala:739 src/core/updater.vala:747
+#: src/core/updater.vala:897 src/core/updater.vala:922
+#: src/core/updater.vala:1556 src/core/updater.vala:1572
+#: src/core/updater.vala:1668 src/core/updater.vala:1679
 msgid "Already up to date"
 msgstr "已是最新版本"
 
-#: src/core/updater.vala:746 src/core/updater.vala:1672
-#: src/core/updater.vala:1771
+#: src/core/updater.vala:802 src/core/updater.vala:1748
+#: src/core/updater.vala:1847
 #, c-format
 msgid "Updated to %s"
 msgstr "更新至 %s"
 
-#. All candidates failed identity verification
-#: src/core/updater.vala:756 src/core/updater.vala:758
+#: src/core/updater.vala:812 src/core/updater.vala:814
 msgid "App identity mismatch"
 msgstr "架构不匹配"
 
-#: src/core/updater.vala:829 src/core/updater.vala:859
+#: src/core/updater.vala:885 src/core/updater.vala:915
 msgid "Server does not provide change tracking headers"
 msgstr "服务器不提供更改跟踪标头"
 
-#: src/core/updater.vala:837
+#: src/core/updater.vala:893
 msgid "Baseline recorded"
 msgstr "记录基线"
 
-#: src/core/updater.vala:899 src/core/updater.vala:1673
-#: src/core/updater.vala:1772
+#: src/core/updater.vala:955 src/core/updater.vala:1749
+#: src/core/updater.vala:1848
 msgid "Updated"
 msgstr "已更新"
 
-#: src/core/updater.vala:1014 src/core/updater.vala:1022
+#: src/core/updater.vala:1070 src/core/updater.vala:1078
 msgid "Downloaded file is not a valid AppImage"
 msgstr "下载的文件不是有效的 AppImage"
 
-#: src/core/updater.vala:1025
+#: src/core/updater.vala:1081
 #, c-format
 msgid "AppImage architecture '%s' is incompatible with this system"
 msgstr "AppImage 架构 '%s' 与该系统不兼容"
 
-#. Match — verification passed
-#: src/core/updater.vala:1066
+#: src/core/updater.vala:1131
 #, c-format
 msgid "App identity mismatch: expected '%s' but got '%s'"
 msgstr "应用标识不匹配：期望 '%s'，但得到 '%s'"
 
-#: src/core/updater.vala:1108
+#: src/core/updater.vala:1173
 msgid ""
 "GitHub authentication failed (401). Check your token in Preferences → GitHub."
 msgstr "GitHub 身份验证失败 (401)。在首选项 → GitHub 中检查您的令牌。"
 
-#: src/core/updater.vala:1113
+#: src/core/updater.vala:1178
 msgid ""
 "GitHub API rate limit exceeded. Add a token in Preferences → GitHub to "
 "increase your limit."
 msgstr "超过 GitHub API 速率限制。在首选项 → GitHub 中添加令牌以增加您的限制。"
 
-#: src/core/updater.vala:1115
+#: src/core/updater.vala:1180
 msgid ""
 "GitHub access forbidden (403). Your token may lack the required permissions."
 msgstr "GitHub 访问被禁止 (403)。您的令牌可能缺乏所需的权限。"
 
-#: src/core/updater.vala:1447
+#: src/core/updater.vala:1512
 msgid "Unknown zsync source type"
 msgstr "未知的 zsync 源类型"
 
-#: src/core/updater.vala:1472 src/core/updater.vala:1580
+#: src/core/updater.vala:1537 src/core/updater.vala:1656
 msgid "Malformed zsync file (no checksum)"
 msgstr "zsync 文件格式错误（没有校验和）"
 
-#: src/core/updater.vala:1487
+#: src/core/updater.vala:1552
 msgid "Failed to compute local checksum"
 msgstr "无法计算本地校验和"
 
-#: src/core/updater.vala:1557
+#: src/core/updater.vala:1633
 msgid "Unknown zsync source"
 msgstr "未知的 zsync 源"
 
-#: src/core/updater.vala:1725
+#: src/core/updater.vala:1801
 msgid "Cannot determine download URL from zsync URL"
 msgstr "无法从 zsync URL 确定下载 URL"
 
-#: src/windows/details_window.vala:115
+#: src/windows/details_window.vala:120
 #, c-format
 msgid "⚠️ '%s' is not in $PATH. App will not launch from the terminal"
 msgstr "⚠️ '%s' 不在 $PATH 中。应用无法从终端启动"
 
-#: src/windows/details_window.vala:241
+#: src/windows/details_window.vala:246 src/windows/drop_window.vala:712
 msgid "Show in Files"
 msgstr "在文件管理器中显示"
 
-#: src/windows/details_window.vala:243
+#: src/windows/details_window.vala:248
 msgid "Portable"
 msgstr "便携"
 
-#: src/windows/details_window.vala:243
+#: src/windows/details_window.vala:248
 msgid "Extracted"
 msgstr "已解压"
 
-#: src/windows/details_window.vala:262
+#: src/windows/details_window.vala:267
 msgid "App version"
 msgstr "版本"
 
-#. Terminal app card (only show if is_terminal)
-#: src/windows/details_window.vala:273
+#: src/windows/details_window.vala:278
 msgid "Terminal"
 msgstr "终端"
 
-#: src/windows/details_window.vala:281
+#: src/windows/details_window.vala:286
 msgid "This app supports efficient delta updates"
 msgstr "此应用支持高效的增量更新"
 
-#: src/windows/details_window.vala:288
+#: src/windows/details_window.vala:293
 msgid "Hidden"
 msgstr "已隐藏"
 
-#: src/windows/details_window.vala:298
+#: src/windows/details_window.vala:304
+msgid "Web"
+msgstr ""
+
+#: src/windows/details_window.vala:323
 msgid "Properties"
 msgstr "属性"
 
-#: src/windows/details_window.vala:303
+#: src/windows/details_window.vala:328
 msgid "Command line arguments"
 msgstr "命令行参数"
 
-#: src/windows/details_window.vala:335
-msgid "Update info"
-msgstr "更新信息"
-
-#: src/windows/details_window.vala:341
-msgid "How update links work"
-msgstr "更新链接如何工作"
-
-#: src/windows/details_window.vala:353
-msgid "Pre-release Updates"
-msgstr "预发布更新"
-
-#: src/windows/details_window.vala:354
-msgid "Include pre-release versions when checking for updates"
-msgstr "检查更新时包含预发布版本"
-
-#: src/windows/details_window.vala:369
-msgid "Update link is managed by the embedded zsync update mechanism"
-msgstr "更新链接由嵌入的 zsync 更新机制管理"
-
-#: src/windows/details_window.vala:405
-msgid "Update Link"
-msgstr "更新链接"
-
-#: src/windows/details_window.vala:460
-msgid "Web Page"
-msgstr "网页"
-
-#: src/windows/details_window.vala:489
-msgid "Open web page"
-msgstr "打开网页"
-
-#: src/windows/details_window.vala:503
-msgid "Advanced"
-msgstr "高级"
-
-#: src/windows/details_window.vala:528
-#, fuzzy
-msgid "Portable .home folder"
-msgstr "便携"
-
-#: src/windows/details_window.vala:529
-msgid "Store the app's home directory in a .home folder next to the AppImage"
+#: src/windows/details_window.vala:366 src/windows/details_window.vala:420
+msgid "App Updates"
 msgstr ""
 
-#: src/windows/details_window.vala:530
-msgid ".home"
+#: src/windows/details_window.vala:367
+msgid "Edit app update details"
 msgstr ""
 
-#: src/windows/details_window.vala:539
-#, fuzzy
-msgid "Portable .config folder"
-msgstr "便携"
-
-#: src/windows/details_window.vala:540
-msgid "Store the app's config in a .config folder next to the AppImage"
+#: src/windows/details_window.vala:369 src/windows/details_window.vala:413
+msgid "On"
 msgstr ""
 
-#: src/windows/details_window.vala:541
-msgid ".config"
+#: src/windows/details_window.vala:369 src/windows/details_window.vala:413
+msgid "Off"
 msgstr ""
 
-#: src/windows/details_window.vala:582
-#, c-format
-msgid "Remove portable %s folder?"
-msgstr ""
-
-#: src/windows/details_window.vala:583
-#, c-format
-msgid ""
-"The %s folder next to this AppImage will be permanently removed, including "
-"any data it contains."
-msgstr ""
-
-#: src/windows/details_window.vala:586
-#, fuzzy
-msgid "Remove Data"
-msgstr "删除变量"
-
-#: src/windows/details_window.vala:604
-msgid "Environment Variables"
-msgstr "环境变量"
-
-#: src/windows/details_window.vala:605
-msgid "Set custom environment variables for this app"
-msgstr "为此应用设置自定义环境变量"
-
-#: src/windows/details_window.vala:658
-msgid "NAME"
-msgstr "名称"
-
-#: src/windows/details_window.vala:672
-msgid "value"
-msgstr "值"
-
-#: src/windows/details_window.vala:684
-msgid "Remove variable"
-msgstr "删除变量"
-
-#: src/windows/details_window.vala:809
-msgid "Keywords"
-msgstr "关键词"
-
-#: src/windows/details_window.vala:819
-msgid "Icon name"
-msgstr "图标名称"
-
-#: src/windows/details_window.vala:829
-msgid "Startup WM Class"
-msgstr "启动窗口类"
-
-#: src/windows/details_window.vala:839
-msgid "Version"
-msgstr "版本"
-
-#: src/windows/details_window.vala:851
-msgid "Hide from app drawer"
-msgstr "从应用列表中隐藏"
-
-#: src/windows/details_window.vala:852
-msgid "Don't show in application menu"
-msgstr "不在应用程序菜单中显示"
-
-#: src/windows/details_window.vala:863
-msgid "Add to $PATH"
-msgstr "添加到 $PATH"
-
-#: src/windows/details_window.vala:864
-#, c-format
-msgid "Create a launcher in %s so you can run it from the terminal"
-msgstr "在 %s 创建启动器以便从终端运行"
-
-#: src/windows/details_window.vala:925
-msgid "Actions"
-msgstr "操作"
-
-#. Extract button
-#: src/windows/details_window.vala:964
-msgid "Extract AppImage"
-msgstr "解压 AppImage"
-
-#: src/windows/details_window.vala:1001
-msgid "Restore default"
-msgstr "恢复默认"
-
-#: src/windows/details_window.vala:1013 src/windows/main_window.vala:593
-#: src/windows/main_window.vala:667
-msgid "Updating..."
-msgstr "正在更新..."
-
-#: src/windows/details_window.vala:1015
-msgid "Checking..."
-msgstr "正在检查..."
-
-#: src/windows/details_window.vala:1042
-msgid "Update Failed"
-msgstr "有可用更新"
-
-#: src/windows/details_window.vala:1049
-msgid "Check Update"
-msgstr "检查更新"
-
-#: src/windows/details_window.vala:1116
+#: src/windows/details_window.vala:388
 msgid ""
 "Update info lets AppManager fetch new builds for you. Paste the download "
 "link and AppManager will do the rest."
@@ -660,7 +519,7 @@ msgstr ""
 "更新信息让 AppManager 能够为您获取新版本。粘贴下载链接，AppManager 会完成剩余"
 "工作。"
 
-#: src/windows/details_window.vala:1117
+#: src/windows/details_window.vala:389
 msgid ""
 "Currently GitHub and GitLab URL formats are fully supported. Direct download "
 "links also work if the server provides Last-Modified or Content-Length "
@@ -669,43 +528,246 @@ msgstr ""
 "目前完全支持 GitHub 和 GitLab URL 格式。如果服务器提供 Last-Modified 或 "
 "Content-Length 头，直接下载链接也可以使用。"
 
-#: src/windows/details_window.vala:1118
+#: src/windows/details_window.vala:391
 msgid "Update links"
 msgstr "更新链接"
 
-#: src/windows/details_window.vala:1119
-msgid "Got it"
-msgstr "明白了"
+#: src/windows/details_window.vala:398
+msgid "Enable app updates"
+msgstr ""
+
+#: src/windows/details_window.vala:424
+msgid "Update details"
+msgstr ""
+
+#: src/windows/details_window.vala:434
+msgid "Pre-release Updates"
+msgstr "预发布更新"
+
+#: src/windows/details_window.vala:435
+msgid "Include pre-release versions when checking for updates"
+msgstr "检查更新时包含预发布版本"
+
+#: src/windows/details_window.vala:455
+msgid "Update link is managed by the embedded zsync update mechanism"
+msgstr "更新链接由嵌入的 zsync 更新机制管理"
+
+#: src/windows/details_window.vala:489
+msgid "Update Link"
+msgstr "更新链接"
+
+#: src/windows/details_window.vala:545
+msgid "Web Page"
+msgstr "网页"
+
+#: src/windows/details_window.vala:579
+msgid "Open web page"
+msgstr "打开网页"
+
+#: src/windows/details_window.vala:595 src/windows/details_window.vala:628
+msgid "Advanced Settings"
+msgstr ""
+
+#: src/windows/details_window.vala:596
+msgid ""
+"Change app icon, Startup WM Class, Keywords, $PATH or environment variables"
+msgstr ""
+
+#: src/windows/details_window.vala:612
+msgid "App Settings"
+msgstr ""
+
+#: src/windows/details_window.vala:641
+#, fuzzy
+msgid "Portable .home folder"
+msgstr "便携"
+
+#: src/windows/details_window.vala:642
+msgid "Store the app's home directory in a .home folder next to the AppImage"
+msgstr ""
+
+#: src/windows/details_window.vala:643
+msgid ".home"
+msgstr ""
+
+#: src/windows/details_window.vala:652
+#, fuzzy
+msgid "Portable .config folder"
+msgstr "便携"
+
+#: src/windows/details_window.vala:653
+msgid "Store the app's config in a .config folder next to the AppImage"
+msgstr ""
+
+#: src/windows/details_window.vala:654
+msgid ".config"
+msgstr ""
+
+#: src/windows/details_window.vala:695
+#, c-format
+msgid "Remove portable %s folder?"
+msgstr ""
+
+#: src/windows/details_window.vala:696
+#, c-format
+msgid ""
+"The %s folder next to this AppImage will be permanently removed, including "
+"any data it contains."
+msgstr ""
+
+#: src/windows/details_window.vala:699
+#, fuzzy
+msgid "Remove Data"
+msgstr "删除变量"
+
+#: src/windows/details_window.vala:717
+msgid "Environment Variables"
+msgstr "环境变量"
+
+#: src/windows/details_window.vala:718
+msgid "Set custom environment variables for this app"
+msgstr "为此应用设置自定义环境变量"
+
+#: src/windows/details_window.vala:780
+msgid "NAME"
+msgstr "名称"
+
+#: src/windows/details_window.vala:796
+msgid "value"
+msgstr "值"
+
+#: src/windows/details_window.vala:810
+msgid "Remove variable"
+msgstr "删除变量"
+
+#: src/windows/details_window.vala:941
+msgid "App Name"
+msgstr ""
+
+#: src/windows/details_window.vala:955
+msgid "Keywords"
+msgstr "关键词"
+
+#: src/windows/details_window.vala:965
+msgid "Icon name"
+msgstr "图标名称"
+
+#: src/windows/details_window.vala:975
+msgid "Startup WM Class"
+msgstr "启动窗口类"
+
+#: src/windows/details_window.vala:985
+msgid "Version"
+msgstr "版本"
+
+#: src/windows/details_window.vala:1005
+msgid "Hide from app drawer"
+msgstr "从应用列表中隐藏"
+
+#: src/windows/details_window.vala:1006
+msgid "Don't show in application menu"
+msgstr "不在应用程序菜单中显示"
+
+#: src/windows/details_window.vala:1019
+msgid "Add to $PATH"
+msgstr "添加到 $PATH"
+
+#: src/windows/details_window.vala:1020
+#, c-format
+msgid "Create a launcher in %s so you can run it from the terminal"
+msgstr "在 %s 创建启动器以便从终端运行"
+
+#: src/windows/details_window.vala:1086
+msgid "Actions"
+msgstr "操作"
+
+#: src/windows/details_window.vala:1125
+msgid "Extract AppImage"
+msgstr "解压 AppImage"
+
+#: src/windows/details_window.vala:1165
+msgid "Restore default"
+msgstr "恢复默认"
+
+#: src/windows/details_window.vala:1177 src/windows/main_window.vala:633
+#: src/windows/main_window.vala:707
+msgid "Updating..."
+msgstr "正在更新..."
 
 #: src/windows/details_window.vala:1179
+msgid "Checking..."
+msgstr "正在检查..."
+
+#: src/windows/details_window.vala:1199
+msgid "Update"
+msgstr "更新"
+
+#: src/windows/details_window.vala:1206
+msgid "Update Failed"
+msgstr "有可用更新"
+
+#: src/windows/details_window.vala:1213
+msgid "Check Update"
+msgstr "检查更新"
+
+#: src/windows/details_window.vala:1334
 msgid "Hold Shift to delete permanently"
 msgstr "按住 Shift 永久删除"
 
-#: src/windows/details_window.vala:1186
+#: src/windows/details_window.vala:1341 src/windows/details_window.vala:1369
 #, c-format
 msgid "<b>%s</b> will be permanently deleted. This action cannot be undone."
 msgstr "<b>%s</b> 将被永久删除。此操作无法撤销。"
 
-#: src/windows/details_window.vala:1188
-msgid "Portable data in .home and .config will also be removed."
-msgstr ""
-
-#: src/windows/details_window.vala:1190
+#: src/windows/details_window.vala:1342 src/windows/details_window.vala:1367
 msgid "Delete permanently?"
 msgstr "永久删除？"
 
-#: src/windows/details_window.vala:1207
+#: src/windows/details_window.vala:1370
+msgid "Delete All Data"
+msgstr ""
+
+#: src/windows/details_window.vala:1371
+msgid "Permanently erase user data to save space"
+msgstr ""
+
+#: src/windows/details_window.vala:1373
+msgid "Move to Trash?"
+msgstr ""
+
+#: src/windows/details_window.vala:1375
+#, c-format
+msgid "<b>%s</b> will be moved to the Trash."
+msgstr ""
+
+#: src/windows/details_window.vala:1376
+msgid "Trash All Data"
+msgstr ""
+
+#: src/windows/details_window.vala:1377
+msgid "Move user data to Trash along with the app"
+msgstr ""
+
+#: src/windows/details_window.vala:1393
+msgid "Keep User Data"
+msgstr ""
+
+#: src/windows/details_window.vala:1394
+msgid "Allow restoring personal settings &amp; content"
+msgstr ""
+
+#: src/windows/details_window.vala:1427
 msgid ""
 "Extracting will unpack the application so it opens faster, but it will "
 "consume more disk space. This action cannot be reversed automatically."
 msgstr ""
 "解压将展开应用程序以便更快打开，但会占用更多磁盘空间。此操作无法自动撤销。"
 
-#: src/windows/details_window.vala:1208
+#: src/windows/details_window.vala:1428
 msgid "Extract application?"
 msgstr "解压应用程序？"
 
-#: src/windows/details_window.vala:1210
+#: src/windows/details_window.vala:1430
 msgid "Extract"
 msgstr "解压"
 
@@ -717,478 +779,517 @@ msgstr "应用已删除"
 msgid "The application was uninstalled successfully."
 msgstr "应用程序已成功卸载。"
 
-#: src/windows/drop_window.vala:56 src/windows/drop_window.vala:80
+#: src/windows/drop_window.vala:66 src/windows/drop_window.vala:811
 msgid "AppImage Installer"
 msgstr "AppImage 安装器"
 
-#. Add Verify button to headerbar
-#: src/windows/drop_window.vala:91 src/windows/drop_window.vala:1007
+#: src/windows/drop_window.vala:111 src/windows/drop_window.vala:1206
 msgid "Verify"
 msgstr "验证"
 
-#: src/windows/drop_window.vala:92
+#: src/windows/drop_window.vala:112
 msgid "Verify AppImage with SHA256 hash"
 msgstr "使用 SHA256 哈希验证 AppImage"
 
-#. Verification failed banner
-#: src/windows/drop_window.vala:118
+#: src/windows/drop_window.vala:138
 msgid "SHA256 hash does not match. Verification failed."
 msgstr "SHA256 哈希不匹配。验证失败。"
 
-#: src/windows/drop_window.vala:140
+#: src/windows/drop_window.vala:169
 #, c-format
 msgid "Drag and drop to install into %s"
 msgstr "拖放到 %s 中安装"
 
-#: src/windows/drop_window.vala:242
+#: src/windows/drop_window.vala:303
 msgid "This is a terminal application and will be installed in portable mode."
 msgstr "这是一个终端应用程序，将以便携模式安装。"
 
-#: src/windows/drop_window.vala:320
+#: src/windows/drop_window.vala:376
 msgid "This AppImage is incompatible or corrupted"
 msgstr "此 AppImage 不兼容或已损坏"
 
-#: src/windows/drop_window.vala:322
+#: src/windows/drop_window.vala:378
 msgid "Missing required files (AppRun, .desktop, or icon)"
 msgstr "缺少必需文件（AppRun、.desktop 或图标）"
 
-#: src/windows/drop_window.vala:333
+#: src/windows/drop_window.vala:389
 msgid "Architecture mismatch"
 msgstr "架构不匹配"
 
-#: src/windows/drop_window.vala:498
+#: src/windows/drop_window.vala:502
 msgid "Unable to prepare AppImage for installation"
 msgstr "无法准备 AppImage 进行安装"
 
-#: src/windows/drop_window.vala:541
+#: src/windows/drop_window.vala:546
 msgid "Successfully Replaced"
 msgstr "替换成功"
 
-#: src/windows/drop_window.vala:968
+#: src/windows/drop_window.vala:708
+msgid "Get Info"
+msgstr ""
+
+#: src/windows/drop_window.vala:709
+msgid "Copy"
+msgstr ""
+
+#: src/windows/drop_window.vala:715
+msgid "New Terminal at Folder"
+msgstr ""
+
+#: src/windows/drop_window.vala:1167
 msgid "Verify AppImage"
 msgstr "验证 AppImage"
 
-#: src/windows/drop_window.vala:986
+#: src/windows/drop_window.vala:1185
 msgid "Verify the authenticity of this AppImage."
 msgstr "验证此 AppImage 的真实性。"
 
-#: src/windows/drop_window.vala:992
+#: src/windows/drop_window.vala:1191
 msgid "Enter the SHA256 hash "
 msgstr "输入 SHA256 哈希值 "
 
-#: src/windows/main_window.vala:64 src/windows/main_window.vala:221
-#: data/com.github.AppManager.metainfo.xml:4
+#: src/windows/main_window.vala:71 src/windows/main_window.vala:234
 msgid "AppManager"
 msgstr "AppManager"
 
-#. GNOME-style hint overlay: title + subtitle + pill button, centered in
-#. the content area when only AppManager itself is installed.
-#: src/windows/main_window.vala:183
+#: src/windows/main_window.vala:196
 msgid "No Apps Yet"
 msgstr "还没有应用"
 
-#: src/windows/main_window.vala:187
+#: src/windows/main_window.vala:200
 msgid "Import your AppImages to manage and update them here"
 msgstr "导入您的 AppImages，在此处管理和更新它们"
 
-#: src/windows/main_window.vala:202 src/windows/main_window.vala:375
+#: src/windows/main_window.vala:215 src/windows/main_window.vala:388
 msgid "Import AppImages ..."
 msgstr "导入 AppImages ..."
 
-#: src/windows/main_window.vala:280
+#: src/windows/main_window.vala:293
 msgid "Get more ..."
 msgstr "获取更多..."
 
-#: src/windows/main_window.vala:292
+#: src/windows/main_window.vala:305
 msgid "Find more AppImages"
 msgstr "发现更多 AppImage"
 
-#: src/windows/main_window.vala:293
+#: src/windows/main_window.vala:306
 msgid "Browse these sources to discover and download AppImages"
 msgstr "浏览这些来源以发现和下载 AppImage"
 
-#: src/windows/main_window.vala:319
+#: src/windows/main_window.vala:332
 msgid "Import AppImages from folder ..."
 msgstr "从文件夹导入 AppImages ..."
 
-#: src/windows/main_window.vala:357 src/windows/main_window.vala:450
+#: src/windows/main_window.vala:370 src/windows/main_window.vala:463
 msgid "No AppImage apps installed"
 msgstr "没有已安装的 AppImage 应用"
 
-#: src/windows/main_window.vala:362
+#: src/windows/main_window.vala:375
 msgid "Download AppImage and double click to install with AppManager"
 msgstr "下载 AppImage 并双击使用 AppManager 安装"
 
-#: src/windows/main_window.vala:450
+#: src/windows/main_window.vala:463
 msgid "No results found"
 msgstr "未找到结果"
 
-#: src/windows/main_window.vala:529 src/windows/main_window.vala:1058
+#: src/windows/main_window.vala:542 src/windows/main_window.vala:1101
 msgid "My Apps"
 msgstr "我的应用"
 
-#: src/windows/main_window.vala:600 src/windows/main_window.vala:674
+#: src/windows/main_window.vala:640 src/windows/main_window.vala:714
 msgid "Update available"
 msgstr "有可用更新"
 
-#. App name label (same size as list view)
-#: src/windows/main_window.vala:689
+#: src/windows/main_window.vala:729
 msgid "Unknown"
 msgstr "未知"
 
-#: src/windows/main_window.vala:782
+#: src/windows/main_window.vala:822
 msgid "extracted"
 msgstr "已解压"
 
-#: src/windows/main_window.vala:840
+#: src/windows/main_window.vala:883
 #, fuzzy
 msgid "Imported just now"
 msgstr "刚刚更新"
 
-#: src/windows/main_window.vala:840
+#: src/windows/main_window.vala:883
 msgid "Updated just now"
 msgstr "刚刚更新"
 
-#: src/windows/main_window.vala:840
+#: src/windows/main_window.vala:883
 msgid "Installed just now"
 msgstr "刚刚安装"
 
-#: src/windows/main_window.vala:848
+#: src/windows/main_window.vala:891
 #, fuzzy, c-format
 msgid "Imported %d min ago"
 msgstr "%d 分钟前更新"
 
-#: src/windows/main_window.vala:848
+#: src/windows/main_window.vala:891
 #, c-format
 msgid "Updated %d min ago"
 msgstr "%d 分钟前更新"
 
-#: src/windows/main_window.vala:848
+#: src/windows/main_window.vala:891
 #, c-format
 msgid "Installed %d min ago"
 msgstr "%d 分钟前安装"
 
-#: src/windows/main_window.vala:856
+#: src/windows/main_window.vala:899
 #, fuzzy, c-format
 msgid "Imported %d hours ago"
 msgstr "%d 小时前更新"
 
-#: src/windows/main_window.vala:856
+#: src/windows/main_window.vala:899
 #, c-format
 msgid "Updated %d hours ago"
 msgstr "%d 小时前更新"
 
-#: src/windows/main_window.vala:856
+#: src/windows/main_window.vala:899
 #, c-format
 msgid "Installed %d hours ago"
 msgstr "%d 小时前安装"
 
-#: src/windows/main_window.vala:863
+#: src/windows/main_window.vala:906
 #, fuzzy, c-format
 msgid "Imported %d days ago"
 msgstr "%d 天前更新"
 
-#: src/windows/main_window.vala:863
+#: src/windows/main_window.vala:906
 #, c-format
 msgid "Updated %d days ago"
 msgstr "%d 天前更新"
 
-#: src/windows/main_window.vala:863
+#: src/windows/main_window.vala:906
 #, c-format
 msgid "Installed %d days ago"
 msgstr "%d 天前安装"
 
-#: src/windows/main_window.vala:882 src/windows/main_window.vala:1189
+#: src/windows/main_window.vala:925 src/windows/main_window.vala:1284
 msgid "Leave Fullscreen"
 msgstr "退出全屏"
 
-#: src/windows/main_window.vala:882 src/windows/main_window.vala:1189
+#: src/windows/main_window.vala:925 src/windows/main_window.vala:1284
 msgid "Fullscreen"
 msgstr "全屏"
 
-#: src/windows/main_window.vala:887 src/windows/preferences_window.vala:34
+#: src/windows/main_window.vala:930 src/windows/preferences_window.vala:34
 msgid "Preferences"
 msgstr "首选项"
 
-#: src/windows/main_window.vala:888
+#: src/windows/main_window.vala:931
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-#: src/windows/main_window.vala:889 src/windows/main_window.vala:1800
+#: src/windows/main_window.vala:932 src/windows/main_window.vala:1895
 msgid "About AppManager"
 msgstr "关于 AppManager"
 
-#: src/windows/main_window.vala:893
+#: src/windows/main_window.vala:936
 msgid "Quit"
 msgstr "退出"
 
-#: src/windows/main_window.vala:907
+#: src/windows/main_window.vala:950
 msgid "Support AppManager"
 msgstr "支持应用管理器"
 
-#: src/windows/main_window.vala:922
+#: src/windows/main_window.vala:965
 msgid "Buy Me a Coffee"
 msgstr "请我喝杯咖啡"
 
-#: src/windows/main_window.vala:941
+#: src/windows/main_window.vala:984
 msgid "Become a sponsor on GitHub"
 msgstr "成为 GitHub 上的赞助商"
 
-#: src/windows/main_window.vala:946
+#: src/windows/main_window.vala:989
 msgid "Sponsor Me ♡"
 msgstr "赞助我♡"
 
-#: src/windows/main_window.vala:957
+#: src/windows/main_window.vala:1000
 msgid "Star AppManager on GitHub"
 msgstr "在 GitHub 上加星 AppManager"
 
-#: src/windows/main_window.vala:962
+#: src/windows/main_window.vala:1005
 msgid "Star AppManager"
 msgstr "明星应用管理器"
 
-#: src/windows/main_window.vala:973
+#: src/windows/main_window.vala:1016
 msgid "View contributors on GitHub"
 msgstr "查看 GitHub 上的贡献者"
 
-#: src/windows/main_window.vala:978 src/windows/main_window.vala:1819
+#: src/windows/main_window.vala:1021 src/windows/main_window.vala:1914
 msgid "Contributors"
 msgstr "贡献者"
 
-#: src/windows/main_window.vala:1001 src/windows/main_window.vala:1798
+#: src/windows/main_window.vala:1044 src/windows/main_window.vala:1893
 msgid "Search"
 msgstr "搜索"
 
-#: src/windows/main_window.vala:1007
+#: src/windows/main_window.vala:1050
 msgid "Support this project"
 msgstr "支持这个项目"
 
-#: src/windows/main_window.vala:1017
+#: src/windows/main_window.vala:1060
 msgid "More actions"
 msgstr "更多操作"
 
-#: src/windows/main_window.vala:1032
+#: src/windows/main_window.vala:1075
 msgid "Search apps..."
 msgstr "搜索应用..."
 
-#. FUSE is not installed warning banner
-#: src/windows/main_window.vala:1040
+#: src/windows/main_window.vala:1083
 msgid "FUSE is not installed. Some AppImages may fail to run"
 msgstr "FUSE 未安装。某些 AppImage 可能无法运行"
 
-#: src/windows/main_window.vala:1042
+#: src/windows/main_window.vala:1085
 msgid "Learn More"
 msgstr "了解更多"
 
-#: src/windows/main_window.vala:1063
+#: src/windows/main_window.vala:1106
 msgid "Shift+click to launch app"
 msgstr "Shift+单击以启动应用"
 
-#: src/windows/main_window.vala:1100
+#: src/windows/main_window.vala:1118
+msgid "Sort apps"
+msgstr ""
+
+#: src/windows/main_window.vala:1147
 msgid "Switch to grid view"
 msgstr "切换到网格视图"
 
-#: src/windows/main_window.vala:1103
+#: src/windows/main_window.vala:1150
 msgid "Switch to list view"
 msgstr "切换到列表视图"
 
-#: src/windows/main_window.vala:1245 src/windows/main_window.vala:1316
+#: src/windows/main_window.vala:1156
+msgid "Default"
+msgstr ""
+
+#: src/windows/main_window.vala:1159
+msgid "Name (A-Z)"
+msgstr ""
+
+#: src/windows/main_window.vala:1160
+msgid "Name (Z-A)"
+msgstr ""
+
+#: src/windows/main_window.vala:1164
+msgid "Size (smallest first)"
+msgstr ""
+
+#: src/windows/main_window.vala:1165
+msgid "Size (largest first)"
+msgstr ""
+
+#: src/windows/main_window.vala:1340 src/windows/main_window.vala:1411
 msgid "Updates already running"
 msgstr "更新已在运行中"
 
-#: src/windows/main_window.vala:1293
+#: src/windows/main_window.vala:1388
 msgid "Cancel update"
 msgstr "取消更新"
 
-#: src/windows/main_window.vala:1324
+#: src/windows/main_window.vala:1419
 msgid "Cancelling..."
 msgstr "正在取消..."
 
-#: src/windows/main_window.vala:1350
+#: src/windows/main_window.vala:1445
 msgid "Update check cancelled"
 msgstr "更新检查已取消"
 
-#: src/windows/main_window.vala:1380
+#: src/windows/main_window.vala:1475
 #, c-format
 msgid "%d app(s) have updates"
 msgstr "%d 个应用有更新"
 
-#: src/windows/main_window.vala:1383
+#: src/windows/main_window.vala:1478
 msgid "No updates available right now"
 msgstr "目前没有可用更新"
 
-#: src/windows/main_window.vala:1390
+#: src/windows/main_window.vala:1485
 msgid "Nothing queued for updating"
 msgstr "没有等待更新的项目"
 
-#: src/windows/main_window.vala:1417
+#: src/windows/main_window.vala:1512
 msgid "Update cancelled"
 msgstr "更新已取消"
 
-#: src/windows/main_window.vala:1482 src/windows/main_window.vala:1502
+#: src/windows/main_window.vala:1577 src/windows/main_window.vala:1597
 msgid "Update failed"
 msgstr "有可用更新"
 
-#: src/windows/main_window.vala:1555
+#: src/windows/main_window.vala:1650
 msgid "Checking updates"
 msgstr "正在检查更新"
 
-#: src/windows/main_window.vala:1558
+#: src/windows/main_window.vala:1653
 msgid "Update Apps"
 msgstr "更新应用"
 
-#: src/windows/main_window.vala:1561
+#: src/windows/main_window.vala:1656
 msgid "Updating apps"
 msgstr "正在更新应用"
 
-#: src/windows/main_window.vala:1564
+#: src/windows/main_window.vala:1659
 msgid "Check updates"
 msgstr "检查更新"
 
-#: src/windows/main_window.vala:1588
+#: src/windows/main_window.vala:1683
 msgid "No installed apps to update"
 msgstr "没有已安装的应用需要更新"
 
-#: src/windows/main_window.vala:1628
+#: src/windows/main_window.vala:1723
 #, c-format
 msgid "Updated %d app(s)"
 msgstr "已更新 %d 个应用"
 
-#: src/windows/main_window.vala:1631
+#: src/windows/main_window.vala:1726
 #, c-format
 msgid "%d update(s) failed"
 msgstr "%d 个更新失败"
 
-#: src/windows/main_window.vala:1639
+#: src/windows/main_window.vala:1734
 msgid "Add update addresses in Details to enable updates"
 msgstr "在详情中添加更新地址以启用更新"
 
-#: src/windows/main_window.vala:1641
+#: src/windows/main_window.vala:1736
 msgid "All supported apps are already up to date"
 msgstr "所有支持的应用都已是最新版本"
 
-#: src/windows/main_window.vala:1645
+#: src/windows/main_window.vala:1740
 #, c-format
 msgid "%d app(s) use unsupported update links"
 msgstr "%d 个应用使用不支持的更新链接"
 
-#: src/windows/main_window.vala:1740
+#: src/windows/main_window.vala:1835
 #, c-format
 msgid "Update available for %s"
 msgstr "%s 有可用更新"
 
-#: src/windows/main_window.vala:1786
+#: src/windows/main_window.vala:1881
 msgid "General"
 msgstr "常规"
 
-#: src/windows/main_window.vala:1790
+#: src/windows/main_window.vala:1885
 msgid "Navigation"
 msgstr "导航"
 
-#: src/windows/main_window.vala:1794
+#: src/windows/main_window.vala:1889
 msgid "Window"
 msgstr "窗口"
 
-#: src/windows/main_window.vala:1796
+#: src/windows/main_window.vala:1891
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: src/windows/main_window.vala:1797
+#: src/windows/main_window.vala:1892
 msgid "Show main menu"
 msgstr "显示主菜单"
 
-#: src/windows/main_window.vala:1799
+#: src/windows/main_window.vala:1894
 msgid "Show shortcuts"
 msgstr "显示快捷键"
 
-#: src/windows/main_window.vala:1801
+#: src/windows/main_window.vala:1896
 msgid "Close window"
 msgstr "关闭窗口"
 
-#: src/windows/main_window.vala:1802
+#: src/windows/main_window.vala:1897
 msgid "Quit AppManager"
 msgstr "退出 AppManager"
 
-#: src/windows/main_window.vala:1803
+#: src/windows/main_window.vala:1898
 msgid "Toggle fullscreen"
 msgstr "切换全屏"
 
-#: src/windows/main_window.vala:1820
+#: src/windows/main_window.vala:1915
 msgid "Credits"
 msgstr "致谢"
 
-#: src/windows/main_window.vala:1904
+#: src/windows/main_window.vala:1999
 msgid "Select folder with AppImages"
 msgstr "选择包含 AppImages 的文件夹"
 
-#: src/windows/main_window.vala:1922
+#: src/windows/main_window.vala:2013
+msgid "Cannot import from this location"
+msgstr ""
+
+#: src/windows/main_window.vala:2014
+#, c-format
+msgid ""
+"This folder is inside the install folder (%s). Select a different folder to "
+"import from."
+msgstr ""
+
+#: src/windows/main_window.vala:2025
 msgid "Import AppImages"
 msgstr "导入 AppImages"
 
-#: src/windows/main_window.vala:1923
+#: src/windows/main_window.vala:2026
 #, c-format
 msgid "Install AppImages found in %s"
 msgstr "安装在 %s 中找到的 AppImages"
 
-#: src/windows/main_window.vala:1925
+#: src/windows/main_window.vala:2028
 msgid "Move AppImages"
 msgstr "移动 AppImages"
 
-#: src/windows/main_window.vala:1932
+#: src/windows/main_window.vala:2035
 msgid "Import"
 msgstr "导入"
 
-#: src/windows/main_window.vala:1962
+#: src/windows/main_window.vala:2065
 #, c-format
 msgid "Failed to read folder: %s"
 msgstr "无法读取文件夹：%s"
 
-#: src/windows/main_window.vala:1967
+#: src/windows/main_window.vala:2070
 msgid "No AppImage files found in folder"
 msgstr "文件夹中未找到 AppImage 文件"
 
-#: src/windows/main_window.vala:1978
+#: src/windows/main_window.vala:2081
 msgid "Importing AppImages…"
 msgstr "正在导入 AppImages…"
 
-#: src/windows/main_window.vala:1979
+#: src/windows/main_window.vala:2082
 #, c-format
 msgid "Installing %d AppImage(s)…"
 msgstr "正在安装 %d 个 AppImage…"
 
-#: src/windows/main_window.vala:1992
+#: src/windows/main_window.vala:2095
 msgid "Starting…"
 msgstr "正在启动…"
 
-#: src/windows/main_window.vala:2001
+#: src/windows/main_window.vala:2104
 msgid "Cancelling…"
 msgstr "正在取消…"
 
-#: src/windows/main_window.vala:2018
+#: src/windows/main_window.vala:2121
 #, c-format
 msgid "%d of %d: %s"
 msgstr "%d / %d：%s"
 
-#: src/windows/main_window.vala:2077
+#: src/windows/main_window.vala:2180
 #, c-format
 msgid "Imported %d app(s)"
 msgstr "已导入 %d 个应用"
 
-#: src/windows/main_window.vala:2080
+#: src/windows/main_window.vala:2183
 #, fuzzy, c-format
 msgid "Skipped %d incompatible architecture app(s)"
 msgstr "已跳过 %d 个已安装的应用"
 
-#: src/windows/main_window.vala:2083
+#: src/windows/main_window.vala:2186
 #, c-format
 msgid "%d app(s) failed to import"
 msgstr "%d 个应用导入失败"
 
-#: src/windows/main_window.vala:2086
+#: src/windows/main_window.vala:2189
 #, c-format
 msgid "Cancelled — %d app(s) not imported"
 msgstr "已取消 — %d 个应用未导入"
 
-#. Installation directory group
 #: src/windows/preferences_window.vala:59
 msgid "Installation"
 msgstr "安装"
@@ -1247,7 +1348,6 @@ msgid ""
 "the .AppImage extension"
 msgstr ""
 
-#. Automatic updates group
 #: src/windows/preferences_window.vala:135
 msgid "Automatic updates"
 msgstr "自动更新"
@@ -1260,7 +1360,6 @@ msgstr "配置自动更新检查"
 msgid "Open update log"
 msgstr "打开更新日志"
 
-#. Background update check expander row
 #: src/windows/preferences_window.vala:156
 msgid "Background update check"
 msgstr "后台更新检查"
@@ -1269,7 +1368,6 @@ msgstr "后台更新检查"
 msgid "Will notify when new app updates are available"
 msgstr "有新的应用更新时会通知您"
 
-#. Auto update apps toggle (inside expander)
 #: src/windows/preferences_window.vala:168
 msgid "Auto update apps"
 msgstr "自动更新应用"
@@ -1278,7 +1376,6 @@ msgstr "自动更新应用"
 msgid "Will update apps automatically in background"
 msgstr "将在后台自动更新应用"
 
-#. Check interval (inside expander)
 #: src/windows/preferences_window.vala:175
 msgid "Check interval"
 msgstr "检查间隔"
@@ -1295,7 +1392,6 @@ msgstr "每周"
 msgid "Monthly"
 msgstr "每月"
 
-#. Thumbnails group
 #: src/windows/preferences_window.vala:204
 msgid "Thumbnails"
 msgstr "缩略图"
@@ -1316,7 +1412,6 @@ msgstr "隐藏 Nautilus 缩略图背景"
 msgid "Remove the alpha checkerboard behind thumbnails and icons"
 msgstr "移除缩略图和图标后面的透明棋盘格"
 
-#. GitHub authentication group
 #: src/windows/preferences_window.vala:229
 msgid "GitHub"
 msgstr "GitHub"
@@ -1350,7 +1445,6 @@ msgstr "清除令牌"
 msgid "GitHub token cleared"
 msgstr "GitHub 令牌已清除"
 
-#. Test token row
 #: src/windows/preferences_window.vala:273
 msgid "Test token"
 msgstr "测试代币"
@@ -1404,9 +1498,6 @@ msgstr ""
 msgid "Move Apps"
 msgstr "移动应用程序"
 
-#. Kill background daemon if running - it may interfere with migration
-#. by monitoring folders and triggering reconciliation
-#. Create progress dialog
 #: src/windows/preferences_window.vala:483
 msgid "Moving Apps…"
 msgstr "移动应用程序..."
@@ -1431,42 +1522,111 @@ msgstr "发生未知错误"
 msgid "OK"
 msgstr "好的"
 
-#: src/windows/preferences_window.vala:578
+#: src/windows/preferences_window.vala:580
 msgid "Authentication failed — token is invalid or expired"
 msgstr "身份验证失败 - 令牌无效或已过期"
 
-#: src/windows/preferences_window.vala:580
+#: src/windows/preferences_window.vala:582
 msgid "Access forbidden — token lacks required permissions"
 msgstr "访问被禁止——令牌缺乏所需的权限"
 
-#: src/windows/preferences_window.vala:586
+#: src/windows/preferences_window.vala:588
 #, c-format
 msgid "Token is valid — %s / %s requests remaining"
 msgstr "令牌有效 — 剩余 %s / %s 请求"
 
-#: src/windows/preferences_window.vala:588
+#: src/windows/preferences_window.vala:590
 msgid "Token is valid"
 msgstr "令牌有效"
 
-#: src/windows/preferences_window.vala:591
+#: src/windows/preferences_window.vala:593
 #, c-format
 msgid "Unexpected response (%u)"
 msgstr "意外响应 (%u)"
 
-#: src/windows/preferences_window.vala:594
+#: src/windows/preferences_window.vala:596
 #, c-format
 msgid "Connection error: %s"
 msgstr "连接错误：%s"
 
+#. (itstool) path: component/id
+#: data/com.github.AppManager.metainfo.xml:3
+msgid "com.github.AppManager"
+msgstr ""
+
+#. (itstool) path: developer/name
+#. (itstool) path: component/developer_name
 #: data/com.github.AppManager.metainfo.xml:6
 #: data/com.github.AppManager.metainfo.xml:8
 msgid "Arnis Kemlers"
 msgstr "阿尼斯·凯姆勒斯"
 
+#. (itstool) path: component/summary
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer and management application"
 msgstr "适用于 GNOME 的拖放式 AppImage 安装程序"
 
+#. (itstool) path: component/metadata_license
+#: data/com.github.AppManager.metainfo.xml:10
+msgid "CC0-1.0"
+msgstr ""
+
+#. (itstool) path: component/project_license
+#: data/com.github.AppManager.metainfo.xml:11
+msgid "GPL-3.0-or-later"
+msgstr ""
+
+#. (itstool) path: custom/value
+#: data/com.github.AppManager.metainfo.xml:15
+msgid "© 2026 Arnis Kemlers"
+msgstr ""
+
+#. (itstool) path: bundle/name
+#: data/com.github.AppManager.metainfo.xml:20
+msgid "squashfs-tools (unsquashfs)"
+msgstr ""
+
+#. (itstool) path: bundle/copyright
+#: data/com.github.AppManager.metainfo.xml:21
+msgid "© Phillip Lougher"
+msgstr ""
+
+#. (itstool) path: bundle/license
+#: data/com.github.AppManager.metainfo.xml:22
+msgid "GPL-2.0-or-later"
+msgstr ""
+
+#. (itstool) path: bundle/name
+#: data/com.github.AppManager.metainfo.xml:25
+msgid "DwarFS"
+msgstr ""
+
+#. (itstool) path: bundle/copyright
+#: data/com.github.AppManager.metainfo.xml:26
+msgid "© Marcus Holland-Moritz"
+msgstr ""
+
+#. (itstool) path: bundle/license
+#: data/com.github.AppManager.metainfo.xml:27
+msgid "GPL-3.0"
+msgstr ""
+
+#. (itstool) path: bundle/name
+#: data/com.github.AppManager.metainfo.xml:30
+msgid "zsync2"
+msgstr ""
+
+#. (itstool) path: bundle/copyright
+#: data/com.github.AppManager.metainfo.xml:31
+msgid "© AppImageCommunity, © Colin Phipps"
+msgstr ""
+
+#. (itstool) path: bundle/license
+#: data/com.github.AppManager.metainfo.xml:32
+msgid "Artistic-2.0"
+msgstr ""
+
+#. (itstool) path: description/p
 #: data/com.github.AppManager.metainfo.xml:35
 msgid ""
 "AppManager lets you install or uninstall AppImages with a familiar drag-and-"
@@ -1475,6 +1635,54 @@ msgid ""
 msgstr ""
 "AppManager 允许您使用受 macOS 启发的熟悉的拖放工作流程来安装或卸载 "
 "AppImages。它处理桌面集成、图标提取、可执行位和 Nautilus 上下文菜单。"
+
+#. (itstool) path: component/launchable
+#: data/com.github.AppManager.metainfo.xml:37
+msgid "com.github.AppManager.desktop"
+msgstr ""
+
+#. (itstool) path: component/url
+#: data/com.github.AppManager.metainfo.xml:38
+msgid "https://github.com/kem-a/AppManager"
+msgstr ""
+
+#. (itstool) path: component/url
+#: data/com.github.AppManager.metainfo.xml:39
+msgid "https://github.com/kem-a/AppManager/issues"
+msgstr ""
+
+#. (itstool) path: component/url
+#: data/com.github.AppManager.metainfo.xml:40
+msgid "https://github.com/kem-a/AppManager/graphs/contributors"
+msgstr ""
+
+#. (itstool) path: provides/binary
+#: data/com.github.AppManager.metainfo.xml:42
+msgid "app-manager"
+msgstr ""
+
+#, c-format
+#~ msgid "Update %s?"
+#~ msgstr "更新 %s？"
+
+#~ msgid "Version unknown"
+#~ msgstr "版本未知"
+
+#, c-format
+#~ msgid "Will update to version %s"
+#~ msgstr "将更新到版本 %s"
+
+#~ msgid "Update info"
+#~ msgstr "更新信息"
+
+#~ msgid "How update links work"
+#~ msgstr "更新链接如何工作"
+
+#~ msgid "Advanced"
+#~ msgstr "高级"
+
+#~ msgid "Got it"
+#~ msgstr "明白了"
 
 #~ msgid "Launch Application"
 #~ msgstr "解压应用程序？"
