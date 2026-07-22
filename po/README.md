@@ -1,9 +1,66 @@
 # Translating AppManager
 
-## How to Contribute Translations
+## Dependencies
 
-1. **Edit an existing translation**: Find the relevant `.po` file for your language and submit a PR with your improvements.
-2. **Add a new language**: Use `app-manager.pot` as a template, save it as `po/xx.po` (where `xx` is your language code), translate the strings, and create a PR.
+Install the required tools before working with translations:
+
+```bash
+# Debian / Ubuntu
+sudo apt install gettext itstool python3
+
+# Fedora
+sudo dnf install gettext itstool python3
+```
+
+## Quick Start — Using the Translation Script
+
+The script at `scripts/translations.sh` helps you add or update translations
+without needing to touch `.po` files directly.
+
+### 1. Export untranslated strings
+
+This generates a YAML file with all strings that still need translating:
+
+```bash
+./scripts/translations.sh --export lv      # → po/lv.yaml
+```
+
+### 2. Translate
+
+Open the generated YAML file and fill in the `msgstr` fields:
+
+```yaml
+entries:
+  - msgid: "Keep Both"
+    msgstr: "Paturēt abus"
+    locations: "src/application.vala:508, src/windows/drop_window.vala:460"
+  - msgid: "Ignore"
+    msgstr: "Ignorēt"
+    locations: "src/application.vala:766"
+```
+
+### 3. Import translations
+
+This validates the `.po` file, merges your translations, and validates again:
+
+```bash
+./scripts/translations.sh --import lv      # reads po/lv.yaml → po/lv.po
+```
+
+### 4. Submit
+
+Commit your updated `.po` file and open a pull request.
+
+> **Tip:** If the script reports errors during import, run `./scripts/translations.sh --fix`
+> first to automatically mark broken entries as fuzzy, then try importing again.
+
+### Adding a new language
+
+To start a translation for a language that doesn't exist yet:
+
+1. Add the language code to `po/LINGUAS` (e.g. `ru`)
+2. Run `./scripts/translations.sh` — it will create the new `.po` from the template
+3. Then use `--export` / `--import` as described above
 
 ## Translation Status
 
