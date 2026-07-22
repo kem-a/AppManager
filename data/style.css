@@ -104,10 +104,21 @@
     transition: background-color 100ms ease;
 }
 .clickable-icon-column.selected {
-    background-color: alpha(@accent_bg_color, 0.3);
+    background-color: alpha(currentColor, 0.12);
 }
-.clickable-icon-column.selected label {
+/* Direct child only: a plain `label` descendant selector would also match the
+   labels of a context menu popover parented to this column. Constant padding is
+   always reserved so selecting never shifts the layout; only the colours change. */
+.clickable-icon-column > label {
+    border-radius: 7px;
+    padding: 2px 8px;
+}
+.clickable-icon-column.selected > label {
+    background-color: @accent_bg_color;
     color: @accent_fg_color;
+}
+.depth-icon {
+    -gtk-icon-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 .drop-target-highlight {
     background-color: alpha(@accent_bg_color, 0.15);

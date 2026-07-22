@@ -469,6 +469,44 @@ namespace AppManager.Core {
             return false;
         }
 
+        /**
+         * Read SquashFS superblock statistics (compression, block size, inode count, ...)
+         * via the bundled unsquashfs -stat. Returns the raw text, or null if the payload
+         * is not SquashFS or unsquashfs is unavailable.
+         */
+        public static string? read_squashfs_stat(string appimage_path) {
+            if (detect_format(appimage_path) != AppImageFormat.SQUASHFS) {
+                return null;
+            }
+            int64 offset = get_payload_offset(appimage_path);
+            if (offset <= 0) {
+                return null;
+            }
+            init_unsquashfs();
+            if (unsquashfs_path == null) {
+                return null;
+            }
+
+            try {
+                string[] cmd = { unsquashfs_path, "-o", offset.to_string(), "-stat", appimage_path };
+                string? stdout_str;
+                string? stderr_str;
+                int exit_status;
+                Process.spawn_sync(null, cmd, null, SpawnFlags.SEARCH_PATH, null,
+                                   out stdout_str, out stderr_str, out exit_status);
+                if (stdout_str != null && stdout_str.strip() != "") {
+                    return stdout_str;
+                }
+                // Some unsquashfs builds print -stat output on stderr.
+                if (stderr_str != null && stderr_str.strip() != "") {
+                    return stderr_str;
+                }
+            } catch (Error e) {
+                debug("unsquashfs -stat failed: %s", e.message);
+            }
+            return null;
+        }
+
         // --- Private implementation ---
 
         private static bool extract_entry(string appimage_path, string output_dir, string pattern) {
