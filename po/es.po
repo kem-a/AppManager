@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-22 11:40+0300\n"
-"PO-Revision-Date: 2026-07-15 03:16-0400\n"
+"PO-Revision-Date: 2026-08-17 14:50-0400\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: src/application.vala:312
 msgid "Cannot install from this location"
-msgstr ""
+msgstr "No se puede instalar desde esta ubicación"
 
 #: src/application.vala:313
 #, c-format
@@ -27,6 +27,8 @@ msgid ""
 "This AppImage is already inside the install folder (%s). Move it elsewhere "
 "first to install it."
 msgstr ""
+"Este archivo AppImage ya se encuentra dentro de la carpeta de instalación "
+"(%s). Muévalo primero a otra ubicación para instalarlo."
 
 #: src/application.vala:314 src/application.vala:358 src/application.vala:370
 #: src/application.vala:1001 src/application.vala:1112
@@ -104,6 +106,8 @@ msgid ""
 "An older item named \"%s\" already exists in this location. Do you want to "
 "replace it with newer one you're copying?"
 msgstr ""
+"Ya existe un elemento antiguo llamado \"%s\" en esta ubicación. ¿Desea "
+"reemplazarlo con el nuevo que está copiando?"
 
 #: src/application.vala:497 src/windows/drop_window.vala:449
 #, c-format
@@ -130,7 +134,7 @@ msgstr "Instalado: %s | Entrante: %s"
 
 #: src/application.vala:508 src/windows/drop_window.vala:460
 msgid "Keep Both"
-msgstr ""
+msgstr "Conservar ambos"
 
 #: src/application.vala:509 src/windows/drop_window.vala:461
 msgid "Stop"
@@ -176,7 +180,7 @@ msgstr "Descartar"
 
 #: src/application.vala:763
 msgid "Leftover portable folder found"
-msgstr ""
+msgstr "Se encontró una carpeta portátil residual"
 
 #: src/application.vala:764
 #, c-format
@@ -186,10 +190,15 @@ msgid ""
 "installed while this bug was active — move anything you need out of it (e.g. "
 "AppImages under its Applications subfolder), then delete it."
 msgstr ""
+"Se ha encontrado una carpeta portátil residual junto a AppManager (%s). "
+"AppManager no admite el modo portátil para sí mismo. Es posible que la "
+"carpeta contenga aplicaciones instaladas mientras este error estaba activo; "
+"saque de ella todo lo que necesite (por ejemplo, las AppImages de la "
+"subcarpeta Applications) y, a continuación, elimínela."
 
 #: src/application.vala:766
 msgid "Ignore"
-msgstr ""
+msgstr "Ignorar"
 
 #: src/application.vala:767 src/core/installer.vala:1053
 #: src/core/installer.vala:1118 src/core/path_migration_service.vala:350
@@ -505,7 +514,7 @@ msgstr "Oculto"
 
 #: src/windows/details_window.vala:304
 msgid "Web"
-msgstr ""
+msgstr "Web"
 
 #: src/windows/details_window.vala:323
 msgid "Properties"
@@ -517,19 +526,19 @@ msgstr "Argumentos de línea de comandos"
 
 #: src/windows/details_window.vala:366 src/windows/details_window.vala:420
 msgid "App Updates"
-msgstr ""
+msgstr "Actualizaciones de la aplicación"
 
 #: src/windows/details_window.vala:367
 msgid "Edit app update details"
-msgstr ""
+msgstr "Editar detalles de actualización de la aplicación"
 
 #: src/windows/details_window.vala:369 src/windows/details_window.vala:413
 msgid "On"
-msgstr ""
+msgstr "Activar"
 
 #: src/windows/details_window.vala:369 src/windows/details_window.vala:413
 msgid "Off"
-msgstr ""
+msgstr "Desactivar"
 
 #: src/windows/details_window.vala:388
 msgid ""
@@ -555,11 +564,11 @@ msgstr "Enlaces de actualización"
 
 #: src/windows/details_window.vala:398
 msgid "Enable app updates"
-msgstr ""
+msgstr "Habilitar las actualizaciones de la aplicación"
 
 #: src/windows/details_window.vala:424
 msgid "Update details"
-msgstr ""
+msgstr "Detalles de la actualización"
 
 #: src/windows/details_window.vala:434
 msgid "Pre-release Updates"
@@ -587,16 +596,18 @@ msgstr "Abrir página web"
 
 #: src/windows/details_window.vala:595 src/windows/details_window.vala:628
 msgid "Advanced Settings"
-msgstr ""
+msgstr "Configuración avanzada"
 
 #: src/windows/details_window.vala:596
 msgid ""
 "Change app icon, Startup WM Class, Keywords, $PATH or environment variables"
 msgstr ""
+"Cambiar el icono de la aplicación, la clase de WM de inicio, las palabras "
+"clave, $PATH o las variables de entorno"
 
 #: src/windows/details_window.vala:612
 msgid "App Settings"
-msgstr ""
+msgstr "Configuración de la aplicación"
 
 #: src/windows/details_window.vala:641
 msgid "Portable .home folder"
@@ -666,7 +677,7 @@ msgstr "Eliminar variable"
 
 #: src/windows/details_window.vala:941
 msgid "App Name"
-msgstr ""
+msgstr "Nombre de la aplicación"
 
 #: src/windows/details_window.vala:955
 msgid "Keywords"
@@ -750,36 +761,36 @@ msgstr "¿Eliminar permanentemente?"
 
 #: src/windows/details_window.vala:1370
 msgid "Delete All Data"
-msgstr ""
+msgstr "Eliminar todos los datos"
 
 #: src/windows/details_window.vala:1371
 msgid "Permanently erase user data to save space"
-msgstr ""
+msgstr "Borrar permanentemente los datos del usuario para ahorrar espacio"
 
 #: src/windows/details_window.vala:1373
 msgid "Move to Trash?"
-msgstr ""
+msgstr "¿Mover a la papelera?"
 
 #: src/windows/details_window.vala:1375
 #, c-format
 msgid "<b>%s</b> will be moved to the Trash."
-msgstr ""
+msgstr "<b>%s</b> se moverá a la Papelera."
 
 #: src/windows/details_window.vala:1376
 msgid "Trash All Data"
-msgstr ""
+msgstr "Borrar todos los datos"
 
 #: src/windows/details_window.vala:1377
 msgid "Move user data to Trash along with the app"
-msgstr ""
+msgstr "Mover los datos del usuario a la Papelera junto con la aplicación"
 
 #: src/windows/details_window.vala:1393
 msgid "Keep User Data"
-msgstr ""
+msgstr "Conservar los datos del usuario"
 
 #: src/windows/details_window.vala:1394
 msgid "Allow restoring personal settings &amp; content"
-msgstr ""
+msgstr "Permitir restaurar la configuración y el contenido personales"
 
 #: src/windows/details_window.vala:1427
 msgid ""
@@ -853,15 +864,15 @@ msgstr "Reemplazado correctamente"
 
 #: src/windows/drop_window.vala:708
 msgid "Get Info"
-msgstr ""
+msgstr "Obtener información"
 
 #: src/windows/drop_window.vala:709
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
 #: src/windows/drop_window.vala:715
 msgid "New Terminal at Folder"
-msgstr ""
+msgstr "Nueva terminal en la carpeta"
 
 #: src/windows/drop_window.vala:1167
 msgid "Verify AppImage"
@@ -1078,7 +1089,7 @@ msgstr "Mayús+clic para iniciar la aplicación"
 
 #: src/windows/main_window.vala:1118
 msgid "Sort apps"
-msgstr ""
+msgstr "Ordenar aplicaciones"
 
 #: src/windows/main_window.vala:1147
 msgid "Switch to grid view"
@@ -1090,23 +1101,23 @@ msgstr "Cambiar a vista de lista"
 
 #: src/windows/main_window.vala:1156
 msgid "Default"
-msgstr ""
+msgstr "Predeterminado"
 
 #: src/windows/main_window.vala:1159
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Nombre (A-Z)"
 
 #: src/windows/main_window.vala:1160
 msgid "Name (Z-A)"
-msgstr ""
+msgstr "Nombre (Z-A)"
 
 #: src/windows/main_window.vala:1164
 msgid "Size (smallest first)"
-msgstr ""
+msgstr "Tamaño (del menor al mayor)"
 
 #: src/windows/main_window.vala:1165
 msgid "Size (largest first)"
-msgstr ""
+msgstr "Tamaño (del mayor al menor)"
 
 #: src/windows/main_window.vala:1340 src/windows/main_window.vala:1411
 msgid "Updates already running"
@@ -1241,7 +1252,7 @@ msgstr "Seleccionar carpeta con AppImages"
 
 #: src/windows/main_window.vala:2013
 msgid "Cannot import from this location"
-msgstr ""
+msgstr "No se puede importar desde esta ubicación"
 
 #: src/windows/main_window.vala:2014
 #, c-format
@@ -1249,6 +1260,8 @@ msgid ""
 "This folder is inside the install folder (%s). Select a different folder to "
 "import from."
 msgstr ""
+"Esta carpeta se encuentra dentro de la carpeta de instalación (%s). "
+"Seleccione otra carpeta desde la que importar."
 
 #: src/windows/main_window.vala:2025
 msgid "Import AppImages"
@@ -1587,7 +1600,7 @@ msgstr "Error de conexión: %s"
 #. (itstool) path: component/id
 #: data/com.github.AppManager.metainfo.xml:3
 msgid "com.github.AppManager"
-msgstr ""
+msgstr "com.github.AppManager"
 
 #. (itstool) path: developer/name
 #. (itstool) path: component/developer_name
@@ -1605,62 +1618,62 @@ msgstr ""
 #. (itstool) path: component/metadata_license
 #: data/com.github.AppManager.metainfo.xml:10
 msgid "CC0-1.0"
-msgstr ""
+msgstr "CC0-1.0"
 
 #. (itstool) path: component/project_license
 #: data/com.github.AppManager.metainfo.xml:11
 msgid "GPL-3.0-or-later"
-msgstr ""
+msgstr "GPL 3.0 o posterior"
 
 #. (itstool) path: custom/value
 #: data/com.github.AppManager.metainfo.xml:15
 msgid "© 2026 Arnis Kemlers"
-msgstr ""
+msgstr "© 2026 Arnis Kemlers"
 
 #. (itstool) path: bundle/name
 #: data/com.github.AppManager.metainfo.xml:20
 msgid "squashfs-tools (unsquashfs)"
-msgstr ""
+msgstr "squashfs-tools (unsquashfs)"
 
 #. (itstool) path: bundle/copyright
 #: data/com.github.AppManager.metainfo.xml:21
 msgid "© Phillip Lougher"
-msgstr ""
+msgstr "© Phillip Lougher"
 
 #. (itstool) path: bundle/license
 #: data/com.github.AppManager.metainfo.xml:22
 msgid "GPL-2.0-or-later"
-msgstr ""
+msgstr "GPL 2.0 o posterior"
 
 #. (itstool) path: bundle/name
 #: data/com.github.AppManager.metainfo.xml:25
 msgid "DwarFS"
-msgstr ""
+msgstr "DwarFS"
 
 #. (itstool) path: bundle/copyright
 #: data/com.github.AppManager.metainfo.xml:26
 msgid "© Marcus Holland-Moritz"
-msgstr ""
+msgstr "© Marcus Holland-Moritz"
 
 #. (itstool) path: bundle/license
 #: data/com.github.AppManager.metainfo.xml:27
 msgid "GPL-3.0"
-msgstr ""
+msgstr "GPL-3.0"
 
 #. (itstool) path: bundle/name
 #: data/com.github.AppManager.metainfo.xml:30
 msgid "zsync2"
-msgstr ""
+msgstr "zsync2"
 
 #. (itstool) path: bundle/copyright
 #: data/com.github.AppManager.metainfo.xml:31
 msgid "© AppImageCommunity, © Colin Phipps"
-msgstr ""
+msgstr "© AppImageCommunity, © Colin Phipps"
 
 #. (itstool) path: bundle/license
 #: data/com.github.AppManager.metainfo.xml:32
 msgid "Artistic-2.0"
-msgstr ""
+msgstr "Artistic-2.0"
 
 #. (itstool) path: description/p
 #: data/com.github.AppManager.metainfo.xml:35
@@ -1677,27 +1690,27 @@ msgstr ""
 #. (itstool) path: component/launchable
 #: data/com.github.AppManager.metainfo.xml:37
 msgid "com.github.AppManager.desktop"
-msgstr ""
+msgstr "com.github.AppManager.desktop"
 
 #. (itstool) path: component/url
 #: data/com.github.AppManager.metainfo.xml:38
 msgid "https://github.com/kem-a/AppManager"
-msgstr ""
+msgstr "https://github.com/kem-a/AppManager"
 
 #. (itstool) path: component/url
 #: data/com.github.AppManager.metainfo.xml:39
 msgid "https://github.com/kem-a/AppManager/issues"
-msgstr ""
+msgstr "https://github.com/kem-a/AppManager/issues"
 
 #. (itstool) path: component/url
 #: data/com.github.AppManager.metainfo.xml:40
 msgid "https://github.com/kem-a/AppManager/graphs/contributors"
-msgstr ""
+msgstr "https://github.com/kem-a/AppManager/graphs/contributors"
 
 #. (itstool) path: provides/binary
 #: data/com.github.AppManager.metainfo.xml:42
 msgid "app-manager"
-msgstr ""
+msgstr "app-manager"
 
 #, c-format
 #~ msgid "Update %s?"
