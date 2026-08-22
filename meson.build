@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '3.7.3',
+  version: '3.7.4',
   meson_version: '>=0.64.0'
 )
 
@@ -75,6 +75,7 @@ bundle_unsquashfs = get_option('bundle_unsquashfs')
 core_sources = files(
   'src/core/app_constants.vala',
   'src/core/app_paths.vala',
+  'src/core/appmgr_link.vala',
   'src/core/installation_record.vala',
   'src/core/installation_registry.vala',
   'src/core/custom_values_store.vala',

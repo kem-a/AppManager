@@ -13,10 +13,14 @@ namespace AppManager {
     }
 
     public class DropWindow : Adw.Window {
+        // Emitted when the window is closed while a download is still running.
+        public signal void download_cancel_requested();
+
         private Application app_ref;
         private InstallationRegistry registry;
         private Installer installer;
-        private AppImageMetadata metadata;
+        // Null only while an appmgr:// download has not landed yet.
+        private AppImageMetadata? metadata;
         private Gtk.Image app_icon;
         private Gtk.Image folder_icon;
         private Gtk.Image arrow_icon;
@@ -54,6 +58,10 @@ namespace AppManager {
         private bool spinner_icon_active = false;
         private bool spinner_install_active = false;
         private Settings settings;
+
+        // Pending appmgr:// download: progress on the icon, nothing installable yet.
+        private bool downloading = false;
+        private Gtk.ProgressBar? download_progress = null;
         
         // Verification state tracking
         private VerificationState verification_state = VerificationState.UNVERIFIED;
@@ -86,12 +94,114 @@ namespace AppManager {
             load_icons_async();
         }
 
+        /**
+         * Opens the installer for an appmgr:// link whose download is still
+         * running; download_completed() swaps in the real AppImage.
+         */
+        public DropWindow.for_download(Application app, InstallationRegistry registry, Installer installer,
+                                       Settings settings, string destination_path, string display_name) {
+            Object(application: app,
+                title: _("AppImage Installer"),
+                modal: true,
+                default_width: 600,
+                default_height: 420,
+                destroy_with_parent: true);
+            this.app_ref = app;
+            this.registry = registry;
+            this.installer = installer;
+            this.settings = settings;
+            this.appimage_path = destination_path;
+            this.resolved_app_name = display_name;
+            this.downloading = true;
+
+            build_ui();
+
+            // The overlay is as wide as the column, so pin the bar to the icon width.
+            download_progress = new Gtk.ProgressBar();
+            download_progress.add_css_class("download-progress");
+            download_progress.halign = Gtk.Align.CENTER;
+            download_progress.valign = Gtk.Align.END;
+            download_progress.set_size_request(app_icon.pixel_size, -1);
+            // Icon artwork has transparent padding and .depth-icon a shadow below
+            // it, so inset the bar onto the icon's visible edge.
+            download_progress.margin_bottom = 8;
+            app_icon_overlay.add_overlay(download_progress);
+
+            subtitle.set_text(_("Starting…"));
+            verify_button.set_sensitive(false);
+        }
+
+        public void set_download_progress(double fraction, string status) {
+            if (download_progress == null) {
+                return;
+            }
+            if (fraction >= 0.0) {
+                download_progress.fraction = fraction;
+            } else {
+                download_progress.pulse();
+            }
+            subtitle.set_text(status);
+        }
+
+        /**
+         * The download landed: read its metadata and turn the window into a
+         * normal installer. A checksum matched during the download counts as
+         * a successful verification.
+         */
+        public void download_completed(string path, bool checksum_verified) {
+            downloading = false;
+            appimage_path = path;
+            clear_download_progress();
+
+            try {
+                metadata = new AppImageMetadata(File.new_for_path(path));
+            } catch (Error e) {
+                download_failed(e.message);
+                return;
+            }
+
+            resolved_app_name = extract_app_name();
+            app_name_label.set_text(resolved_app_name);
+            title = compute_window_title();
+            footer_label.set_text(appimage_path);
+            var install_dir_name = Path.get_basename(AppPaths.applications_dir);
+            subtitle.set_text(_("Drag and drop to install into %s").printf(install_dir_name));
+            verify_button.set_sensitive(true);
+
+            // Before check_compatibility(), which has the last word on the drag target.
+            if (checksum_verified) {
+                set_verification_state(VerificationState.VERIFIED);
+            }
+            check_compatibility();
+            load_icons_async();
+        }
+
+        public void download_failed(string message) {
+            downloading = false;
+            clear_download_progress();
+            subtitle.set_text(_("Download failed"));
+            incompatibility_banner.title = message;
+            incompatibility_banner.revealed = true;
+            verify_button.set_sensitive(false);
+        }
+
+        private void clear_download_progress() {
+            if (download_progress == null) {
+                return;
+            }
+            app_icon_overlay.remove_overlay(download_progress);
+            download_progress = null;
+        }
+
         private void build_ui() {
             title = compute_window_title();
             //add_css_class("devel");
 
             // Revert a temporary executable bit if the user closes without installing.
             this.close_request.connect(() => {
+                if (downloading) {
+                    download_cancel_requested();
+                }
                 restore_original_exec_state();
                 if (context_popover != null) {
                     context_popover.unparent();
@@ -333,7 +443,7 @@ namespace AppManager {
         }
 
         private void start_install() {
-            if (installing || install_prompt_visible) {
+            if (downloading || installing || install_prompt_visible) {
                 return;
             }
 
@@ -755,12 +865,18 @@ namespace AppManager {
         }
 
         private void show_info_window() {
+            if (metadata == null) {
+                return;
+            }
             var info_window = new AppImageInfoWindow(app_ref, this, appimage_path,
                 resolved_app_name, resolved_app_version, metadata, app_icon.get_paintable());
             info_window.present();
         }
 
         private void copy_appimage_to_clipboard() {
+            if (downloading) {
+                return;
+            }
             GLib.File[] files = { File.new_for_path(appimage_path) };
             var file_list = new Gdk.FileList.from_array(files);
             var value = Value(typeof(Gdk.FileList));
@@ -769,7 +885,7 @@ namespace AppManager {
         }
 
         private void run_appimage_standalone() {
-            if (installing) {
+            if (downloading || installing) {
                 return;
             }
             try {

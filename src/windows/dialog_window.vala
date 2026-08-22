@@ -7,6 +7,7 @@ namespace AppManager {
 
         private Gtk.Box body_box;
         private Gtk.Box action_box;
+        private Gtk.Label title_label;
         private bool actions_initialized = false;
 
         public DialogWindow(Application app, Gtk.Window? parent, string title, Gtk.Image? icon = null) {
@@ -28,7 +29,7 @@ namespace AppManager {
             header.set_show_end_title_buttons(false);
             header.set_show_start_title_buttons(false);
             header.margin_top = 20;
-            var title_label = new Gtk.Label(title);
+            title_label = new Gtk.Label(title);
             title_label.add_css_class("title-4");
             header.set_title_widget(title_label);
             toolbar_view.add_top_bar(header);
@@ -60,7 +61,31 @@ namespace AppManager {
             body_box.append(widget);
         }
 
-        public void add_option(string response_id, string label, bool is_default = false) {
+        /**
+         * Re-uses this dialog for the next step of a flow: swaps the title and
+         * clears the body and buttons so the caller can rebuild them in place.
+         */
+        public void reset(string title, Gtk.Image? icon = null) {
+            title_label.set_text(title);
+
+            var child = body_box.get_first_child();
+            while (child != null) {
+                var next = child.get_next_sibling();
+                body_box.remove(child);
+                child = next;
+            }
+
+            action_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
+            action_box.halign = Gtk.Align.FILL;
+            action_box.hexpand = true;
+            actions_initialized = false;
+
+            if (icon != null) {
+                body_box.append(icon);
+            }
+        }
+
+        public Gtk.Button add_option(string response_id, string label, bool is_default = false) {
             if (!actions_initialized) {
                 body_box.append(action_box);
                 actions_initialized = true;
@@ -78,6 +103,7 @@ namespace AppManager {
                 option_selected(response_id);
                 this.close();
             });
+            return button;
         }
     }
 

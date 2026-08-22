@@ -16,6 +16,8 @@ namespace AppManager {
         private HashSet<string> owned_lock_files = new HashSet<string>();
         // Stale self portable folders already flagged to the user (notice fires once per dir)
         private HashSet<string> notified_stale_dirs = new HashSet<string>();
+        // Temp dirs holding appmgr:// downloads, removed on shutdown
+        private HashSet<string> appmgr_download_dirs = new HashSet<string>();
         private static bool opt_version = false;
         private static bool opt_help = false;
         private static bool opt_background_update = false;
@@ -262,6 +264,14 @@ Examples:
             this.set_accels_for_action("win.toggle_fullscreen", fullscreen_accels);
         }
 
+        protected override void shutdown() {
+            foreach (var dir in appmgr_download_dirs) {
+                Utils.FileUtils.remove_dir_recursive(dir);
+            }
+            appmgr_download_dirs.clear();
+            base.shutdown();
+        }
+
         protected override void activate() {
             // Check integrity on app launch to detect manual deletions while app was closed
             // Skip during migration to prevent false uninstallation
@@ -294,8 +304,193 @@ Examples:
                 return;
             }
             foreach (var file in files) {
+                // Browsers hand appmgr:// deep links over as URIs, not paths.
+                if (file.get_uri_scheme() == APPMGR_URI_SCHEME) {
+                    handle_appmgr_uri(file.get_uri());
+                    continue;
+                }
                 show_drop_window(file);
             }
+        }
+
+        /**
+         * Handles an `appmgr://install?url=…&sha256=…` link: download with
+         * integrity checks, then hand the file to the normal install flow.
+         */
+        private void handle_appmgr_uri(string uri) {
+            // No activate(): a web install shows only the installer, never the app list.
+            AppmgrLink link;
+            try {
+                link = AppmgrLink.parse(uri);
+            } catch (Error e) {
+                present_appmgr_error(_("Invalid install link"), e.message);
+                return;
+            }
+
+            string download_dir;
+            try {
+                download_dir = Utils.FileUtils.create_temp_dir("appmgr-download-");
+            } catch (Error e) {
+                present_appmgr_error(_("Download failed"), e.message);
+                return;
+            }
+            appmgr_download_dirs.add(download_dir);
+
+            var cancellable = new GLib.Cancellable();
+            if (settings.get_boolean("skip-drop-window")) {
+                download_appmgr_link_with_dialog(link, download_dir, cancellable);
+            } else {
+                download_appmgr_link_in_drop_window(link, download_dir, cancellable);
+            }
+        }
+
+        /**
+         * Default path: the drag-and-drop installer opens right away and shows
+         * the download on the app icon.
+         */
+        private void download_appmgr_link_in_drop_window(AppmgrLink link, string download_dir,
+                                                          GLib.Cancellable cancellable) {
+            var destination = Path.build_filename(download_dir, link.filename);
+            var window = new DropWindow.for_download(this, registry, installer, settings,
+                destination, link.display_name);
+            window.download_cancel_requested.connect(() => cancellable.cancel());
+            window.present();
+
+            var progress_id = Timeout.add(200, () => {
+                window.set_download_progress(appmgr_progress_fraction(link), appmgr_progress_text(link));
+                return Source.CONTINUE;
+            });
+
+            this.hold();
+            run_appmgr_download.begin(link, download_dir, cancellable, progress_id, window, null);
+        }
+
+        /**
+         * Used when the drop window is disabled: the simple install dialog with
+         * an icon and progress bar, which then becomes the install prompt.
+         */
+        private void download_appmgr_link_with_dialog(AppmgrLink link, string download_dir,
+                                                       GLib.Cancellable cancellable) {
+            var icon = new Gtk.Image.from_icon_name("application-x-executable");
+            icon.set_pixel_size(64);
+
+            // Progress overlays the lower edge of the icon and stays within it.
+            var progress_bar = new Gtk.ProgressBar();
+            progress_bar.add_css_class("download-progress");
+            progress_bar.halign = Gtk.Align.CENTER;
+            progress_bar.valign = Gtk.Align.END;
+            progress_bar.set_size_request(icon.pixel_size, -1);
+
+            var icon_overlay = new Gtk.Overlay();
+            icon_overlay.set_child(icon);
+            icon_overlay.halign = Gtk.Align.CENTER;
+            icon_overlay.add_overlay(progress_bar);
+
+            var dialog = new DialogWindow(this, this.get_active_window(), _("Downloading"), null);
+            dialog.append_body(icon_overlay);
+
+            var name_markup = "<b>%s</b>".printf(GLib.Markup.escape_text(link.display_name, -1));
+            dialog.append_body(UiUtils.create_wrapped_label(name_markup, true));
+
+            // Same buttons as the install prompt that follows, so the shape stays put.
+            var install_button = dialog.add_option("install", _("Install"));
+            install_button.set_sensitive(false);
+            dialog.add_option("cancel", _("Cancel"), true);
+            // Still connected once the window is re-used; cancelling a finished
+            // download is a no-op.
+            dialog.option_selected.connect((response) => {
+                if (response == "cancel") {
+                    cancellable.cancel();
+                }
+            });
+            dialog.present();
+
+            var progress_id = Timeout.add(200, () => {
+                var fraction = appmgr_progress_fraction(link);
+                if (fraction >= 0.0) {
+                    progress_bar.fraction = fraction;
+                } else {
+                    progress_bar.pulse();
+                }
+                return Source.CONTINUE;
+            });
+
+            // The dialog may be the only window; do not quit mid-download.
+            this.hold();
+            run_appmgr_download.begin(link, download_dir, cancellable, progress_id, null, dialog);
+        }
+
+        // The download thread only updates counters; the UI polls them.
+        private double appmgr_progress_fraction(AppmgrLink link) {
+            var total = link.total_bytes;
+            return total > 0 ? (double)link.received_bytes / (double)total : -1.0;
+        }
+
+        private string appmgr_progress_text(AppmgrLink link) {
+            var received = link.received_bytes;
+            var total = link.total_bytes;
+            if (total > 0) {
+                return _("Downloading %s of %s").printf(format_size(received), format_size(total));
+            }
+            if (received > 0) {
+                return _("Downloading %s").printf(format_size(received));
+            }
+            return _("Starting…");
+        }
+
+        private async void run_appmgr_download(AppmgrLink link, string download_dir,
+                                               GLib.Cancellable cancellable, uint progress_id,
+                                               DropWindow? window, DialogWindow? dialog) {
+            SourceFunc callback = run_appmgr_download.callback;
+            string? downloaded_path = null;
+            Error? error = null;
+
+            new Thread<void>("appmgr-download", () => {
+                try {
+                    downloaded_path = link.download(download_dir, cancellable);
+                } catch (Error e) {
+                    error = e;
+                }
+                Idle.add((owned) callback);
+            });
+
+            yield;
+
+            Source.remove(progress_id);
+
+            if (error != null || downloaded_path == null) {
+                if (dialog != null) {
+                    dialog.close();
+                }
+                Utils.FileUtils.remove_dir_recursive(download_dir);
+                appmgr_download_dirs.remove(download_dir);
+                var cancelled = error != null && error is IOError.CANCELLED;
+                if (window != null) {
+                    // Cancelling means the window is already gone.
+                    if (!cancelled) {
+                        window.download_failed(error != null ? error.message : _("Download failed"));
+                    }
+                } else if (!cancelled) {
+                    present_appmgr_error(_("Download failed"), error.message);
+                }
+            } else if (window != null) {
+                window.download_completed(downloaded_path, link.sha256 != null);
+            } else {
+                // The same window continues as the install prompt.
+                show_quick_install_dialog(downloaded_path, dialog);
+            }
+
+            this.release();
+        }
+
+        private void present_appmgr_error(string title, string message) {
+            var dialog = new Adw.AlertDialog(title, message);
+            dialog.add_response("close", _("Close"));
+            dialog.set_close_response("close");
+            // A parentless dialog is not an application window, so hold the app.
+            this.hold();
+            dialog.closed.connect(() => this.release());
+            dialog.present(this.get_active_window());
         }
 
         private void show_drop_window(GLib.File file) {
@@ -340,23 +535,22 @@ Examples:
         /**
          * Shows a direct install confirmation dialog, bypassing the drag-and-drop window.
          */
-        private void show_quick_install_dialog(string appimage_path) {
+        private void show_quick_install_dialog(string appimage_path, DialogWindow? reuse = null) {
             AppImageMetadata metadata;
             try {
                 metadata = new AppImageMetadata(File.new_for_path(appimage_path));
             } catch (Error e) {
                 release_drop_window_lock(appimage_path);
                 critical("Failed to read AppImage metadata: %s", e.message);
+                quick_install_present_error(_("Cannot read AppImage"), e.message, reuse);
                 return;
             }
 
             // Check compatibility
             if (!AppImageAssets.check_compatibility(appimage_path)) {
-                var err_dialog = new Adw.AlertDialog(
-                    _("Incompatible AppImage"),
-                    _("This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."));
-                err_dialog.add_response("close", _("Close"));
-                err_dialog.present(this.get_active_window());
+                quick_install_present_error(_("Incompatible AppImage"),
+                    _("This AppImage is incompatible or corrupted. Missing required files (AppRun, .desktop, or icon)."),
+                    reuse);
                 release_drop_window_lock(appimage_path);
                 return;
             }
@@ -364,11 +558,9 @@ Examples:
             // Check architecture
             if (!metadata.is_architecture_compatible()) {
                 var appimage_arch = metadata.architecture ?? _("unknown");
-                var err_dialog = new Adw.AlertDialog(
-                    _("Architecture Mismatch"),
-                    _("This app is built for %s and cannot run here").printf(appimage_arch));
-                err_dialog.add_response("close", _("Close"));
-                err_dialog.present(this.get_active_window());
+                quick_install_present_error(_("Architecture Mismatch"),
+                    _("This app is built for %s and cannot run here").printf(appimage_arch),
+                    reuse);
                 release_drop_window_lock(appimage_path);
                 return;
             }
@@ -401,10 +593,30 @@ Examples:
             var existing = registry.detect_existing(appimage_path, metadata.checksum, resolved_name);
             if (existing != null) {
                 var relation = quick_install_version_relation(existing, resolved_version);
-                quick_install_present_replace(appimage_path, existing, resolved_version, relation);
+                quick_install_present_replace(appimage_path, existing, resolved_version, relation, reuse);
             } else {
-                quick_install_present_warning(appimage_path, resolved_name);
+                quick_install_present_warning(appimage_path, resolved_name, reuse);
             }
+        }
+
+        /**
+         * Reports a quick-install error in the re-used download window when
+         * there is one, otherwise as a plain alert.
+         */
+        private void quick_install_present_error(string title, string message, DialogWindow? reuse) {
+            if (reuse != null) {
+                var icon = new Gtk.Image.from_icon_name("dialog-error-symbolic");
+                icon.set_pixel_size(64);
+                icon.halign = Gtk.Align.CENTER;
+                reuse.reset(title, icon);
+                reuse.append_body(UiUtils.create_wrapped_label(GLib.Markup.escape_text(message, -1), true));
+                reuse.add_option("close", _("Close"));
+                return;
+            }
+            var dialog = new Adw.AlertDialog(title, message);
+            dialog.add_response("close", _("Close"));
+            dialog.set_close_response("close");
+            dialog.present(this.get_active_window());
         }
 
         /**
@@ -455,9 +667,12 @@ Examples:
             return overlay;
         }
 
-        private void quick_install_present_warning(string appimage_path, string app_name) {
-            var parent = this.get_active_window();
-            var dialog = new DialogWindow(this, parent, _("Open %s?").printf(app_name), null);
+        private void quick_install_present_warning(string appimage_path, string app_name, DialogWindow? reuse = null) {
+            var title = _("Open %s?").printf(app_name);
+            var dialog = reuse ?? new DialogWindow(this, this.get_active_window(), title, null);
+            if (reuse != null) {
+                reuse.reset(title);
+            }
 
             dialog.append_body(quick_install_build_icon_with_badge(appimage_path));
 
@@ -483,9 +698,12 @@ Examples:
             dialog.present();
         }
 
-        private void quick_install_present_replace(string appimage_path, InstallationRecord record, string? candidate_version, int relation) {
-            var parent = this.get_active_window();
-            var dialog = new DialogWindow(this, parent, _("Replace %s?").printf(record.name), null);
+        private void quick_install_present_replace(string appimage_path, InstallationRecord record, string? candidate_version, int relation, DialogWindow? reuse = null) {
+            var title = _("Replace %s?").printf(record.name);
+            var dialog = reuse ?? new DialogWindow(this, this.get_active_window(), title, null);
+            if (reuse != null) {
+                reuse.reset(title);
+            }
 
             dialog.append_body(quick_install_build_icon_with_badge(appimage_path, record));
 
@@ -804,6 +1022,15 @@ Examples:
 
             // Handle non-option arguments (file paths)
             var args = command_line.get_arguments();
+
+            // appmgr:// links arrive as a plain argument (Exec=… %u), so they are
+            // routed before the file handling below.
+            for (int i = 1; i < args.length; i++) {
+                if (args[i].has_prefix(APPMGR_URI_SCHEME + ":")) {
+                    handle_appmgr_uri(args[i]);
+                    return 0;
+                }
+            }
 
             // Support subcommand-style: app-manager install PATH / uninstall PATH / update PATH
             // (--install/--uninstall flags are handled by GLib option parser as hidden options)

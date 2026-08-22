@@ -120,6 +120,11 @@
 .depth-icon {
     -gtk-icon-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
+/* Download progress overlaid on an app icon: drop the theme's 150px minimum
+   trough so the widget's own width request decides. */
+progressbar.download-progress > trough {
+    min-width: 0;
+}
 .drop-target-highlight {
     background-color: alpha(@accent_bg_color, 0.15);
     border-radius: 12px;
