@@ -256,6 +256,36 @@ namespace AppManager.Core {
         }
 
         /**
+         * Whether the AppImage ships <bin_name> as a command in its executable directory.
+         * Standard AppImages use usr/bin/; sharun-packed AppImages drop the usr prefix and use
+         * bin/. Both layouts are probed, mirroring extract_extra_desktop_entries().
+         *
+         * This is what tells an app's own components apart from the background helpers that its
+         * bundled runtime merely references: a multi-component AppImage ships a real command for
+         * each component, whereas the service .desktop files a runtime drags along point at
+         * binaries that live under libexec — or are not in the AppImage at all.
+         */
+        public static bool has_bundled_binary(string appimage_path, string temp_root, string bin_name) {
+            var name = bin_name.strip();
+            if (name == "" || name.contains("/")) {
+                return false;
+            }
+
+            var probe_root = Path.build_filename(temp_root, "bin_probe");
+            DirUtils.create_with_parents(probe_root, 0755);
+
+            string[] bin_dir_variants = { "usr/bin", "bin" };
+            foreach (var rel_dir in bin_dir_variants) {
+                var rel_path = Path.build_filename(rel_dir, name);
+                extract_entry(appimage_path, probe_root, rel_path);
+                if (FileUtils.test(Path.build_filename(probe_root, rel_path), FileTest.EXISTS)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
          * Look up a named icon inside the AppImage's icon themes.
          * Tries <share>/icons/hicolor/<size>/apps/<icon>.{png,svg} (largest size first),
          * then <share>/pixmaps/<icon>.{png,svg}, where <share> is usr/share (standard
