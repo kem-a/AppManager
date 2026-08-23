@@ -311,7 +311,7 @@ namespace AppManager {
             pkgforge_row.activatable = true;
             pkgforge_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
             pkgforge_row.activated.connect(() => {
-                UiUtils.open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/");
+                UiUtils.open_url("https://pkgforge-dev.github.io/Anylinux-AppImages/#Applications");
             });
             links_group.add(pkgforge_row);
 
