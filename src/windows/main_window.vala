@@ -191,30 +191,18 @@ namespace AppManager {
             content_stack.add_named(empty_state_box, "empty");
             content_stack.set_visible_child_name("list");
 
-            // GNOME-style hint overlay: title + subtitle + pill button, centered in
+            // GNOME-style hint overlay: title + subtitle, centered in
             // the content area when only AppManager itself is installed.
             var hint_title = new Gtk.Label(_("No Apps Yet"));
             hint_title.add_css_class("title-2");
             hint_title.set_halign(Gtk.Align.CENTER);
 
-            var hint_subtitle = new Gtk.Label(_("Import your AppImages to manage and update them here"));
+            var hint_subtitle = new Gtk.Label(_("To install AppImages, drag and drop them onto this window or double click the file"));
             hint_subtitle.add_css_class("dim-label");
             hint_subtitle.set_halign(Gtk.Align.CENTER);
             hint_subtitle.set_wrap(true);
             hint_subtitle.set_max_width_chars(42);
             hint_subtitle.set_justify(Gtk.Justification.CENTER);
-
-            var hint_btn = new Gtk.Button();
-            hint_btn.add_css_class("pill");
-            hint_btn.add_css_class("suggested-action");
-            hint_btn.set_halign(Gtk.Align.CENTER);
-            hint_btn.set_margin_top(6);
-            var hint_btn_content = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
-            hint_btn_content.set_halign(Gtk.Align.CENTER);
-            hint_btn_content.append(new Gtk.Image.from_icon_name("folder-open-symbolic"));
-            hint_btn_content.append(new Gtk.Label(_("Import AppImages ...")));
-            hint_btn.set_child(hint_btn_content);
-            hint_btn.clicked.connect(() => present_import_folder_dialog());
 
             var hint_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
             hint_box.set_halign(Gtk.Align.CENTER);
@@ -222,7 +210,6 @@ namespace AppManager {
             hint_box.set_visible(false);
             hint_box.append(hint_title);
             hint_box.append(hint_subtitle);
-            hint_box.append(hint_btn);
             import_hint_widget = hint_box;
 
             var content_overlay = new Gtk.Overlay();
@@ -372,24 +359,11 @@ namespace AppManager {
             empty_state_label.set_wrap(true);
             empty_state_label.set_justify(Gtk.Justification.CENTER);
 
-            var subtitle = new Gtk.Label(_("Download AppImage and double click to install with AppManager"));
+            var subtitle = new Gtk.Label(_("To install AppImages, drag and drop them onto this window or double click the files"));
             subtitle.add_css_class("dim-label");
             subtitle.set_wrap(true);
             subtitle.set_justify(Gtk.Justification.CENTER);
             subtitle.set_margin_top(12);
-
-            var import_button = new Gtk.Button();
-            import_button.add_css_class("pill");
-            import_button.add_css_class("suggested-action");
-            import_button.set_margin_top(18);
-            var import_btn_content = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
-            import_btn_content.set_halign(Gtk.Align.CENTER);
-            import_btn_content.append(new Gtk.Image.from_icon_name("folder-open-symbolic"));
-            import_btn_content.append(new Gtk.Label(_("Import AppImages ...")));
-            import_button.set_child(import_btn_content);
-            import_button.clicked.connect(() => {
-                present_import_folder_dialog();
-            });
 
             var box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             box.set_hexpand(true);
@@ -398,7 +372,6 @@ namespace AppManager {
             box.set_valign(Gtk.Align.CENTER);
             box.append(empty_state_label);
             box.append(subtitle);
-            box.append(import_button);
 
             return box;
         }
