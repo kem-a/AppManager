@@ -1233,6 +1233,10 @@ namespace AppManager {
             check_updates_action.activate.connect(on_check_updates_accel);
             add_window_action(check_updates_action);
 
+            var update_apps_action = new GLib.SimpleAction("update_apps", null);
+            update_apps_action.activate.connect(on_update_apps_accel);
+            add_window_action(update_apps_action);
+
             var show_menu_action = new GLib.SimpleAction("show_menu", null);
             show_menu_action.activate.connect(() => {
                 if (main_menu_button != null) {
@@ -1341,6 +1345,12 @@ namespace AppManager {
                 return;
             }
             start_update_check();
+        }
+
+        private void on_update_apps_accel() {
+            if (update_state == UpdateWorkflowState.READY_TO_UPDATE) {
+                start_update_install();
+            }
         }
 
         private void toggle_search_mode() {
@@ -1889,6 +1899,7 @@ namespace AppManager {
                     window_group.title = _("Window");
                 }
                 assign_shortcut_title(builder, "shortcut_check_updates", _("Check for updates"));
+                assign_shortcut_title(builder, "shortcut_update_apps", _("Update apps"));
                 assign_shortcut_title(builder, "shortcut_main_menu", _("Show main menu"));
                 assign_shortcut_title(builder, "shortcut_search", _("Search"));
                 assign_shortcut_title(builder, "shortcut_show_overlay", _("Show shortcuts"));
