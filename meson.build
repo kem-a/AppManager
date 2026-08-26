@@ -72,6 +72,17 @@ unsquashfs_version = '4.7.4'
 unsquashfs_tools_dir = get_option('prefix') / get_option('bindir')
 bundle_unsquashfs = get_option('bundle_unsquashfs')
 
+# sas (simple-appimage-sandbox) bundling for the AppImage sandbox feature.
+# squashfuse ships only for the two arches pkgforge's bincache publishes.
+sas_version = '2.4'
+sas_tools_dir = get_option('prefix') / get_option('bindir')
+bundle_sas = get_option('bundle_sas')
+sas_arch_map = {
+  'x86_64': 'x86_64',
+  'aarch64': 'aarch64',
+}
+sas_arch = sas_arch_map.get(host_cpu, '')
+
 core_sources = files(
   'src/core/app_constants.vala',
   'src/core/app_paths.vala',
@@ -84,6 +95,8 @@ core_sources = files(
   'src/core/app_image_assets.vala',
   'src/core/desktop_entry.vala',
   'src/core/installer.vala',
+  'src/core/sandbox_config.vala',
+  'src/core/sandbox_launcher.vala',
   'src/core/update_sources.vala',
   'src/core/tls_session.vala',
   'src/core/token_store.vala',
@@ -128,8 +141,10 @@ test('crypto-shim', crypto_shim_test)
 # Fetch and install DwarFS tools if requested and supported
 if bundle_dwarfs and dwarfs_arch != ''
   fetch_script = files('scripts/fetch-dwarfs-tools.sh')
+  # dwarfsextract unpacks DwarFS AppImages; dwarfs is the FUSE driver sas mounts them
+  # with. Same tarball, so both are extracted from a single download.
   dwarfs_tools = custom_target('dwarfs-tools',
-    output: ['dwarfsextract'],
+    output: ['dwarfsextract', 'dwarfs'],
     build_by_default: bundle_dwarfs,
     command: ['sh', fetch_script, dwarfs_version, dwarfs_arch, meson.current_build_dir()],
     install: true,
@@ -137,6 +152,24 @@ if bundle_dwarfs and dwarfs_arch != ''
   )
 elif bundle_dwarfs and dwarfs_arch == ''
   warning('DwarFS tools bundling requested but architecture "@0@" is not supported'.format(host_cpu))
+endif
+
+# Fetch and install sas + squashfuse if requested and supported.
+# sas also needs the dwarfs FUSE driver, which the DwarFS target above provides.
+if bundle_sas and sas_arch != ''
+  if not bundle_dwarfs
+    error('bundle_sas requires bundle_dwarfs: sas needs the dwarfs FUSE driver, which the DwarFS target provides.')
+  endif
+  fetch_sas_script = files('scripts/fetch-sas-tools.sh')
+  sas_tools = custom_target('sas-tools',
+    output: ['sas', 'squashfuse'],
+    build_by_default: bundle_sas,
+    command: ['sh', fetch_sas_script, sas_version, sas_arch, meson.current_build_dir()],
+    install: true,
+    install_dir: sas_tools_dir
+  )
+elif bundle_sas and sas_arch == ''
+  warning('Sandbox tools bundling requested but architecture "@0@" is not supported'.format(host_cpu))
 endif
 
 # Fetch and install zsync2 if requested and supported

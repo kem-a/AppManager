@@ -104,7 +104,11 @@ namespace AppManager {
             props_group.add(advanced_row);
             
             detail_page.add(props_group);
-            
+
+            var security_group = new Adw.PreferencesGroup();
+            security_group.add(build_security_action_row());
+            detail_page.add(security_group);
+
             var update_group_replacement = new Adw.PreferencesGroup();
             update_group_replacement.add(build_update_info_action_row());
             detail_page.add(update_group_replacement);
@@ -590,7 +594,373 @@ namespace AppManager {
             webpage_row.add_suffix(open_web_button);
             
             return webpage_row;
-        }        private Adw.ActionRow build_advanced_action_row() {
+        }
+
+        // Order of the Profile combo, and the mapping to stored profile names.
+        private const string[] SANDBOX_PROFILE_ORDER = {
+            Core.SANDBOX_PROFILE_OFF,
+            Core.SANDBOX_PROFILE_STANDARD,
+            Core.SANDBOX_PROFILE_STRICT,
+            Core.SANDBOX_PROFILE_CUSTOM
+        };
+
+        private string sandbox_status_label() {
+            if (!record.sandbox_enabled()) {
+                return _("Off");
+            }
+            switch (record.sandbox_profile) {
+                case Core.SANDBOX_PROFILE_STANDARD: return _("Standard");
+                case Core.SANDBOX_PROFILE_STRICT:   return _("Strict");
+                default:                            return _("Custom");
+            }
+        }
+
+        private Adw.ActionRow build_security_action_row() {
+            var row = new Adw.ActionRow();
+            // ActionRow titles are Pango markup, so a bare "&" is invalid and the
+            // title silently fails to render. Keep the string clean for translators.
+            row.title = Markup.escape_text(_("Privacy & Security"));
+            row.subtitle = _("Run this app isolated from the rest of your files");
+
+            var status_label = new Gtk.Label(sandbox_status_label());
+            status_label.add_css_class("dim-label");
+            row.add_suffix(status_label);
+
+            var icon = new Gtk.Image.from_icon_name("go-next-symbolic");
+            row.add_suffix(icon);
+            row.activatable = true;
+            row.activated.connect(() => {
+                var page = build_security_page(status_label);
+                var main_win = (MainWindow) this.get_root();
+                main_win.push_page(page);
+            });
+            return row;
+        }
+
+        private Adw.SwitchRow build_permission_row(string title, string? subtitle, string icon_name, bool active) {
+            var row = new Adw.SwitchRow();
+            row.title = title;
+            if (subtitle != null) {
+                row.subtitle = subtitle;
+            }
+            row.add_prefix(new Gtk.Image.from_icon_name(icon_name));
+            row.active = active;
+            return row;
+        }
+
+        private Adw.NavigationPage build_security_page(Gtk.Label status_label) {
+            var prefs_page = new Adw.PreferencesPage();
+
+            bool supported = Core.SandboxConfig.supports_record(record);
+            bool available = AppPaths.sandbox_available;
+
+            // Say plainly why the controls are dead rather than just greying them out.
+            if (!supported || !available) {
+                var notice_group = new Adw.PreferencesGroup();
+                var notice_row = new Adw.ActionRow();
+                if (!supported) {
+                    notice_row.title = _("Sandboxing is not available for this app");
+                    notice_row.subtitle = record.mode == InstallMode.EXTRACTED
+                        ? _("Only apps installed in portable mode can be sandboxed.")
+                        : _("AppManager cannot sandbox itself.");
+                } else {
+                    notice_row.title = _("Sandboxing requires sas and bubblewrap");
+                    notice_row.subtitle = _("Install the simple-appimage-sandbox and bubblewrap packages to use this.");
+                }
+                notice_row.add_prefix(new Gtk.Image.from_icon_name("dialog-warning-symbolic"));
+                notice_group.add(notice_row);
+                prefs_page.add(notice_group);
+            }
+
+            var profile_group = new Adw.PreferencesGroup();
+            profile_group.title = _("Sandbox");
+            profile_group.description = _("A sandboxed app gets its own home folder and cannot read the rest of yours. Standard keeps the network and sound working; Strict takes both away. Apps that need something you have not granted may fail to start or silently misbehave.");
+
+            // Combo entries are in SANDBOX_PROFILE_ORDER, so the selected index is the
+            // index of the stored profile name.
+            var profile_row = new Adw.ComboRow();
+            profile_row.title = _("Profile");
+            profile_row.model = new Gtk.StringList({
+                _("Off"), _("Standard"), _("Strict"), _("Custom")
+            });
+            profile_group.add(profile_row);
+            prefs_page.add(profile_group);
+
+            var access_group = new Adw.PreferencesGroup();
+            access_group.title = _("Access");
+            access_group.description = _("Cameras and other devices are not covered: the sandbox has to leave them reachable for hardware rendering to keep working.");
+
+            var network_row = build_permission_row(
+                _("Network"), null, "network-wireless-symbolic", record.sandbox_allow_network);
+            access_group.add(network_row);
+
+            var audio_row = build_permission_row(
+                _("Sound"),
+                _("Covers playback and recording together — they share one connection."),
+                "audio-speakers-symbolic",
+                record.sandbox_allow_audio);
+            access_group.add(audio_row);
+
+            var x11_row = build_permission_row(
+                _("Legacy X11"),
+                _("Needed by apps that have not moved to Wayland. Turning it off is safer, but such an app will not start."),
+                "video-display-symbolic",
+                record.sandbox_allow_x11);
+            access_group.add(x11_row);
+
+            var dbus_row = build_permission_row(
+                _("Desktop services"),
+                _("Lets the app talk to the session bus. This is powerful enough to work around the sandbox, so grant it only to apps you trust."),
+                "system-run-symbolic",
+                record.sandbox_allow_dbus);
+            access_group.add(dbus_row);
+
+            prefs_page.add(access_group);
+
+            var folders_group = new Adw.PreferencesGroup();
+            folders_group.title = _("Folders");
+            folders_group.description = _("Granted folders are readable and writable. Everything else in your home folder stays hidden from the app.");
+
+            var downloads_row = build_permission_row(
+                _("Downloads"), null, "folder-download-symbolic", record.sandbox_allow_downloads);
+            folders_group.add(downloads_row);
+            var documents_row = build_permission_row(
+                _("Documents"), null, "folder-documents-symbolic", record.sandbox_allow_documents);
+            folders_group.add(documents_row);
+            var desktop_row = build_permission_row(
+                _("Desktop"), null, "user-desktop-symbolic", record.sandbox_allow_desktop);
+            folders_group.add(desktop_row);
+            var pictures_row = build_permission_row(
+                _("Pictures"), null, "folder-pictures-symbolic", record.sandbox_allow_pictures);
+            folders_group.add(pictures_row);
+            var videos_row = build_permission_row(
+                _("Videos"), null, "folder-videos-symbolic", record.sandbox_allow_videos);
+            folders_group.add(videos_row);
+            var music_row = build_permission_row(
+                _("Music"), null, "folder-music-symbolic", record.sandbox_allow_music);
+            folders_group.add(music_row);
+
+            prefs_page.add(folders_group);
+
+            // The "manual override" of issue #37, as a list rather than a single slot:
+            // anything outside the XDG set the app still needs — including the real target
+            // of a symlink, which a bind of the link alone leaves dangling.
+            var extra_group = new Adw.PreferencesGroup();
+            extra_group.title = _("Special permissions");
+            extra_group.description = _("Additional folders this app may read and write. A symlink only works if you also add the folder it points at.");
+
+            var add_folder_button = new Gtk.Button.from_icon_name("list-add-symbolic");
+            add_folder_button.valign = Gtk.Align.CENTER;
+            add_folder_button.tooltip_text = _("Add folder");
+            add_folder_button.add_css_class("flat");
+            extra_group.header_suffix = add_folder_button;
+
+            var extra_rows = new Gee.ArrayList<Adw.ActionRow>();
+            prefs_page.add(extra_group);
+
+            // --- wiring -------------------------------------------------------------
+
+            bool suppress = false;
+
+            void sync_profile_row() {
+                suppress = true;
+                var current = record.sandbox_enabled()
+                    ? (record.sandbox_profile ?? Core.SANDBOX_PROFILE_CUSTOM)
+                    : Core.SANDBOX_PROFILE_OFF;
+                for (int i = 0; i < SANDBOX_PROFILE_ORDER.length; i++) {
+                    if (SANDBOX_PROFILE_ORDER[i] == current) {
+                        profile_row.selected = i;
+                        break;
+                    }
+                }
+                suppress = false;
+            }
+
+            void sync_permission_rows() {
+                suppress = true;
+                network_row.active   = record.sandbox_allow_network;
+                audio_row.active     = record.sandbox_allow_audio;
+                x11_row.active       = record.sandbox_allow_x11;
+                dbus_row.active      = record.sandbox_allow_dbus;
+                downloads_row.active = record.sandbox_allow_downloads;
+                documents_row.active = record.sandbox_allow_documents;
+                desktop_row.active   = record.sandbox_allow_desktop;
+                pictures_row.active  = record.sandbox_allow_pictures;
+                videos_row.active    = record.sandbox_allow_videos;
+                music_row.active     = record.sandbox_allow_music;
+                suppress = false;
+            }
+
+            void update_sensitivity() {
+                bool usable = supported && available;
+                profile_row.sensitive = usable;
+                // With the sandbox off there is nothing to configure, so the permission
+                // groups are hidden rather than shown greyed out.
+                bool show_permissions = usable && record.sandbox_enabled();
+                access_group.visible = show_permissions;
+                folders_group.visible = show_permissions;
+                extra_group.visible = show_permissions;
+            }
+
+            void commit() {
+                persist_record_and_refresh_desktop();
+                status_label.set_label(sandbox_status_label());
+            }
+
+            // Re-label the profile so the combo reflects what the permissions now say.
+            // Never applied with the sandbox off: detect_profile has no "off" answer and
+            // would switch the sandbox on behind the user's back.
+            void relabel_profile() {
+                if (record.sandbox_enabled()) {
+                    record.sandbox_profile = Core.SandboxConfig.detect_profile(record);
+                }
+            }
+
+            // Extra-folder rows are added and removed one at a time rather than rebuilt
+            // wholesale: a rebuild would have to be callable from the row handlers it
+            // creates, and Vala local functions cannot recurse into each other.
+            void add_extra_row(string path) {
+                var row = new Adw.ActionRow();
+                row.title = Path.get_basename(path);
+                row.subtitle = path;
+                row.add_prefix(new Gtk.Image.from_icon_name("folder-symbolic"));
+
+                var remove_button = new Gtk.Button.from_icon_name("user-trash-symbolic");
+                remove_button.valign = Gtk.Align.CENTER;
+                remove_button.tooltip_text = _("Remove folder");
+                remove_button.add_css_class("flat");
+                remove_button.clicked.connect(() => {
+                    var kept = new Gee.ArrayList<string>();
+                    foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
+                        if (strip_rw_suffix(entry) != path) {
+                            kept.add(entry);
+                        }
+                    }
+                    record.sandbox_extra_dirs = kept.size > 0 ? kept.to_array() : null;
+
+                    extra_group.remove(row);
+                    extra_rows.remove(row);
+                    relabel_profile();
+                    sync_profile_row();
+                    commit();
+                });
+                row.add_suffix(remove_button);
+
+                extra_group.add(row);
+                extra_rows.add(row);
+            }
+
+            void add_extra_dir(string path) {
+                var dirs = new Gee.ArrayList<string>();
+                foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
+                    // Adding the same folder twice would just repeat the bind.
+                    if (strip_rw_suffix(entry) == path) {
+                        return;
+                    }
+                    dirs.add(entry);
+                }
+                dirs.add("%s:rw".printf(path));
+                record.sandbox_extra_dirs = dirs.to_array();
+                add_extra_row(path);
+                relabel_profile();
+                sync_profile_row();
+                commit();
+            }
+
+            void on_permission_toggled() {
+                if (suppress) {
+                    return;
+                }
+                record.sandbox_allow_network   = network_row.active;
+                record.sandbox_allow_audio     = audio_row.active;
+                record.sandbox_allow_x11       = x11_row.active;
+                record.sandbox_allow_dbus      = dbus_row.active;
+                record.sandbox_allow_downloads = downloads_row.active;
+                record.sandbox_allow_documents = documents_row.active;
+                record.sandbox_allow_desktop   = desktop_row.active;
+                record.sandbox_allow_pictures  = pictures_row.active;
+                record.sandbox_allow_videos    = videos_row.active;
+                record.sandbox_allow_music     = music_row.active;
+                relabel_profile();
+                sync_profile_row();
+                commit();
+            }
+
+            sync_profile_row();
+            foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
+                add_extra_row(strip_rw_suffix(entry));
+            }
+            update_sensitivity();
+
+            profile_row.notify["selected"].connect(() => {
+                if (suppress) {
+                    return;
+                }
+                var index = profile_row.selected;
+                if (index >= SANDBOX_PROFILE_ORDER.length) {
+                    return;
+                }
+                var picked = SANDBOX_PROFILE_ORDER[index];
+                if (picked == Core.SANDBOX_PROFILE_CUSTOM) {
+                    // Custom is a label, not a preset — keep the permissions as they are.
+                    record.sandbox_profile = Core.SANDBOX_PROFILE_CUSTOM;
+                } else {
+                    Core.SandboxConfig.apply_preset(record, picked);
+                    sync_permission_rows();
+                }
+                update_sensitivity();
+                commit();
+            });
+
+            network_row.notify["active"].connect(() => on_permission_toggled());
+            audio_row.notify["active"].connect(() => on_permission_toggled());
+            x11_row.notify["active"].connect(() => on_permission_toggled());
+            dbus_row.notify["active"].connect(() => on_permission_toggled());
+            downloads_row.notify["active"].connect(() => on_permission_toggled());
+            documents_row.notify["active"].connect(() => on_permission_toggled());
+            desktop_row.notify["active"].connect(() => on_permission_toggled());
+            pictures_row.notify["active"].connect(() => on_permission_toggled());
+            videos_row.notify["active"].connect(() => on_permission_toggled());
+            music_row.notify["active"].connect(() => on_permission_toggled());
+
+            add_folder_button.clicked.connect(() => {
+                var dialog = new Gtk.FileDialog();
+                dialog.title = _("Select Folder to Share");
+                dialog.modal = true;
+                dialog.select_folder.begin(this.get_root() as Gtk.Window, null, (obj, res) => {
+                    try {
+                        var folder = dialog.select_folder.end(res);
+                        var path = folder != null ? folder.get_path() : null;
+                        if (path == null || path.strip() == "") {
+                            return;
+                        }
+                        // Store the real target, not a symlink to it: what is bound and
+                        // what is shown then agree, and a symlink cannot be bound anyway.
+                        add_extra_dir(Core.SandboxConfig.canonicalize(path.strip()));
+                    } catch (Error e) {
+                        if (!(e is IOError.CANCELLED)) {
+                            warning("Failed to select sandbox folder: %s", e.message);
+                        }
+                    }
+                });
+            });
+
+            var toolbar = new Adw.ToolbarView();
+            toolbar.add_top_bar(new Adw.HeaderBar());
+            toolbar.set_content(prefs_page);
+
+            return new Adw.NavigationPage(toolbar, _("Privacy & Security"));
+        }
+
+        /**
+         * An extra-folder entry without its ":rw" access suffix.
+         */
+        private static string strip_rw_suffix(string entry) {
+            var trimmed = entry.strip();
+            return trimmed.has_suffix(":rw") ? trimmed.substring(0, trimmed.length - 3) : trimmed;
+        }
+
+        private Adw.ActionRow build_advanced_action_row() {
             var row = new Adw.ActionRow();
             row.title = _("Advanced Settings");
             row.subtitle = _("Change app icon, Startup WM Class, Keywords, $PATH or environment variables");

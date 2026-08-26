@@ -15,3 +15,9 @@ option('bundle_unsquashfs',
   value: true,
   description: 'Bundle unsquashfs tool for AppImage extraction during build'
 )
+
+option('bundle_sas',
+  type: 'boolean',
+  value: true,
+  description: 'Bundle sas (simple-appimage-sandbox) and squashfuse for the AppImage sandbox. Requires bundle_dwarfs, which also supplies the dwarfs FUSE driver sas needs.'
+)

@@ -157,12 +157,29 @@ echo "---------------------------------------------------------------"
 #
 # Additional notes:
 #   - unsquashfs is provided by the squashfs-tools Arch package (installed via pacman)
+#   - squashfuse and dwarfs are the FUSE *drivers* sas mounts AppImages with, which is
+#     a different job from the unsquashfs/dwarfsextract extractors above. sas itself is
+#     a shell script, so it is copied in separately rather than passed to quick-sharun.
 
 "$QS" \
     /usr/bin/app-manager \
     /usr/bin/dwarfsextract \
     /usr/bin/zsync2 \
-    /usr/bin/unsquashfs
+    /usr/bin/unsquashfs \
+    /usr/bin/squashfuse \
+    /usr/bin/dwarfs
+
+# ── Add the sas sandbox launcher ─────────────────────────────────────
+# Plain POSIX shell, so it needs no library bundling — just place it on the
+# AppImage's internal PATH next to the drivers it calls. sas checks every
+# dependency up front and refuses to run if one is missing, so a partial
+# bundle would disable sandboxing at launch rather than at build time.
+if [ -x /usr/bin/sas ]; then
+    echo "Adding sas sandbox launcher..."
+    install -Dm755 /usr/bin/sas "$APPDIR/bin/sas"
+else
+    echo "Warning: /usr/bin/sas missing; AppImage will ship without sandbox support." >&2
+fi
 
 #   - GIO modules for TLS and proxy are needed since the app uses libsoup3 for networking
 #   - this has been fixed upstream, but let's keep an eye on it https://github.com/pkgforge-dev/Anylinux-AppImages/pull/340

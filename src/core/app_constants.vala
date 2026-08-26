@@ -10,6 +10,19 @@ namespace AppManager.Core {
     public const string SQUASHFS_ROOT_DIR = "squashfs-root";
     public const string LOCAL_BIN_DEFAULT_DIRNAME = ".local/bin";
 
+    // Sandbox profile names stored in InstallationRecord.sandbox_profile.
+    public const string SANDBOX_PROFILE_OFF = "off";
+    public const string SANDBOX_PROFILE_STANDARD = "standard";
+    public const string SANDBOX_PROFILE_STRICT = "strict";
+    public const string SANDBOX_PROFILE_CUSTOM = "custom";
+
+    // Per-app sandbox argument files live in <data_dir>/<SANDBOX_DIRNAME>/<record-id>.args.
+    public const string SANDBOX_DIRNAME = "sandbox";
+
+    // CLI verb used by the generated .desktop Exec lines and bin wrappers to
+    // re-enter AppManager as the sandbox launcher. See SandboxLauncher.
+    public const string SANDBOX_RUN_VERB = "sandbox-run";
+
     // Background update daemon check frequency (in seconds). One lightweight
     // timestamp comparison per tick, so a short interval is cheap. Kept short
     // because GLib timers do not advance during suspend (issue #141).

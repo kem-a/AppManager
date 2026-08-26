@@ -52,6 +52,14 @@ int main(string[] args) {
     // Initialize translations before anything else
     i18n_init();
 
+    // The sandbox launcher must be handled before GApplication exists. AppManager
+    // registers as a single instance, so going through the normal command-line path
+    // would forward these arguments to the already-running GUI and let this process
+    // exit at once — leaving the sandboxed app with no parent process to be bound to.
+    if (args.length > 1 && args[1] == SANDBOX_RUN_VERB) {
+        return SandboxLauncher.run(args);
+    }
+
     // If DBUS_SESSION_BUS_ADDRESS names a unix socket that doesn't exist,
     // unset it so GLib.Application skips DBus registration gracefully instead
     // of failing. Happens on minimal desktops where the env var is set by a

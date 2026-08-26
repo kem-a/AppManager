@@ -84,6 +84,41 @@ namespace AppManager.Core {
         public bool prerelease_enabled { get; set; default = false; }
         public bool updates_enabled { get; set; default = true; }
 
+        // Sandbox configuration. sandbox_profile is "off" | "standard" | "strict" | "custom";
+        // null is treated as "off" and nothing is wrapped. The sandbox_allow_* toggles carry
+        // the real state — the profile only labels which preset was last applied. Every
+        // toggle reads as a permission: true means the app IS allowed the thing, matching
+        // the UI switches one-for-one. Honored only while sandbox_enabled().
+        // There is deliberately no camera or microphone toggle. sas's audio socket
+        // carries capture and playback together, and /dev is shared whole because the
+        // only way sas can restrict it also breaks hardware rendering (see
+        // SandboxConfig.build_args). Devices are the portal work's job, not this one's.
+        public string? sandbox_profile { get; set; }
+        public bool sandbox_allow_network { get; set; default = true; }
+        public bool sandbox_allow_dbus { get; set; default = false; }
+        public bool sandbox_allow_audio { get; set; default = true; }
+        // Legacy X11 access. Defaults on: without it any app pinned to X11 fails to
+        // start on a Wayland session.
+        public bool sandbox_allow_x11 { get; set; default = true; }
+        public bool sandbox_allow_downloads { get; set; default = true; }
+        public bool sandbox_allow_documents { get; set; default = false; }
+        public bool sandbox_allow_desktop { get; set; default = false; }
+        public bool sandbox_allow_pictures { get; set; default = false; }
+        public bool sandbox_allow_videos { get; set; default = false; }
+        public bool sandbox_allow_music { get; set; default = false; }
+        // The issue #37 "manual override": extra paths the app may read. An entry
+        // ending in ":rw" is granted write access too.
+        public string[]? sandbox_extra_dirs { get; set; }
+
+        /**
+         * True when this record should be launched through the sandbox.
+         */
+        public bool sandbox_enabled() {
+            return sandbox_profile != null
+                && sandbox_profile != ""
+                && sandbox_profile != SANDBOX_PROFILE_OFF;
+        }
+
         public InstallationRecord(string id, string name, InstallMode mode) {
             Object(id: id, name: name, mode: mode, installed_at: (int64)GLib.get_real_time());
         }
@@ -144,7 +179,8 @@ namespace AppManager.Core {
                    custom_web_page != null ||
                    custom_no_display != null ||
                    custom_add_to_path != null ||
-                   (custom_env_vars != null && custom_env_vars.length > 0);
+                   (custom_env_vars != null && custom_env_vars.length > 0) ||
+                   sandbox_enabled();
         }
 
         public Json.Node to_json() {
@@ -324,6 +360,76 @@ namespace AppManager.Core {
                 }
                 builder.end_array();
             }
+            serialize_sandbox(builder);
+        }
+
+        private static void put_bool(Json.Builder builder, string key, bool value) {
+            builder.set_member_name(key);
+            builder.add_boolean_value(value);
+        }
+
+        private static bool read_bool(Json.Object obj, string key, bool fallback) {
+            return obj.has_member(key) ? obj.get_boolean_member(key) : fallback;
+        }
+
+        /**
+         * Writes the sandbox block. Nothing is written for a record that isn't
+         * sandboxed, so turning the sandbox off leaves no state behind to restore.
+         */
+        private void serialize_sandbox(Json.Builder builder) {
+            if (!sandbox_enabled()) {
+                return;
+            }
+            builder.set_member_name("sandbox_profile");
+            builder.add_string_value(sandbox_profile);
+            put_bool(builder, "sandbox_allow_network", sandbox_allow_network);
+            put_bool(builder, "sandbox_allow_dbus", sandbox_allow_dbus);
+            put_bool(builder, "sandbox_allow_audio", sandbox_allow_audio);
+            put_bool(builder, "sandbox_allow_x11", sandbox_allow_x11);
+            put_bool(builder, "sandbox_allow_downloads", sandbox_allow_downloads);
+            put_bool(builder, "sandbox_allow_documents", sandbox_allow_documents);
+            put_bool(builder, "sandbox_allow_desktop", sandbox_allow_desktop);
+            put_bool(builder, "sandbox_allow_pictures", sandbox_allow_pictures);
+            put_bool(builder, "sandbox_allow_videos", sandbox_allow_videos);
+            put_bool(builder, "sandbox_allow_music", sandbox_allow_music);
+            if (sandbox_extra_dirs != null && sandbox_extra_dirs.length > 0) {
+                builder.set_member_name("sandbox_extra_dirs");
+                builder.begin_array();
+                foreach (var dir in sandbox_extra_dirs) {
+                    builder.add_string_value(dir);
+                }
+                builder.end_array();
+            }
+        }
+
+        /**
+         * Reads the sandbox block. Absent keys keep their current value, so a
+         * record written by an older version simply stays un-sandboxed.
+         */
+        private void deserialize_sandbox(Json.Object obj) {
+            if (!obj.has_member("sandbox_profile")) {
+                return;
+            }
+            var profile = obj.get_string_member("sandbox_profile");
+            sandbox_profile = (profile != null && profile.strip() != "") ? profile : null;
+            sandbox_allow_network    = read_bool(obj, "sandbox_allow_network", sandbox_allow_network);
+            sandbox_allow_dbus       = read_bool(obj, "sandbox_allow_dbus", sandbox_allow_dbus);
+            sandbox_allow_audio      = read_bool(obj, "sandbox_allow_audio", sandbox_allow_audio);
+            sandbox_allow_x11        = read_bool(obj, "sandbox_allow_x11", sandbox_allow_x11);
+            sandbox_allow_downloads  = read_bool(obj, "sandbox_allow_downloads", sandbox_allow_downloads);
+            sandbox_allow_documents  = read_bool(obj, "sandbox_allow_documents", sandbox_allow_documents);
+            sandbox_allow_desktop    = read_bool(obj, "sandbox_allow_desktop", sandbox_allow_desktop);
+            sandbox_allow_pictures   = read_bool(obj, "sandbox_allow_pictures", sandbox_allow_pictures);
+            sandbox_allow_videos     = read_bool(obj, "sandbox_allow_videos", sandbox_allow_videos);
+            sandbox_allow_music      = read_bool(obj, "sandbox_allow_music", sandbox_allow_music);
+            if (obj.has_member("sandbox_extra_dirs")) {
+                var arr = obj.get_array_member("sandbox_extra_dirs");
+                var list = new string[arr.get_length()];
+                for (uint i = 0; i < arr.get_length(); i++) {
+                    list[i] = arr.get_string_element(i);
+                }
+                sandbox_extra_dirs = list;
+            }
         }
 
         /**
@@ -496,7 +602,8 @@ namespace AppManager.Core {
                 }
                 record.custom_env_vars = env_list;
             }
-            
+            record.deserialize_sandbox(obj);
+
             return record;
         }
 
@@ -545,6 +652,11 @@ namespace AppManager.Core {
                     env_list[i] = env_array.get_string_element(i);
                 }
                 custom_env_vars = env_list;
+            }
+            // Only adopt stored sandbox state when this record has none, so an
+            // explicit reset back to "off" is not undone by history.
+            if (sandbox_profile == null) {
+                deserialize_sandbox(obj);
             }
         }
 

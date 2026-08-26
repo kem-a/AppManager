@@ -308,7 +308,21 @@ namespace AppManager {
             });
             github_group.add(token_help_row);
 
+            var security_group = new Adw.PreferencesGroup();
+            security_group.title = _("Security");
+
+            var default_sandbox_row = new Adw.SwitchRow();
+            default_sandbox_row.title = _("Sandbox new apps by default");
+            default_sandbox_row.subtitle = _("New installations start on the Standard profile. Apps already installed are left alone.");
+            settings.bind("default-sandbox-enabled", default_sandbox_row, "active", GLib.SettingsBindFlags.DEFAULT);
+            if (!AppPaths.sandbox_available) {
+                default_sandbox_row.sensitive = false;
+                default_sandbox_row.subtitle = _("Install the simple-appimage-sandbox and bubblewrap packages to use this.");
+            }
+            security_group.add(default_sandbox_row);
+
             page.add(updates_group);
+            page.add(security_group);
             page.add(github_group);
             page.add(thumbnails_group);
 

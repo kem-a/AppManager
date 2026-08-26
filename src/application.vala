@@ -47,7 +47,12 @@ namespace AppManager {
             settings = new Settings(Core.APPLICATION_ID);
             registry = new InstallationRegistry();
             installer = new Installer(registry, settings);
-            
+            // The sandbox flag set changes as sas compatibility issues are found, and a
+            // record's .args file is otherwise only rewritten when its permissions change.
+            // Refreshing them here keeps already-sandboxed apps from being stuck on flags
+            // that a newer AppManager knows are wrong.
+            Core.SandboxConfig.refresh_all(registry.list());
+
             add_main_option_entries(options);
             set_option_context_parameter_string("[FILE...]");
             set_option_context_summary("AppImage Manager - Manage and update AppImages on your system");
