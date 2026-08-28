@@ -30,6 +30,15 @@ jobs:
       - name: Build AnyLinux AppImage
         run: sh scripts/make-anyimage.sh
 
+      - name: Smoke test the sandbox launcher
+        # A record with no manifest means the sandbox was turned off and only the
+        # .desktop Exec line is stale, so the launcher has to run the target plainly
+        # instead of refusing. Getting this backwards would leave every app that ever
+        # had the sandbox enabled unable to start.
+        run: |
+          app-manager sandbox-run --id=nonexistent --target=/bin/true
+          test "$(app-manager sandbox-run --id=nonexistent --target=/bin/echo -- smoke)" = smoke
+
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v4
         with:

@@ -157,12 +157,19 @@ echo "---------------------------------------------------------------"
 #
 # Additional notes:
 #   - unsquashfs is provided by the squashfs-tools Arch package (installed via pacman)
+#   - squashfuse and dwarfs are the FUSE *drivers* the sandbox mounts AppImages with,
+#     which is a different job from the unsquashfs/dwarfsextract extractors above
+#   - bwrap and xdg-dbus-proxy are deliberately NOT bundled: bwrap may be setuid on
+#     some distros and bundling breaks that, and the proxy links the host's glib.
+#     Both are host runtime dependencies, packaged by every major distro.
 
 "$QS" \
     /usr/bin/app-manager \
     /usr/bin/dwarfsextract \
     /usr/bin/zsync2 \
-    /usr/bin/unsquashfs
+    /usr/bin/unsquashfs \
+    /usr/bin/squashfuse \
+    /usr/bin/dwarfs
 
 #   - GIO modules for TLS and proxy are needed since the app uses libsoup3 for networking
 #   - this has been fixed upstream, but let's keep an eye on it https://github.com/pkgforge-dev/Anylinux-AppImages/pull/340

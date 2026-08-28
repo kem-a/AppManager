@@ -266,6 +266,11 @@ namespace AppManager.Core {
                 }
             }
 
+            // Move the sandboxed home along with the app it belongs to, before the record
+            // path changes — otherwise the app comes back to an empty home at the new
+            // location and its settings look lost.
+            move_sibling_folder(old_path + ".sandbox", new_path + ".sandbox");
+
             // Update record path
             record.installed_path = new_path;
 
@@ -275,9 +280,15 @@ namespace AppManager.Core {
                 update_desktop_file(record.desktop_file, old_path, new_path, old_base, new_base);
             }
 
+            // The manifest holds the AppImage and sandboxed-home paths, so it has to be
+            // regenerated rather than path-replaced.
+            if (record.sandbox_enabled()) {
+                SandboxManifest.write_for_record(record);
+            }
+
             // Update symlink if exists
             if (record.bin_symlink != null && record.bin_symlink.strip() != "") {
-                update_symlink(record.bin_symlink, old_path, new_path);
+                update_bin_entry(record.bin_symlink, old_path, new_path, old_base, new_base);
             }
 
             // Same treatment for the secondary entries of multi-component AppImages:
@@ -385,6 +396,57 @@ namespace AppManager.Core {
                 }
             } catch (Error e) {
                 warning("Failed to update desktop file %s: %s", desktop_path, e.message);
+            }
+        }
+
+        /**
+         * Moves a folder that lives beside the AppImage to sit beside its new location.
+         * Silently does nothing when the source is absent.
+         */
+        private void move_sibling_folder(string old_path, string new_path) {
+            var source = File.new_for_path(old_path);
+            if (!source.query_exists()) {
+                return;
+            }
+            try {
+                source.move(File.new_for_path(new_path),
+                    FileCopyFlags.OVERWRITE | FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
+                debug("Moved %s to %s", old_path, new_path);
+            } catch (Error e) {
+                warning("Failed to move %s to %s: %s", old_path, new_path, e.message);
+            }
+        }
+
+        /**
+         * Retargets a record's ~/.local/bin entry. A sandboxed app's entry is a wrapper
+         * script rather than a symlink, so the old path is replaced in its contents;
+         * anything else is treated as a symlink as before.
+         */
+        private void update_bin_entry(string bin_path, string old_target, string new_target,
+                                      string old_base, string new_base) {
+            var file = File.new_for_path(bin_path);
+            if (!file.query_exists()) {
+                return;
+            }
+            if (file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS) == FileType.SYMBOLIC_LINK) {
+                update_symlink(bin_path, old_target, new_target);
+                return;
+            }
+            try {
+                string content;
+                if (!GLib.FileUtils.get_contents(bin_path, out content)) {
+                    return;
+                }
+                // Replace the base rather than the exact path: the wrapper also names
+                // AppManager itself, which may live under the same base directory.
+                var updated = content.replace(old_base, new_base);
+                if (updated != content) {
+                    GLib.FileUtils.set_contents(bin_path, updated);
+                    Utils.FileUtils.ensure_executable(bin_path);
+                    debug("Updated sandbox wrapper: %s", bin_path);
+                }
+            } catch (Error e) {
+                warning("Failed to update bin wrapper %s: %s", bin_path, e.message);
             }
         }
 

@@ -21,6 +21,8 @@
 , squashfuse
 , dwarfs
 , zsync
+, bubblewrap
+, xdg-dbus-proxy
 }:
 
 stdenv.mkDerivation(finalAttrs: {
@@ -58,6 +60,7 @@ stdenv.mkDerivation(finalAttrs: {
     "-Dbundle_dwarfs=false"
     "-Dbundle_zsync=false"
     "-Dbundle_unsquashfs=false"
+    "-Dbundle_squashfuse=false"
   ];
 
   dontWrapGApps = true;
@@ -68,6 +71,9 @@ stdenv.mkDerivation(finalAttrs: {
       squashfuse
       dwarfs
       zsync
+      # Sandbox runtime dependencies, resolved from PATH at launch.
+      bubblewrap
+      xdg-dbus-proxy
     ];
   in ''
     wrapProgram $out/bin/app-manager \

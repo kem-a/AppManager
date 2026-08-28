@@ -31,12 +31,49 @@ AppManager doesn't require FUSE to run, thanks to the [uruntime](https://github.
 - **Install registry + preferences**: Main window lists installed apps, default mode, and cleanup behaviors, all stored with GSettings.
 - **Background app updates**: Optional automatic update checks with configurable interval (daily, weekly, monthly) and notifications when updates are found.
 - **GitHub authentication**: Optionally store a GitHub personal access token to raise the API rate limit from 60 to 5,000 requests per hour. The token is kept in the system keyring (GNOME Keyring, KWallet, KeePassXC) when a Secret Service is available, and otherwise in an AES-256-GCM blob bound to the machine and user account, so a synced or copied config file is useless elsewhere.
+- **Per-app sandboxing**: Run an app isolated from the rest of your files, with per-permission switches for network, sound, hardware acceleration, camera, game controllers, Bluetooth, notifications, tray icons and location. A sandboxed app gets its own home folder and reaches nothing else on its own unless you grant it. Desktop services go through a filtered D-Bus rather than the open session bus, and with dynamic permissions on, the app asks for files, camera and location through the system's own prompts instead of being handed them up front — a file you pick in one of those prompts is granted individually, whatever the folder switches say.
+
+## Sandboxing
+
+Open an app's details, then **Privacy & Security**, and pick a profile:
+
+| | Standard | Strict |
+| --- | --- | --- |
+| Network, sound, legacy X11 | on | off |
+| Notifications, tray icons, Downloads folder | on | off |
+| Dynamic permissions, hardware acceleration | on | on |
+| Camera, game controllers, Bluetooth, location, full session bus | off | off |
+
+Both profiles keep dynamic permissions and hardware acceleration on: a prompt grants nothing until you answer it, and software rendering makes most apps unusable without making them safer. Every switch can be changed individually, which the profile then shows as **Custom**.
+
+Turn it on for every newly installed app under **Preferences → Security**.
+
+### What it needs
+
+- `bubblewrap` and `xdg-dbus-proxy` on the host — neither is bundled, because `bwrap` is setuid on some distributions and bundling it would break that, and the proxy links the host's glib.
+- `fusermount3`, plus the `squashfuse` and `dwarfs` FUSE drivers. The AppImage build bundles the drivers.
+- Portal prompts need `xdg-desktop-portal` (1.21 or newer) with a backend for your desktop. Without it the app falls back to the folders you granted statically.
+
+If an app is configured to be sandboxed and the tooling is missing, it refuses to start rather than starting unconfined.
+
+### Limits worth knowing
+
+- **The app starts with an empty home.** A sandboxed app gets its own home folder beside the AppImage (`<app>.sandbox`), so it will not see the settings, accounts or vaults it had before, and it will ask you to set those up again. Nothing is lost: the old configuration is still in your real home, and turning the sandbox off brings the app back to it.
+- **Chromium-based apps are told not to sandbox themselves.** Electron and Chromium isolate their own renderers by creating a user namespace, which this sandbox does not allow, and their fallback aborts the app outright. They are therefore launched with `--no-sandbox`, and their renderers run confined by this sandbox instead of by their own — the same position Electron apps are in under Flatpak without zypak.
+- **Sound includes the microphone.** One connection carries playback and capture, and no audio portal exists upstream, so there is no way to grant one without the other.
+- **Only portable installs** can be sandboxed. An extracted AppDir is not supported yet.
+- **Apps that do not use portals see only what you granted.** A file picker that predates portals — some Java, SDL and older Electron apps — shows the sandbox's own view of your files, drag-and-drop hands over paths the app cannot open, and recent-file lists may fill up with portal paths that do not resolve later. This is why static folder grants remain first-class.
+- **A granted folder is granted whole.** Adding a symlink does nothing unless you also add the folder it points at.
+- **X11 is not a security boundary.** Any X11 client can read any other's input and windows. The Legacy X11 switch is there for compatibility; isolation comes from Wayland.
+- **Network is on or off.** There is no per-app firewall, and with the network on the app shares the host's network namespace, so it can reach services listening on localhost.
 
 ## Requirements
 
 - `valac`, `meson`, `ninja`
 - Libraries: `libadwaita-1` (>= 1.6), `gtk4`, `gio-2.0`, `glib-2.0`, `gmodule-2.0`, `json-glib-1.0`, `gee-0.8`, `libsoup-3.0`, `libsecret-1`, `gnutls` (>= 3.6.13)
+- Optional, for sandbox hardening: `libseccomp` (syscall filtering), `wayland-client` (compositor-side isolation). Both are found automatically and can be turned off with `-Dseccomp=disabled` and `-Dwayland_security_context=disabled`.
 - Runtime tools: `unsquashfs`, `dwarfsextract`
+- Runtime tools for sandboxing: `bwrap`, `xdg-dbus-proxy`, `fusermount3`, `squashfuse`, `dwarfs`
 
 ## Install
 
@@ -73,19 +110,19 @@ Install the development packages required to build AppManager on each distributi
 - **Debian / Ubuntu:**
 
 ```bash
-sudo apt install valac meson ninja-build pkg-config libadwaita-1-dev libgtk-4-dev libglib2.0-dev libjson-glib-dev libgee-0.8-dev libgirepository1.0-dev libsoup-3.0-dev cmake desktop-file-utils jq libzstd-dev
+sudo apt install valac meson ninja-build pkg-config libadwaita-1-dev libgtk-4-dev libglib2.0-dev libjson-glib-dev libgee-0.8-dev libgirepository1.0-dev libsoup-3.0-dev cmake desktop-file-utils jq libzstd-dev libseccomp-dev libwayland-dev
 ```
 
 - **Fedora:**
 
 ```bash
-sudo dnf install vala meson ninja-build gtk4-devel libadwaita-devel glib2-devel json-glib-devel libgee-devel libsoup3-devel cmake desktop-file-utils jq libzstd-devel
+sudo dnf install vala meson ninja-build gtk4-devel libadwaita-devel glib2-devel json-glib-devel libgee-devel libsoup3-devel cmake desktop-file-utils jq libzstd-devel libseccomp-devel wayland-devel
 ```
 
 - **Arch Linux / Manjaro:**
 
 ```bash
-sudo pacman -S vala meson ninja gtk4 libadwaita glib2 json-glib libgee libsoup cmake desktop-file-utils jq libzstd-devel
+sudo pacman -S vala meson ninja gtk4 libadwaita glib2 json-glib libgee libsoup cmake desktop-file-utils jq libzstd-devel libseccomp wayland
 ```
 
 </details>

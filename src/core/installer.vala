@@ -143,6 +143,17 @@ namespace AppManager.Core {
         }
 
         /**
+         * Removes the sandboxed home folder (<installed_path>.sandbox) next to the AppImage.
+         * When `to_trash` is true it is moved to trash; otherwise deleted permanently.
+         */
+        public void remove_sandbox_home(InstallationRecord record, bool to_trash) {
+            if (record.installed_path == null || record.installed_path.strip() == "") {
+                return;
+            }
+            remove_portable_folder_at(SandboxConfig.sandbox_home_path(record), to_trash);
+        }
+
+        /**
          * Removes both portable folders next to the AppImage.
          */
         public void remove_portable_folders(InstallationRecord record, bool to_trash) {
@@ -297,6 +308,7 @@ namespace AppManager.Core {
                 record.custom_no_display = old_record.custom_no_display;
                 record.custom_add_to_path = old_record.custom_add_to_path;
                 record.prerelease_enabled = old_record.prerelease_enabled;
+                record.copy_sandbox_from(old_record);
                 // Note: original_* values will be updated from the new AppImage's .desktop
             }
             // Note: For fresh installs, history is applied in finalize_desktop_and_icon()
@@ -687,7 +699,26 @@ namespace AppManager.Core {
                 // subsequent rewrites (e.g. from the GUI) have a stable source instead of
                 // re-parsing already-modified Exec lines.
                 record.original_action_args = capture_action_args(desktop_entry);
-                
+
+                // Fresh-install default: opt in to the Standard profile when the user asked
+                // for it in Preferences and history left the sandbox unset. Placed after
+                // original_startup_wm_class is known, since supports_record() uses it to keep
+                // AppManager from sandboxing itself.
+                if (!is_upgrade
+                    && record.sandbox_profile == null
+                    && AppPaths.sandbox_available
+                    && SandboxConfig.supports_record(record)
+                    && settings.get_boolean("default-sandbox-enabled")) {
+                    SandboxConfig.apply_preset(record, SANDBOX_PROFILE_STANDARD);
+                }
+                // Records restored from history can name a profile this install cannot honor
+                // (an extracted install, or AppManager itself). Drop it rather than emit an
+                // Exec line pointing at a sandbox that will never work.
+                if (record.sandbox_enabled() && !SandboxConfig.supports_record(record)) {
+                    record.sandbox_profile = null;
+                }
+                SandboxConfig.sync_manifest(record, registry.list());
+
                 // For fresh install with history (reinstall), use effective values (considers CLEARED_VALUE)
                 var effective_icon = record.get_effective_icon_name() ?? icon_name_for_desktop;
                 var effective_keywords = record.get_effective_keywords();
@@ -755,7 +786,7 @@ namespace AppManager.Core {
                 // Default is to create a bin symlink. Terminal apps always do.
                 // Otherwise the user can opt out via custom_add_to_path = "false".
                 if (record.is_terminal || record.custom_add_to_path != "false") {
-                    record.bin_symlink = create_bin_symlink(exec_path, symlink_name);
+                    record.bin_symlink = create_bin_launcher(record, exec_path, symlink_name);
                 } else {
                     record.bin_symlink = null;
                 }
@@ -822,9 +853,13 @@ namespace AppManager.Core {
 
                 // Remove AppImage portable folders (.home/.config) unless the caller is
                 // upgrading a portable install and wants to keep the user data.
+                // The sandboxed home holds the same kind of user data, so it follows
+                // the same rule.
                 if (!preserve_portable) {
                     remove_portable_folders(record, !permanently);
+                    remove_sandbox_home(record, !permanently);
                 }
+                SandboxManifest.remove(record.id);
 
                 // Remove symbolic icon when uninstalling AppManager itself
                 if (record.original_startup_wm_class == Core.APPLICATION_ID) {
@@ -899,6 +934,33 @@ namespace AppManager.Core {
             return captured.size > 0 ? captured.to_array() : null;
         }
 
+        /**
+         * The Exec= tokens that launch `exec_target`. For a sandboxed record this is
+         * AppManager re-entered as the sandbox launcher, ending in the "--" separator
+         * so whatever the caller appends belongs to the app rather than to us.
+         *
+         * Every Exec line in the entry — primary, each desktop action, each sub-entry —
+         * goes through here, which is what makes a permission change rewrite one
+         * manifest instead of every line.
+         */
+        private string launch_tokens(InstallationRecord record, string exec_target) {
+            if (!record.sandbox_enabled()) {
+                return "\"%s\"".printf(exec_target);
+            }
+            // Same prefix used for the Uninstall action: how to invoke AppManager itself.
+            var parts = new StringBuilder();
+            foreach (var token in uninstall_prefix) {
+                if (parts.len > 0) {
+                    parts.append(" ");
+                }
+                parts.append(Utils.FileUtils.quote_exec_token(token));
+            }
+            // Record ids are checksums (optionally "-N"), so they need no quoting.
+            parts.append(" %s --id=%s".printf(SANDBOX_RUN_VERB, record.id));
+            parts.append(" \"--target=%s\" --".printf(Utils.FileUtils.escape_exec_arg(exec_target)));
+            return parts.str;
+        }
+
         private string build_env_prefix(string[]? env_vars) {
             if (env_vars == null || env_vars.length == 0) {
                 return "";
@@ -964,12 +1026,13 @@ namespace AppManager.Core {
             // Update Exec with optional environment variables
             var args = effective_commandline_args ?? "";
             var env_prefix = build_env_prefix(record.custom_env_vars);
+            var launcher = launch_tokens(record, exec_target);
 
             string exec_line;
             if (args.strip() != "") {
-                exec_line = "%s\"%s\" %s".printf(env_prefix, exec_target, args);
+                exec_line = "%s%s %s".printf(env_prefix, launcher, args);
             } else {
-                exec_line = "%s\"%s\"".printf(env_prefix, exec_target);
+                exec_line = "%s%s".printf(env_prefix, launcher);
             }
             entry.exec = exec_line;
 
@@ -991,8 +1054,8 @@ namespace AppManager.Core {
                     if (!keyfile.has_group(group)) continue;
                     var trail = (preserved + " " + extra_user_args).strip();
                     var line = trail == ""
-                        ? "%s\"%s\"".printf(env_prefix, exec_target)
-                        : "%s\"%s\" %s".printf(env_prefix, exec_target, trail);
+                        ? "%s%s".printf(env_prefix, launcher)
+                        : "%s%s %s".printf(env_prefix, launcher, trail);
                     keyfile.set_string(group, "Exec", line);
                 }
             }
@@ -1079,11 +1142,16 @@ namespace AppManager.Core {
             var env_prefix = build_env_prefix(record.custom_env_vars);
             var extra_user_args = user_added_commandline_args(record);
             var args = (pristine_args + " " + extra_user_args).strip();
+            // The target stays the component's ~/.local/bin symlink even when sandboxed:
+            // the launcher mounts the AppImage the link resolves to, but passes the
+            // unresolved spelling on as ARGV0, which is how the AppImage runtime picks
+            // the component to start.
+            var launcher = launch_tokens(record, sub_binary_symlink_path);
             string exec_line;
             if (args != "") {
-                exec_line = "%s\"%s\" %s".printf(env_prefix, sub_binary_symlink_path, args);
+                exec_line = "%s%s %s".printf(env_prefix, launcher, args);
             } else {
-                exec_line = "%s\"%s\"".printf(env_prefix, sub_binary_symlink_path);
+                exec_line = "%s%s".printf(env_prefix, launcher);
             }
             entry.exec = exec_line;
 
@@ -1202,7 +1270,11 @@ namespace AppManager.Core {
             // command. Memoised so a binary shared by several entries is probed and symlinked once.
             // The primary command always exists, so it never needs probing.
             var targets = new Gee.HashMap<string, string>();
-            targets.set(primary_bin, record.bin_symlink ?? exec_path);
+            // A sandboxed primary bin entry is a wrapper that re-enters sandbox-run, so
+            // pointing a sub-entry at it would recurse. Target the AppImage directly instead.
+            targets.set(primary_bin, record.sandbox_enabled()
+                ? exec_path
+                : (record.bin_symlink ?? exec_path));
 
             foreach (var sub_path in extras) {
                 try {
@@ -1512,12 +1584,78 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Writes a one-line shell wrapper in place of the bin symlink so that a
+         * terminal launch goes through the same sandbox as a desktop launch.
+         *
+         * The wrapper holds no permissions of its own — it only re-enters sandbox-run,
+         * which reads the .args file. A permission change therefore never has to
+         * rewrite this file.
+         */
+        private string? create_bin_wrapper(InstallationRecord record, string exec_path, string slug) {
+            try {
+                var script_path = Path.build_filename(AppPaths.local_bin_dir, slug);
+                var script_file = File.new_for_path(script_path);
+                if (script_file.query_exists()) {
+                    script_file.delete(null);
+                }
+
+                // The whole prefix, not just its first token: invoking AppManager can take
+                // several words (e.g. "flatpak run <id>").
+                var launcher = new StringBuilder();
+                foreach (var token in uninstall_prefix) {
+                    if (launcher.len > 0) {
+                        launcher.append(" ");
+                    }
+                    launcher.append(shell_quote(token));
+                }
+                if (launcher.len == 0) {
+                    launcher.append("app-manager");
+                }
+
+                var content = new StringBuilder();
+                content.append("#!/bin/sh\n");
+                content.append("# Generated by AppManager — launches this app inside its sandbox.\n");
+                content.append("exec %s %s --id=%s --target=%s -- \"$@\"\n".printf(
+                    launcher.str, SANDBOX_RUN_VERB, record.id, shell_quote(exec_path)));
+
+                if (!GLib.FileUtils.set_contents(script_path, content.str)) {
+                    warning("Failed to write sandbox wrapper %s", script_path);
+                    return null;
+                }
+                Utils.FileUtils.ensure_executable(script_path);
+                debug("Created sandbox wrapper: %s", script_path);
+                return script_path;
+            } catch (Error e) {
+                warning("Failed to create sandbox wrapper for %s: %s", slug, e.message);
+                return null;
+            }
+        }
+
+        private static string shell_quote(string token) {
+            return "'%s'".printf(token.replace("'", "'\\''"));
+        }
+
+        /**
+         * Chooses between a plain symlink and a sandbox wrapper for the app's
+         * ~/.local/bin entry, based on whether the record is sandboxed.
+         *
+         * Note this makes record.bin_symlink a regular file for sandboxed apps.
+         * PathMigrationService therefore regenerates it rather than rewriting a link.
+         */
+        private string? create_bin_launcher(InstallationRecord record, string exec_path, string slug) {
+            if (record.sandbox_enabled()) {
+                return create_bin_wrapper(record, exec_path, slug);
+            }
+            return create_bin_symlink(exec_path, slug);
+        }
+
         public bool ensure_bin_symlink_for_record(InstallationRecord record, string exec_path, string slug) {
             if (exec_path.strip() == "") {
                 return false;
             }
 
-            var link = create_bin_symlink(exec_path, slug);
+            var link = create_bin_launcher(record, exec_path, slug);
             if (link == null) {
                 return false;
             }
@@ -1602,6 +1740,10 @@ namespace AppManager.Core {
 
             var exec_target = resolve_exec_path_for_record(record);
 
+            // Refresh the manifest before the Exec lines are written, so a launch racing
+            // this rewrite never finds a sandbox-run line with no manifest behind it.
+            SandboxConfig.sync_manifest(record, registry.list());
+
             var effective_icon = record.get_effective_icon_name();
             var effective_keywords = record.get_effective_keywords();
             var effective_wmclass = record.get_effective_startup_wm_class();
@@ -1635,6 +1777,27 @@ namespace AppManager.Core {
             }
 
             apply_record_customizations_to_sub_desktops(record);
+            refresh_bin_launcher_for_record(record, exec_target);
+        }
+
+        /**
+         * Swaps the ~/.local/bin entry between a plain symlink and a sandbox wrapper so a
+         * terminal launch matches what the desktop entry now does. No-op for an app that
+         * opted out of $PATH, whose bin entry is absent by design.
+         */
+        private void refresh_bin_launcher_for_record(InstallationRecord record, string exec_target) {
+            if (record.bin_symlink == null || record.bin_symlink.strip() == "") {
+                return;
+            }
+            if (exec_target.strip() == "") {
+                return;
+            }
+            var slug = Path.get_basename(record.bin_symlink);
+            var link = create_bin_launcher(record, exec_target, slug);
+            if (link != null) {
+                record.bin_symlink = link;
+                registry.persist(false);
+            }
         }
 
         /**

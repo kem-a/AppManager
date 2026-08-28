@@ -15,10 +15,14 @@ EXTRACT_DIR="dwarfs-${VERSION}-Linux-${ARCH}"
 mkdir -p "$OUTPUT_DIR"
 cd "$OUTPUT_DIR"
 
+# dwarfsextract unpacks DwarFS-based AppImages; dwarfs is the FUSE driver the sandbox
+# mounts them with. Both come from the same tarball, so fetch once for both.
+TOOLS="dwarfsextract dwarfs"
+
 # Check if tools already exist and are executable
-if [ -x "dwarfsextract" ]; then
+if [ -x "dwarfsextract" ] && [ -x "dwarfs" ]; then
     echo "DwarFS tools already exist in $OUTPUT_DIR, skipping download"
-    ls -la dwarfsextract
+    ls -la $TOOLS
     exit 0
 fi
 
@@ -29,10 +33,13 @@ if [ ! -f "$TARBALL" ]; then
 fi
 
 # Extract the specific binaries we need
-echo "Extracting dwarfsextract..."
-tar -xf "$TARBALL" "${EXTRACT_DIR}/bin/dwarfsextract"
-mv "${EXTRACT_DIR}/bin/dwarfsextract" .
+for tool in $TOOLS; do
+    [ -x "$tool" ] && continue
+    echo "Extracting $tool..."
+    tar -xf "$TARBALL" "${EXTRACT_DIR}/bin/${tool}"
+    mv "${EXTRACT_DIR}/bin/${tool}" .
+done
 rm -rf "$EXTRACT_DIR"
 
 echo "DwarFS tools extracted to $OUTPUT_DIR"
-ls -la dwarfsextract
+ls -la $TOOLS

@@ -47,7 +47,16 @@ namespace AppManager {
             settings = new Settings(Core.APPLICATION_ID);
             registry = new InstallationRegistry();
             installer = new Installer(registry, settings);
-            
+            // What a permission implies changes as app compatibility issues are found, and
+            // a record's manifest is otherwise only rewritten when its permissions change.
+            // Refreshing them here keeps already-sandboxed apps from being stuck on a
+            // manifest that a newer AppManager knows is wrong.
+            // A newly assigned portal identity has to be saved, or it would be
+            // generated again on the next start and the permissions keyed by it lost.
+            if (Core.SandboxConfig.refresh_all(registry.list())) {
+                registry.persist(false);
+            }
+
             add_main_option_entries(options);
             set_option_context_parameter_string("[FILE...]");
             set_option_context_summary("AppImage Manager - Manage and update AppImages on your system");

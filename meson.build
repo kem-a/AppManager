@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '3.7.4',
+  version: '4.0.0',
   meson_version: '>=0.64.0'
 )
 
@@ -20,11 +20,27 @@ gnutls_dep = dependency('gnutls', version: '>=3.6.13')
 
 add_project_arguments(['--target-glib=2.74', '--pkg=posix'], language: 'vala')
 
-# Local vapi for the tier-2 crypto shim (GnuTLS has no shipped Vala binding).
+# Local vapis for the C helpers whose libraries ship no Vala bindings:
+# the tier-2 crypto shim (GnuTLS) and the sandbox seccomp filter (libseccomp).
 add_project_arguments(
-  ['--vapidir', meson.current_source_dir() / 'src' / 'vapi', '--pkg', 'crypto-shim'],
+  ['--vapidir', meson.current_source_dir() / 'src' / 'vapi',
+   '--pkg', 'crypto-shim', '--pkg', 'seccomp-filter',
+   '--pkg', 'wayland-security-context'],
   language: 'vala'
 )
+
+# libseccomp hardens the sandbox but is not needed to build or run it: without
+# it the filter helper returns "no filter" and the launcher says so. Kept
+# optional so the sandbox still builds on a host that lacks the headers.
+seccomp_dep = dependency('libseccomp', required: get_option('seccomp'))
+
+# Same arrangement for the Wayland security context: without it the sandbox binds
+# the compositor's socket directly, as it did before. The protocol XML is vendored
+# in data/protocols, so wayland-protocols is not a build dependency — only
+# wayland-client and the scanner that comes with it.
+wayland_client_dep = dependency('wayland-client', required: get_option('wayland_security_context'))
+wayland_scanner = find_program('wayland-scanner', required: get_option('wayland_security_context'))
+have_wayland_sc = wayland_client_dep.found() and wayland_scanner.found()
 
 # Define GETTEXT_PACKAGE for C code (required by gi18n-lib.h)
 add_project_arguments(['-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name())], language: 'c')
@@ -72,6 +88,16 @@ unsquashfs_version = '4.7.4'
 unsquashfs_tools_dir = get_option('prefix') / get_option('bindir')
 bundle_unsquashfs = get_option('bundle_unsquashfs')
 
+# squashfuse FUSE driver, used by the sandbox to mount SquashFS AppImages.
+# pkgforge's bincache publishes it for two arches only.
+squashfuse_tools_dir = get_option('prefix') / get_option('bindir')
+bundle_squashfuse = get_option('bundle_squashfuse')
+squashfuse_arch_map = {
+  'x86_64': 'x86_64',
+  'aarch64': 'aarch64',
+}
+squashfuse_arch = squashfuse_arch_map.get(host_cpu, '')
+
 core_sources = files(
   'src/core/app_constants.vala',
   'src/core/app_paths.vala',
@@ -84,6 +110,15 @@ core_sources = files(
   'src/core/app_image_assets.vala',
   'src/core/desktop_entry.vala',
   'src/core/installer.vala',
+  'src/core/sandbox_config.vala',
+  'src/core/sandbox_manifest.vala',
+  'src/core/sandbox_identity.vala',
+  'src/core/sandbox_mount.vala',
+  'src/core/sandbox_bwrap.vala',
+  'src/core/sandbox_documents.vala',
+  'src/core/sandbox_dbus_proxy.vala',
+  'src/core/sandbox_wayland.vala',
+  'src/core/sandbox_launcher.vala',
   'src/core/update_sources.vala',
   'src/core/tls_session.vala',
   'src/core/token_store.vala',
@@ -117,6 +152,49 @@ crypto_shim_lib = static_library('crypto-shim',
   include_directories: crypto_shim_inc
 )
 
+# The seccomp filter builder, same arrangement as the crypto shim: a C static
+# library kept out of the Vala target's `dependencies` so meson does not look for
+# a libseccomp vapi that does not exist.
+seccomp_filter_args = []
+if seccomp_dep.found()
+  seccomp_filter_args += ['-DHAVE_LIBSECCOMP']
+endif
+seccomp_filter_lib = static_library('seccomp-filter',
+  'src/core/seccomp_filter.c',
+  c_args: seccomp_filter_args,
+  dependencies: seccomp_dep.found() ? [glib_dep, seccomp_dep] : [glib_dep],
+  include_directories: crypto_shim_inc
+)
+
+# The Wayland security-context helper, and the client code wayland-scanner
+# generates from the vendored protocol description.
+wayland_sc_sources = ['src/core/wayland_security_context.c']
+wayland_sc_args = []
+wayland_sc_deps = [glib_dep]
+if have_wayland_sc
+  security_context_xml = files('data/protocols/security-context-v1.xml')
+  security_context_header = custom_target('security-context-v1-client-protocol.h',
+    input: security_context_xml,
+    output: 'security-context-v1-client-protocol.h',
+    command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@']
+  )
+  security_context_code = custom_target('security-context-v1-protocol.c',
+    input: security_context_xml,
+    output: 'security-context-v1-protocol.c',
+    command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@']
+  )
+  wayland_sc_sources += [security_context_header, security_context_code]
+  wayland_sc_args += ['-DHAVE_WAYLAND']
+  wayland_sc_deps += [wayland_client_dep]
+endif
+
+wayland_sc_lib = static_library('wayland-security-context',
+  wayland_sc_sources,
+  c_args: wayland_sc_args,
+  dependencies: wayland_sc_deps,
+  include_directories: crypto_shim_inc
+)
+
 crypto_shim_test = executable('crypto-shim-test',
   'tests/crypto_shim_test.c',
   link_with: crypto_shim_lib,
@@ -128,8 +206,10 @@ test('crypto-shim', crypto_shim_test)
 # Fetch and install DwarFS tools if requested and supported
 if bundle_dwarfs and dwarfs_arch != ''
   fetch_script = files('scripts/fetch-dwarfs-tools.sh')
+  # dwarfsextract unpacks DwarFS AppImages; dwarfs is the FUSE driver the sandbox
+  # mounts them with. Same tarball, so both are extracted from a single download.
   dwarfs_tools = custom_target('dwarfs-tools',
-    output: ['dwarfsextract'],
+    output: ['dwarfsextract', 'dwarfs'],
     build_by_default: bundle_dwarfs,
     command: ['sh', fetch_script, dwarfs_version, dwarfs_arch, meson.current_build_dir()],
     install: true,
@@ -137,6 +217,21 @@ if bundle_dwarfs and dwarfs_arch != ''
   )
 elif bundle_dwarfs and dwarfs_arch == ''
   warning('DwarFS tools bundling requested but architecture "@0@" is not supported'.format(host_cpu))
+endif
+
+# Fetch and install the squashfuse FUSE driver if requested and supported.
+# The dwarfs driver for the other payload format comes from the DwarFS target above.
+if bundle_squashfuse and squashfuse_arch != ''
+  fetch_squashfuse_script = files('scripts/fetch-squashfuse.sh')
+  squashfuse_tools = custom_target('squashfuse-tools',
+    output: ['squashfuse'],
+    build_by_default: bundle_squashfuse,
+    command: ['sh', fetch_squashfuse_script, squashfuse_arch, meson.current_build_dir()],
+    install: true,
+    install_dir: squashfuse_tools_dir
+  )
+elif bundle_squashfuse and squashfuse_arch == ''
+  warning('squashfuse bundling requested but architecture "@0@" is not supported'.format(host_cpu))
 endif
 
 # Fetch and install zsync2 if requested and supported

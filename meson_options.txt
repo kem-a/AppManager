@@ -15,3 +15,21 @@ option('bundle_unsquashfs',
   value: true,
   description: 'Bundle unsquashfs tool for AppImage extraction during build'
 )
+
+option('wayland_security_context',
+  type: 'feature',
+  value: 'auto',
+  description: 'Tag a sandboxed app\'s Wayland connection with security-context-v1, so the compositor refuses it screen capture and input inhibiting. Needs wayland-client and wayland-scanner; the protocol description is vendored.'
+)
+
+option('seccomp',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build the sandbox seccomp filter with libseccomp. Without it the sandbox still works, but an app inside it can call syscalls the filter would have refused.'
+)
+
+option('bundle_squashfuse',
+  type: 'boolean',
+  value: true,
+  description: 'Bundle the squashfuse FUSE driver the sandbox mounts SquashFS AppImages with. The dwarfs driver for the other payload format comes from bundle_dwarfs.'
+)
