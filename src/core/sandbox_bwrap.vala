@@ -290,7 +290,61 @@ namespace AppManager.Core {
                 var dest = Path.build_filename(home, rel);
                 ro_bind_try(SandboxConfig.canonicalize(dest), dest);
             }
+            add_cache_dir();
             return true;
+        }
+
+        /**
+         * A cache directory whose path means the same thing inside the sandbox and out.
+         *
+         * The private home is bound *over* $HOME, so every absolute path the app derives
+         * from $HOME is a lie from the host's point of view: the app writes to what it
+         * calls ~/.cache/<x>, the bytes land in <app>.sandbox/.cache/<x>, and anything on
+         * the host told to open the first path finds nothing there. That matters because
+         * apps hand such paths to the desktop over D-Bus and expect them to be opened by
+         * something outside the sandbox - MPRIS "mpris:artUrl" is the case that bites
+         * first, since GNOME Shell resolves it with a plain Gio.File in its own
+         * namespace, so a music player's album art silently never appears.
+         *
+         * So the cache gets a real host path, bound at that same path here. Flatpak's
+         * answer to the same problem, and for the same reason: ~/.var/app/<id> is bound
+         * at its own path and XDG_CACHE_HOME points straight at it.
+         *
+         * Only the cache is moved. XDG_DATA_HOME and XDG_CONFIG_HOME would have to move
+         * with the theming binds above, which are layered onto the private home at $HOME
+         * - and a cache is disposable, so nothing has to be migrated when this changes.
+         * Apps that put such files anywhere else (the data dir, $XDG_RUNTIME_DIR, /tmp)
+         * are not helped by this; the real cure is not shadowing $HOME at all.
+         */
+        private void add_cache_dir() {
+            var cache = host_cache_dir(manifest.app_id);
+            if (cache == null) {
+                return;
+            }
+            if (DirUtils.create_with_parents(cache, 0700) != 0) {
+                warning("Sandbox: cannot create %s: %s", cache, Posix.strerror(Posix.errno));
+                return;
+            }
+            add2("--bind", cache, cache);
+            setenv("XDG_CACHE_HOME", cache);
+        }
+
+        /**
+         * Where a sandboxed app's cache lives on the host, or null when the record has no
+         * app id to key it by - in which case the app keeps the cache inside its private
+         * home and only loses the path agreement above.
+         *
+         * Keyed on the app id rather than the record id because it is the same identity
+         * the Wayland security context and the bus proxy's --own rules already use, and
+         * SandboxIdentity guarantees no two records share one.
+         */
+        public static string? host_cache_dir(string? app_id) {
+            var id = (app_id ?? "").strip();
+            if (id == "") {
+                return null;
+            }
+            return Path.build_filename(Environment.get_user_cache_dir(),
+                                       DATA_DIRNAME, "sandbox", id);
         }
 
         private void add_environment(string argv0) {

@@ -145,12 +145,22 @@ namespace AppManager.Core {
         /**
          * Removes the sandboxed home folder (<installed_path>.sandbox) next to the AppImage.
          * When `to_trash` is true it is moved to trash; otherwise deleted permanently.
+         *
+         * The sandbox's cache does not live in there — it needs a path that means the
+         * same thing on the host, see SandboxBwrap.add_cache_dir — so it is removed
+         * separately, and always permanently: it is a cache, and filling the trash with
+         * one helps nobody.
          */
         public void remove_sandbox_home(InstallationRecord record, bool to_trash) {
             if (record.installed_path == null || record.installed_path.strip() == "") {
                 return;
             }
             remove_portable_folder_at(SandboxConfig.sandbox_home_path(record), to_trash);
+
+            var cache = SandboxBwrap.host_cache_dir(record.sandbox_app_id);
+            if (cache != null && GLib.FileUtils.test(cache, FileTest.IS_DIR)) {
+                remove_portable_folder_at(cache, false);
+            }
         }
 
         /**
