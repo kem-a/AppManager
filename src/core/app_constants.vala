@@ -25,12 +25,13 @@ namespace AppManager.Core {
     // refuses a manifest from a future version rather than guessing.
     public const int SANDBOX_MANIFEST_VERSION = 1;
 
-    // Prefix of the generated per-app D-Bus/portal identity, e.g.
+    // Prefix of the generated per-app sandbox identity - the root of the app's D-Bus
+    // names and its Wayland security-context app id, e.g.
     // io.appmanager.sandboxed.Inkscape.
     public const string SANDBOX_APP_ID_PREFIX = "io.appmanager.sandboxed";
 
     // Sandbox engine name reported to a Wayland compositor through
-    // security-context-v1. Deliberately not "org.flatpak" — we are not flatpak.
+    // security-context-v1. Deliberately not "org.flatpak" - we are not flatpak.
     public const string SANDBOX_ENGINE_NAME = "io.appmanager";
 
     // CLI verb used by the generated .desktop Exec lines and bin wrappers to

@@ -11,7 +11,7 @@ namespace AppManager.Core {
      *
      * --target is the path the Exec would have held without the sandbox: the AppImage
      * for the main entry, or the ~/.local/bin symlink for a sub-entry of a
-     * multi-component AppImage. It is never resolved — it is passed on as argv[0] and
+     * multi-component AppImage. It is never resolved - it is passed on as argv[0] and
      * $ARGV0, which is what the AppImage runtime dispatches components on, so the
      * component a sub-entry asked for is the one that starts.
      *
@@ -76,7 +76,7 @@ namespace AppManager.Core {
             var manifest = (id != "") ? SandboxManifest.read(id) : null;
 
             // No manifest on disk means this app is not sandboxed any more and only its
-            // Exec line is stale — launching it plainly is what the user asked for. An
+            // Exec line is stale - launching it plainly is what the user asked for. An
             // unreadable one is a different story: the user believes this app is
             // contained, so refuse rather than quietly running it unconfined.
             if (manifest == null) {
@@ -111,8 +111,8 @@ namespace AppManager.Core {
                 return 3;
             }
 
-            // The bus proxy needs its own name for its sockets, and (from phase 3) the
-            // portal needs one to key this launch's identity by. One id serves both.
+            // Names the bus proxy's sockets and the Wayland security-context socket, so
+            // two concurrent launches of the same app do not collide.
             var instance_id = new_instance_id();
 
             var mount = SandboxMount.acquire(appimage, record_id);
@@ -124,19 +124,6 @@ namespace AppManager.Core {
                 return 3;
             }
 
-            // The portal identity is prepared before anything is spawned, because the
-            // bus proxy has to carry it too and bwrapinfo.json has to exist before the
-            // app's first portal call. A portal that is not running is not an error:
-            // the app then runs with static grants only, which is exactly what
-            // portals=false means.
-            SandboxInstance? instance = null;
-            if (manifest.portals && SandboxInstance.portals_available()) {
-                instance = SandboxInstance.create(manifest, instance_id);
-                if (instance == null) {
-                    warning("Sandbox: could not prepare a portal identity for %s; running without portals", target);
-                }
-            }
-
             SandboxDbusProxy? proxy = null;
             if (manifest.needs_bus_proxy()) {
                 if (AppPaths.xdg_dbus_proxy_path == null) {
@@ -144,20 +131,13 @@ namespace AppManager.Core {
                         SANDBOX_RUN_VERB, target);
                     printerr("%s: install the xdg-dbus-proxy package, or turn the sandbox off for this app.\n",
                         SANDBOX_RUN_VERB);
-                    if (instance != null) {
-                        instance.cleanup();
-                    }
                     mount.release();
                     return 3;
                 }
-                proxy = SandboxDbusProxy.start(manifest, instance_id,
-                    instance != null ? instance.app_info : null);
+                proxy = SandboxDbusProxy.start(manifest, instance_id);
                 if (proxy == null) {
                     printerr("%s: could not start the filtered bus for %s; refusing to launch it with an open bus.\n",
                         SANDBOX_RUN_VERB, target);
-                    if (instance != null) {
-                        instance.cleanup();
-                    }
                     mount.release();
                     return 3;
                 }
@@ -170,14 +150,9 @@ namespace AppManager.Core {
                 builder.a11y_bus_socket = proxy.a11y_socket;
                 builder.sync_fd = proxy.sync_read_fd;
             } else if (manifest.full_session_bus) {
-                // No proxy to filter it, so the real accessibility socket — consistent
+                // No proxy to filter it, so the real accessibility socket - consistent
                 // with the session bus the user has already opened up here.
                 builder.a11y_bus_socket = SandboxDbusProxy.host_a11y_socket();
-            }
-            if (instance != null) {
-                builder.flatpak_info = instance.app_info;
-                builder.info_fd = instance.info_fd;
-                builder.document_portal_dir = instance.document_dir;
             }
 
             // Ask the compositor to treat this client as sandboxed. Its own socket is
@@ -191,9 +166,6 @@ namespace AppManager.Core {
                     wayland.cleanup();
                     if (proxy != null) {
                         proxy.stop();
-                    }
-                    if (instance != null) {
-                        instance.cleanup();
                     }
                     mount.release();
                     return 3;
@@ -223,9 +195,6 @@ namespace AppManager.Core {
             }
             if (wayland != null) {
                 wayland.cleanup();
-            }
-            if (instance != null) {
-                instance.cleanup();
             }
             mount.release();
             return status;
@@ -316,9 +285,9 @@ namespace AppManager.Core {
         }
 
         /**
-         * A name for this one launch. Decimal, like flatpak's, because it also names a
-         * directory under $XDG_RUNTIME_DIR/.flatpak that xdg-desktop-portal reads; being
-         * random is what keeps it from colliding with a real flatpak instance.
+         * A name for this one launch. It names the bus proxy's socket files and the
+         * Wayland security-context socket, so it only has to be unique among concurrent
+         * launches.
          */
         private static string new_instance_id() {
             return "%u".printf(Random.next_int());

@@ -298,7 +298,7 @@ namespace AppManager {
                 cards_box.append(hidden_card);
             }
 
-            // Web page badge — clickable, shown only when a URL is set
+            // Web page badge - clickable, shown only when a URL is set
             var web_url = record.get_effective_web_page() ?? "";
             if (web_url.strip() != "") {
                 var web_badge = new Gtk.Button();
@@ -388,7 +388,7 @@ namespace AppManager {
         private Adw.NavigationPage build_app_updates_page(Adw.ActionRow parent_row, Gtk.Label status_label) {
             var prefs_page = new Adw.PreferencesPage();
 
-            // Description group — aligned with rows via PreferencesGroup title + description
+            // Description group - aligned with rows via PreferencesGroup title + description
             var body_text = _("Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest.");
             body_text += "\n\n" + _("Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers.");
             var info_group = new Adw.PreferencesGroup();
@@ -684,16 +684,6 @@ namespace AppManager {
                 _("Off"), _("Standard"), _("Strict"), _("Custom")
             });
             profile_group.add(profile_row);
-
-            var portals_row = build_permission_row(
-                _("Dynamic permissions"),
-                // The second sentence is the one that matters: the prompt is drawn by
-                // the system outside the sandbox, so it can reach anything the user
-                // can, and the folder switches do not constrain it.
-                _("Apps ask for files, camera and location through system prompts. A file you pick that way is granted on its own, even in a folder you have not granted."),
-                "dialog-question-symbolic",
-                record.sandbox_use_portals);
-            profile_group.add(portals_row);
             prefs_page.add(profile_group);
 
             var access_group = new Adw.PreferencesGroup();
@@ -738,7 +728,7 @@ namespace AppManager {
 
             var camera_row = build_permission_row(
                 _("Camera"),
-                _("Direct device access. Apps that use PipeWire can also ask via a system prompt."),
+                _("Direct device access."),
                 "camera-photo-symbolic",
                 record.sandbox_allow_camera);
             devices_group.add(camera_row);
@@ -770,7 +760,7 @@ namespace AppManager {
             services_group.add(tray_row);
 
             var location_row = build_permission_row(
-                _("Location"), _("Ask via system prompt."), "find-location-symbolic",
+                _("Location"), _("Reaches the system location service. AppManager alone enforces this - it does not appear in your desktop's location settings."), "find-location-symbolic",
                 record.sandbox_allow_location);
             services_group.add(location_row);
 
@@ -778,13 +768,7 @@ namespace AppManager {
 
             var folders_group = new Adw.PreferencesGroup();
             folders_group.title = _("Folders");
-            // Says "on its own" rather than promising everything else is unreachable:
-            // what the user picks in a portal dialog is granted by the document portal
-            // and never appears among these switches, so a flat "everything else stays
-            // hidden" reads as a broken sandbox the first time an app opens a file from
-            // a folder that is switched off. The pointer to Special permissions is the
-            // other half — that is where a picked folder does show up.
-            folders_group.description = _("Folders the app may read and write on its own. Everything else stays hidden, except what you pick in a file dialog — any folder granted that way is listed under Special permissions.");
+            folders_group.description = _("Folders the app may read and write. Everything else stays hidden, including anything you pick in a file dialog inside the app.");
 
             var downloads_row = build_permission_row(
                 _("Downloads"), null, "folder-download-symbolic", record.sandbox_allow_downloads);
@@ -808,15 +792,11 @@ namespace AppManager {
             prefs_page.add(folders_group);
 
             // The "manual override" of issue #37, as a list rather than a single slot:
-            // anything outside the XDG set the app still needs — including the real target
+            // anything outside the XDG set the app still needs - including the real target
             // of a symlink, which a bind of the link alone leaves dangling.
             var extra_group = new Adw.PreferencesGroup();
             extra_group.title = _("Special permissions");
-            // Names both kinds of row: the ones the user added here, and the ones the
-            // document portal handed the app from inside its own file dialogs, which
-            // are listed alongside so this screen accounts for every folder it can
-            // reach rather than only the ones added through it.
-            extra_group.description = _("Additional folders this app may read and write, including any it was granted in its own file dialogs. A symlink only works if you also add the folder it points at.");
+            extra_group.description = _("Additional folders this app may read and write. A symlink only works if you also add the folder it points at.");
 
             var add_folder_button = new Gtk.Button.from_icon_name("list-add-symbolic");
             add_folder_button.valign = Gtk.Align.CENTER;
@@ -847,7 +827,6 @@ namespace AppManager {
 
             void sync_permission_rows() {
                 suppress = true;
-                portals_row.active       = record.sandbox_use_portals;
                 network_row.active       = record.sandbox_allow_network;
                 audio_row.active         = record.sandbox_allow_audio;
                 x11_row.active           = record.sandbox_allow_x11;
@@ -874,15 +853,11 @@ namespace AppManager {
                 // With the sandbox off there is nothing to configure, so the permission
                 // groups are hidden rather than shown greyed out.
                 bool show_permissions = usable && record.sandbox_enabled();
-                portals_row.visible = show_permissions;
                 access_group.visible = show_permissions;
                 devices_group.visible = show_permissions;
                 services_group.visible = show_permissions;
                 folders_group.visible = show_permissions;
                 extra_group.visible = show_permissions;
-                // Location and the file chooser only work through portals, so say so
-                // rather than leaving a switch that quietly does nothing.
-                location_row.sensitive = record.sandbox_use_portals;
             }
 
             void commit() {
@@ -933,36 +908,6 @@ namespace AppManager {
                 extra_rows.add(row);
             }
 
-            // A folder the document portal granted from inside the app. It behaves like
-            // an extra folder and is removed the same way, but it is not stored on the
-            // record — the portal owns it — so removing it revokes the grant instead of
-            // rewriting sandbox_extra_dirs. Marked so the difference is visible: the
-            // user never added this one here, and would not otherwise know it existed.
-            void add_granted_folder_row(SandboxFolderGrant grant) {
-                var row = new Adw.ActionRow();
-                row.title = Path.get_basename(grant.path);
-                row.subtitle = "%s\n%s".printf(grant.path, _("Granted inside the app"));
-                row.subtitle_lines = 2;
-                row.add_prefix(new Gtk.Image.from_icon_name("folder-symbolic"));
-
-                var remove_button = new Gtk.Button.from_icon_name("user-trash-symbolic");
-                remove_button.valign = Gtk.Align.CENTER;
-                remove_button.tooltip_text = _("Revoke access");
-                remove_button.add_css_class("flat");
-                remove_button.clicked.connect(() => {
-                    // Only drop the row once the portal has actually let go, or the
-                    // screen would claim an access was removed that still stands.
-                    if (Core.SandboxDocuments.revoke(record.sandbox_app_id ?? "", grant.doc_id)) {
-                        extra_group.remove(row);
-                        extra_rows.remove(row);
-                    }
-                });
-                row.add_suffix(remove_button);
-
-                extra_group.add(row);
-                extra_rows.add(row);
-            }
-
             void add_extra_dir(string path) {
                 var dirs = new Gee.ArrayList<string>();
                 foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
@@ -984,7 +929,6 @@ namespace AppManager {
                 if (suppress) {
                     return;
                 }
-                record.sandbox_use_portals         = portals_row.active;
                 record.sandbox_allow_network       = network_row.active;
                 record.sandbox_allow_audio         = audio_row.active;
                 record.sandbox_allow_x11           = x11_row.active;
@@ -1012,16 +956,6 @@ namespace AppManager {
             foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
                 add_extra_row(strip_rw_suffix(entry));
             }
-            // Folders the app was handed in a file dialog. They are real, permanent
-            // access that nothing else on this screen accounts for, so they are listed
-            // here rather than left to be discovered by accident. Only ones the settings
-            // above do not already cover show up, and only while the sandbox is on.
-            if (record.sandbox_enabled()) {
-                foreach (var grant in Core.SandboxDocuments.folder_grants(
-                             Core.SandboxManifest.from_record(record))) {
-                    add_granted_folder_row(grant);
-                }
-            }
             update_sensitivity();
 
             profile_row.notify["selected"].connect(() => {
@@ -1034,7 +968,7 @@ namespace AppManager {
                 }
                 var picked = SANDBOX_PROFILE_ORDER[index];
                 if (picked == Core.SANDBOX_PROFILE_CUSTOM) {
-                    // Custom is a label, not a preset — keep the permissions as they are.
+                    // Custom is a label, not a preset - keep the permissions as they are.
                     record.sandbox_profile = Core.SANDBOX_PROFILE_CUSTOM;
                 } else {
                     Core.SandboxConfig.apply_preset(record, picked);
@@ -1044,7 +978,6 @@ namespace AppManager {
                 commit();
             });
 
-            portals_row.notify["active"].connect(() => on_permission_toggled());
             network_row.notify["active"].connect(() => on_permission_toggled());
             audio_row.notify["active"].connect(() => on_permission_toggled());
             x11_row.notify["active"].connect(() => on_permission_toggled());
@@ -1570,7 +1503,7 @@ namespace AppManager {
                 if (path_row.active) {
                     if (installer.ensure_bin_symlink_for_record(record, exec_path, symlink_name)) {
                         symlink_exists = true;
-                        // Back to default — don't persist the redundant "true" override.
+                        // Back to default - don't persist the redundant "true" override.
                         record.custom_add_to_path = null;
                         registry.update(record, false);
                     } else {

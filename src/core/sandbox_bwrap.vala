@@ -23,15 +23,12 @@ namespace AppManager.Core {
     public class SandboxBwrap {
         // Launch-time state, filled in by the supervisor before compose() is called.
         // All of it is optional: with none of it set, this builds the phase-1 sandbox
-        // (no bus, no portal identity, no seccomp).
-        public int info_fd = -1;                    // bwrap writes bwrapinfo.json here
+        // (no bus, no seccomp).
         public int sync_fd = -1;                    // held open for the bus proxy's lifetime
         public int seccomp_fd = -1;                 // compiled BPF filter
-        public string? flatpak_info = null;         // /.flatpak-info content, portal identity
         public string? session_bus_socket = null;   // proxied session bus socket
         public string? system_bus_socket = null;    // proxied system bus socket
         public string? a11y_bus_socket = null;      // accessibility bus socket
-        public string? document_portal_dir = null;  // <doc mount>/by-app/<app-id>
         public string? wayland_socket = null;       // security-context socket, if any
 
         private SandboxManifest manifest;
@@ -85,19 +82,15 @@ namespace AppManager.Core {
             add_folders();
             add_buses();
             add_a11y_bus();
-            add_portal_identity();
             add_seccomp();
 
             if (seccomp_fd >= 0) {
                 add("--seccomp", seccomp_fd.to_string());
                 data_fds.add(seccomp_fd);
             }
-            // info_fd and sync_fd belong to the instance and the bus proxy; they are
-            // passed through and must survive the exec, but closing them is their
-            // owners' job — a double close could land on an unrelated descriptor.
-            if (info_fd >= 0) {
-                add("--info-fd", info_fd.to_string());
-            }
+            // sync_fd belongs to the bus proxy; it is passed through and must survive
+            // the exec, but closing it is the proxy's job - a double close could land
+            // on an unrelated descriptor.
             if (sync_fd >= 0) {
                 add("--sync-fd", sync_fd.to_string());
             }
@@ -132,16 +125,12 @@ namespace AppManager.Core {
             if (sync_fd >= 0) {
                 list.add(sync_fd);
             }
-            if (info_fd >= 0) {
-                list.add(info_fd);
-            }
             return list.to_array();
         }
 
         /**
          * Closes this side of every generated-content pipe. Called once bwrap has been
-         * spawned; the descriptors owned by the instance and the bus proxy are left for
-         * them to close.
+         * spawned; the descriptor owned by the bus proxy is left for it to close.
          */
         public void close_fds() {
             foreach (var fd in data_fds) {
@@ -155,9 +144,9 @@ namespace AppManager.Core {
          * the mounted AppDir.
          *
          * The file name has to survive, because a multi-call AppImage chooses which
-         * component to run from it. The *directory* cannot be the real one: sharun —
+         * component to run from it. The *directory* cannot be the real one: sharun -
          * the launcher pkgforge builds AppImages with, and so the AppRun of a large
-         * share of them — resolves argv[0] to a directory and aborts with "Failed to
+         * share of them - resolves argv[0] to a directory and aborts with "Failed to
          * find ARG0 dir!" when that path does not exist. The launch target is either
          * the AppImage in ~/Applications or a symlink in ~/.local/bin, and neither
          * exists inside a sandbox whose home is private.
@@ -177,13 +166,13 @@ namespace AppManager.Core {
          *
          * Chromium sandboxes its own renderers by creating a user namespace, and falls
          * back to a setuid helper binary when it cannot. Inside this sandbox both are
-         * closed off — user namespaces by --disable-userns and by the seccomp filter,
+         * closed off - user namespaces by --disable-userns and by the seccomp filter,
          * the helper because bwrap mounts nosuid and the AppImage's copy is not
          * root-owned. Chromium's response to that is to abort with "The SUID sandbox
          * helper binary was found, but is not configured correctly", which is how
          * every Electron app that does not already pass --no-sandbox itself fails to
          * start. Verified: removing *both* the filter and --disable-userns lets it
-         * through, and removing either alone does not — so there is nothing to relax
+         * through, and removing either alone does not - so there is nothing to relax
          * here short of giving up the syscall filter, which is not a trade worth
          * making for an app already confined by it.
          *
@@ -204,8 +193,8 @@ namespace AppManager.Core {
                 add1("--share-net");
             }
             // Belt and braces on top of --unshare-all: without a user namespace of its
-            // own the app cannot restructure its mounts, which is what stops it from
-            // replacing /.flatpak-info and inheriting another app's portal permissions.
+            // own the app cannot restructure its mounts, so it cannot mount its way out
+            // of the read-only binds this sandbox is built from.
             add1("--unshare-user");
             if (supports_flag("--disable-userns")) {
                 add1("--disable-userns");
@@ -246,8 +235,8 @@ namespace AppManager.Core {
          * Makes /etc/resolv.conf resolvable, or the app has no DNS at all even with the
          * network shared.
          *
-         * On most distributions that file is a symlink into /run — systemd-resolved's
-         * stub, or NetworkManager's copy — and /run is not otherwise carried into the
+         * On most distributions that file is a symlink into /run - systemd-resolved's
+         * stub, or NetworkManager's copy - and /run is not otherwise carried into the
          * sandbox, so the link dangles. Binding *onto* the symlink is not an option:
          * bwrap creates a bind destination literally, and creating a file inside the
          * read-only /etc bind fails with ENOENT. So the link's target is bound at its
@@ -463,8 +452,8 @@ namespace AppManager.Core {
          * cookie itself.
          *
          * An entry with an empty display number is kept whatever display was asked for.
-         * That is not laxness: mutter's Xwayland cookie file — the file in front of most
-         * users of this program — writes its entries with no number at all, and
+         * That is not laxness: mutter's Xwayland cookie file - the file in front of most
+         * users of this program - writes its entries with no number at all, and
          * insisting on a match would leave every GNOME Wayland session unable to start
          * an X11 app.
          */
@@ -686,8 +675,8 @@ namespace AppManager.Core {
          *
          * A grant is always mounted at its canonicalized path, because that is the only
          * form bwrap can mount at all. But it is not the form anything asks for: with
-         * ~/Music a symlink to ~/Nextcloud/Music — a Nextcloud, Syncthing or
-         * separate-partition setup, so not a rare one — the app asks GLib for the music
+         * ~/Music a symlink to ~/Nextcloud/Music - a Nextcloud, Syncthing or
+         * separate-partition setup, so not a rare one - the app asks GLib for the music
          * directory, gets /home/<user>/Music, and finds nothing there, because the
          * private home contains no such symlink. The folder is mounted and unreachable.
          *
@@ -742,14 +731,14 @@ namespace AppManager.Core {
          * address of its own.
          *
          * A toolkit finds it by asking the session bus for the address and connecting to
-         * whatever path comes back — a host path, which is not the sandbox's to reach.
+         * whatever path comes back - a host path, which is not the sandbox's to reach.
          * Both ways of failing at that were reported: on a filtered bus the lookup is
          * refused outright ("ServiceUnknown", because org.a11y.Bus is not in the rules),
          * and on a full session bus the lookup succeeds and hands back a path with
          * nothing bound behind it ("Could not connect: No such file or directory").
          *
          * So the address is resolved outside, the socket bound at a fixed path, and
-         * AT_SPI_BUS_ADDRESS set — which every toolkit checks before doing the lookup,
+         * AT_SPI_BUS_ADDRESS set - which every toolkit checks before doing the lookup,
          * so the lookup never happens. --clearenv means it has to be set explicitly.
          */
         private void add_a11y_bus() {
@@ -760,100 +749,12 @@ namespace AppManager.Core {
             setenv("AT_SPI_BUS_ADDRESS", "unix:path=%s".printf(A11Y_BUS_PATH));
         }
 
-        private void add_portal_identity() {
-            if (flatpak_info == null) {
-                return;
-            }
-            add_xdg_open_shim();
-            // GTK4 and GLib switch themselves into portal mode the moment
-            // /.flatpak-info exists; Qt does not, and needs telling. Only set when the
-            // host has not already chosen a platform theme for the user.
-            if (Environment.get_variable("QT_QPA_PLATFORMTHEME") == null) {
-                setenv("QT_QPA_PLATFORMTHEME", "xdgdesktopportal");
-            }
-            // Two mounts of identical content, which is what flatpak does and for the
-            // reason it documents: a portal that has opened /proc/<pid>/root and then
-            // sees the process exit finds every mount but the root gone from that
-            // namespace, so the plain file underneath keeps the data readable while the
-            // read-only bind on top keeps the app from rewriting its own identity.
-            var file_fd = data_fd(flatpak_info);
-            var bind_fd = data_fd(flatpak_info);
-            if (file_fd < 0 || bind_fd < 0) {
-                return;
-            }
-            add1("--perms");
-            add1("0600");
-            add2("--file", file_fd.to_string(), "/.flatpak-info");
-            add2("--ro-bind-data", bind_fd.to_string(), "/.flatpak-info");
-            setenv("container", "flatpak");
-
-            // The same content again, under the name GTK 3 looks for. GTK 4 and GLib
-            // check /.flatpak-info; GTK 3 checks $XDG_RUNTIME_DIR/flatpak-info and
-            // nothing else, so without this every GTK 3 app — which is every Electron
-            // app — stays out of portal mode.
-            //
-            // Getting only half of this wrong is worse than not doing it at all: GLib
-            // sees the sandbox and switches GSettings to a keyfile backend that starts
-            // out empty, so an app that is not also reading the portal gets neither its
-            // own settings nor the user's, and falls back to schema defaults. That is
-            // how a themed desktop turns into stock Adwaita, and on a host whose
-            // librsvg no longer ships a gdk-pixbuf loader it also means the icon theme
-            // cannot be decoded at all: "Could not load a pixbuf from icon theme",
-            // followed by missing window buttons.
-            var gtk3_fd = data_fd(flatpak_info);
-            if (gtk3_fd >= 0) {
-                add1("--perms");
-                add1("0600");
-                add2("--ro-bind-data", gtk3_fd.to_string(),
-                     Path.build_filename(runtime_base, "flatpak-info"));
-            }
-
-            if (document_portal_dir != null) {
-                // Exactly this path: it is the only prefix the document portal's own
-                // path remapping understands. Read-write, and never the mount root,
-                // which would expose every other app's grants.
-                add2("--bind", document_portal_dir, "/run/flatpak/doc");
-                // And reachable under the name the portal actually hands out, which is
-                // the other half of the same job and useless without it. A path returned
-                // by the file chooser is "<document portal mount>/<doc id>/<name>", and
-                // that mount is $XDG_RUNTIME_DIR/doc — a path the sandbox replaces with
-                // a tmpfs, so every file the user grants arrives as a path that does not
-                // resolve. An app then reports the folder it was just given as missing,
-                // which is what "Screenshots directory does not exist" was.
-                //
-                // A link rather than a second bind, matching flatpak: the doc id is
-                // looked up under the app's own by-app subtree either way, so the two
-                // names are the same grant, not two.
-                add2("--symlink", "/run/flatpak/doc", Path.build_filename(runtime_base, "doc"));
-            }
-        }
-
-        // The shim that stands in for xdg-open inside the sandbox. The real one would
-        // try to start a browser or file manager in here, where neither exists and
-        // where the user would not see it anyway; the portal starts it on the host.
-        private const string XDG_OPEN_SHIM = """#!/bin/sh
-# Generated by AppManager — hands the URI to the OpenURI portal, because a
-# browser started inside the sandbox is of no use to anyone.
-#
-# A plain path becomes a file: URI. That works for anything in a granted folder,
-# which the sandbox binds at its real host path, so the path means the same thing
-# on both sides. A file that exists only inside the sandbox has no path the host
-# could open and the call fails, which is the honest outcome.
-uri="$1"
-case "$uri" in
-  /*) uri="file://$uri" ;;
-esac
-exec gdbus call --session --dest org.freedesktop.portal.Desktop \
-  --object-path /org/freedesktop/portal/desktop \
-  --method org.freedesktop.portal.OpenURI.OpenURI "" "$uri" "{}" >/dev/null
-""";
-
         /**
          * Installs the seccomp filter, unless the caller supplied one already.
          *
          * A build without libseccomp gets no filter. That is a weaker sandbox, not a
-         * broken one — the mount and user-namespace routes are already closed by
-         * --unshare-user and --disable-userns — so it is logged rather than refused.
+         * broken one - the mount and user-namespace routes are already closed by
+         * --unshare-user and --disable-userns - so it is logged rather than refused.
          */
         private void add_seccomp() {
             if (seccomp_fd >= 0) {
@@ -865,105 +766,6 @@ exec gdbus call --session --dest org.freedesktop.portal.Desktop \
                 return;
             }
             seccomp_fd = fd;
-        }
-
-        // Stands in for flatpak-spawn, which a few libraries reach for once they see a
-        // /.flatpak-info and conclude they are inside Flatpak.
-        private const string FLATPAK_SPAWN_SHIM = """#!/bin/sh
-# Generated by AppManager — runs the command directly instead of handing it to
-# Flatpak's Spawn portal, which does not exist here.
-#
-# glycin, the image loader behind gdk-pixbuf on current distributions, decodes
-# images in a sandbox of its own. Seeing /.flatpak-info it picks the
-# flatpak-spawn mechanism, and with no flatpak-spawn to run, *every* image load
-# fails — which shows up as "Could not load a pixbuf from icon theme" and an app
-# with no icons on its window buttons.
-#
-# The command is already inside this sandbox, which is the boundary that matters,
-# so the flatpak-spawn-only options are dropped and the rest is run as-is. This is
-# the state glycin itself falls back to when it cannot sandbox: it warns and
-# carries on.
-dir=/
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --sandbox|--watch-bus|--no-network|--clear-env|--latest-version|--host|--sandbox-flag=*) shift ;;
-    --directory=*) dir="${1#--directory=}"; shift ;;
-    # The descriptor is inherited across a plain exec, so forwarding is implicit.
-    --forward-fd=*|--sandbox-expose=*|--sandbox-expose-ro=*|--sandbox-expose-path=*) shift ;;
-    --sandbox-expose-path-ro=*|--app-path=*|--usr-path=*) shift ;;
-    --env=*) export "${1#--env=}"; shift ;;
-    --) shift; break ;;
-    *) break ;;
-  esac
-done
-[ -d "$dir" ] && cd "$dir"
-exec "$@"
-""";
-
-        private void add_xdg_open_shim() {
-            // In a directory of our own that goes first on PATH, which is what most
-            // callers use...
-            var shim_dir = Path.build_filename(runtime_base, "sandbox-bin");
-            var shim = Path.build_filename(shim_dir, "xdg-open");
-            var path_fd = data_fd(XDG_OPEN_SHIM);
-            if (path_fd >= 0) {
-                add1("--perms");
-                add1("0755");
-                add2("--ro-bind-data", path_fd.to_string(), shim);
-                setenv("PATH", "%s:/usr/local/bin:/usr/bin:/bin".printf(shim_dir));
-            }
-
-            var spawn_fd = data_fd(FLATPAK_SPAWN_SHIM);
-            if (spawn_fd >= 0) {
-                add1("--perms");
-                add1("0755");
-                add2("--ro-bind-data", spawn_fd.to_string(),
-                     Path.build_filename(shim_dir, "flatpak-spawn"));
-            }
-            add_flatpak_spawn_fallback();
-        }
-
-        /**
-         * Puts the flatpak-spawn shim in /usr/bin as well, because PATH is not always
-         * consulted: glycin spawns its loader with the environment cleared, and glibc
-         * then falls back to confstr(_CS_PATH), which on this system is "/usr/bin"
-         * alone. A shim anywhere else is simply not found.
-         *
-         * /usr is bound read-only and a new file cannot be created inside a read-only
-         * mount, so /usr/bin is re-mounted as an overlay whose writes go to a tmpfs
-         * that exists only inside this sandbox. The cost is that the app can write into
-         * its own view of /usr/bin, which changes nothing it could not already do —
-         * nothing there reaches the host, the mount is nosuid, and the app already
-         * chooses what it execs. The gain is that images load at all.
-         *
-         * Skipped when bwrap is too old to have overlays, in which case an app using
-         * glycin loses its icons but still runs.
-         */
-        private void add_flatpak_spawn_fallback() {
-            if (!supports_flag("--tmp-overlay")) {
-                debug("Sandbox: bwrap has no overlay support; glycin-based image loading may fail");
-                return;
-            }
-            var fd = data_fd(FLATPAK_SPAWN_SHIM);
-            if (fd < 0) {
-                return;
-            }
-            add("--overlay-src", "/usr/bin");
-            add("--tmp-overlay", "/usr/bin");
-            add1("--perms");
-            add1("0755");
-            add2("--ro-bind-data", fd.to_string(), "/usr/bin/flatpak-spawn");
-            // ...and over the host's own copy, for the callers that spell out
-            // /usr/bin/xdg-open. Only when it already exists: /usr is bound read-only,
-            // so a new file cannot be created there, but mounting over one works.
-            if (GLib.FileUtils.test("/usr/bin/xdg-open", FileTest.EXISTS)) {
-                var usr_fd = data_fd(XDG_OPEN_SHIM);
-                if (usr_fd >= 0) {
-                    add1("--perms");
-                    add1("0755");
-                    add2("--ro-bind-data", usr_fd.to_string(), "/usr/bin/xdg-open");
-                }
-            }
         }
 
         // ── helpers ─────────────────────────────────────────────────────────────
@@ -1020,8 +822,8 @@ exec "$@"
 
         /**
          * Puts `bytes` in a pipe and returns the read end's number, for passing to a
-         * child that expects to read a generated file from a numbered descriptor —
-         * bwrap's --ro-bind-data and --file, and xdg-dbus-proxy's --args.
+         * child that expects to read a generated file from a numbered descriptor -
+         * bwrap's --ro-bind-data, and xdg-dbus-proxy's --args.
          *
          * Takes bytes rather than a string because the proxy's argument list is
          * NUL-separated, and a Vala string ends at its first NUL.
@@ -1076,7 +878,7 @@ exec "$@"
 
         /**
          * The real path of one of the six offered XDG user directories, or null when it
-         * is unset, missing, or resolves to the home directory itself — binding $HOME
+         * is unset, missing, or resolves to the home directory itself - binding $HOME
          * would undo the private home the sandbox exists to provide.
          *
          * `requested` returns the unresolved path, which is what the app will ask for.
@@ -1110,7 +912,7 @@ exec "$@"
 
         /**
          * The host session bus socket, from DBUS_SESSION_BUS_ADDRESS. Returns null for
-         * an abstract-socket address, which cannot be bind-mounted at all — those are
+         * an abstract-socket address, which cannot be bind-mounted at all - those are
          * reached through the network namespace instead, and there is nothing to do.
          */
         public static string? host_session_bus_socket() {
@@ -1133,7 +935,7 @@ exec "$@"
         public static string? socket_path_in(string address) {
             foreach (var part in address.strip().split(",")) {
                 var field = part.strip();
-                // "unix:path=/run/user/1000/bus" — the only form that can be bound.
+                // "unix:path=/run/user/1000/bus" - the only form that can be bound.
                 var index = field.index_of("path=");
                 if (index >= 0) {
                     var path = field.substring(index + "path=".length);

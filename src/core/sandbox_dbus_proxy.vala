@@ -5,7 +5,7 @@ namespace AppManager.Core {
      *
      * The app never gets the real bus socket. It gets a socket this proxy listens on,
      * and the proxy forwards only what the rules allow. One process serves both buses:
-     * the session bus for desktop services and portals, the system bus for BlueZ.
+     * the session bus for desktop services, the system bus for BlueZ and GeoClue2.
      *
      * Two descriptors do the coordination, both copied from what flatpak does:
      *
@@ -13,7 +13,7 @@ namespace AppManager.Core {
      *    byte once it is listening; the supervisor blocks on the read end before
      *    starting the app, so the app can never race ahead of its own bus. The read end
      *    is then handed to the app's bwrap (--sync-fd), which holds it open for the
-     *    sandbox's lifetime — so when the app dies the pipe closes and the proxy exits
+     *    sandbox's lifetime - so when the app dies the pipe closes and the proxy exits
      *    on its own. No supervision of the proxy is needed beyond that.
      *
      *  - The **args pipe** (--args), carrying the addresses and rules NUL-separated.
@@ -36,16 +36,8 @@ namespace AppManager.Core {
          *
          * `instance_id` names the sockets, so that concurrent launches of the same app
          * do not collide.
-         *
-         * `app_info` is the app's /.flatpak-info content, and when present the proxy is
-         * run inside its own bwrap carrying that file. That is not decoration: the
-         * portal works out who is calling it from the D-Bus *peer*, and with a proxy in
-         * between the peer is the proxy. A proxy that does not carry the app's identity
-         * makes the app look like a plain host process to the portal, and the whole
-         * point of the identity is lost.
          */
-        public static SandboxDbusProxy? start(SandboxManifest manifest, string instance_id,
-                                              string? app_info = null) {
+        public static SandboxDbusProxy? start(SandboxManifest manifest, string instance_id) {
             var proxy_path = AppPaths.xdg_dbus_proxy_path;
             if (proxy_path == null) {
                 return null;
@@ -114,27 +106,7 @@ namespace AppManager.Core {
                 return null;
             }
 
-            int info_fd = -1;
-            if (app_info != null) {
-                info_fd = SandboxBwrap.content_fd(app_info.data);
-                if (info_fd < 0) {
-                    Posix.close(sync_fds[0]);
-                    Posix.close(sync_fds[1]);
-                    Posix.close(args_fd);
-                    return null;
-                }
-            }
-
-            var argv = build_argv(proxy_path, sync_fds[1], args_fd, info_fd);
-            if (argv == null) {
-                Posix.close(sync_fds[0]);
-                Posix.close(sync_fds[1]);
-                Posix.close(args_fd);
-                if (info_fd >= 0) {
-                    Posix.close(info_fd);
-                }
-                return null;
-            }
+            var argv = build_argv(proxy_path, sync_fds[1], args_fd);
 
             var child = Posix.fork();
             if (child < 0) {
@@ -142,17 +114,11 @@ namespace AppManager.Core {
                 Posix.close(sync_fds[0]);
                 Posix.close(sync_fds[1]);
                 Posix.close(args_fd);
-                if (info_fd >= 0) {
-                    Posix.close(info_fd);
-                }
                 return null;
             }
             if (child == 0) {
                 clear_cloexec(sync_fds[1]);
                 clear_cloexec(args_fd);
-                if (info_fd >= 0) {
-                    clear_cloexec(info_fd);
-                }
                 Posix.close(sync_fds[0]);
                 Posix.execvp(argv[0], argv);
                 Posix.perror(argv[0]);
@@ -161,9 +127,6 @@ namespace AppManager.Core {
 
             self.pid = child;
             Posix.close(args_fd);
-            if (info_fd >= 0) {
-                Posix.close(info_fd);
-            }
             // Our own copy of the write end has to go before the read below, or a proxy
             // that dies on startup would leave the read blocking on a pipe this process
             // is itself holding open.
@@ -220,75 +183,22 @@ namespace AppManager.Core {
         }
 
         /**
-         * The proxy's command line: the proxy itself, or the proxy inside a bwrap that
-         * carries the app's /.flatpak-info when there is a portal identity to present.
-         *
-         * The wrapper is a mount namespace and nothing more — no unshared network, no
-         * dropped devices. The proxy is our own code doing our own filtering; the only
-         * reason it is in a sandbox at all is so that a portal reading
-         * /proc/<peer>/root/.flatpak-info finds the app's identity there. It needs the
-         * host's libraries, and /run, /tmp and /var writable to place its sockets.
+         * The proxy's command line. Nothing wraps it: the proxy is our own code doing
+         * our own filtering, and it needs the host's own view of the buses it stands
+         * in front of.
          */
-        private static string[]? build_argv(string proxy_path, int sync_fd, int args_fd, int info_fd) {
-            if (info_fd < 0) {
-                return new string[] {
-                    proxy_path,
-                    "--fd=%d".printf(sync_fd),
-                    "--args=%d".printf(args_fd),
-                    null
-                };
-            }
-
-            var bwrap = AppPaths.bwrap_path;
-            if (bwrap == null) {
-                warning("Sandbox: bwrap is needed to give the bus proxy the app's identity");
-                return null;
-            }
-
-            var args = new Gee.ArrayList<string>();
-            args.add(bwrap);
-            args.add("--ro-bind");
-            args.add("/usr");
-            args.add("/usr");
-            foreach (var dir in new string[] { "/bin", "/lib", "/lib64", "/lib32", "/sbin", "/etc" }) {
-                args.add("--ro-bind-try");
-                args.add(dir);
-                args.add(dir);
-            }
-            foreach (var dir in new string[] { "/run", "/tmp", "/var" }) {
-                args.add("--bind-try");
-                args.add(dir);
-                args.add(dir);
-            }
-            args.add("--proc");
-            args.add("/proc");
-            args.add("--dev");
-            args.add("/dev");
-            // A plain file rather than the app's double mount: this namespace is not
-            // handed to anything untrusted, and a real file survives the namespace
-            // teardown that the portal's /proc/<pid>/root read can race with.
-            args.add("--perms");
-            args.add("0600");
-            args.add("--file");
-            args.add(info_fd.to_string());
-            args.add("/.flatpak-info");
-            args.add("--die-with-parent");
-            args.add("--");
-            args.add(proxy_path);
-            args.add("--fd=%d".printf(sync_fd));
-            args.add("--args=%d".printf(args_fd));
-
-            var argv = new string[args.size + 1];
-            for (int i = 0; i < args.size; i++) {
-                argv[i] = args[i];
-            }
-            argv[args.size] = null;
-            return argv;
+        private static string[] build_argv(string proxy_path, int sync_fd, int args_fd) {
+            return new string[] {
+                proxy_path,
+                "--fd=%d".printf(sync_fd),
+                "--args=%d".printf(args_fd),
+                null
+            };
         }
 
         /**
          * Session-bus rules. Everything not listed is refused, including the services
-         * that make sandbox escape trivial — systemd's StartTransientUnit above all.
+         * that make sandbox escape trivial - systemd's StartTransientUnit above all.
          */
         private static Gee.ArrayList<string> session_rules(SandboxManifest manifest) {
             var rules = new Gee.ArrayList<string>();
@@ -314,15 +224,6 @@ namespace AppManager.Core {
                 rules.add("--talk=org.mpris.MediaPlayer2.*");
             }
 
-            if (manifest.portals) {
-                rules.add("--call=org.freedesktop.portal.*=*");
-                // Mandatory, and the classic mistake to leave out: a portal answers
-                // asynchronously with a Request::Response *broadcast*, so without this
-                // every portal call the app makes waits forever.
-                rules.add("--broadcast=org.freedesktop.portal.*=@/org/freedesktop/portal/*");
-                rules.add("--talk=org.freedesktop.portal.Documents");
-            }
-
             return rules;
         }
 
@@ -337,8 +238,8 @@ namespace AppManager.Core {
          * The bus names a StatusNotifierItem tray icon can claim.
          *
          * Two tray flavours exist. The object-path one hands the watcher a path on a
-         * name the app already owns and so needs no rule of its own. The named one —
-         * what libappindicator uses, and therefore what Electron apps use — registers
+         * name the app already owns and so needs no rule of its own. The named one -
+         * what libappindicator uses, and therefore what Electron apps use - registers
          * org.kde.StatusNotifierItem-<pid>-<n>, and the proxy's only wildcard is a
          * trailing ".*", which cannot match a name that varies before the last dot.
          *
@@ -359,14 +260,46 @@ namespace AppManager.Core {
         }
 
         /**
-         * System-bus rules. Only spawned at all when a toggle needs it; UPower,
-         * NetworkManager and GeoClue are deliberately not exposed here, since network
-         * status and location are reachable through portals with no system bus at all.
+         * System-bus rules. Only spawned at all when a toggle needs it; UPower and
+         * NetworkManager are deliberately not exposed.
          */
         private static Gee.ArrayList<string> system_rules(SandboxManifest manifest) {
             var rules = new Gee.ArrayList<string>();
             if (manifest.bluetooth) {
                 rules.add("--talk=org.bluez");
+            }
+            if (manifest.location) {
+                rules.add_all(geoclue_rules());
+            }
+            return rules;
+        }
+
+        /**
+         * GeoClue2, narrowed to the objects a client actually uses: the manager it asks
+         * for a client object, and the client object itself, whose path is handed out at
+         * runtime as /org/freedesktop/GeoClue2/Client/<n> with the fix hanging below it.
+         * The trailing "/*" is a subtree match, so one rule covers a client and its
+         * Location children.
+         *
+         * Deliberately not a bare --talk=org.freedesktop.GeoClue2: a rule with no path
+         * or interface permits the whole service. --call already implies talk, which is
+         * what lets the D-Bus-activated daemon start on the first call.
+         *
+         * LocationUpdated needs no rule of its own - geoclue emits it addressed to the
+         * client rather than broadcast, and the proxy only filters signals with no
+         * destination. PropertiesChanged is a real broadcast and does need one, or an
+         * app relying on property caching never sees the fix arrive.
+         */
+        private static Gee.ArrayList<string> geoclue_rules() {
+            var rules = new Gee.ArrayList<string>();
+            foreach (var rule in new string[] {
+                "--call=org.freedesktop.GeoClue2=org.freedesktop.GeoClue2.Manager.*@/org/freedesktop/GeoClue2/Manager",
+                "--call=org.freedesktop.GeoClue2=org.freedesktop.DBus.Properties.*@/org/freedesktop/GeoClue2/Manager",
+                "--call=org.freedesktop.GeoClue2=org.freedesktop.GeoClue2.Client.*@/org/freedesktop/GeoClue2/Client/*",
+                "--call=org.freedesktop.GeoClue2=org.freedesktop.DBus.Properties.*@/org/freedesktop/GeoClue2/Client/*",
+                "--broadcast=org.freedesktop.GeoClue2=org.freedesktop.DBus.Properties.PropertiesChanged@/org/freedesktop/GeoClue2/*"
+            }) {
+                rules.add(rule);
             }
             return rules;
         }
@@ -378,7 +311,7 @@ namespace AppManager.Core {
          *
          * The a11y bus needs filtering as much as the session bus does. It is how a
          * screen reader reads every window on the desktop, so an app with a free run of
-         * it can read other apps' contents and watch their keystrokes — which is why the
+         * it can read other apps' contents and watch their keystrokes - which is why the
          * app is not simply handed the real socket.
          */
         private static Gee.ArrayList<string> a11y_rules() {
@@ -405,7 +338,7 @@ namespace AppManager.Core {
          * in the environment, or else the answer to org.a11y.Bus.GetAddress, which
          * starts at-spi-bus-launcher on the way if it is not running yet.
          *
-         * Null when the session has no accessibility bus at all. That is not an error —
+         * Null when the session has no accessibility bus at all. That is not an error -
          * the app then starts without one, which is what happens outside a sandbox too.
          */
         public static string? a11y_bus_address() {
@@ -438,7 +371,7 @@ namespace AppManager.Core {
 
         /**
          * The address of the session bus to proxy. Uses DBUS_SESSION_BUS_ADDRESS as
-         * given — it is an address, not a path, so abstract sockets work here even
+         * given - it is an address, not a path, so abstract sockets work here even
          * though they could not be bind-mounted into the sandbox.
          */
         private static string? host_session_bus_address() {

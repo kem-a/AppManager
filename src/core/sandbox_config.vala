@@ -13,9 +13,8 @@ namespace AppManager.Core {
          * Applies a named preset's permissions to the record and stamps the profile.
          * "custom" and "off" carry no permissions of their own, so they only set the label.
          *
-         * Both real presets keep portals and hardware acceleration on. Prompts are the
-         * safe path — nothing is granted until the user answers a system dialog — and
-         * software rendering makes apps unusably slow without improving isolation.
+         * Both real presets keep hardware acceleration on: software rendering makes
+         * apps unusably slow without materially improving isolation.
          */
         public static void apply_preset(InstallationRecord record, string profile) {
             switch (profile) {
@@ -43,7 +42,6 @@ namespace AppManager.Core {
             record.sandbox_allow_tray = open;
             record.sandbox_allow_downloads = open;
 
-            record.sandbox_use_portals = true;
             record.sandbox_allow_gpu = true;
 
             record.sandbox_allow_dbus = false;
@@ -62,7 +60,7 @@ namespace AppManager.Core {
 
         /**
          * Returns the preset whose permissions match the record's current state,
-         * or "custom" when none does. Never returns "off" — callers decide that
+         * or "custom" when none does. Never returns "off" - callers decide that
          * from sandbox_enabled().
          */
         public static string detect_profile(InstallationRecord record) {
@@ -82,7 +80,6 @@ namespace AppManager.Core {
                 && r.sandbox_allow_notifications == open
                 && r.sandbox_allow_tray == open
                 && r.sandbox_allow_downloads == open
-                && r.sandbox_use_portals
                 && r.sandbox_allow_gpu
                 && !r.sandbox_allow_dbus
                 && !r.sandbox_allow_camera
@@ -144,7 +141,7 @@ namespace AppManager.Core {
          * they want.
          *
          * `existing` is only needed to keep two records from being handed the same
-         * portal identity; pass the registry contents where they are at hand.
+         * sandbox app id; pass the registry contents where they are at hand.
          */
         public static void sync_manifest(InstallationRecord record, InstallationRecord[]? existing = null) {
             if (record.sandbox_enabled()) {
@@ -161,13 +158,13 @@ namespace AppManager.Core {
          *
          * Called at startup so a change to the manifest format or to what a permission
          * implies reaches apps that were sandboxed by an older build. Writing them is
-         * cheap — a few hundred bytes each — and the launcher reads the file fresh on
+         * cheap - a few hundred bytes each - and the launcher reads the file fresh on
          * every launch, so the next start picks it up.
          *
-         * Returns true when a record was modified — an app id was assigned to one that
-         * had none — and the registry therefore needs persisting. Without that the id
-         * would be generated afresh on every start, and portal permissions and document
-         * grants keyed by it would stop resolving.
+         * Returns true when a record was modified - an app id was assigned to one that
+         * had none - and the registry therefore needs persisting. Without that the id
+         * would be generated afresh on every start, and the Wayland security context
+         * keyed by it would stop identifying the app.
          */
         public static bool refresh_all(InstallationRecord[] records) {
             // Sorted so that, if two apps of the same name both need an id, which one

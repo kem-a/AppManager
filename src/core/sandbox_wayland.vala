@@ -3,11 +3,11 @@ namespace AppManager.Core {
      * The Wayland side of the sandbox: a socket the compositor knows belongs to a
      * sandboxed client.
      *
-     * This is a separate boundary from the portal identity, and both are wanted. The
-     * portal governs what a *dialog* may grant; the compositor governs what the
-     * *Wayland connection* itself may do. Without a security context, an app with
-     * Wayland access can bind screen-capture, input-inhibiting and virtual-input
-     * protocols directly and never involve a portal at all.
+     * The compositor is the only thing that can govern what a *Wayland connection*
+     * itself may do, and it can only do so when it is told which connections are
+     * sandboxed. Without a security context, an app with Wayland access can bind
+     * screen-capture, input-inhibiting and virtual-input protocols directly - neither
+     * the bwrap nor the D-Bus boundary ever sees those.
      *
      * The lifetime is a pipe: the compositor watches the read end and stops accepting
      * new connections when it signals hangup. The supervisor holds the write end and
@@ -16,7 +16,7 @@ namespace AppManager.Core {
     public class SandboxWaylandContext {
         public string socket_path { get; private set; default = ""; }
         // True when the compositor offered to sandbox the connection and the handshake
-        // then failed. The caller must refuse Wayland rather than fall back — falling
+        // then failed. The caller must refuse Wayland rather than fall back - falling
         // back would quietly hand over the privileged protocols this exists to deny.
         public bool failed { get; private set; default = false; }
 
@@ -89,8 +89,8 @@ namespace AppManager.Core {
         }
 
         /**
-         * Closes the keepalive pipe — which is what tells the compositor to stop
-         * accepting connections — and removes the socket.
+         * Closes the keepalive pipe - which is what tells the compositor to stop
+         * accepting connections - and removes the socket.
          */
         public void cleanup() {
             if (keepalive_fd >= 0) {

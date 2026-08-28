@@ -51,7 +51,7 @@ namespace AppManager {
             // a record's manifest is otherwise only rewritten when its permissions change.
             // Refreshing them here keeps already-sandboxed apps from being stuck on a
             // manifest that a newer AppManager knows is wrong.
-            // A newly assigned portal identity has to be saved, or it would be
+            // A newly assigned sandbox app id has to be saved, or it would be
             // generated again on the next start and the permissions keyed by it lost.
             if (Core.SandboxConfig.refresh_all(registry.list())) {
                 registry.persist(false);
@@ -893,7 +893,7 @@ Examples:
                 return true; // Not an AppImage, consider "installed"
             }
             // If the AppImage file no longer exists at the original path,
-            // it was likely moved during installation — treat as installed
+            // it was likely moved during installation - treat as installed
             if (!GLib.FileUtils.test(appimage, FileTest.EXISTS)) {
                 debug("AppImage no longer at original path %s, assuming installed", appimage);
                 return true;
@@ -968,12 +968,12 @@ Examples:
                     continue;
                 }
                 if (Utils.FileUtils.dir_is_effectively_empty(dir)) {
-                    // Only empty scaffolding left behind — remove silently.
+                    // Only empty scaffolding left behind - remove silently.
                     Utils.FileUtils.remove_dir_recursive(dir);
                     debug("Removed stale portable folder %s", dir);
                 } else {
                     // Contains real files (possibly apps installed while HOME was
-                    // redirected). Never delete silently — tell the user once.
+                    // redirected). Never delete silently - tell the user once.
                     present_stale_portable_dir_notice(dir);
                 }
             }
@@ -988,7 +988,7 @@ Examples:
             Idle.add(() => {
                 var dialog = new Adw.AlertDialog(
                     _("Leftover portable folder found"),
-                    _("A leftover portable folder was found next to AppManager (%s). AppManager does not support portable mode for itself. The folder may contain apps installed while this bug was active — move anything you need out of it (e.g. AppImages under its Applications subfolder), then delete it.").printf(dir)
+                    _("A leftover portable folder was found next to AppManager (%s). AppManager does not support portable mode for itself. The folder may contain apps installed while this bug was active - move anything you need out of it (e.g. AppImages under its Applications subfolder), then delete it.").printf(dir)
                 );
                 dialog.add_response("ignore", _("Ignore"));
                 dialog.add_response("trash", _("Move to Trash"));

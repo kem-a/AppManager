@@ -18,7 +18,7 @@ namespace AppManager.Core {
         public string? icon_path { get; set; }
         public string? bin_symlink { get; set; }
         // Additional desktop entries installed from usr/share/applications/ inside the AppImage
-        // (issue #106 — multi-component apps like WPS Office). Custom env vars and command-line
+        // (issue #106 - multi-component apps like WPS Office). Custom env vars and command-line
         // args propagate to sub-entries too; these arrays track files for cleanup on uninstall/upgrade.
         public string[]? extra_desktop_files { get; set; }   // ~/.local/share/applications/<name>.desktop
         public string[]? extra_icon_paths    { get; set; }   // ~/.local/share/icons/<name>.<ext>
@@ -86,47 +86,44 @@ namespace AppManager.Core {
 
         // Sandbox configuration. sandbox_profile is "off" | "standard" | "strict" | "custom";
         // null is treated as "off" and nothing is wrapped. The sandbox_allow_* toggles carry
-        // the real state — the profile only labels which preset was last applied. Every
+        // the real state - the profile only labels which preset was last applied. Every
         // toggle reads as a permission: true means the app IS allowed the thing, matching
         // the UI switches one-for-one. Honored only while sandbox_enabled().
         //
         // There is deliberately no microphone toggle: one PulseAudio/PipeWire connection
-        // carries capture and playback together and no Audio portal exists upstream, so
-        // sandbox_allow_audio covers both and the UI says so.
+        // carries capture and playback together, so sandbox_allow_audio covers both and
+        // the UI says so.
         public string? sandbox_profile { get; set; }
         public bool sandbox_allow_network { get; set; default = true; }
         // Unfiltered session bus. Named "dbus" for serialization compatibility; the UI
-        // calls it "Full session bus" because that is what granting it means — with it
+        // calls it "Full session bus" because that is what granting it means - with it
         // on, no bus proxy is used at all and the app can reach every desktop service.
         public bool sandbox_allow_dbus { get; set; default = false; }
         public bool sandbox_allow_audio { get; set; default = true; }
         // Legacy X11 access. Defaults on: without it any app pinned to X11 fails to
         // start on a Wayland session.
         public bool sandbox_allow_x11 { get; set; default = true; }
-        // Hardware rendering: the GPU device nodes. On by default — software rendering
+        // Hardware rendering: the GPU device nodes. On by default - software rendering
         // makes most apps unusable without materially improving isolation.
         public bool sandbox_allow_gpu { get; set; default = true; }
-        // Direct V4L2 camera device access. The Camera portal is the other path and
-        // needs no toggle; this one is the fallback for apps that only speak V4L2.
+        // Direct V4L2 camera device access: the /dev/video* nodes are bound into the
+        // sandbox. The only camera path there is, now that portals are gone.
         public bool sandbox_allow_camera { get; set; default = false; }
-        // Game controllers: /dev/input. Off by default — that tree carries keyboards
+        // Game controllers: /dev/input. Off by default - that tree carries keyboards
         // and mice too, so granting it hands the app a keylogger.
         public bool sandbox_allow_input { get; set; default = false; }
         // System-bus BlueZ access, for apps that talk to Bluetooth devices directly.
         public bool sandbox_allow_bluetooth { get; set; default = false; }
-        // Direct org.freedesktop.Notifications access. Independent of the portal path,
-        // which works with this off.
+        // org.freedesktop.Notifications access through the filtered session bus. The
+        // only notification path there is, now that portals are gone.
         public bool sandbox_allow_notifications { get; set; default = true; }
         // StatusNotifierItem tray icons and MPRIS media controls.
         public bool sandbox_allow_tray { get; set; default = true; }
-        // Location. Portal-backed: nothing is bound, the app is prompted.
+        // Location. Reaches GeoClue2 on the system bus through the filtered proxy.
         public bool sandbox_allow_location { get; set; default = false; }
-        // Dynamic permissions: give the app a portal identity so it can ask for files,
-        // camera and location through system prompts instead of pre-granted binds.
-        public bool sandbox_use_portals { get; set; default = true; }
-        // Stable portal/D-Bus identity, generated once when sandboxing is first enabled
-        // and carried across upgrades: document-portal grants and permission-store
-        // entries are keyed by it, so it must never change under an app.
+        // Stable D-Bus / Wayland identity, generated once when sandboxing is first
+        // enabled and carried across upgrades: the compositor's security context and
+        // the proxy's --own rules are keyed by it, so it must never change under an app.
         public string? sandbox_app_id { get; set; }
         public bool sandbox_allow_downloads { get; set; default = true; }
         public bool sandbox_allow_documents { get; set; default = false; }
@@ -150,7 +147,8 @@ namespace AppManager.Core {
         /**
          * Copies the whole sandbox block from another record. Used when an upgrade
          * builds a fresh record for the same app: permissions the user granted must
-         * survive, and sandbox_app_id especially so — portal grants are keyed by it.
+         * survive, and sandbox_app_id especially so - the Wayland security context and
+         * the bus proxy's --own rules are keyed by it.
          *
          * Kept here rather than spelled out at the call site so a new toggle only has
          * to be added in this file.
@@ -169,7 +167,6 @@ namespace AppManager.Core {
             sandbox_allow_notifications = other.sandbox_allow_notifications;
             sandbox_allow_tray          = other.sandbox_allow_tray;
             sandbox_allow_location      = other.sandbox_allow_location;
-            sandbox_use_portals         = other.sandbox_use_portals;
             sandbox_allow_downloads     = other.sandbox_allow_downloads;
             sandbox_allow_documents     = other.sandbox_allow_documents;
             sandbox_allow_desktop       = other.sandbox_allow_desktop;
@@ -458,7 +455,6 @@ namespace AppManager.Core {
             put_bool(builder, "sandbox_allow_notifications", sandbox_allow_notifications);
             put_bool(builder, "sandbox_allow_tray", sandbox_allow_tray);
             put_bool(builder, "sandbox_allow_location", sandbox_allow_location);
-            put_bool(builder, "sandbox_use_portals", sandbox_use_portals);
             if (sandbox_app_id != null && sandbox_app_id.strip() != "") {
                 builder.set_member_name("sandbox_app_id");
                 builder.add_string_value(sandbox_app_id);
@@ -500,7 +496,6 @@ namespace AppManager.Core {
             sandbox_allow_notifications = read_bool(obj, "sandbox_allow_notifications", sandbox_allow_notifications);
             sandbox_allow_tray       = read_bool(obj, "sandbox_allow_tray", sandbox_allow_tray);
             sandbox_allow_location   = read_bool(obj, "sandbox_allow_location", sandbox_allow_location);
-            sandbox_use_portals      = read_bool(obj, "sandbox_use_portals", sandbox_use_portals);
             if (obj.has_member("sandbox_app_id")) {
                 var app_id = obj.get_string_member("sandbox_app_id");
                 sandbox_app_id = (app_id != null && app_id.strip() != "") ? app_id.strip() : null;

@@ -1,12 +1,11 @@
 /*
  * Wayland security-context-v1: telling the compositor that a client is sandboxed.
  *
- * This is a different boundary from the portal identity and neither replaces the
- * other. xdg-desktop-portal does not read a security context, and a compositor
- * does not read /.flatpak-info; the portal decides what a *dialog* may grant,
- * while the compositor decides what the *Wayland connection* may do. Without a
- * security context, a sandboxed app can still bind screen-capture and
- * input-inhibiting protocols directly and never involve a portal at all.
+ * The compositor is the only thing that can decide what a *Wayland connection*
+ * may do, and it can only do so when it is told which connections are sandboxed.
+ * Without a security context, a sandboxed app can still bind screen-capture and
+ * input-inhibiting protocols directly - neither the bwrap nor the D-Bus boundary
+ * ever sees those.
  *
  * The mechanism: create a listening socket, hand it to the compositor along with
  * an identity, and bind that socket into the sandbox in place of the
@@ -136,8 +135,8 @@ am_wayland_security_context_create (const char *socket_path,
   wp_security_context_v1_set_instance_id (context, instance_id);
   wp_security_context_v1_commit (context);
 
-  /* The roundtrip is what turns a protocol error — an engine name the compositor
-   * refuses, a duplicate identity — into a failure here rather than a silently
+  /* The roundtrip is what turns a protocol error - an engine name the compositor
+   * refuses, a duplicate identity - into a failure here rather than a silently
    * untagged socket. */
   if (wl_display_roundtrip (display) < 0)
     goto out;

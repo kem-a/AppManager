@@ -3,9 +3,9 @@
  *
  * This is flatpak's filter, deliberately: it is the one that a decade of running
  * untrusted desktop apps has shaped, and every entry in it answers a specific
- * escape. It is also what makes the portal identity trustworthy — without the
- * mount and user-namespace syscalls blocked, an app could restructure its own
- * mounts and rewrite /.flatpak-info to claim another app's permissions.
+ * escape. The mount and user-namespace syscalls matter most: without them blocked
+ * an app could restructure its own mounts and undo the read-only binds the sandbox
+ * is built from.
  *
  * Two rules about how it is written:
  *
@@ -79,7 +79,7 @@ add_rules (scmp_filter_ctx ctx, const struct am_rule *rules, size_t n)
                               rules[i].syscall_nr, 0);
 
       /* A syscall libseccomp does not know, or one absent from a secondary
-       * architecture, cannot be called either — skipping it is correct. Any
+       * architecture, cannot be called either - skipping it is correct. Any
        * other failure means the filter would be incomplete, so give up rather
        * than install a filter that is not the one asked for. */
       if (r < 0 && r != -EDOM && r != -EFAULT && r != -EACCES && r != -EINVAL)
@@ -122,7 +122,7 @@ am_seccomp_build_fd (int allow_bluetooth)
     { SCMP_SYS (set_mempolicy),  EPERM, 0, { 0 } },
     { SCMP_SYS (migrate_pages),  EPERM, 0, { 0 } },
     /* Namespace and mount manipulation: the route to rewriting the sandbox's
-     * own view of the filesystem, and with it /.flatpak-info. */
+     * own view of the filesystem. */
     { SCMP_SYS (unshare),        EPERM, 0, { 0 } },
     { SCMP_SYS (setns),          EPERM, 0, { 0 } },
     { SCMP_SYS (mount),          EPERM, 0, { 0 } },

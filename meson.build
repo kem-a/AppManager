@@ -36,7 +36,7 @@ seccomp_dep = dependency('libseccomp', required: get_option('seccomp'))
 
 # Same arrangement for the Wayland security context: without it the sandbox binds
 # the compositor's socket directly, as it did before. The protocol XML is vendored
-# in data/protocols, so wayland-protocols is not a build dependency — only
+# in data/protocols, so wayland-protocols is not a build dependency - only
 # wayland-client and the scanner that comes with it.
 wayland_client_dep = dependency('wayland-client', required: get_option('wayland_security_context'))
 wayland_scanner = find_program('wayland-scanner', required: get_option('wayland_security_context'))
@@ -115,7 +115,6 @@ core_sources = files(
   'src/core/sandbox_identity.vala',
   'src/core/sandbox_mount.vala',
   'src/core/sandbox_bwrap.vala',
-  'src/core/sandbox_documents.vala',
   'src/core/sandbox_dbus_proxy.vala',
   'src/core/sandbox_wayland.vala',
   'src/core/sandbox_launcher.vala',

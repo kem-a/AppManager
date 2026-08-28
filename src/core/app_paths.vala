@@ -232,7 +232,7 @@ namespace AppManager.Core {
         /**
          * The value $XDG_RUNTIME_DIR has, or should have. The sandbox reproduces this
          * path inside itself as a tmpfs, so it has to be a single answer that holds on
-         * both sides — hence the explicit fallback rather than leaving it unset, which
+         * both sides - hence the explicit fallback rather than leaving it unset, which
          * only happens outside a normal login session.
          */
         public static string sandbox_runtime_base {
@@ -265,7 +265,7 @@ namespace AppManager.Core {
          * Path to the bubblewrap binary, or null when it is not installed.
          * Same resolution order as zsync_path: explicit override, then PATH.
          *
-         * bwrap is deliberately not bundled — it may be setuid on some distros, and
+         * bwrap is deliberately not bundled - it may be setuid on some distros, and
          * a bundled copy would lose that.
          */
         public static string? bwrap_path {
@@ -277,7 +277,7 @@ namespace AppManager.Core {
         /**
          * Path to xdg-dbus-proxy, or null when it is not installed. Needed by any
          * sandbox that filters the bus rather than binding the real socket, which is
-         * every sandbox with portals or a service toggle on.
+         * every sandbox that is not given the open session bus.
          */
         public static string? xdg_dbus_proxy_path {
             owned get {
@@ -313,7 +313,7 @@ namespace AppManager.Core {
         /**
          * Path to the dwarfs FUSE driver, or null when it is unavailable. Same
          * relationship to dwarfsextract as squashfuse has to unsquashfs, and it ships
-         * in the same tarball — hence the shared APP_MANAGER_DWARFS_DIR override.
+         * in the same tarball - hence the shared APP_MANAGER_DWARFS_DIR override.
          */
         public static string? dwarfs_fuse_path {
             owned get {
@@ -322,7 +322,7 @@ namespace AppManager.Core {
         }
 
         /**
-         * Resolves a helper binary: explicit environment override first, then PATH —
+         * Resolves a helper binary: explicit environment override first, then PATH -
          * which covers both a native install and the bundled copy an AppImage's AppRun
          * prepends to $PATH.
          */
