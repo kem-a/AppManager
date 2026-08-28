@@ -279,6 +279,25 @@ namespace AppManager.Core {
             if (record.bin_symlink != null && record.bin_symlink.strip() != "") {
                 update_symlink(record.bin_symlink, old_path, new_path);
             }
+
+            // Same treatment for the secondary entries of multi-component AppImages:
+            // their .desktop files carry the Uninstall action's old base path and their
+            // ~/.local/bin symlinks still point at the old installed path.
+            foreach (var extra_desktop in record.extra_desktop_files ?? new string[0]) {
+                if (extra_desktop == null || extra_desktop.strip() == "") {
+                    continue;
+                }
+                if (File.new_for_path(extra_desktop).query_exists()) {
+                    update_desktop_file(extra_desktop, old_path, new_path, old_base, new_base);
+                }
+            }
+
+            foreach (var extra_symlink in record.extra_bin_symlinks ?? new string[0]) {
+                if (extra_symlink == null || extra_symlink.strip() == "") {
+                    continue;
+                }
+                update_symlink(extra_symlink, old_path, new_path);
+            }
         }
 
         private async void copy_directory_recursive(string src, string dest) throws Error {

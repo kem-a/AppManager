@@ -459,26 +459,22 @@ namespace AppManager {
             
             dialog.response.connect((response) => {
                 if (response == "move") {
-                    start_migration(old_effective, new_effective, new_setting);
+                    start_migration.begin(old_effective, new_effective, new_setting);
                 }
             });
 
             dialog.present(this.get_root() as Gtk.Window);
         }
 
-        private void start_migration(string old_path, string new_path, string new_setting) {
+        private async void start_migration(string old_path, string new_path, string new_setting) {
             var migration_service = new PathMigrationService(registry, settings);
-            
+
             // STOP directory monitoring completely during migration
             // This is simpler and more reliable than pausing
             if (directory_monitor != null) {
                 directory_monitor.stop();
             }
-            
-            // Kill background daemon if running - it may interfere with migration
-            // by monitoring folders and triggering reconciliation
-            bool daemon_was_running = BackgroundUpdateService.kill_daemon_and_wait();
-            
+
             // Create progress dialog
             var progress_dialog = new Adw.AlertDialog(_("Moving Apps…"), _("Please wait while your apps are being moved."));
             progress_dialog.add_response("cancel", _("Cancel"));
@@ -496,6 +492,14 @@ namespace AppManager {
                 progress_bar.fraction = fraction;
                 progress_bar.text = message;
             });
+
+            progress_bar.text = _("Stopping background service…");
+            progress_dialog.present(this.get_root() as Gtk.Window);
+
+            // Kill background daemon if running - it may interfere with migration
+            // by monitoring folders and triggering reconciliation. Awaited (not
+            // blocking) so the UI stays responsive while the daemon shuts down.
+            bool daemon_was_running = yield BackgroundUpdateService.kill_daemon_and_wait_async();
 
             migration_service.migration_complete.connect((success, error_message) => {
                 // Clear migration flag first
@@ -522,8 +526,6 @@ namespace AppManager {
                     show_error_dialog(_("Migration Failed"), error_message ?? _("Unknown error occurred"));
                 }
             });
-
-            progress_dialog.present(this.get_root() as Gtk.Window);
 
             // Pass explicit old and new paths to avoid GSettings caching issues
             migration_service.migrate.begin(old_path, new_path, new_setting);

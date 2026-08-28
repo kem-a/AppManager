@@ -745,6 +745,9 @@ namespace AppManager.Core {
                 if (record.original_startup_wm_class == Core.APPLICATION_ID) {
                     symlink_name = "app-manager";
                 }
+                // Sub-entries of multi-component AppImages reference this name without the
+                // side-by-side copy suffix, so keep the un-suffixed form for comparison.
+                var primary_bin = symlink_name;
                 // Secondary copies need a distinct symlink so they don't overwrite the primary's.
                 if (copy_suffix != "") {
                     symlink_name = symlink_name + copy_suffix;
@@ -759,7 +762,7 @@ namespace AppManager.Core {
 
                 // Install additional desktop entries from usr/share/applications/ (issue #106).
                 // No-op when AppImage has no sub-entries; never aborts the install on failure.
-                install_extra_desktop_entries(record, exec_path, assets_path, temp_dir);
+                install_extra_desktop_entries(record, exec_path, assets_path, temp_dir, primary_bin);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
@@ -1124,9 +1127,13 @@ namespace AppManager.Core {
         /**
          * Removes previously-installed extra desktop entries / icons / symlinks for this record.
          * Called before re-installing extras on upgrade so stale paths don't linger.
+         * The primary entry's desktop file and bin symlink are skipped: sub-entries that only
+         * re-point the primary command list them as their own target, and by the time this runs
+         * the primary pass has already (re)created both.
          */
         private void remove_extra_entries(InstallationRecord record) {
             foreach (var path in record.extra_desktop_files ?? new string[0]) {
+                if (path == record.desktop_file) continue;
                 try {
                     var f = File.new_for_path(path);
                     if (f.query_exists()) f.delete(null);
@@ -1135,6 +1142,7 @@ namespace AppManager.Core {
                 }
             }
             foreach (var path in record.extra_icon_paths ?? new string[0]) {
+                if (path == record.icon_path) continue;
                 try {
                     var f = File.new_for_path(path);
                     if (f.query_exists()) f.delete(null);
@@ -1143,6 +1151,7 @@ namespace AppManager.Core {
                 }
             }
             foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
+                if (path == record.bin_symlink) continue;
                 try {
                     var f = File.new_for_path(path);
                     if (f.query_exists()) f.delete(null);
@@ -1156,15 +1165,20 @@ namespace AppManager.Core {
         }
 
         /**
-         * Install all .desktop entries from usr/share/applications/ inside the AppImage
-         * (issue #106 — multi-component AppImages like WPS Office). For each sub-entry:
-         *  - resolve sub-binary name from its Exec
-         *  - create a ~/.local/bin/<name> symlink to the AppImage (multi-call dispatch via argv[0])
-         *  - extract its referenced icon from usr/share/icons/hicolor or usr/share/pixmaps
-         *  - rewrite the .desktop (Exec/Icon/Uninstall) and install to ~/.local/share/applications/
+         * Install the .desktop entries from usr/share/applications/ inside the AppImage that the
+         * AppImage actually ships a command for (issue #106 — multi-component AppImages such as
+         * office suites, which present several separate menu entries).
+         *
+         * Bundling a whole toolkit or runtime commonly drags its background-service entries along
+         * too (helper daemons, settings modules, protocol helpers). Those point at binaries the
+         * AppImage keeps under libexec, or does not contain at all, so requiring the Exec binary to
+         * be a real command keeps them out of $PATH and the menu. Each accepted entry gets a
+         * ~/.local/bin/<name> symlink to the AppImage (multi-call dispatch via argv[0]); entries
+         * that share a binary share the one command.
+         *
          * Tracks all created paths on the record for clean uninstall. No-op when no extras present.
          */
-        private void install_extra_desktop_entries(InstallationRecord record, string exec_path, string assets_path, string temp_root) {
+        private void install_extra_desktop_entries(InstallationRecord record, string exec_path, string assets_path, string temp_root, string primary_bin) {
             string[] extras;
             try {
                 extras = AppImageAssets.extract_extra_desktop_entries(assets_path, temp_root);
@@ -1184,6 +1198,12 @@ namespace AppManager.Core {
             var installed_symlinks = new Gee.ArrayList<string>();
             var sub_args           = new Gee.ArrayList<string>();
 
+            // Sub-binary -> the Exec target its entries point at, "" when the AppImage ships no such
+            // command. Memoised so a binary shared by several entries is probed and symlinked once.
+            // The primary command always exists, so it never needs probing.
+            var targets = new Gee.HashMap<string, string>();
+            targets.set(primary_bin, record.bin_symlink ?? exec_path);
+
             foreach (var sub_path in extras) {
                 try {
                     var sub_entry = new DesktopEntry(sub_path);
@@ -1199,10 +1219,23 @@ namespace AppManager.Core {
                         debug("Skipping sub-desktop %s: unusable binary token %s", sub_path, base_token);
                         continue;
                     }
+                    var dest = Path.build_filename(AppPaths.desktop_dir, Path.get_basename(sub_path));
+                    if (dest == record.desktop_file) {
+                        // The AppImage's root .desktop is a symlink into usr/share/applications/, so
+                        // it shows up here too — the primary pass already installed it.
+                        continue;
+                    }
 
-                    var sym = create_bin_symlink(exec_path, sub_bin);
-                    if (sym == null) {
-                        warning("Failed to create symlink for sub-binary %s; skipping %s", sub_bin, sub_path);
+                    if (!targets.has_key(sub_bin)) {
+                        string? sym = null;
+                        if (AppImageAssets.has_bundled_binary(assets_path, temp_root, sub_bin)) {
+                            sym = create_bin_symlink(exec_path, sub_bin);
+                        }
+                        targets.set(sub_bin, sym ?? "");
+                    }
+                    var target = targets.get(sub_bin);
+                    if (target == "") {
+                        debug("Skipping sub-desktop %s: %s is not a command in the AppImage", sub_path, sub_bin);
                         continue;
                     }
 
@@ -1224,18 +1257,12 @@ namespace AppManager.Core {
                     }
 
                     var pristine_args = DesktopEntry.extract_exec_arguments(sub_exec) ?? "";
-                    var contents = rewrite_sub_desktop(sub_path, sym, icon_name_for_desktop, pristine_args, record);
-                    var dest = Path.build_filename(AppPaths.desktop_dir, Path.get_basename(sub_path));
+                    var contents = rewrite_sub_desktop(sub_path, target, icon_name_for_desktop, pristine_args, record);
                     Utils.FileUtils.ensure_parent(dest);
                     if (!GLib.FileUtils.set_contents(dest, contents)) {
                         warning("Failed to write sub-desktop %s", dest);
-                        // Roll back the symlink we just created for this entry
-                        try {
-                            var sym_file = File.new_for_path(sym);
-                            if (sym_file.query_exists()) sym_file.delete(null);
-                        } catch (Error e) {
-                            debug("Cleanup of failed sub-symlink %s: %s", sym, e.message);
-                        }
+                        // Roll back this entry's icon, and the command too when no entry uses it yet
+                        // (dropping it from the memo lets a sibling recreate it).
                         if (installed_icon_path != null) {
                             try {
                                 var icon_file = File.new_for_path(installed_icon_path);
@@ -1244,11 +1271,20 @@ namespace AppManager.Core {
                                 debug("Cleanup of failed sub-icon %s: %s", installed_icon_path, e.message);
                             }
                         }
+                        if (target != record.bin_symlink && !installed_symlinks.contains(target)) {
+                            try {
+                                var sym_file = File.new_for_path(target);
+                                if (sym_file.query_exists()) sym_file.delete(null);
+                            } catch (Error e) {
+                                debug("Cleanup of failed sub-symlink %s: %s", target, e.message);
+                            }
+                            targets.unset(sub_bin);
+                        }
                         continue;
                     }
 
                     installed_desktops.add(dest);
-                    installed_symlinks.add(sym);
+                    installed_symlinks.add(target);
                     sub_args.add("%s=%s".printf(Path.get_basename(dest), pristine_args));
                     if (installed_icon_path != null) {
                         installed_icons.add(installed_icon_path);

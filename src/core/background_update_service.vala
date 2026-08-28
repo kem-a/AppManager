@@ -190,6 +190,26 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         /**
+         * Async variant of kill_daemon_and_wait(): runs the same blocking
+         * wait on a worker thread so the caller's main loop keeps spinning.
+         * Calling the synchronous version from the UI thread stalls it for
+         * up to 5 seconds, long enough for the desktop shell to declare the
+         * window unresponsive and offer its "Wait / Force Quit" dialog.
+         */
+        public static async bool kill_daemon_and_wait_async() {
+            SourceFunc callback = kill_daemon_and_wait_async.callback;
+            bool was_running = false;
+
+            new Thread<void>("kill-update-daemon", () => {
+                was_running = kill_daemon_and_wait();
+                Idle.add((owned) callback);
+            });
+
+            yield;
+            return was_running;
+        }
+
+        /**
          * Checks if the background daemon is already running.
          * Public so PreferencesDialog can check before migration.
          */
