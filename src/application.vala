@@ -16,8 +16,8 @@ namespace AppManager {
         private HashSet<string> owned_lock_files = new HashSet<string>();
         // Stale self portable folders already flagged to the user (notice fires once per dir)
         private HashSet<string> notified_stale_dirs = new HashSet<string>();
-        // Temp dirs holding appmgr:// downloads, removed on shutdown
-        private HashSet<string> appmgr_download_dirs = new HashSet<string>();
+        // Temp dirs holding appimg:// downloads, removed on shutdown
+        private HashSet<string> appimg_download_dirs = new HashSet<string>();
         private static bool opt_version = false;
         private static bool opt_help = false;
         private static bool opt_background_update = false;
@@ -265,10 +265,10 @@ Examples:
         }
 
         protected override void shutdown() {
-            foreach (var dir in appmgr_download_dirs) {
+            foreach (var dir in appimg_download_dirs) {
                 Utils.FileUtils.remove_dir_recursive(dir);
             }
-            appmgr_download_dirs.clear();
+            appimg_download_dirs.clear();
             base.shutdown();
         }
 
@@ -304,9 +304,9 @@ Examples:
                 return;
             }
             foreach (var file in files) {
-                // Browsers hand appmgr:// deep links over as URIs, not paths.
-                if (file.get_uri_scheme() == APPMGR_URI_SCHEME) {
-                    handle_appmgr_uri(file.get_uri());
+                // Browsers hand appimg:// deep links over as URIs, not paths.
+                if (file.get_uri_scheme() == APPIMG_URI_SCHEME) {
+                    handle_appimg_uri(file.get_uri());
                     continue;
                 }
                 show_drop_window(file);
@@ -314,33 +314,33 @@ Examples:
         }
 
         /**
-         * Handles an `appmgr://install?url=…&sha256=…` link: download with
+         * Handles an `appimg://install?url=…&sha256=…` link: download with
          * integrity checks, then hand the file to the normal install flow.
          */
-        private void handle_appmgr_uri(string uri) {
+        private void handle_appimg_uri(string uri) {
             // No activate(): a web install shows only the installer, never the app list.
-            AppmgrLink link;
+            AppimgLink link;
             try {
-                link = AppmgrLink.parse(uri);
+                link = AppimgLink.parse(uri);
             } catch (Error e) {
-                present_appmgr_error(_("Invalid install link"), e.message);
+                present_appimg_error(_("Invalid install link"), e.message);
                 return;
             }
 
             string download_dir;
             try {
-                download_dir = Utils.FileUtils.create_temp_dir("appmgr-download-");
+                download_dir = Utils.FileUtils.create_temp_dir("appimg-download-");
             } catch (Error e) {
-                present_appmgr_error(_("Download failed"), e.message);
+                present_appimg_error(_("Download failed"), e.message);
                 return;
             }
-            appmgr_download_dirs.add(download_dir);
+            appimg_download_dirs.add(download_dir);
 
             var cancellable = new GLib.Cancellable();
             if (settings.get_boolean("skip-drop-window")) {
-                download_appmgr_link_with_dialog(link, download_dir, cancellable);
+                download_appimg_link_with_dialog(link, download_dir, cancellable);
             } else {
-                download_appmgr_link_in_drop_window(link, download_dir, cancellable);
+                download_appimg_link_in_drop_window(link, download_dir, cancellable);
             }
         }
 
@@ -348,7 +348,7 @@ Examples:
          * Default path: the drag-and-drop installer opens right away and shows
          * the download on the app icon.
          */
-        private void download_appmgr_link_in_drop_window(AppmgrLink link, string download_dir,
+        private void download_appimg_link_in_drop_window(AppimgLink link, string download_dir,
                                                           GLib.Cancellable cancellable) {
             var destination = Path.build_filename(download_dir, link.filename);
             var window = new DropWindow.for_download(this, registry, installer, settings,
@@ -357,19 +357,19 @@ Examples:
             window.present();
 
             var progress_id = Timeout.add(200, () => {
-                window.set_download_progress(appmgr_progress_fraction(link), appmgr_progress_text(link));
+                window.set_download_progress(appimg_progress_fraction(link), appimg_progress_text(link));
                 return Source.CONTINUE;
             });
 
             this.hold();
-            run_appmgr_download.begin(link, download_dir, cancellable, progress_id, window, null);
+            run_appimg_download.begin(link, download_dir, cancellable, progress_id, window, null);
         }
 
         /**
          * Used when the drop window is disabled: the simple install dialog with
          * an icon and progress bar, which then becomes the install prompt.
          */
-        private void download_appmgr_link_with_dialog(AppmgrLink link, string download_dir,
+        private void download_appimg_link_with_dialog(AppimgLink link, string download_dir,
                                                        GLib.Cancellable cancellable) {
             var icon = new Gtk.Image.from_icon_name("application-x-executable");
             icon.set_pixel_size(64);
@@ -406,7 +406,7 @@ Examples:
             dialog.present();
 
             var progress_id = Timeout.add(200, () => {
-                var fraction = appmgr_progress_fraction(link);
+                var fraction = appimg_progress_fraction(link);
                 if (fraction >= 0.0) {
                     progress_bar.fraction = fraction;
                 } else {
@@ -417,16 +417,16 @@ Examples:
 
             // The dialog may be the only window; do not quit mid-download.
             this.hold();
-            run_appmgr_download.begin(link, download_dir, cancellable, progress_id, null, dialog);
+            run_appimg_download.begin(link, download_dir, cancellable, progress_id, null, dialog);
         }
 
         // The download thread only updates counters; the UI polls them.
-        private double appmgr_progress_fraction(AppmgrLink link) {
+        private double appimg_progress_fraction(AppimgLink link) {
             var total = link.total_bytes;
             return total > 0 ? (double)link.received_bytes / (double)total : -1.0;
         }
 
-        private string appmgr_progress_text(AppmgrLink link) {
+        private string appimg_progress_text(AppimgLink link) {
             var received = link.received_bytes;
             var total = link.total_bytes;
             if (total > 0) {
@@ -438,14 +438,14 @@ Examples:
             return _("Starting…");
         }
 
-        private async void run_appmgr_download(AppmgrLink link, string download_dir,
+        private async void run_appimg_download(AppimgLink link, string download_dir,
                                                GLib.Cancellable cancellable, uint progress_id,
                                                DropWindow? window, DialogWindow? dialog) {
-            SourceFunc callback = run_appmgr_download.callback;
+            SourceFunc callback = run_appimg_download.callback;
             string? downloaded_path = null;
             Error? error = null;
 
-            new Thread<void>("appmgr-download", () => {
+            new Thread<void>("appimg-download", () => {
                 try {
                     downloaded_path = link.download(download_dir, cancellable);
                 } catch (Error e) {
@@ -463,7 +463,7 @@ Examples:
                     dialog.close();
                 }
                 Utils.FileUtils.remove_dir_recursive(download_dir);
-                appmgr_download_dirs.remove(download_dir);
+                appimg_download_dirs.remove(download_dir);
                 var cancelled = error != null && error is IOError.CANCELLED;
                 if (window != null) {
                     // Cancelling means the window is already gone.
@@ -471,7 +471,7 @@ Examples:
                         window.download_failed(error != null ? error.message : _("Download failed"));
                     }
                 } else if (!cancelled) {
-                    present_appmgr_error(_("Download failed"), error.message);
+                    present_appimg_error(_("Download failed"), error.message);
                 }
             } else if (window != null) {
                 window.download_completed(downloaded_path, link.sha256 != null);
@@ -483,7 +483,7 @@ Examples:
             this.release();
         }
 
-        private void present_appmgr_error(string title, string message) {
+        private void present_appimg_error(string title, string message) {
             var dialog = new Adw.AlertDialog(title, message);
             dialog.add_response("close", _("Close"));
             dialog.set_close_response("close");
@@ -1023,11 +1023,11 @@ Examples:
             // Handle non-option arguments (file paths)
             var args = command_line.get_arguments();
 
-            // appmgr:// links arrive as a plain argument (Exec=… %u), so they are
+            // appimg:// links arrive as a plain argument (Exec=… %u), so they are
             // routed before the file handling below.
             for (int i = 1; i < args.length; i++) {
-                if (args[i].has_prefix(APPMGR_URI_SCHEME + ":")) {
-                    handle_appmgr_uri(args[i]);
+                if (args[i].has_prefix(APPIMG_URI_SCHEME + ":")) {
+                    handle_appimg_uri(args[i]);
                     return 0;
                 }
             }
