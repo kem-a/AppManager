@@ -2,7 +2,7 @@
 
 src/application.vala
 src/main.vala
-src/core/appmgr_link.vala
+src/core/appimg_link.vala
 src/core/background_update_service.vala
 src/core/installer.vala
 src/core/path_migration_service.vala

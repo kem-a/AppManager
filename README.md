@@ -27,7 +27,7 @@ AppManager doesn't require FUSE to run, thanks to the [uruntime](https://github.
 - **Side-by-side installs**: Install multiple copies or versions of the same app; extra copies get a numbered suffix (e.g. `Bitwarden` and `Bitwarden 2`) with their own desktop entries and icons.
 - **Desktop integration**: Extracts the bundled `.desktop` file via `unsquashfs` or `dwarfsextract`, rewrites `Exec` and `Icon`, and stores it in `~/.local/share/applications`.
 - **Simple uninstall**: Right click in app drawer and choose `Move to Trash`, can uninstall in AppManager or simply delete from `~/Applications` folder.
-- **One-click installs from the web**: Registers the `x-scheme-handler/appmgr` handler, so an `appmgr://install?url=…&sha256=…` link on a store page (e.g. AppHub) downloads the AppImage — only over HTTPS, verified against the size and SHA-256 in the link — and hands it to the normal install flow.
+- **One-click installs from the web**: Registers the `x-scheme-handler/appimg` handler, so an `appimg://install?url=…&sha256=…` link on a store page (e.g. AppHub) downloads the AppImage — only over HTTPS, verified against the size and SHA-256 in the link — and hands it to the normal install flow.
 - **Install registry + preferences**: Main window lists installed apps, default mode, and cleanup behaviors, all stored with GSettings.
 - **Background app updates**: Optional automatic update checks with configurable interval (daily, weekly, monthly) and notifications when updates are found.
 - **GitHub authentication**: Optionally store a GitHub personal access token to raise the API rate limit from 60 to 5,000 requests per hour. The token is kept in the system keyring (GNOME Keyring, KWallet, KeePassXC) when a Secret Service is available, and otherwise in an AES-256-GCM blob bound to the machine and user account, so a synced or copied config file is useless elsewhere.
@@ -114,7 +114,7 @@ meson install -C build
 - Check if installed: `app-manager --is-installed /path/to/app.AppImage`
 - Run a background update check: `app-manager --background-update`
 - Show version or help: `app-manager --version` / `app-manager --help`
-- Open a web install link: `app-manager 'appmgr://install?url=https://host/App.AppImage&sha256=<hex>'`
+- Open a web install link: `app-manager 'appimg://install?url=https://host/App.AppImage&sha256=<hex>'`
 
 ## Translations
 

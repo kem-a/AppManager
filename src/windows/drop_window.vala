@@ -19,7 +19,7 @@ namespace AppManager {
         private Application app_ref;
         private InstallationRegistry registry;
         private Installer installer;
-        // Null only while an appmgr:// download has not landed yet.
+        // Null only while an appimg:// download has not landed yet.
         private AppImageMetadata? metadata;
         private Gtk.Image app_icon;
         private Gtk.Image folder_icon;
@@ -59,7 +59,7 @@ namespace AppManager {
         private bool spinner_install_active = false;
         private Settings settings;
 
-        // Pending appmgr:// download: progress on the icon, nothing installable yet.
+        // Pending appimg:// download: progress on the icon, nothing installable yet.
         private bool downloading = false;
         private Gtk.ProgressBar? download_progress = null;
         
@@ -95,7 +95,7 @@ namespace AppManager {
         }
 
         /**
-         * Opens the installer for an appmgr:// link whose download is still
+         * Opens the installer for an appimg:// link whose download is still
          * running; download_completed() swaps in the real AppImage.
          */
         public DropWindow.for_download(Application app, InstallationRegistry registry, Installer installer,

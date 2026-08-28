@@ -1,9 +1,9 @@
 using GLib;
 
 namespace AppManager.Core {
-    public const string APPMGR_URI_SCHEME = "appmgr";
+    public const string APPIMG_URI_SCHEME = "appimg";
 
-    public errordomain AppmgrLinkError {
+    public errordomain AppimgLinkError {
         INVALID_LINK,
         UNSUPPORTED_ACTION,
         INSECURE_URL,
@@ -12,11 +12,11 @@ namespace AppManager.Core {
     }
 
     /**
-     * A parsed `appmgr://install?url=…&sha256=…` deep link from a web store.
+     * A parsed `appimg://install?url=…&sha256=…` deep link from a web store.
      * Nothing in it is trusted: https only, the file name is rebuilt, and the
      * declared size/checksum are enforced against the bytes received.
      */
-    public class AppmgrLink : Object {
+    public class AppimgLink : Object {
         public string url { get; private set; }
         public string host { get; private set; }
         public string filename { get; private set; }
@@ -41,30 +41,30 @@ namespace AppManager.Core {
         public int64 received_bytes = 0;
         public int64 total_bytes = -1;
 
-        private AppmgrLink() {
+        private AppimgLink() {
             size = -1;
         }
 
-        public static AppmgrLink parse(string link) throws AppmgrLinkError {
+        public static AppimgLink parse(string link) throws AppimgLinkError {
             Uri uri;
             try {
                 uri = Uri.parse(link, UriFlags.NONE);
             } catch (Error e) {
-                throw new AppmgrLinkError.INVALID_LINK(_("This is not a valid install link."));
+                throw new AppimgLinkError.INVALID_LINK(_("This is not a valid install link."));
             }
 
-            if (uri.get_scheme() != APPMGR_URI_SCHEME) {
-                throw new AppmgrLinkError.INVALID_LINK(_("This is not a valid install link."));
+            if (uri.get_scheme() != APPIMG_URI_SCHEME) {
+                throw new AppimgLinkError.INVALID_LINK(_("This is not a valid install link."));
             }
 
-            // appmgr://install?… carries the action in the host, appmgr:install?…
+            // appimg://install?… carries the action in the host, appimg:install?…
             // in the path.
             var action = uri.get_host();
             if (action == null || action.strip() == "") {
                 action = (uri.get_path() ?? "").replace("/", "").strip();
             }
             if (action != "install") {
-                throw new AppmgrLinkError.UNSUPPORTED_ACTION(
+                throw new AppimgLinkError.UNSUPPORTED_ACTION(
                     _("Unsupported install link action “%s”.").printf(action));
             }
 
@@ -72,12 +72,12 @@ namespace AppManager.Core {
             try {
                 params = Uri.parse_params(uri.get_query() ?? "", -1, "&", UriParamsFlags.NONE);
             } catch (Error e) {
-                throw new AppmgrLinkError.INVALID_LINK(_("The install link is malformed."));
+                throw new AppimgLinkError.INVALID_LINK(_("The install link is malformed."));
             }
 
             var raw_url = params.lookup("url");
             if (raw_url == null || raw_url.strip() == "") {
-                throw new AppmgrLinkError.INVALID_LINK(_("The install link carries no download URL."));
+                throw new AppimgLinkError.INVALID_LINK(_("The install link carries no download URL."));
             }
             var download_url = raw_url.strip();
 
@@ -85,18 +85,18 @@ namespace AppManager.Core {
             try {
                 target = Uri.parse(download_url, UriFlags.NONE);
             } catch (Error e) {
-                throw new AppmgrLinkError.INVALID_LINK(_("The download URL in the install link is malformed."));
+                throw new AppimgLinkError.INVALID_LINK(_("The download URL in the install link is malformed."));
             }
             if (target.get_scheme() != "https") {
-                throw new AppmgrLinkError.INSECURE_URL(
+                throw new AppimgLinkError.INSECURE_URL(
                     _("Only https downloads are allowed, but this link points to %s.").printf(target.get_scheme() ?? "?"));
             }
             var target_host = target.get_host();
             if (target_host == null || target_host.strip() == "") {
-                throw new AppmgrLinkError.INVALID_LINK(_("The download URL in the install link has no host."));
+                throw new AppimgLinkError.INVALID_LINK(_("The download URL in the install link has no host."));
             }
 
-            var result = new AppmgrLink();
+            var result = new AppimgLink();
             result.url = download_url;
             result.host = target_host;
             result.name = clean_text(params.lookup("name"));
@@ -107,7 +107,7 @@ namespace AppManager.Core {
             if (raw_sha256 != null && raw_sha256.strip() != "") {
                 var digest = raw_sha256.strip().down();
                 if (digest.length != 64 || !is_hex(digest)) {
-                    throw new AppmgrLinkError.INVALID_LINK(
+                    throw new AppimgLinkError.INVALID_LINK(
                         _("The install link carries a malformed SHA-256 checksum."));
                 }
                 result.sha256 = digest;
@@ -117,7 +117,7 @@ namespace AppManager.Core {
             if (raw_size != null && raw_size.strip() != "") {
                 int64 declared;
                 if (!int64.try_parse(raw_size.strip(), out declared) || declared <= 0) {
-                    throw new AppmgrLinkError.INVALID_LINK(_("The install link carries a malformed size."));
+                    throw new AppimgLinkError.INVALID_LINK(_("The install link carries a malformed size."));
                 }
                 result.size = declared;
             }
@@ -163,7 +163,7 @@ namespace AppManager.Core {
                     while ((read = input.read(buffer, cancellable)) > 0) {
                         received_bytes += read;
                         if (size > 0 && received_bytes > size) {
-                            throw new AppmgrLinkError.SIZE_MISMATCH(
+                            throw new AppimgLinkError.SIZE_MISMATCH(
                                 _("The download is larger than the install link declared."));
                         }
                         checksum.update(buffer, (size_t)read);
@@ -173,11 +173,11 @@ namespace AppManager.Core {
                     input.close(cancellable);
 
                     if (size > 0 && received_bytes != size) {
-                        throw new AppmgrLinkError.SIZE_MISMATCH(
+                        throw new AppimgLinkError.SIZE_MISMATCH(
                             _("The download is smaller than the install link declared."));
                     }
                     if (sha256 != null && checksum.get_string() != sha256) {
-                        throw new AppmgrLinkError.CHECKSUM_MISMATCH(
+                        throw new AppimgLinkError.CHECKSUM_MISMATCH(
                             _("The downloaded file does not match the checksum in the install link."));
                     }
                 });
