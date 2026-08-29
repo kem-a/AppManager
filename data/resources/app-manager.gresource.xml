@@ -9,6 +9,7 @@
     <file compressed="true" alias="icons/hicolor/scalable/status/verify-failed.svg">../icons/verify-failed.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/status/verify-warning.svg">../icons/verify-warning.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/actions/external-link-symbolic.svg">../icons/external-link-symbolic.svg</file>
+    <file compressed="true" alias="icons/hicolor/scalable/actions/chip-symbolic.svg">../icons/chip-symbolic.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/actions/qrcode-symbolic.svg">../icons/qrcode-symbolic.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/actions/github-symbolic.svg">../icons/github-symbolic.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/apps/com.github.AppManager.svg">../icons/hicolor/scalable/apps/com.github.AppManager.svg</file>

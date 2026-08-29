@@ -15,6 +15,8 @@ namespace AppManager {
         private Gtk.Button? reset_button = null;
         private Gtk.Button? apply_button = null;
         private Adw.ActionRow? thumbnailer_row = null;
+        private Adw.PreferencesGroup? global_dirs_group = null;
+        private Gee.ArrayList<Adw.ActionRow> global_dir_rows = new Gee.ArrayList<Adw.ActionRow>();
         private const string GTK_CONFIG_SUBDIR = "gtk-4.0";
         private const string APP_CSS_FILENAME = "AppManager.css";
         private const string APP_CSS_IMPORT_LINE = "@import url(\"AppManager.css\");";
@@ -32,7 +34,7 @@ namespace AppManager {
             this.registry = registry;
             this.directory_monitor = directory_monitor;
             this.set_title(_("Preferences"));
-            this.content_height = 650;
+            this.content_height = 700;
             build_ui();
             
             // Remove focus from entry row when dialog is shown
@@ -61,7 +63,8 @@ namespace AppManager {
 
             var install_dir_row = new Adw.EntryRow();
             install_dir_row.title = _("Installation directory");
-            
+            install_dir_row.add_prefix(new Gtk.Image.from_icon_name("folder-symbolic"));
+
             // Get current value - show actual path or placeholder for default
             var current_custom = settings.get_string("applications-dir");
             if (current_custom != null && current_custom.strip() != "") {
@@ -106,27 +109,17 @@ namespace AppManager {
             var skip_drop_row = new Adw.SwitchRow();
             skip_drop_row.title = _("Skip drag-and-drop window");
             skip_drop_row.subtitle = _("Show install dialog directly when opening AppImages");
+            skip_drop_row.add_prefix(new Gtk.Image.from_icon_name("window-new-symbolic"));
             settings.bind("skip-drop-window", skip_drop_row, "active", GLib.SettingsBindFlags.DEFAULT);
-
-            var portable_home_row = new Adw.SwitchRow();
-            portable_home_row.title = _("Portable .home by default");
-            portable_home_row.subtitle = _("Create a .home folder next to every newly installed AppImage");
-            settings.bind("portable-home-default", portable_home_row, "active", GLib.SettingsBindFlags.DEFAULT);
-
-            var portable_config_row = new Adw.SwitchRow();
-            portable_config_row.title = _("Portable .config by default");
-            portable_config_row.subtitle = _("Create a .config folder next to every newly installed AppImage");
-            settings.bind("portable-config-default", portable_config_row, "active", GLib.SettingsBindFlags.DEFAULT);
 
             var sanitize_filenames_row = new Adw.SwitchRow();
             sanitize_filenames_row.title = _("Keep file extension name");
             sanitize_filenames_row.subtitle = _("Replace spaces with underscores in installed filenames and keep the .AppImage extension");
+            sanitize_filenames_row.add_prefix(new Gtk.Image.from_icon_name("text-x-generic-symbolic"));
             settings.bind("sanitize-filenames-default", sanitize_filenames_row, "active", GLib.SettingsBindFlags.DEFAULT);
 
             install_group.add(install_dir_row);
             install_group.add(skip_drop_row);
-            install_group.add(portable_home_row);
-            install_group.add(portable_config_row);
             install_group.add(sanitize_filenames_row);
             page.add(install_group);
 
@@ -155,6 +148,7 @@ namespace AppManager {
             var auto_check_expander = new Adw.ExpanderRow();
             auto_check_expander.title = _("Background update check");
             auto_check_expander.subtitle = _("Will notify when new app updates are available");
+            auto_check_expander.add_prefix(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
             auto_check_expander.show_enable_switch = true;
             settings.bind("auto-check-updates", auto_check_expander, "enable-expansion", GLib.SettingsBindFlags.DEFAULT);
             this.auto_check_expander = auto_check_expander;
@@ -167,12 +161,14 @@ namespace AppManager {
             var auto_update_row = new Adw.SwitchRow();
             auto_update_row.title = _("Auto update apps");
             auto_update_row.subtitle = _("Will update apps automatically in background");
+            auto_update_row.add_prefix(new Gtk.Image.from_icon_name("view-refresh-symbolic"));
             settings.bind("auto-update-apps", auto_update_row, "active", GLib.SettingsBindFlags.DEFAULT);
             this.auto_update_row = auto_update_row;
 
             // Check interval (inside expander)
             var interval_row = new Adw.ComboRow();
             interval_row.title = _("Check interval");
+            interval_row.add_prefix(new Gtk.Image.from_icon_name("alarm-symbolic"));
             var interval_model = new Gtk.StringList(null);
             interval_model.append(_("Daily"));
             interval_model.append(_("Weekly"));
@@ -206,6 +202,7 @@ namespace AppManager {
             thumbnailer_row = new Adw.ActionRow();
             thumbnailer_row.title = _("AppImage Thumbnailer");
             thumbnailer_row.subtitle = _("Install appimage-thumbnailer to generate thumbnails for AppImages");
+            thumbnailer_row.add_prefix(new Gtk.Image.from_icon_name("image-x-generic-symbolic"));
             thumbnailer_row.activatable = true;
             thumbnailer_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
             thumbnailer_row.activated.connect(() => {
@@ -216,6 +213,7 @@ namespace AppManager {
             var thumbnail_background_row = new Adw.SwitchRow();
             thumbnail_background_row.title = _("Hide Nautilus thumbnail background");
             thumbnail_background_row.subtitle = _("Remove the alpha checkerboard behind thumbnails and icons");
+            thumbnail_background_row.add_prefix(new Gtk.Image.from_icon_name("preferences-desktop-appearance-symbolic"));
             settings.bind("remove-thumbnail-checkerboard", thumbnail_background_row, "active", GLib.SettingsBindFlags.DEFAULT);
 
             settings.changed["remove-thumbnail-checkerboard"].connect(() => {
@@ -231,6 +229,7 @@ namespace AppManager {
 
             var token_row = new Adw.PasswordEntryRow();
             token_row.title = _( "Personal access token");
+            token_row.add_prefix(new Gtk.Image.from_icon_name("dialog-password-symbolic"));
 
             var current_token = TokenStore.get_token();
             if (current_token != null && current_token.strip() != "") {
@@ -272,6 +271,7 @@ namespace AppManager {
             var token_test_row = new Adw.ActionRow();
             token_test_row.title = _( "Test token");
             token_test_row.subtitle = _( "Verify your token works and check rate limit status");
+            token_test_row.add_prefix(new Gtk.Image.from_icon_name("object-select-symbolic"));
 
             var test_spinner = new Gtk.Spinner();
             test_spinner.visible = false;
@@ -301,6 +301,7 @@ namespace AppManager {
             var token_help_row = new Adw.ActionRow();
             token_help_row.title = _( "Create a token on GitHub");
             token_help_row.subtitle = _( "Fine-grained token with read-only public repo access is sufficient");
+            token_help_row.add_prefix(new Gtk.Image.from_icon_name("help-about-symbolic"));
             token_help_row.activatable = true;
             token_help_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
             token_help_row.activated.connect(() => {
@@ -309,17 +310,7 @@ namespace AppManager {
             github_group.add(token_help_row);
 
             var security_group = new Adw.PreferencesGroup();
-            security_group.title = _("Security");
-
-            var default_sandbox_row = new Adw.SwitchRow();
-            default_sandbox_row.title = _("Sandbox new apps by default");
-            default_sandbox_row.subtitle = _("New installations start on the Standard profile. Apps already installed are left alone.");
-            settings.bind("default-sandbox-enabled", default_sandbox_row, "active", GLib.SettingsBindFlags.DEFAULT);
-            if (!AppPaths.sandbox_available) {
-                default_sandbox_row.sensitive = false;
-                default_sandbox_row.subtitle = _("Install the bubblewrap and xdg-dbus-proxy packages to use this.");
-            }
-            security_group.add(default_sandbox_row);
+            security_group.add(build_security_action_row());
 
             page.add(updates_group);
             page.add(security_group);
@@ -329,6 +320,206 @@ namespace AppManager {
             this.add(page);
 
             apply_thumbnail_background_preference(settings.get_boolean("remove-thumbnail-checkerboard"));
+        }
+
+        private Adw.ActionRow build_security_action_row() {
+            var row = new Adw.ActionRow();
+            // ActionRow titles are Pango markup, so a bare "&" is invalid and the title
+            // silently fails to render. Keep the string clean for translators.
+            row.title = Markup.escape_text(_("Security & Privacy"));
+            row.subtitle = _("App sandboxing and the folders every sandboxed app may use");
+            row.add_prefix(new Gtk.Image.from_icon_name("security-high-symbolic"));
+            row.add_suffix(new Gtk.Image.from_icon_name("go-next-symbolic"));
+            row.activatable = true;
+            row.activated.connect(() => {
+                this.push_subpage(build_security_page());
+            });
+            return row;
+        }
+
+        /**
+         * The Security & Privacy subpage: whether new installations are sandboxed, and
+         * the folders every sandboxed app is granted on top of its own permissions.
+         */
+        private Adw.NavigationPage build_security_page() {
+            var page = new Adw.PreferencesPage();
+
+            // A separate mechanism from sandboxing, and listed first for that reason.
+            // They are still alternatives, not layers: only the AppImage runtime reads
+            // a portable folder, and a sandboxed app never runs it, so switching either
+            // side on switches the other off rather than leaving a dead folder behind.
+            var portable_group = new Adw.PreferencesGroup();
+            portable_group.title = _("Portable folders");
+            portable_group.description = _("Give new apps a .home or .config folder next to the AppImage, so their data travels with the file. The AppImage runtime is what reads these, and a sandboxed app never runs it, so turning either of these on turns sandboxing by default off.");
+
+            var portable_home_row = new Adw.SwitchRow();
+            portable_home_row.title = _("Portable .home by default");
+            portable_home_row.subtitle = _("Create a .home folder next to every newly installed AppImage");
+            portable_home_row.add_prefix(new Gtk.Image.from_icon_name("user-home-symbolic"));
+            settings.bind("portable-home-default", portable_home_row, "active", GLib.SettingsBindFlags.DEFAULT);
+            portable_group.add(portable_home_row);
+
+            var portable_config_row = new Adw.SwitchRow();
+            portable_config_row.title = _("Portable .config by default");
+            portable_config_row.subtitle = _("Create a .config folder next to every newly installed AppImage");
+            portable_config_row.add_prefix(new Gtk.Image.from_icon_name("emblem-system-symbolic"));
+            settings.bind("portable-config-default", portable_config_row, "active", GLib.SettingsBindFlags.DEFAULT);
+            portable_group.add(portable_config_row);
+            page.add(portable_group);
+
+            var sandbox_group = new Adw.PreferencesGroup();
+            sandbox_group.title = _("App sandboxing");
+
+            var warning_row = new Adw.ActionRow();
+            // ActionRow titles are Pango markup, so the emphasis goes in the string.
+            warning_row.title = _("Sandboxing is <b>experimental</b>");
+            // ActionRow subtitles are Pango markup, so this string must stay free of
+            // bare ampersands or it silently fails to render.
+            warning_row.subtitle = _("Sandboxed apps may misbehave or stop working entirely. If an app breaks, turn its sandbox off in that app's security settings.");
+            var warning_icon = new Gtk.Image.from_icon_name("dialog-warning-symbolic");
+            warning_icon.add_css_class("warning");
+            warning_row.add_prefix(warning_icon);
+            sandbox_group.add(warning_row);
+
+            var default_sandbox_row = new Adw.SwitchRow();
+            default_sandbox_row.title = _("Sandbox new apps by default");
+            default_sandbox_row.subtitle = _("New installations start on the Standard profile. Apps already installed are left alone.");
+            default_sandbox_row.add_prefix(new Gtk.Image.from_icon_name("security-high-symbolic"));
+            settings.bind("default-sandbox-enabled", default_sandbox_row, "active", GLib.SettingsBindFlags.DEFAULT);
+            if (!AppPaths.sandbox_available) {
+                default_sandbox_row.sensitive = false;
+                default_sandbox_row.subtitle = _("Install the bubblewrap and xdg-dbus-proxy packages to use this.");
+            }
+            sandbox_group.add(default_sandbox_row);
+            page.add(sandbox_group);
+
+            bool exclusive_suppress = false;
+            default_sandbox_row.notify["active"].connect(() => {
+                if (exclusive_suppress || !default_sandbox_row.active) {
+                    return;
+                }
+                exclusive_suppress = true;
+                portable_home_row.active = false;
+                portable_config_row.active = false;
+                exclusive_suppress = false;
+            });
+            void on_portable_default_toggled() {
+                if (exclusive_suppress
+                    || !(portable_home_row.active || portable_config_row.active)) {
+                    return;
+                }
+                exclusive_suppress = true;
+                default_sandbox_row.active = false;
+                exclusive_suppress = false;
+            }
+            portable_home_row.notify["active"].connect(() => on_portable_default_toggled());
+            portable_config_row.notify["active"].connect(() => on_portable_default_toggled());
+
+            // The subpage is rebuilt on every visit, so rows tracked for the previous
+            // group must be forgotten rather than removed from this fresh one.
+            global_dir_rows.clear();
+            global_dirs_group = new Adw.PreferencesGroup();
+            global_dirs_group.title = _("Global folder access");
+            global_dirs_group.description = _("Folders every sandboxed app may read and write, in addition to its own permissions. A symlink only works if you also add the folder it points at.");
+            global_dirs_group.sensitive = AppPaths.sandbox_available;
+
+            var add_folder_button = new Gtk.Button.from_icon_name("list-add-symbolic");
+            add_folder_button.valign = Gtk.Align.CENTER;
+            add_folder_button.tooltip_text = _("Add folder");
+            add_folder_button.add_css_class("flat");
+            add_folder_button.clicked.connect(on_add_global_dir);
+            global_dirs_group.header_suffix = add_folder_button;
+
+            page.add(global_dirs_group);
+            reload_global_dir_rows();
+
+            var toolbar = new Adw.ToolbarView();
+            toolbar.add_top_bar(new Adw.HeaderBar());
+            toolbar.set_content(page);
+            return new Adw.NavigationPage(toolbar, _("Security & Privacy"));
+        }
+
+        private void reload_global_dir_rows() {
+            foreach (var row in global_dir_rows) {
+                global_dirs_group.remove(row);
+            }
+            global_dir_rows.clear();
+
+            foreach (var entry in SandboxConfig.global_extra_dirs()) {
+                var path = SandboxConfig.strip_access_suffix(entry);
+                var row = new Adw.ActionRow();
+                row.title = Path.get_basename(path);
+                row.subtitle = path;
+                row.add_prefix(new Gtk.Image.from_icon_name("folder-symbolic"));
+
+                var remove_button = new Gtk.Button.from_icon_name("user-trash-symbolic");
+                remove_button.valign = Gtk.Align.CENTER;
+                remove_button.tooltip_text = _("Remove folder");
+                remove_button.add_css_class("flat");
+                remove_button.clicked.connect(() => remove_global_dir(path));
+                row.add_suffix(remove_button);
+
+                global_dirs_group.add(row);
+                global_dir_rows.add(row);
+            }
+        }
+
+        private void store_global_dirs(Gee.List<string> entries) {
+            // set_strv reads until a NULL, but Gee's to_array only counts elements, and
+            // valac drops the length - so the setter runs off the end and segfaults.
+            // One extra slot, zero-initialised, is the terminator.
+            var value = new string[entries.size + 1];
+            for (int i = 0; i < entries.size; i++) {
+                value[i] = entries[i];
+            }
+            settings.set_strv("sandbox-global-dirs", value);
+            // Manifests hold the resolved folder list, so they have to be rewritten for
+            // the change to reach apps before the next AppManager start.
+            if (registry != null && SandboxConfig.refresh_all(registry.list())) {
+                registry.persist(false);
+            }
+            reload_global_dir_rows();
+        }
+
+        private void remove_global_dir(string path) {
+            var kept = new Gee.ArrayList<string>();
+            foreach (var entry in SandboxConfig.global_extra_dirs()) {
+                if (SandboxConfig.strip_access_suffix(entry) != path) {
+                    kept.add(entry);
+                }
+            }
+            store_global_dirs(kept);
+        }
+
+        private void on_add_global_dir() {
+            var dialog = new Gtk.FileDialog();
+            dialog.title = _("Select Folder to Share");
+            dialog.modal = true;
+            dialog.select_folder.begin(this.get_root() as Gtk.Window, null, (obj, res) => {
+                try {
+                    var folder = dialog.select_folder.end(res);
+                    var selected = folder != null ? folder.get_path() : null;
+                    if (selected == null || selected.strip() == "") {
+                        return;
+                    }
+                    // Store the real target, not a symlink to it: bwrap cannot mount
+                    // onto a symlink. Same reasoning as the per-app folder list.
+                    var path = SandboxConfig.canonicalize(selected.strip());
+                    var dirs = new Gee.ArrayList<string>();
+                    foreach (var entry in SandboxConfig.global_extra_dirs()) {
+                        if (SandboxConfig.strip_access_suffix(entry) == path) {
+                            return;
+                        }
+                        dirs.add(entry);
+                    }
+                    dirs.add("%s:rw".printf(path));
+                    store_global_dirs(dirs);
+                } catch (Error e) {
+                    if (!(e is IOError.CANCELLED)) {
+                        warning("Failed to select sandbox folder: %s", e.message);
+                    }
+                }
+            });
         }
 
         private void handle_auto_update_toggle(bool enabled) {

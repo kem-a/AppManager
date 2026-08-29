@@ -136,6 +136,30 @@ namespace AppManager.Core {
         }
 
         /**
+         * A granted-folder entry without its ":rw" access suffix.
+         */
+        public static string strip_access_suffix(string entry) {
+            var trimmed = entry.strip();
+            return trimmed.has_suffix(":rw") ? trimmed.substring(0, trimmed.length - 3) : trimmed;
+        }
+
+        /**
+         * Folders the user granted to every sandboxed app, in the same "path[:rw]"
+         * form as a record's own extra dirs. Empty entries are dropped so a stale
+         * GSettings value cannot turn into a bind of "".
+         */
+        public static string[] global_extra_dirs() {
+            var settings = new Settings(APPLICATION_ID);
+            var kept = new Gee.ArrayList<string>();
+            foreach (var entry in settings.get_strv("sandbox-global-dirs")) {
+                if (entry != null && entry.strip() != "") {
+                    kept.add(entry.strip());
+                }
+            }
+            return kept.to_array();
+        }
+
+        /**
          * Writes a record's manifest, or removes it when the record is not sandboxed.
          * Single entry point so callers never have to think about which of the two
          * they want.

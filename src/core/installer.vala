@@ -85,10 +85,43 @@ namespace AppManager.Core {
         }
 
         /**
+         * True when a portable folder holds something worth migrating. An empty one
+         * still has to go, but it raises no question about what to do with it.
+         */
+        public static bool has_portable_data(InstallationRecord record) {
+            foreach (var path in new string[] { get_portable_home_path(record),
+                                                get_portable_config_path(record) }) {
+                if (GLib.FileUtils.test(path, FileTest.IS_DIR)
+                    && !Utils.FileUtils.dir_is_effectively_empty(path)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * True when the sandboxed home exists at all. Uninstall offers to keep or
+         * remove user data, and for a sandboxed app this folder is all of it.
+         */
+        public static bool has_sandbox_home(InstallationRecord record) {
+            return GLib.FileUtils.test(SandboxConfig.sandbox_home_path(record), FileTest.IS_DIR);
+        }
+
+        /**
+         * True when the sandboxed home already holds data of its own, which is what
+         * turns migrating the portable folders in from a move into a choice.
+         */
+        public static bool sandbox_home_has_data(InstallationRecord record) {
+            var path = SandboxConfig.sandbox_home_path(record);
+            return GLib.FileUtils.test(path, FileTest.IS_DIR)
+                && !Utils.FileUtils.dir_is_effectively_empty(path);
+        }
+
+        /**
          * Creates the .home folder next to the AppImage. Safe to call if it already exists.
          */
         public void create_portable_home(InstallationRecord record) {
-            if (!portable_mode_applicable(record) || is_self_record(record)) {
+            if (!portable_mode_applicable(record) || is_self_record(record) || record.sandbox_enabled()) {
                 return;
             }
             DirUtils.create_with_parents(get_portable_home_path(record), 0755);
@@ -98,10 +131,103 @@ namespace AppManager.Core {
          * Creates the .config folder next to the AppImage. Safe to call if it already exists.
          */
         public void create_portable_config(InstallationRecord record) {
-            if (!portable_mode_applicable(record) || is_self_record(record)) {
+            if (!portable_mode_applicable(record) || is_self_record(record) || record.sandbox_enabled()) {
                 return;
             }
             DirUtils.create_with_parents(get_portable_config_path(record), 0755);
+        }
+
+        /**
+         * Moves the app's portable folders into its sandboxed home, so switching the
+         * sandbox on does not leave the app's data behind.
+         *
+         * It has to move rather than be read in place: only the AppImage runtime reads
+         * a portable folder, and a sandboxed launch never runs it - the payload is
+         * mounted outside and AppRun is executed directly. So a .home left where it is
+         * would simply stop being read.
+         *
+         * .home is the app's $HOME and so is the sandboxed home, so its contents cross
+         * over directly. .config is the app's $XDG_CONFIG_HOME, which the sandbox does
+         * not set, so it lands in .config inside that home.
+         *
+         * The sources are removed rather than emptied. An empty .home is still adopted
+         * by the runtime on an unsandboxed launch, and the details window reads the
+         * folder's existence as the toggle's state, so leaving one behind would make
+         * both lie.
+         *
+         * With `replace`, whatever the sandboxed home already held is deleted first.
+         * Otherwise it wins every name collision, which is what the conflict dialog
+         * offers as "Merge".
+         */
+        public void migrate_portable_to_sandbox(InstallationRecord record, bool replace) {
+            if (!portable_mode_applicable(record) || !has_portable_folders(record)) {
+                return;
+            }
+            var sandbox = SandboxConfig.sandbox_home_path(record);
+            if (replace && GLib.FileUtils.test(sandbox, FileTest.IS_DIR)) {
+                Utils.FileUtils.remove_dir_recursive(sandbox);
+            }
+            if (DirUtils.create_with_parents(sandbox, 0700) != 0) {
+                warning("Cannot create sandboxed home %s: %s", sandbox, Posix.strerror(Posix.errno));
+                return;
+            }
+            // .config first. With both folders active the runtime points
+            // XDG_CONFIG_HOME at .config, which makes any .config *inside* .home stale
+            // leftovers from before it was turned on. Moving the live copy in first
+            // means the stale one loses the name collision rather than winning it.
+            move_into(get_portable_config_path(record), Path.build_filename(sandbox, ".config"));
+            move_into(get_portable_home_path(record), sandbox);
+        }
+
+        /**
+         * Moves every entry of `source` into `dest` and then removes `source`.
+         *
+         * A name already taken in `dest` is descended into when both sides are
+         * directories, and otherwise left alone: the destination copy wins, which is
+         * the merge rule the dialog states. Names are collected before anything moves,
+         * since moving entries out from under a live enumerator is not defined.
+         */
+        private static void move_into(string source, string dest) {
+            if (!GLib.FileUtils.test(source, FileTest.IS_DIR)) {
+                return;
+            }
+            if (DirUtils.create_with_parents(dest, 0700) != 0) {
+                warning("Cannot create %s: %s", dest, Posix.strerror(Posix.errno));
+                return;
+            }
+            var names = new Gee.ArrayList<string>();
+            try {
+                var dir = Dir.open(source);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    names.add(name);
+                }
+            } catch (FileError e) {
+                warning("Cannot read %s: %s", source, e.message);
+                return;
+            }
+
+            foreach (var name in names) {
+                var child = Path.build_filename(source, name);
+                var target = Path.build_filename(dest, name);
+                if (GLib.FileUtils.test(target, FileTest.EXISTS)) {
+                    if (GLib.FileUtils.test(child, FileTest.IS_DIR)
+                        && GLib.FileUtils.test(target, FileTest.IS_DIR)
+                        && !GLib.FileUtils.test(child, FileTest.IS_SYMLINK)) {
+                        move_into(child, target);
+                    }
+                    continue;
+                }
+                try {
+                    File.new_for_path(child).move(File.new_for_path(target),
+                        FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
+                } catch (Error e) {
+                    warning("Failed to move %s to %s: %s", child, target, e.message);
+                }
+            }
+            // Anything still here lost a name collision, and the user was told the
+            // sandbox copy would be kept.
+            Utils.FileUtils.remove_dir_recursive(source);
         }
 
         private void remove_portable_folder_at(string path, bool to_trash) {

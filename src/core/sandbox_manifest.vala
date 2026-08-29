@@ -87,8 +87,19 @@ namespace AppManager.Core {
             if (record.sandbox_allow_music)     dirs.add("music");
             m.xdg_dirs = dirs.to_array();
 
-            var extras = new Gee.ArrayList<string>();
+            // The app's own folders first, then the ones granted to every sandboxed
+            // app, so a folder listed in both keeps the app's own access mode.
+            var requested = new Gee.ArrayList<string>();
             foreach (var entry in record.sandbox_extra_dirs ?? new string[0]) {
+                requested.add(entry);
+            }
+            foreach (var entry in SandboxConfig.global_extra_dirs()) {
+                requested.add(entry);
+            }
+
+            var extras = new Gee.ArrayList<string>();
+            var seen = new Gee.HashSet<string>();
+            foreach (var entry in requested) {
                 if (entry == null || entry.strip() == "") {
                     continue;
                 }
@@ -98,6 +109,9 @@ namespace AppManager.Core {
                 // Resolve here as well as when the UI stores it, so entries written by
                 // an older build are corrected too. See SandboxConfig.canonicalize.
                 path = SandboxConfig.canonicalize(path);
+                if (!seen.add(path)) {
+                    continue;
+                }
                 extras.add(writable ? "%s:rw".printf(path) : path);
             }
             m.extra_dirs = extras.to_array();

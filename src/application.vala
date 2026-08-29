@@ -1269,6 +1269,7 @@ Examples:
                     if (restored_path != null && restored_path.strip() != "") {
                         restore_trashed_portable_folder("%s.home".printf(restored_path));
                         restore_trashed_portable_folder("%s.config".printf(restored_path));
+                        restore_trashed_portable_folder("%s.sandbox".printf(restored_path));
                     }
                 } catch (Error e) {
                     error = e;

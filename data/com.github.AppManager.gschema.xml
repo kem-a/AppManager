@@ -101,5 +101,10 @@
       <summary>Sandbox newly installed apps by default</summary>
       <description>When enabled, new installations start on the Standard sandbox profile. Existing apps are never changed.</description>
     </key>
+    <key name="sandbox-global-dirs" type="as">
+      <default>[]</default>
+      <summary>Folders granted to every sandboxed app</summary>
+      <description>Folder paths every sandboxed app may read and write, in addition to its own permissions. Each entry may carry a ':rw' suffix for write access.</description>
+    </key>
   </schema>
 </schemalist>

@@ -179,10 +179,40 @@ namespace AppManager.Core {
          * The renderers then run unsandboxed *within* this sandbox, which is the same
          * position flatpak's Electron apps are in without zypak: the outer sandbox is
          * the boundary that matters.
+         *
+         * Where the helper sits depends on who built the AppImage: electron-builder
+         * leaves it at the AppDir root, sharun puts it in bin/, and an AppDir assembled
+         * by hand can nest it a level deeper still - so the AppDir is searched rather
+         * than one path probed.
          */
         private bool needs_no_sandbox() {
-            return GLib.FileUtils.test(Path.build_filename(mount_dir, "chrome-sandbox"),
-                                       FileTest.EXISTS);
+            return has_chrome_sandbox(mount_dir, 3);
+        }
+
+        private bool has_chrome_sandbox(string dir, int depth) {
+            if (GLib.FileUtils.test(Path.build_filename(dir, "chrome-sandbox"),
+                                    FileTest.EXISTS)) {
+                return true;
+            }
+            if (depth <= 1) {
+                return false;
+            }
+            try {
+                var entries = Dir.open(dir);
+                string? name;
+                while ((name = entries.read_name()) != null) {
+                    var child = Path.build_filename(dir, name);
+                    if (GLib.FileUtils.test(child, FileTest.IS_SYMLINK)
+                        || !GLib.FileUtils.test(child, FileTest.IS_DIR)) {
+                        continue;
+                    }
+                    if (has_chrome_sandbox(child, depth - 1)) {
+                        return true;
+                    }
+                }
+            } catch (FileError e) {
+            }
+            return false;
         }
 
         // ── composition ─────────────────────────────────────────────────────────
@@ -354,6 +384,14 @@ namespace AppManager.Core {
             setenv("HOME", home);
             setenv("SHELL", "/bin/sh");
             setenv("XDG_RUNTIME_DIR", runtime_base);
+
+            // gvfs cannot work behind the filtered bus: its peer-to-peer route needs a
+            // writable $XDG_RUNTIME_DIR/gvfsd, which the runtime tmpfs does not have, and
+            // the session-bus fallback has no org.gtk.vfs.* rules. Left enabled it warns
+            // once per file operation, so GIO is told to use its local backend instead.
+            if (!manifest.full_session_bus) {
+                setenv("GIO_USE_VFS", "local");
+            }
 
             foreach (var name in new string[] {
                 "USER", "LOGNAME", "LANG", "LANGUAGE", "TERM", "COLORTERM",
