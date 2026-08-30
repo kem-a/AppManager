@@ -71,7 +71,8 @@ namespace AppManager.Utils {
                 if (!File.new_for_path(path).query_exists()) {
                     return;
                 }
-                var enumerator = File.new_for_path(path).enumerate_children("standard::name", FileQueryInfoFlags.NONE);
+                var enumerator = File.new_for_path(path).enumerate_children(
+                    "standard::name,standard::type", FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
                 FileInfo info;
                 while ((info = enumerator.next_file()) != null) {
                     var child = enumerator.get_child(info);
