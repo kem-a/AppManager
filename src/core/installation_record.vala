@@ -23,6 +23,10 @@ namespace AppManager.Core {
         public string[]? extra_desktop_files { get; set; }   // ~/.local/share/applications/<name>.desktop
         public string[]? extra_icon_paths    { get; set; }   // ~/.local/share/icons/<name>.<ext>
         public string[]? extra_bin_symlinks  { get; set; }   // ~/.local/bin/<sub-binary>
+        // Name the "Add to PATH" toggle could not claim in ~/.local/bin because a file AppManager
+        // did not create already uses it; carries the reason out to the toast. Not persisted.
+        // Installs report the same conflict via the warning in create_bin_symlink (issue #175).
+        public string? bin_conflict_slug { get; set; }
         public int64 installed_at { get; set; }
         public int64 updated_at { get; set; default = 0; }
         // Copy index for side-by-side installs of the same app. 0 means the primary

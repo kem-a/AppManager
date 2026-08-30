@@ -755,7 +755,7 @@ namespace AppManager.Core {
                 // Default is to create a bin symlink. Terminal apps always do.
                 // Otherwise the user can opt out via custom_add_to_path = "false".
                 if (record.is_terminal || record.custom_add_to_path != "false") {
-                    record.bin_symlink = create_bin_symlink(exec_path, symlink_name);
+                    record.bin_symlink = create_bin_symlink(exec_path, symlink_name, record.installed_path, null);
                 } else {
                     record.bin_symlink = null;
                 }
@@ -802,7 +802,8 @@ namespace AppManager.Core {
                 if (record.icon_path != null && File.new_for_path(record.icon_path).query_exists()) {
                     File.new_for_path(record.icon_path).delete(null);
                 }
-                if (record.bin_symlink != null && File.new_for_path(record.bin_symlink).query_exists()) {
+                // Only unlink what we created
+                if (record.bin_symlink != null && bin_symlink_is_ours(record.bin_symlink, record.installed_path)) {
                     File.new_for_path(record.bin_symlink).delete(null);
                 }
 
@@ -816,8 +817,7 @@ namespace AppManager.Core {
                     if (f.query_exists()) f.delete(null);
                 }
                 foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
-                    var f = File.new_for_path(path);
-                    if (f.query_exists()) f.delete(null);
+                    if (bin_symlink_is_ours(path, record.installed_path)) File.new_for_path(path).delete(null);
                 }
 
                 // Remove AppImage portable folders (.home/.config) unless the caller is
@@ -860,7 +860,7 @@ namespace AppManager.Core {
                 if (record.icon_path != null && File.new_for_path(record.icon_path).query_exists()) {
                     File.new_for_path(record.icon_path).delete(null);
                 }
-                if (record.bin_symlink != null && File.new_for_path(record.bin_symlink).query_exists()) {
+                if (record.bin_symlink != null && bin_symlink_is_ours(record.bin_symlink, record.installed_path)) {
                     File.new_for_path(record.bin_symlink).delete(null);
                 }
                 foreach (var path in record.extra_desktop_files ?? new string[0]) {
@@ -872,8 +872,7 @@ namespace AppManager.Core {
                     if (f.query_exists()) f.delete(null);
                 }
                 foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
-                    var f = File.new_for_path(path);
-                    if (f.query_exists()) f.delete(null);
+                    if (bin_symlink_is_ours(path, record.installed_path)) File.new_for_path(path).delete(null);
                 }
             } catch (Error e) {
                 warning("Failed to cleanup after installation error: %s", e.message);
@@ -1153,8 +1152,7 @@ namespace AppManager.Core {
             foreach (var path in record.extra_bin_symlinks ?? new string[0]) {
                 if (path == record.bin_symlink) continue;
                 try {
-                    var f = File.new_for_path(path);
-                    if (f.query_exists()) f.delete(null);
+                    if (bin_symlink_is_ours(path, record.installed_path)) File.new_for_path(path).delete(null);
                 } catch (Error e) {
                     debug("Failed to remove extra bin symlink %s: %s", path, e.message);
                 }
@@ -1229,7 +1227,7 @@ namespace AppManager.Core {
                     if (!targets.has_key(sub_bin)) {
                         string? sym = null;
                         if (AppImageAssets.has_bundled_binary(assets_path, temp_root, sub_bin)) {
-                            sym = create_bin_symlink(exec_path, sub_bin);
+                            sym = create_bin_symlink(exec_path, sub_bin, record.installed_path, null);
                         }
                         targets.set(sub_bin, sym ?? "");
                     }
@@ -1490,26 +1488,68 @@ namespace AppManager.Core {
             }
         }
 
-        private string? create_bin_symlink(string exec_path, string slug) {
+        /**
+         * Whether <path> is a symlink AppManager created, i.e. one pointing into the applications
+         * directory. A real binary, a user script or another package's symlink is not ours to
+         * replace or delete (issue #175). Queried NOFOLLOW so a link left dangling by a removed
+         * app still counts as ours.
+         */
+        private static bool bin_symlink_is_ours(string path, string? installed_path = null) {
             try {
-                var bin_dir = AppPaths.local_bin_dir;
-                
-                var symlink_path = Path.build_filename(bin_dir, slug);
-                var symlink_file = File.new_for_path(symlink_path);
-                
-                // Remove existing symlink if it exists
-                if (symlink_file.query_exists()) {
+                var info = File.new_for_path(path).query_info(
+                    FileAttribute.STANDARD_IS_SYMLINK + "," + FileAttribute.STANDARD_SYMLINK_TARGET,
+                    FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+                if (!info.get_is_symlink()) {
+                    return false;
+                }
+                var target = info.get_symlink_target();
+                if (target == null) {
+                    return false;
+                }
+                if (AppPaths.is_inside_applications_dir(target)) {
+                    return true;
+                }
+                // A folder migration that partly failed still switches the configured directory, so
+                // an app left behind sits outside it — its own link is ours all the same. Extracted
+                // installs link to <installed_path>/AppRun, hence the prefix.
+                if (installed_path == null || installed_path.strip() == "") {
+                    return false;
+                }
+                return target == installed_path || target.has_prefix(installed_path + "/");
+            } catch (Error e) {
+                return false;   // absent, or unreadable: nothing we may touch
+            }
+        }
+
+        /**
+         * Symlink <slug> in the user bin dir to the AppImage. Links we own are replaced, so
+         * upgrades keep working once a name is established; anything else is left alone and
+         * `name_taken` is set (issue #175 — this used to delete whatever was there).
+         */
+        private string? create_bin_symlink(string exec_path, string slug, string? installed_path, out bool name_taken) {
+            name_taken = false;
+            var symlink_path = Path.build_filename(AppPaths.local_bin_dir, slug);
+            var symlink_file = File.new_for_path(symlink_path);
+
+            try {
+                if (bin_symlink_is_ours(symlink_path, installed_path)) {
                     symlink_file.delete(null);
                 }
-                
-                // Create symlink
+                // Nothing was deleted for a foreign occupant, so this fails with EXISTS and is the
+                // existence check too — no window between looking and linking.
                 symlink_file.make_symbolic_link(exec_path, null);
-                debug("Created symlink: %s -> %s", symlink_path, exec_path);
-                return symlink_path;
             } catch (Error e) {
-                warning("Failed to create symlink for %s: %s", slug, e.message);
+                if (e is IOError.EXISTS) {
+                    name_taken = true;
+                    warning("Not linking %s: it exists and was not created by AppManager", symlink_path);
+                } else {
+                    warning("Failed to create symlink for %s: %s", slug, e.message);
+                }
                 return null;
             }
+
+            debug("Created symlink: %s -> %s", symlink_path, exec_path);
+            return symlink_path;
         }
 
         public bool ensure_bin_symlink_for_record(InstallationRecord record, string exec_path, string slug) {
@@ -1517,7 +1557,9 @@ namespace AppManager.Core {
                 return false;
             }
 
-            var link = create_bin_symlink(exec_path, slug);
+            bool name_taken;
+            var link = create_bin_symlink(exec_path, slug, record.installed_path, out name_taken);
+            record.bin_conflict_slug = name_taken ? slug : null;
             if (link == null) {
                 return false;
             }
@@ -1567,9 +1609,8 @@ namespace AppManager.Core {
                 return true;
             }
             try {
-                var file = File.new_for_path(record.bin_symlink);
-                if (file.query_exists()) {
-                    file.delete(null);
+                if (bin_symlink_is_ours(record.bin_symlink, record.installed_path)) {
+                    File.new_for_path(record.bin_symlink).delete(null);
                     debug("Removed symlink: %s", record.bin_symlink);
                 }
                 record.bin_symlink = null;

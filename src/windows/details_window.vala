@@ -1064,7 +1064,13 @@ namespace AppManager {
                         record.custom_add_to_path = null;
                         registry.update(record, false);
                     } else {
+                        // The switch snapping back on its own says nothing about why (issue #175).
+                        var conflict = record.bin_conflict_slug;
                         path_row.active = false;
+                        if (conflict != null) {
+                            show_toast(_("Not added to $PATH: '%s' already exists in %s")
+                                .printf(conflict, AppPaths.local_bin_dir));
+                        }
                     }
                 } else {
                     if (installer.remove_bin_symlink_for_record(record)) {
@@ -1437,6 +1443,14 @@ namespace AppManager {
                 }
             });
             dialog.present(this);
+        }
+
+        /** Routes a message to the main window's toast overlay this page lives in. */
+        private void show_toast(string message) {
+            var window = this.get_root() as MainWindow;
+            if (window != null) {
+                window.add_toast(message);
+            }
         }
 
         private void update_path_banner_visibility() {

@@ -1000,6 +1000,25 @@ Examples:
             });
         }
 
+        /**
+         * Anchor a command-line path to the directory the user typed it in. A remote invocation is
+         * executed by the running primary instance, whose own cwd is wherever the GUI was launched
+         * from (usually $HOME), so relative paths must be resolved against the caller's cwd that
+         * GLib passes along. Arguments that name no existing file are left alone, since uninstall
+         * and update also accept a checksum.
+         */
+        private static string resolve_cli_path(GLib.ApplicationCommandLine command_line, string path) {
+            if (Path.is_absolute(path)) {
+                return path;
+            }
+            var cwd = command_line.get_cwd();
+            if (cwd == null || cwd.strip() == "") {
+                return path;
+            }
+            var candidate = Path.build_filename(cwd, path);
+            return GLib.FileUtils.test(candidate, FileTest.EXISTS) ? candidate : path;
+        }
+
         protected override int command_line(GLib.ApplicationCommandLine command_line) {
             // Extract options from the command line (works for both local and remote invocations)
             var opts = command_line.get_options_dict();
@@ -1048,6 +1067,11 @@ Examples:
                     cmd_update = args[2];
                 }
             }
+
+            if (cmd_install != null) cmd_install = resolve_cli_path(command_line, cmd_install);
+            if (cmd_uninstall != null) cmd_uninstall = resolve_cli_path(command_line, cmd_uninstall);
+            if (cmd_update != null) cmd_update = resolve_cli_path(command_line, cmd_update);
+            if (cmd_is_installed != null) cmd_is_installed = resolve_cli_path(command_line, cmd_is_installed);
             debug("command_line: got %u args", args.length);
             for (int _k = 0; _k < args.length; _k++)
                 debug("command_line arg[%d] = %s", _k, args[_k]);
@@ -1068,7 +1092,7 @@ Examples:
                     if (arg.has_prefix("file://")) {
                         file_list.add(File.new_for_uri(arg));
                     } else {
-                        file_list.add(File.new_for_path(arg));
+                        file_list.add(File.new_for_path(resolve_cli_path(command_line, arg)));
                     }
                 }
             }
