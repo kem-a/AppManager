@@ -40,7 +40,7 @@ namespace AppManager.Core {
      * Returns null if locale is "C", "POSIX", or could not be determined.
      */
     public string? get_locale_code() {
-        // get_language_names() returns e.g. ["lv_LV", "lv", "C"] — pick the shortest non-C code
+        // get_language_names() returns e.g. ["lv_LV", "lv", "C"] - pick the shortest non-C code
         var langs = Intl.get_language_names();
         string? best = null;
         foreach (var lang in langs) {

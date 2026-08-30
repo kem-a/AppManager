@@ -448,7 +448,7 @@ X-XDP-Autostart=com.github.AppManager
         /**
          * Checks for staged updates on login and sends a notification only in notify-only mode.
          * This is called when the background daemon starts (on system login).
-         * When auto-update is enabled, no notification is sent — updates are installed silently.
+         * When auto-update is enabled, no notification is sent - updates are installed silently.
          */
         private void check_staged_updates_on_login() {
             if (!settings.get_boolean("auto-check-updates")) {

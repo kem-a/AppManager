@@ -86,6 +86,11 @@
       <summary>Sort by name ascending</summary>
       <description>When sorting by name, list apps A-Z instead of Z-A.</description>
     </key>
+    <key name="fuse-banner-dismissed" type="b">
+      <default>false</default>
+      <summary>FUSE warning banner dismissed</summary>
+      <description>When enabled, the banner warning about a missing FUSE installation is never shown again.</description>
+    </key>
     <key name="github-token" type="s">
       <default>''</default>
       <summary>GitHub personal access token (legacy, no longer written)</summary>

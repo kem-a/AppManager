@@ -420,7 +420,7 @@ namespace AppManager {
             }
 
             // Show the import hint (overlay) when only AppManager itself is installed.
-            // Hide it when filtered_list is empty — the empty-state page has its own button.
+            // Hide it when filtered_list is empty - the empty-state page has its own button.
             bool only_self = has_only_self_records(all_records);
             if (import_hint_widget != null) {
                 import_hint_widget.set_visible(only_self && filtered_list.size > 0);
@@ -1053,14 +1053,16 @@ namespace AppManager {
                 toolbar.add_top_bar(search_bar);
 
                 // FUSE is not installed warning banner
-                fuse_banner = new Adw.Banner(_("FUSE is not installed. Some AppImages may fail to run"));
+                fuse_banner = new Adw.Banner(_("FUSE is missing, some apps may fail to run.") +
+                    " <a href=\"https://github.com/AppImage/AppImageKit/wiki/FUSE\">" + _("Learn more") + "</a>");
+                fuse_banner.use_markup = true;
                 fuse_banner.add_css_class("warning");
-                fuse_banner.button_label = _("Learn More");
+                fuse_banner.button_label = _("Dismiss");
                 fuse_banner.button_clicked.connect(() => {
-                    var launcher = new Gtk.UriLauncher("https://github.com/AppImage/AppImageKit/wiki/FUSE");
-                    launcher.launch.begin(this, null);
+                    settings.set_boolean("fuse-banner-dismissed", true);
+                    fuse_banner.revealed = false;
                 });
-                fuse_banner.revealed = !is_fuse_installed();
+                fuse_banner.revealed = !is_fuse_installed() && !settings.get_boolean("fuse-banner-dismissed");
                 toolbar.add_top_bar(fuse_banner);
 
                 // Frozen "My Apps" title bar with view mode toggle
@@ -1534,7 +1536,7 @@ namespace AppManager {
         private void finalize_single_update(UpdateResult result) {
             var key = record_state_key(result.record);
             updating_records.remove(key);
-            // Always remove from pending — whether success or failure
+            // Always remove from pending - whether success or failure
             pending_update_keys.remove(key);
             if (result.status == UpdateStatus.UPDATED) {
                 failed_update_keys.unset(key);
@@ -1577,7 +1579,7 @@ namespace AppManager {
                 staged_updates.save();
             }
 
-            // Remove all from pending — failures are no longer "pending"
+            // Remove all from pending - failures are no longer "pending"
             pending_update_keys.clear();
             refresh_installations();
             set_update_button_state(UpdateWorkflowState.READY_TO_CHECK);

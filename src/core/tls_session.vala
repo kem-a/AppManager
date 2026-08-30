@@ -18,7 +18,7 @@ namespace AppManager.Core {
      * underlying FUSE mount is user-private.
      *
      * Instead of creating the symlinks once at AppRun startup (the
-     * quick-sharun default — neutralized in scripts/make-anyimage.sh),
+     * quick-sharun default - neutralized in scripts/make-anyimage.sh),
      * we create them only around active network fetches and remove them
      * right after. A process-local refcount lets nested calls share one
      * set of symlinks; a /tmp flock serializes between AppManager
@@ -51,8 +51,8 @@ namespace AppManager.Core {
                 _instance = new TlsSession();
                 // Reap our /tmp symlinks on any normal process exit (GUI
                 // close, daemon stop, CLI one-shot) so a session that ends
-                // before reaching release() — e.g. the window closed
-                // mid-fetch — doesn't orphan them. Signals/crashes aren't
+                // before reaching release() - e.g. the window closed
+                // mid-fetch - doesn't orphan them. Signals/crashes aren't
                 // covered; cleanup_stale() reaps those next launch.
                 Posix.atexit(at_exit_cleanup);
             }
@@ -88,7 +88,7 @@ namespace AppManager.Core {
         /**
          * One-shot cleanup at app startup. Removes any of our own
          * symlinks left behind by a previous crash. Never blocks on
-         * flock — best-effort.
+         * flock - best-effort.
          */
         public static void cleanup_stale() {
             get_default().do_cleanup_stale();

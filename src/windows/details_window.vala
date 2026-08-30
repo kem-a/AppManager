@@ -294,7 +294,7 @@ namespace AppManager {
                 cards_box.append(hidden_card);
             }
 
-            // Web page badge — clickable, shown only when a URL is set
+            // Web page badge - clickable, shown only when a URL is set
             var web_url = record.get_effective_web_page() ?? "";
             if (web_url.strip() != "") {
                 var web_badge = new Gtk.Button();
@@ -384,7 +384,7 @@ namespace AppManager {
         private Adw.NavigationPage build_app_updates_page(Adw.ActionRow parent_row, Gtk.Label status_label) {
             var prefs_page = new Adw.PreferencesPage();
 
-            // Description group — aligned with rows via PreferencesGroup title + description
+            // Description group - aligned with rows via PreferencesGroup title + description
             var body_text = _("Update info lets AppManager fetch new builds for you. Paste the download link and AppManager will do the rest.");
             body_text += "\n\n" + _("Currently GitHub and GitLab URL formats are fully supported. Direct download links also work if the server provides Last-Modified or Content-Length headers.");
             var info_group = new Adw.PreferencesGroup();
@@ -1060,7 +1060,7 @@ namespace AppManager {
                 if (path_row.active) {
                     if (installer.ensure_bin_symlink_for_record(record, exec_path, symlink_name)) {
                         symlink_exists = true;
-                        // Back to default — don't persist the redundant "true" override.
+                        // Back to default - don't persist the redundant "true" override.
                         record.custom_add_to_path = null;
                         registry.update(record, false);
                     } else {

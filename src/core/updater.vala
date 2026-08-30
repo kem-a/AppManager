@@ -661,7 +661,7 @@ namespace AppManager.Core {
 
                 var latest = release.version;
                 var current = record.version;
-                // Sanitize current version — treat unparseable values (e.g. "UNKNOWN") as null
+                // Sanitize current version - treat unparseable values (e.g. "UNKNOWN") as null
                 var current_sanitized = VersionUtils.sanitize(current);
                 
                 // Version comparison: if both have valid versions, compare them
@@ -729,7 +729,7 @@ namespace AppManager.Core {
 
                 var latest = release.version;
                 var current = record.version;
-                // Sanitize current version — treat unparseable values (e.g. "UNKNOWN") as null
+                // Sanitize current version - treat unparseable values (e.g. "UNKNOWN") as null
                 var current_sanitized = VersionUtils.sanitize(current);
                 
                 // Version comparison: if both have valid versions, compare them
@@ -773,7 +773,7 @@ namespace AppManager.Core {
                             continue;
                         }
 
-                        // Verification passed — install
+                        // Verification passed - install
                         InstallationRecord? new_record = null;
                         try {
                             new_record = installer.upgrade(download.file_path, record);
@@ -1116,11 +1116,11 @@ namespace AppManager.Core {
             }
 
             if (normalize_app_name(desktop_name) == normalize_app_name(record_name)) {
-                return null; // Match — verification passed
+                return null; // Match - verification passed
             }
 
             // Secondary copies carry a " N" suffix that the candidate's bundled
-            // .desktop Name won't have — compare against the base name instead.
+            // .desktop Name won't have - compare against the base name instead.
             if (record.copy_index >= 2) {
                 var base_name = InstallationRegistry.base_name_of(record.original_name ?? record_name);
                 if (normalize_app_name(desktop_name) == normalize_app_name(base_name)) {
@@ -1531,7 +1531,7 @@ namespace AppManager.Core {
                 remote_sha1 = zsync_info.sha1.strip().down();
             }
             
-            // SHA-1 is required — without it we cannot reliably determine update state
+            // SHA-1 is required - without it we cannot reliably determine update state
             if (remote_sha1 == null) {
                 warning("probe_zsync[%s]: zsync header has no SHA-1, treating as malformed", record.name ?? record.id);
                 return new UpdateProbeResult(record, false, null, null, _("Malformed zsync file (no checksum)"));
@@ -1541,7 +1541,7 @@ namespace AppManager.Core {
             // an update, a changed file almost always does. Versions are only consulted
             // to suppress auto-repackaging rebuild churn (e.g. pkgforge) where SHA-1
             // flips but the upstream version is identical. Magnitude comparison is
-            // intentionally avoided — upstreams like claude-desktop-debian publish the
+            // intentionally avoided - upstreams like claude-desktop-debian publish the
             // packaging version and the upstream Claude version in different orderings
             // across the .desktop file and the git tag, so greater-than/less-than is
             // not meaningful.
@@ -1557,7 +1557,7 @@ namespace AppManager.Core {
             }
 
             // SHA-1 differs. Only suppress if BOTH sides have a version AND they
-            // normalize to the same string — a genuine no-op rebuild (same tag,
+            // normalize to the same string - a genuine no-op rebuild (same tag,
             // same X-AppImage-Version, just a new build artifact). Pkgforge "-N"
             // bumps are preserved by normalize_for_equality and therefore treated
             // as updates.
@@ -1648,7 +1648,7 @@ namespace AppManager.Core {
                 remote_sha1 = zsync_info.sha1.strip().down();
             }
             
-            // SHA-1 is required — without it we cannot reliably determine update state
+            // SHA-1 is required - without it we cannot reliably determine update state
             if (remote_sha1 == null) {
                 warning("update_zsync[%s]: zsync header has no SHA-1, treating as malformed", record.name ?? record.id);
                 record_skipped(record, UpdateSkipReason.UNSUPPORTED_SOURCE);
@@ -1776,7 +1776,7 @@ namespace AppManager.Core {
                         if (header_url.has_prefix("http://") || header_url.has_prefix("https://")) {
                             download_url = header_url;
                         } else {
-                            // Relative URL — resolve against the zsync URL
+                            // Relative URL - resolve against the zsync URL
                             var clean_zsync = zsync_url;
                             var q = clean_zsync.index_of_char('?');
                             if (q >= 0) clean_zsync = clean_zsync.substring(0, q);
@@ -1861,7 +1861,7 @@ namespace AppManager.Core {
          * Execute zsync2 to perform delta download.
          * @param zsync_path Path to zsync2 binary
          * @param zsync_arg URL or local-file path passed to zsync2 as the .zsync source
-         * @param original_zsync_url Original (pre-redirect) .zsync URL — used only to derive a clean output filename
+         * @param original_zsync_url Original (pre-redirect) .zsync URL - used only to derive a clean output filename
          * @param zsync_info Parsed zsync header (for canonical Filename)
          * @param record Installation record (for fallback filename)
          * @param seed_path Path to existing AppImage to use as seed
@@ -1871,7 +1871,7 @@ namespace AppManager.Core {
          */
         private string run_zsync(string zsync_path, string zsync_arg, string original_zsync_url, ZsyncFileInfo? zsync_info, InstallationRecord record, string seed_path, string output_dir, GLib.Cancellable? cancellable) throws Error {
             // Determine output filename. Prefer (in order):
-            //   1. Filename: field from the zsync header — canonical, redirect-proof
+            //   1. Filename: field from the zsync header - canonical, redirect-proof
             //   2. Basename of the original zsync URL (pre-redirect), with any query
             //      string stripped
             //   3. Synthetic fallback based on the record id

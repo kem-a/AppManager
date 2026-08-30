@@ -263,7 +263,7 @@ namespace AppManager.Core {
          * This is what tells an app's own components apart from the background helpers that its
          * bundled runtime merely references: a multi-component AppImage ships a real command for
          * each component, whereas the service .desktop files a runtime drags along point at
-         * binaries that live under libexec — or are not in the AppImage at all.
+         * binaries that live under libexec - or are not in the AppImage at all.
          */
         public static bool has_bundled_binary(string appimage_path, string temp_root, string bin_name) {
             var name = bin_name.strip();

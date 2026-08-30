@@ -18,7 +18,7 @@ namespace AppManager.Core {
         public string? icon_path { get; set; }
         public string? bin_symlink { get; set; }
         // Additional desktop entries installed from usr/share/applications/ inside the AppImage
-        // (issue #106 — multi-component apps like WPS Office). Custom env vars and command-line
+        // (issue #106 - multi-component apps like WPS Office). Custom env vars and command-line
         // args propagate to sub-entries too; these arrays track files for cleanup on uninstall/upgrade.
         public string[]? extra_desktop_files { get; set; }   // ~/.local/share/applications/<name>.desktop
         public string[]? extra_icon_paths    { get; set; }   // ~/.local/share/icons/<name>.<ext>

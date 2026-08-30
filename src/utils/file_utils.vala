@@ -90,7 +90,7 @@ namespace AppManager.Utils {
 
         /**
          * True when the directory tree at `path` contains no regular files or
-         * symlinks — only (possibly nested) empty directories. Used to decide
+         * symlinks - only (possibly nested) empty directories. Used to decide
          * whether a leftover portable folder is safe to remove silently. On any
          * error it returns false (conservative: never treat as empty).
          */

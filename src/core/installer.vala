@@ -154,7 +154,7 @@ namespace AppManager.Core {
          * Full install flow: checks architecture, detects existing installation,
          * and either upgrades or installs. Sets is_upgrade to true if an existing
          * installation was replaced. With keep_both, an existing installation is
-         * never replaced — the app installs side by side as a numbered copy.
+         * never replaced - the app installs side by side as a numbered copy.
          */
         public InstallationRecord install_or_upgrade(string file_path, out bool is_upgrade, bool keep_both = false) throws Error {
             is_upgrade = false;
@@ -208,7 +208,7 @@ namespace AppManager.Core {
 
         public InstallationRecord reinstall(string file_path, InstallationRecord old_record, InstallMode mode) throws Error {
             // Validate new AppImage before touching the old installation.
-            // Uses the same desktop/icon extraction that install does — if the
+            // Uses the same desktop/icon extraction that install does - if the
             // new package is corrupted or badly packed, we bail out here and
             // the currently installed version stays untouched.
             validate_appimage(file_path);
@@ -233,7 +233,7 @@ namespace AppManager.Core {
 
         /**
          * Pre-flight validation: extracts metadata, desktop entry and icon
-         * from the AppImage — the same checks install_sync/finalize performs.
+         * from the AppImage - the same checks install_sync/finalize performs.
          * Throws on any problem so the caller can abort before uninstalling
          * the old version.
          */
@@ -1065,14 +1065,14 @@ namespace AppManager.Core {
          *  - inject the same Uninstall action as the primary entry (tears down whole app)
          *  - strip TryExec / DBusActivatable
          * Other fields (StartupWMClass, Categories, MimeType, NoDisplay, localized Name[xx])
-         * are intentionally left untouched — these are what distinguish each component.
+         * are intentionally left untouched - these are what distinguish each component.
          */
         private string rewrite_sub_desktop(string sub_desktop_path, string sub_binary_symlink_path, string? sub_icon_name, string pristine_args, InstallationRecord record) throws Error {
             var entry = new DesktopEntry(sub_desktop_path);
 
             // Apply the same custom env vars and command-line args as the primary entry.
             // Each component keeps its own pristine args (captured at install in original_sub_args).
-            // Only the args the user ADDED beyond the root default are appended — appending the
+            // Only the args the user ADDED beyond the root default are appended - appending the
             // whole custom string would drag the root's default field codes (e.g. %F) into the
             // component's own args. Using pristine_args (not the current Exec) avoids compounding.
             var env_prefix = build_env_prefix(record.custom_env_vars);
@@ -1164,7 +1164,7 @@ namespace AppManager.Core {
 
         /**
          * Install the .desktop entries from usr/share/applications/ inside the AppImage that the
-         * AppImage actually ships a command for (issue #106 — multi-component AppImages such as
+         * AppImage actually ships a command for (issue #106 - multi-component AppImages such as
          * office suites, which present several separate menu entries).
          *
          * Bundling a whole toolkit or runtime commonly drags its background-service entries along
@@ -1188,7 +1188,7 @@ namespace AppManager.Core {
                 return;
             }
 
-            // Clear any prior extras (upgrade path) — files on disk are stale.
+            // Clear any prior extras (upgrade path) - files on disk are stale.
             remove_extra_entries(record);
 
             var installed_desktops = new Gee.ArrayList<string>();
@@ -1220,7 +1220,7 @@ namespace AppManager.Core {
                     var dest = Path.build_filename(AppPaths.desktop_dir, Path.get_basename(sub_path));
                     if (dest == record.desktop_file) {
                         // The AppImage's root .desktop is a symlink into usr/share/applications/, so
-                        // it shows up here too — the primary pass already installed it.
+                        // it shows up here too - the primary pass already installed it.
                         continue;
                     }
 
@@ -1510,7 +1510,7 @@ namespace AppManager.Core {
                     return true;
                 }
                 // A folder migration that partly failed still switches the configured directory, so
-                // an app left behind sits outside it — its own link is ours all the same. Extracted
+                // an app left behind sits outside it - its own link is ours all the same. Extracted
                 // installs link to <installed_path>/AppRun, hence the prefix.
                 if (installed_path == null || installed_path.strip() == "") {
                     return false;
@@ -1524,7 +1524,7 @@ namespace AppManager.Core {
         /**
          * Symlink <slug> in the user bin dir to the AppImage. Links we own are replaced, so
          * upgrades keep working once a name is established; anything else is left alone and
-         * `name_taken` is set (issue #175 — this used to delete whatever was there).
+         * `name_taken` is set (issue #175 - this used to delete whatever was there).
          */
         private string? create_bin_symlink(string exec_path, string slug, string? installed_path, out bool name_taken) {
             name_taken = false;
@@ -1536,7 +1536,7 @@ namespace AppManager.Core {
                     symlink_file.delete(null);
                 }
                 // Nothing was deleted for a foreign occupant, so this fails with EXISTS and is the
-                // existence check too — no window between looking and linking.
+                // existence check too - no window between looking and linking.
                 symlink_file.make_symbolic_link(exec_path, null);
             } catch (Error e) {
                 if (e is IOError.EXISTS) {

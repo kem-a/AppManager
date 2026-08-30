@@ -4,11 +4,11 @@ namespace AppManager.Core {
      * Stores the GitHub personal access token as securely as the running
      * system allows, using two tiers tried in order:
      *
-     *   Tier 1 — the freedesktop Secret Service (GNOME Keyring, KWallet,
+     *   Tier 1 - the freedesktop Secret Service (GNOME Keyring, KWallet,
      *            KeePassXC) via libsecret. Encrypted at rest, unlocked with
      *            the login session. This is the platform-correct location.
      *
-     *   Tier 2 — a machine+user-bound AES-256-GCM blob kept in GSettings,
+     *   Tier 2 - a machine+user-bound AES-256-GCM blob kept in GSettings,
      *            used only when no Secret Service is on the bus. This is
      *            obfuscation, not strong crypto (see crypto_shim.h): it makes
      *            a synced or exfiltrated config file useless off its origin
@@ -24,7 +24,7 @@ namespace AppManager.Core {
      * so set_token()/clear_token() run only from the preferences UI.
      * get_token() never prompts: a locked or absent keyring simply yields
      * null and the caller degrades to tier 2, then env, then unauthenticated
-     * requests — the intended behaviour for the headless background service.
+     * requests - the intended behaviour for the headless background service.
      */
     public class TokenStore : Object {
         private const string LEGACY_KEY = "github-token";
@@ -134,7 +134,7 @@ namespace AppManager.Core {
          * One-time lazy migration: if the legacy plaintext key still holds a
          * token, move it into a tier and reset the legacy key. Lazy migration
          * covers both the GUI and the --background-update entry points with a
-         * single code path. Note: it cannot scrub old config backups — users
+         * single code path. Note: it cannot scrub old config backups - users
          * who care should revoke and re-issue the token.
          */
         private static void migrate_legacy() {

@@ -1166,7 +1166,7 @@ namespace AppManager {
             DirUtils.create_with_parents(applications_path, 0755);
             
             try {
-                // Always query custom-icon metadata — it can be set by any file
+                // Always query custom-icon metadata - it can be set by any file
                 // manager (Nautilus, Nemo, Caja, etc.) and must not be gated on
                 // detecting a specific desktop file, which fails inside AppImages
                 // where XDG_DATA_DIRS may not include system paths.

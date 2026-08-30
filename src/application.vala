@@ -884,7 +884,7 @@ Examples:
                 return true; // Not an AppImage, consider "installed"
             }
             // If the AppImage file no longer exists at the original path,
-            // it was likely moved during installation — treat as installed
+            // it was likely moved during installation - treat as installed
             if (!GLib.FileUtils.test(appimage, FileTest.EXISTS)) {
                 debug("AppImage no longer at original path %s, assuming installed", appimage);
                 return true;
@@ -959,12 +959,12 @@ Examples:
                     continue;
                 }
                 if (Utils.FileUtils.dir_is_effectively_empty(dir)) {
-                    // Only empty scaffolding left behind — remove silently.
+                    // Only empty scaffolding left behind - remove silently.
                     Utils.FileUtils.remove_dir_recursive(dir);
                     debug("Removed stale portable folder %s", dir);
                 } else {
                     // Contains real files (possibly apps installed while HOME was
-                    // redirected). Never delete silently — tell the user once.
+                    // redirected). Never delete silently - tell the user once.
                     present_stale_portable_dir_notice(dir);
                 }
             }
