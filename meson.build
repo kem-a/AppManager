@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '3.7.4',
+  version: '3.8.0',
   meson_version: '>=0.64.0'
 )
 
@@ -82,6 +82,7 @@ core_sources = files(
   'src/core/directory_monitor.vala',
   'src/core/app_image_metadata.vala',
   'src/core/app_image_assets.vala',
+  'src/core/fuse_support.vala',
   'src/core/desktop_entry.vala',
   'src/core/installer.vala',
   'src/core/update_sources.vala',

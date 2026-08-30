@@ -407,6 +407,7 @@ namespace AppManager {
 
             var all_records = registry.list();
             has_installations = all_records.length > 0;
+            update_fuse_banner(all_records);
             var filtered_list = new Gee.ArrayList<InstallationRecord>();
 
             foreach (var record in all_records) {
@@ -1062,7 +1063,7 @@ namespace AppManager {
                     settings.set_boolean("fuse-banner-dismissed", true);
                     fuse_banner.revealed = false;
                 });
-                fuse_banner.revealed = !is_fuse_installed() && !settings.get_boolean("fuse-banner-dismissed");
+                fuse_banner.revealed = false;  // set from update_fuse_banner() once records are known
                 toolbar.add_top_bar(fuse_banner);
 
                 // Frozen "My Apps" title bar with view mode toggle
@@ -1175,19 +1176,26 @@ namespace AppManager {
             refresh_installations();
         }
 
-        private bool is_fuse_installed() {
-            // Classic AppImage type-2 runtimes need the fusermount helper
-            // and link against libfuse.so.2. Require both so the banner
-            // shows on systems that only have FUSE 3 or are missing one half.
-            bool has_fusermount2 = GLib.Environment.find_program_in_path("fusermount") != null;
-
-            var module = GLib.Module.open("libfuse.so.2", GLib.ModuleFlags.LAZY);
-            bool has_libfuse2 = module != null;
-            if (module != null) {
-                module.close();
+        // Warn only when an installed app actually needs FUSE bits this system
+        // lacks. Apps on uruntime mount through a user namespace instead, so
+        // they never trigger the banner.
+        private void update_fuse_banner(InstallationRecord[] records) {
+            if (fuse_banner == null) {
+                return;
             }
 
-            return has_fusermount2 && has_libfuse2;
+            if (settings.get_boolean("fuse-banner-dismissed")) {
+                fuse_banner.revealed = false;
+                return;
+            }
+
+            foreach (var record in records) {
+                if (FuseSupport.record_cannot_mount(record)) {
+                    fuse_banner.revealed = true;
+                    return;
+                }
+            }
+            fuse_banner.revealed = false;
         }
 
         private void on_search_changed() {
