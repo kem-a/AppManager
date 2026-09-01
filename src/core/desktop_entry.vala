@@ -211,6 +211,42 @@ namespace AppManager.Core {
 
         // --- Static Utility Methods ---
 
+        /**
+         * Comparable form of the [Desktop Entry] group, with X-AppImage-* keys dropped.
+         * The AppDir spec allows the root .desktop to carry any filename, so a filename
+         * cannot tell the root entry apart from the payload entry it was copied from.
+         * Equal signatures mean the same launcher. Returns null if unreadable.
+         */
+        public static string? entry_signature(string desktop_path) {
+            const string group = "Desktop Entry";
+            try {
+                var kf = new KeyFile();
+                kf.load_from_file(desktop_path, KeyFileFlags.NONE);
+                if (!kf.has_group(group)) {
+                    return null;
+                }
+
+                var pairs = new Gee.ArrayList<string>();
+                foreach (var key in kf.get_keys(group)) {
+                    if (key.has_prefix("X-AppImage-")) {
+                        continue;
+                    }
+                    pairs.add("%s=%s".printf(key, kf.get_value(group, key).strip()));
+                }
+                pairs.sort();
+
+                var builder = new StringBuilder();
+                foreach (var pair in pairs) {
+                    builder.append(pair);
+                    builder.append_c('\n');
+                }
+                return builder.str;
+            } catch (Error e) {
+                debug("Failed to build desktop signature for %s: %s", desktop_path, e.message);
+                return null;
+            }
+        }
+
         public static string? parse_bin_from_apprun(string apprun_path) {
             try {
                 string contents;

@@ -762,7 +762,7 @@ namespace AppManager.Core {
 
                 // Install additional desktop entries from usr/share/applications/ (issue #106).
                 // No-op when AppImage has no sub-entries; never aborts the install on failure.
-                install_extra_desktop_entries(record, exec_path, assets_path, temp_dir, primary_bin);
+                install_extra_desktop_entries(record, exec_path, assets_path, temp_dir, primary_bin, desktop_path);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
             }
@@ -1174,9 +1174,14 @@ namespace AppManager.Core {
          * ~/.local/bin/<name> symlink to the AppImage (multi-call dispatch via argv[0]); entries
          * that share a binary share the one command.
          *
+         * The root .desktop the primary pass installed is normally a copy of one of these payload
+         * entries, so it turns up here too and must not be installed twice. Its filename is no help:
+         * the AppDir spec lets it be anything (MKVToolNix ships mkvtoolnix-gui.desktop in the root
+         * and org.bunkus.mkvtoolnix-gui.desktop in the payload), so it is matched by content.
+         *
          * Tracks all created paths on the record for clean uninstall. No-op when no extras present.
          */
-        private void install_extra_desktop_entries(InstallationRecord record, string exec_path, string assets_path, string temp_root, string primary_bin) {
+        private void install_extra_desktop_entries(InstallationRecord record, string exec_path, string assets_path, string temp_root, string primary_bin, string primary_desktop_path) {
             string[] extras;
             try {
                 extras = AppImageAssets.extract_extra_desktop_entries(assets_path, temp_root);
@@ -1187,6 +1192,9 @@ namespace AppManager.Core {
             if (extras.length == 0) {
                 return;
             }
+
+            // Signature of the bundled root entry, before rewrite_desktop() touched it.
+            var primary_signature = DesktopEntry.entry_signature(primary_desktop_path);
 
             // Clear any prior extras (upgrade path) - files on disk are stale.
             remove_extra_entries(record);
@@ -1221,6 +1229,11 @@ namespace AppManager.Core {
                     if (dest == record.desktop_file) {
                         // The AppImage's root .desktop is a symlink into usr/share/applications/, so
                         // it shows up here too - the primary pass already installed it.
+                        continue;
+                    }
+                    if (primary_signature != null && DesktopEntry.entry_signature(sub_path) == primary_signature) {
+                        // Same launcher as the root entry, only under a different filename.
+                        debug("Skipping sub-desktop %s: duplicate of the root entry", sub_path);
                         continue;
                     }
 
