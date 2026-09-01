@@ -51,6 +51,9 @@ namespace AppManager {
         // launch, so it can be reverted if the user closes the window without installing.
         private bool exec_bit_added = false;
         private uint32 original_file_mode = 0;
+        // True when the standalone launch created the .home folder, so closing the
+        // window can remove it again. A pre-existing folder is never touched.
+        private bool portable_home_created = false;
         private string resolved_app_name;
         private string? resolved_app_version = null;
         private bool is_terminal_app = false;
@@ -197,12 +200,14 @@ namespace AppManager {
             title = compute_window_title();
             //add_css_class("devel");
 
-            // Revert a temporary executable bit if the user closes without installing.
+            // Revert a temporary executable bit and drop the scratch .home folder
+            // when the user closes the window.
             this.close_request.connect(() => {
                 if (downloading) {
                     download_cancel_requested();
                 }
                 restore_original_exec_state();
+                cleanup_portable_home();
                 if (context_popover != null) {
                     context_popover.unparent();
                     context_popover = null;
@@ -898,6 +903,7 @@ namespace AppManager {
                     }
                 }
                 Utils.FileUtils.ensure_executable(appimage_path);
+                ensure_portable_home();
                 string[] argv = { appimage_path };
                 Pid child_pid;
                 Process.spawn_async(null, argv, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out child_pid);
@@ -907,6 +913,31 @@ namespace AppManager {
             } catch (Error e) {
                 warning("Failed to run AppImage: %s", e.message);
             }
+        }
+
+        /**
+         * Creates the portable home folder next to the AppImage so a standalone
+         * launch writes there instead of the user's real $HOME. Removed again
+         * by cleanup_portable_home() when the window closes.
+         */
+        private void ensure_portable_home() {
+            var home_path = "%s.home".printf(appimage_path);
+            if (File.new_for_path(home_path).query_exists()) {
+                return;
+            }
+            if (DirUtils.create_with_parents(home_path, 0755) != 0) {
+                warning("Failed to create portable home %s", home_path);
+                return;
+            }
+            portable_home_created = true;
+        }
+
+        private void cleanup_portable_home() {
+            if (!portable_home_created) {
+                return;
+            }
+            portable_home_created = false;
+            Utils.FileUtils.remove_dir_recursive("%s.home".printf(appimage_path));
         }
 
         private void restore_original_exec_state() {
