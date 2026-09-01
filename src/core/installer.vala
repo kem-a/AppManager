@@ -648,6 +648,31 @@ namespace AppManager.Core {
                         original_update_url = update_info;
                     }
                 }
+
+                // Metainfo homepage fallback: many AppImages (especially Electron-based
+                // ones) do not embed X-AppImage-Homepage or .upd_info, but do ship a
+                // metainfo/appdata XML file with a <url type="homepage"> element.
+                // When that URL points at a GitHub repository AppManager can use it as
+                // the update source for GitHub Releases queries, giving those apps the
+                // same automatic update detection as AppImages that embed update metadata.
+                if (original_homepage == null || original_homepage.strip() == "") {
+                    var desktop_id_hint = desktop_entry.icon;
+                    var desktop_name = desktop_entry.name;
+                    var metainfo_url = AppImageAssets.extract_homepage_from_metainfo(
+                        assets_path, temp_dir, desktop_id_hint, desktop_name);
+                    if (metainfo_url != null && metainfo_url.strip() != "") {
+                        original_homepage = metainfo_url.strip();
+                        // If the homepage is a supported update source (GitHub, GitLab…)
+                        // and no explicit update URL was found, promote it to the update
+                        // link so the updater can query it for new releases.
+                        if (original_update_url == null || original_update_url.strip() == "") {
+                            var normalized = Updater.normalize_update_url(original_homepage);
+                            if (normalized != null) {
+                                original_update_url = normalized;
+                            }
+                        }
+                    }
+                }
                 
                 var exec_value = desktop_entry.exec;
                 var original_exec_args = exec_value != null ? DesktopEntry.extract_exec_arguments(exec_value) : null;

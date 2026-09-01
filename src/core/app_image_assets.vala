@@ -401,6 +401,32 @@ namespace AppManager.Core {
             return find_summary_in_dir_recursive(metainfo_root);
         }
 
+        /**
+         * Extract a homepage URL from the AppImage's embedded metainfo XML.
+         *
+         * The AppStream/metainfo spec defines <url type="homepage"> for the
+         * upstream project page. Many AppImages that do not embed an
+         * X-AppImage-Homepage key in their .desktop file or a .upd_info ELF
+         * section still ship a metainfo file with this element (e.g. KDE,
+         * GNOME, and a large part of the AppImageHub catalogue). When the
+         * homepage is a GitHub repository URL, AppManager can use it as the
+         * update source for GitHub Releases queries.
+         *
+         * Returns the first <url type="homepage"> value found across all
+         * metainfo files, or null if none is present.
+         */
+        public static string? extract_homepage_from_metainfo(string appimage_path, string temp_root, string? desktop_id_hint = null, string? app_name_hint = null) {
+            var metainfo_root = ensure_metainfo_extracted(appimage_path, temp_root);
+            // Prefer the best-matching file so we don't pick up a bundled
+            // service's metainfo instead of the app's own.
+            var best_match = find_best_metainfo_file(metainfo_root, desktop_id_hint, app_name_hint);
+            if (best_match != null) {
+                var url = parse_metainfo_homepage(best_match);
+                if (url != null) return url;
+            }
+            return find_homepage_in_dir_recursive(metainfo_root);
+        }
+
         private static string ensure_metainfo_extracted(string appimage_path, string temp_root) {
             var metainfo_root = Path.build_filename(temp_root, "metainfo");
             DirUtils.create_with_parents(metainfo_root, 0755);
@@ -956,6 +982,74 @@ namespace AppManager.Core {
                 }
             } catch (Error e) {
                 debug("Failed to parse metainfo summary %s: %s", xml_path, e.message);
+            }
+            return null;
+        }
+
+        /**
+         * Parse the first <url type="homepage"> value from a metainfo XML file.
+         * Handles both single-quoted and double-quoted attribute values and
+         * ignores other url types (bugtracker, donation, translate, …).
+         */
+        private static string? parse_metainfo_homepage(string xml_path) {
+            try {
+                string contents;
+                FileUtils.get_contents(xml_path, out contents);
+
+                // Iterate over every <url ...> element and pick the first
+                // one whose type attribute equals "homepage".
+                int search_pos = 0;
+                while (true) {
+                    var tag_start = contents.index_of("<url", search_pos);
+                    if (tag_start < 0) break;
+
+                    var tag_end = contents.index_of(">", tag_start);
+                    if (tag_end < 0) break;
+
+                    var tag = contents.substring(tag_start, tag_end - tag_start + 1);
+
+                    // Check type attribute (accept both quote styles)
+                    bool is_homepage = tag.contains("type=\"homepage\"") ||
+                                       tag.contains("type='homepage'");
+
+                    if (is_homepage) {
+                        var close_tag = "</url>";
+                        var value_start = tag_end + 1;
+                        var value_end = contents.index_of(close_tag, value_start);
+                        if (value_end > value_start) {
+                            var url = contents.substring(value_start, value_end - value_start).strip();
+                            if (url.length > 0) {
+                                debug("Found homepage in metainfo: %s -> %s", xml_path, url);
+                                return url;
+                            }
+                        }
+                    }
+
+                    search_pos = tag_end + 1;
+                }
+            } catch (Error e) {
+                debug("Failed to parse metainfo homepage %s: %s", xml_path, e.message);
+            }
+            return null;
+        }
+
+        private static string? find_homepage_in_dir_recursive(string dir_path) {
+            try {
+                var dir = Dir.open(dir_path);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    var path = Path.build_filename(dir_path, name);
+
+                    if (FileUtils.test(path, FileTest.IS_DIR)) {
+                        var url = find_homepage_in_dir_recursive(path);
+                        if (url != null) return url;
+                    } else if (name.has_suffix(".metainfo.xml") || name.has_suffix(".appdata.xml")) {
+                        var url = parse_metainfo_homepage(path);
+                        if (url != null) return url;
+                    }
+                }
+            } catch (Error e) {
+                debug("Failed to search metainfo dir %s: %s", dir_path, e.message);
             }
             return null;
         }
