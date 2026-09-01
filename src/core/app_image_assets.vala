@@ -435,7 +435,20 @@ namespace AppManager.Core {
 
         /**
          * Quick compatibility check: verify AppImage has required root files.
-         * Attempts extraction of .DirIcon, AppRun, and *.desktop directly.
+         *
+         * Many well-formed AppImages (e.g. appimagetool, gear-lever-compatible AppImages)
+         * place .DirIcon and the root .desktop file as *symlinks* pointing at targets
+         * deeper in the filesystem tree (e.g. .DirIcon →
+         * usr/share/icons/hicolor/128x128/apps/foo.png). When only the symlink entry is
+         * extracted into a temporary directory the symlink target is absent, so any
+         * check that follows the symlink (GLib File.query_exists(), FileTest.IS_REGULAR,
+         * etc.) will return false — even though the AppImage is perfectly valid.
+         *
+         * Fix: delegate to the existing extract_desktop_entry() and extract_icon()
+         * helpers which already resolve symlinks via resolve_symlink(), and to
+         * resolve_symlink() for AppRun. Those helpers were written specifically to handle
+         * this case; duplicating their logic here without symlink resolution was the
+         * original defect (issue #41).
          */
         public static bool check_compatibility(string appimage_path) {
             var format = detect_format(appimage_path);
@@ -456,23 +469,39 @@ namespace AppManager.Core {
             bool has_apprun = false;
 
             try {
-                // Check .desktop file
-                has_desktop = extract_entry(appimage_path, temp_dir, "*.desktop") &&
-                              find_file_in_root(temp_dir, "*.desktop") != null;
-
-                // Check icon (.DirIcon preferred)
-                has_icon = extract_entry(appimage_path, temp_dir, DIRICON_NAME) &&
-                           File.new_for_path(Path.build_filename(temp_dir, DIRICON_NAME)).query_exists();
-                if (!has_icon) {
-                    has_icon = (extract_entry(appimage_path, temp_dir, "*.png") &&
-                                find_file_in_root(temp_dir, "*.png") != null) ||
-                               (extract_entry(appimage_path, temp_dir, "*.svg") &&
-                                find_file_in_root(temp_dir, "*.svg") != null);
+                // Check .desktop file — uses extract_desktop_entry() which resolves symlinks.
+                try {
+                    var desktop_path = extract_desktop_entry(appimage_path, temp_dir);
+                    has_desktop = desktop_path != null &&
+                                  File.new_for_path(desktop_path).query_exists();
+                } catch (Error e) {
+                    debug("check_compatibility: no .desktop: %s", e.message);
+                    has_desktop = false;
                 }
 
-                // Check AppRun
-                has_apprun = extract_entry(appimage_path, temp_dir, "AppRun") &&
-                             File.new_for_path(Path.build_filename(temp_dir, "AppRun")).query_exists();
+                // Check icon — uses extract_icon() which resolves symlinks (.DirIcon,
+                // *.png, *.svg in root, all with symlink resolution).
+                try {
+                    var icon_path = extract_icon(appimage_path, temp_dir);
+                    has_icon = icon_path != null &&
+                               File.new_for_path(icon_path).query_exists();
+                } catch (Error e) {
+                    debug("check_compatibility: no icon: %s", e.message);
+                    has_icon = false;
+                }
+
+                // Check AppRun — extract the entry then resolve any symlink.
+                if (extract_entry(appimage_path, temp_dir, "AppRun")) {
+                    var apprun_path = Path.build_filename(temp_dir, "AppRun");
+                    try {
+                        var resolved = resolve_symlink(apprun_path, appimage_path, temp_dir);
+                        has_apprun = File.new_for_path(resolved).query_exists();
+                    } catch (Error e) {
+                        // resolve_symlink throws if target is missing; treat as absent.
+                        debug("check_compatibility: AppRun symlink unresolvable: %s", e.message);
+                        has_apprun = false;
+                    }
+                }
 
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
