@@ -273,11 +273,14 @@ namespace AppManager.Core {
                 // Keep the secondary-copy suffix stable across updates (frozen counter).
                 record.copy_index = old_record.copy_index;
                 
-                // Carry over last_modified, content_length and release tag from old record
+                // Carry over last_modified and content_length from old record
                 record.last_modified = old_record.last_modified;
                 record.content_length = old_record.content_length;
-                record.last_release_tag = old_record.last_release_tag;
-                
+                // Note: last_release_tag is intentionally NOT carried over. The
+                // updater sets it after a successful release-based update; for other
+                // upgrade paths (manual reinstall, zsync) a stale tag would make the
+                // next probe report "already current" for a release never installed.
+
                 // Carry over zsync_update_info from old record as safety net
                 // (also re-extracted from new AppImage in finalize_desktop_and_icon)
                 record.zsync_update_info = old_record.zsync_update_info;

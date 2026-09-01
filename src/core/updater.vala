@@ -414,6 +414,25 @@ namespace AppManager.Core {
             // pre-releases, scan the releases list instead so pre-releases are visible.
             bool latest_stable = (tag == "latest" && !include_prerelease);
 
+            // A pinned tag resolves directly via /releases/tags/<tag>. The list scan
+            // below only sees the newest page, which misses rolling tags that sit deep
+            // in the release history (e.g. FreeCAD's "weeklies").
+            if (tag != "latest") {
+                try {
+                    var tag_url = "https://api.github.com/repos/%s/%s/releases/tags/%s".printf(
+                        owner, repo, GLib.Uri.escape_string(tag, null, false));
+                    var tag_root = fetch_json(tag_url, "application/vnd.github+json", null);
+                    if (tag_root != null && tag_root.get_node_type() == Json.NodeType.OBJECT) {
+                        var source = find_zsync_asset_with_version(tag_root.get_object(), pattern);
+                        if (source != null) return source;
+                    }
+                } catch (Error e) {
+                    // Unknown tag (404) or API failure: fall through to the
+                    // prefix-tolerant list scan below.
+                    debug("gh-releases-zsync: tag lookup for %s failed: %s", tag, e.message);
+                }
+            }
+
             try {
                 // Use appropriate API endpoint based on tag
                 string api_url;
@@ -664,16 +683,16 @@ namespace AppManager.Core {
                 // Sanitize current version - treat unparseable values (e.g. "UNKNOWN") as null
                 var current_sanitized = VersionUtils.sanitize(current);
                 
+                // The tag we last installed is authoritative. Upstreams that tag by
+                // date (e.g. "weekly-2026.08.26") never match the app's own version,
+                // so magnitude comparison alone reports an update on every check.
+                if (release.tag_name != null && record.last_release_tag == release.tag_name) {
+                    return new UpdateProbeResult(record, false, latest ?? release.tag_name, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
+                }
+
                 // Version comparison: if both have valid versions, compare them
                 if (latest != null && current_sanitized != null && compare_versions(latest, current) <= 0) {
                     return new UpdateProbeResult(record, false, latest, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
-                }
-                
-                // Fallback: if either version is missing/unparseable, compare release tags
-                if ((latest == null || current_sanitized == null) && release.tag_name != null) {
-                    if (record.last_release_tag == release.tag_name) {
-                        return new UpdateProbeResult(record, false, release.tag_name, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
-                    }
                 }
 
                 return new UpdateProbeResult(record, true, latest ?? release.tag_name);
@@ -732,20 +751,20 @@ namespace AppManager.Core {
                 // Sanitize current version - treat unparseable values (e.g. "UNKNOWN") as null
                 var current_sanitized = VersionUtils.sanitize(current);
                 
+                // The tag we last installed is authoritative. Upstreams that tag by
+                // date (e.g. "weekly-2026.08.26") never match the app's own version,
+                // so magnitude comparison alone reports an update on every check.
+                if (release.tag_name != null && record.last_release_tag == release.tag_name) {
+                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                    log_update_event(record, "SKIP", "release tag unchanged");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), latest ?? release.tag_name, UpdateSkipReason.ALREADY_CURRENT);
+                }
+
                 // Version comparison: if both have valid versions, compare them
                 if (latest != null && current_sanitized != null && compare_versions(latest, current) <= 0) {
                     record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
                     log_update_event(record, "SKIP", "already current");
                     return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), latest, UpdateSkipReason.ALREADY_CURRENT);
-                }
-                
-                // Fallback: if either version is missing/unparseable, compare release tags
-                if ((latest == null || current_sanitized == null) && release.tag_name != null) {
-                    if (record.last_release_tag == release.tag_name) {
-                        record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
-                        log_update_event(record, "SKIP", "release tag unchanged");
-                        return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), release.tag_name, UpdateSkipReason.ALREADY_CURRENT);
-                    }
                 }
 
                 var candidates = select_appimage_assets(release.assets);
