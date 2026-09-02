@@ -1173,7 +1173,8 @@ namespace AppManager.Core {
          * Bundling a whole toolkit or runtime commonly drags its background-service entries along
          * too (helper daemons, settings modules, protocol helpers). Those point at binaries the
          * AppImage keeps under libexec, or does not contain at all, so requiring the Exec binary to
-         * be a real command keeps them out of $PATH and the menu. Each accepted entry gets a
+         * be a real command keeps them out of $PATH and the menu, as does requiring a hidden entry
+         * to carry MimeType associations that justify installing it at all. Each accepted entry gets a
          * ~/.local/bin/<name> symlink to the AppImage (multi-call dispatch via argv[0]); entries
          * that share a binary share the one command.
          *
@@ -1217,6 +1218,15 @@ namespace AppManager.Core {
                 try {
                     var sub_entry = new DesktopEntry(sub_path);
                     var sub_exec = sub_entry.exec ?? "";
+
+                    // NoDisplay hides the entry from the menu, leaving association as its only
+                    // purpose; with no MimeType it can be neither launched nor matched, and would
+                    // just add a stray command to $PATH. This is how a bundled dependency's own
+                    // entry leaks in (Inkscape ships python3.8, ONLYOFFICE ships keditbookmarks).
+                    if (sub_entry.no_display && (sub_entry.mime_type == null || sub_entry.mime_type.strip() == "")) {
+                        debug("Skipping sub-desktop %s: hidden and provides no associations", sub_path);
+                        continue;
+                    }
 
                     var base_token = DesktopEntry.extract_base_exec_token(sub_exec);
                     if (base_token == null || base_token.strip() == "") {
