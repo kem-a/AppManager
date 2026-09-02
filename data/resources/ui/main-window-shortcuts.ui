@@ -13,6 +13,11 @@
                             </object>
                         </child>
                         <child>
+                            <object class="GtkShortcutsShortcut" id="shortcut_update_apps">
+                                <property name="accelerator">&lt;Primary&gt;&lt;Shift&gt;u</property>
+                            </object>
+                        </child>
+                        <child>
                             <object class="GtkShortcutsShortcut" id="shortcut_main_menu">
                                 <property name="accelerator">F10</property>
                             </object>
