@@ -1,7 +1,7 @@
 option('build_tests',
   type: 'boolean',
   value: false,
-  description: 'Build the local development test suite when all its files are present'
+  description: 'Build regression tests and the local development suite when available'
 )
 
 option('bundle_dwarfs',

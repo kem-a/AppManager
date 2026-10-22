@@ -131,6 +131,7 @@ core_sources = files(
   'src/core/staged_updates.vala',
   'src/core/i18n.vala',
   'src/core/version_utils.vala',
+  'src/core/env_var_paste.vala',
   'src/core/path_migration_service.vala',
   'src/utils/file_utils.vala'
 )
@@ -197,6 +198,25 @@ wayland_sc_lib = static_library('wayland-security-context',
   dependencies: wayland_sc_deps,
   include_directories: crypto_shim_inc
 )
+
+if get_option('build_tests')
+  env_var_paste_test = executable('env-var-paste-test',
+    'src/core/env_var_paste.vala',
+    'tests/env_var_paste_test.vala',
+    dependencies: [glib_dep, dependency('gobject-2.0')]
+  )
+  test('env-var-paste', env_var_paste_test)
+
+  env_vars_group_test = executable('env-vars-group-test',
+    'src/core/env_var_paste.vala',
+    'src/widgets/env_vars_group.vala',
+    'tests/env_vars_group_test.vala',
+    dependencies: [adw_dep, gtk_dep, gee_dep]
+  )
+  test('env-vars-group', env_vars_group_test,
+    env: ['GTK_A11Y=none', 'GSETTINGS_BACKEND=memory', 'GSK_RENDERER=cairo',
+          'XDG_CONFIG_HOME=' + meson.current_build_dir() / 'test-config'])
+endif
 
 # The development test suite lives locally and may be absent from a checkout.
 local_tests_available = false

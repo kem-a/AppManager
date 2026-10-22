@@ -8,6 +8,7 @@ src/core/background_update_service.vala
 src/core/installer.vala
 src/core/path_migration_service.vala
 src/core/updater.vala
+src/widgets/env_vars_group.vala
 src/windows/app_image_info_window.vala
 src/windows/details_window.vala
 src/windows/dialog_window.vala

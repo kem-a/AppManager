@@ -7,6 +7,7 @@ app_sources = files(
   'windows/drop_window.vala',
   'windows/app_image_info_window.vala',
   'windows/details_window.vala',
+  'widgets/env_vars_group.vala',
   'utils/ui_utils.vala'
 )
 
