@@ -2243,6 +2243,12 @@ namespace AppManager {
         }
 
         private string determine_reveal_path() {
+            // An app stored on another path is reached through its link, which
+            // lives in the main folder - that is the folder to open, exactly as
+            // for an app installed there directly.
+            if (record.symlink_path != null && record.symlink_path.strip() != "") {
+                return AppPaths.applications_dir;
+            }
             var installed_path = record.installed_path ?? "";
             if (record.mode == InstallMode.PORTABLE) {
                 return AppPaths.applications_dir;

@@ -14,6 +14,14 @@ namespace AppManager {
         private Gtk.Button? browse_button = null;
         private Gtk.Button? reset_button = null;
         private Gtk.Button? apply_button = null;
+        // Installation path chooser: which of the configured paths new apps go to,
+        // and the list of additional paths on other drives.
+        private Adw.ComboRow? install_target_row = null;
+        private string[] install_target_paths = {};
+        private bool suppress_target_change = false;
+        private Adw.PreferencesGroup? additional_paths_group = null;
+        private Gee.ArrayList<Adw.ActionRow> additional_path_rows = new Gee.ArrayList<Adw.ActionRow>();
+        private Adw.ActionRow? add_path_row = null;
         private Adw.ActionRow? thumbnailer_row = null;
         private Adw.PreferencesGroup? global_dirs_group = null;
         private Gee.ArrayList<Adw.ActionRow> global_dir_rows = new Gee.ArrayList<Adw.ActionRow>();
@@ -60,7 +68,7 @@ namespace AppManager {
             // Installation directory group
             var install_group = new Adw.PreferencesGroup();
             install_group.title = _("Installation");
-            install_group.description = _("Configure where AppImages are installed (default: ~/Applications)");
+            install_group.description = _("Configure where AppImages are installed (default: ~/Applications). Apps stored on an additional path show up in the main folder as links.");
 
             var install_dir_row = new Adw.EntryRow();
             install_dir_row.title = _("Installation directory");
@@ -107,6 +115,15 @@ namespace AppManager {
             // Allow Enter key to apply
             install_dir_row.entry_activated.connect(on_apply_install_dir);
 
+            // Which installation path a new app is stored on. Hidden while there
+            // is nothing to choose between - one path means no choice to make.
+            var install_target_row = new Adw.ComboRow();
+            install_target_row.title = _("Install new apps to");
+            install_target_row.add_prefix(new Gtk.Image.from_icon_name("folder-download-symbolic"));
+            this.install_target_row = install_target_row;
+            rebuild_install_target_row();
+            install_target_row.notify["selected"].connect(on_install_target_changed);
+
             var skip_drop_row = new Adw.SwitchRow();
             skip_drop_row.title = _("Skip drag-and-drop window");
             skip_drop_row.subtitle = _("Show install dialog directly when opening AppImages");
@@ -120,9 +137,13 @@ namespace AppManager {
             settings.bind("sanitize-filenames-default", sanitize_filenames_row, "active", GLib.SettingsBindFlags.DEFAULT);
 
             install_group.add(install_dir_row);
+            install_group.add(install_target_row);
             install_group.add(skip_drop_row);
             install_group.add(sanitize_filenames_row);
             page.add(install_group);
+
+            build_additional_paths_group();
+            page.add(additional_paths_group);
 
             // Automatic updates group
             var updates_group = new Adw.PreferencesGroup();
@@ -652,6 +673,247 @@ namespace AppManager {
             } catch (Error e) {
                 warning("Failed to update thumbnail background preference: %s", e.message);
             }
+        }
+
+        /**
+         * Shortened form of a path for compact labels: the home folder reads as
+         * ~/..., everything else keeps its full path.
+         */
+        private static string shorten_path(string path) {
+            var home = Environment.get_home_dir();
+            if (home != null && home != "/" && path == home) {
+                return "~";
+            }
+            if (home != null && home != "/" && path.has_prefix(home + "/")) {
+                return "~" + path.substring(home.length);
+            }
+            return path;
+        }
+
+        /**
+         * Rebuilds the "Install new apps to" selector from the main path plus
+         * every additional one, keeping the stored selection.
+         */
+        private void rebuild_install_target_row() {
+            if (install_target_row == null) {
+                return;
+            }
+            var paths = AppPaths.all_installation_dirs;
+            install_target_paths = paths;
+
+            var model = new Gtk.StringList(null);
+            foreach (var path in paths) {
+                model.append(shorten_path(path));
+            }
+            var current = AppPaths.install_target_dir;
+            uint selected = 0;
+            for (int i = 0; i < paths.length; i++) {
+                if (paths[i] == current) {
+                    selected = (uint) i;
+                    break;
+                }
+            }
+
+            suppress_target_change = true;
+            // Swapping the model resets `selected`, so the guard covers both
+            // assignments - otherwise a stored choice would be overwritten with
+            // the first entry the moment the model is replaced.
+            install_target_row.model = model;
+            install_target_row.selected = selected;
+            suppress_target_change = false;
+            install_target_row.subtitle = _("Stored in %s").printf(paths[selected]);
+            install_target_row.visible = paths.length > 1;
+        }
+
+        private void on_install_target_changed() {
+            if (suppress_target_change) {
+                return;
+            }
+            var index = (int) install_target_row.selected;
+            if (index < 0 || index >= install_target_paths.length) {
+                return;
+            }
+            var selected = install_target_paths[index];
+            // The main path is stored as "unset" so changing it later keeps
+            // pointing at whatever the main folder currently is.
+            settings.set_string("install-target", selected == AppPaths.applications_dir ? "" : selected);
+            install_target_row.subtitle = _("Stored in %s").printf(selected);
+        }
+
+        /**
+         * The group listing the extra installation paths, each with a remove
+         * button, and the button to add another.
+         */
+        private void build_additional_paths_group() {
+            var group = new Adw.PreferencesGroup();
+            group.title = _("Additional installation paths");
+            group.description = _("Add a folder on another drive to install into. The app's files are stored there and a link is created in the main installation folder, so every app stays visible in the regular location while only the other drive is used up.");
+            additional_paths_group = group;
+
+            add_path_row = new Adw.ActionRow();
+            add_path_row.activatable = false;
+            var add_button = new Gtk.Button();
+            add_button.child = new Adw.ButtonContent() {
+                icon_name = "list-add-symbolic",
+                label = _("Add path")
+            };
+            add_button.add_css_class("flat");
+            add_button.halign = Gtk.Align.CENTER;
+            add_button.margin_top = 8;
+            add_button.margin_bottom = 8;
+            add_button.clicked.connect(on_add_installation_path);
+            add_path_row.child = add_button;
+
+            reload_additional_path_rows();
+        }
+
+        private void reload_additional_path_rows() {
+            if (additional_paths_group == null) {
+                return;
+            }
+            foreach (var row in additional_path_rows) {
+                additional_paths_group.remove(row);
+            }
+            additional_path_rows.clear();
+            if (add_path_row.get_parent() != null) {
+                additional_paths_group.remove(add_path_row);
+            }
+
+            foreach (var path in AppPaths.additional_installation_dirs) {
+                var row = new Adw.ActionRow();
+                var name = Path.get_basename(path);
+                row.title = (name == "" || name == "/") ? path : name;
+                var installed = count_installed_in(path);
+                row.subtitle = installed > 0 ? "%s — %d installed".printf(path, installed) : path;
+                row.add_prefix(new Gtk.Image.from_icon_name("drive-harddisk-symbolic"));
+
+                var remove_button = new Gtk.Button.from_icon_name("user-trash-symbolic");
+                remove_button.valign = Gtk.Align.CENTER;
+                remove_button.add_css_class("flat");
+                remove_button.tooltip_text = _("Remove path");
+                var row_path = path;
+                remove_button.clicked.connect(() => remove_installation_path(row_path));
+                row.add_suffix(remove_button);
+
+                additional_paths_group.add(row);
+                additional_path_rows.add(row);
+            }
+            additional_paths_group.add(add_path_row);
+        }
+
+        private int count_installed_in(string path) {
+            if (registry == null) {
+                return 0;
+            }
+            int count = 0;
+            foreach (var record in registry.list()) {
+                if (record.installed_path != null && AppPaths.path_is_inside(path, record.installed_path)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private void on_add_installation_path() {
+            var dialog = new Gtk.FileDialog();
+            dialog.title = _("Select Installation Path");
+            dialog.modal = true;
+
+            dialog.select_folder.begin(this.get_root() as Gtk.Window, null, (obj, res) => {
+                try {
+                    var folder = dialog.select_folder.end(res);
+                    var selected = folder != null ? folder.get_path() : null;
+                    if (selected == null || selected.strip() == "") {
+                        return;
+                    }
+                    var path = selected.strip();
+                    while (path.length > 1 && path.has_suffix("/")) {
+                        path = path.substring(0, path.length - 1);
+                    }
+                    if (!Path.is_absolute(path)) {
+                        show_error_dialog(_("Invalid Path"), _("An installation path has to be an absolute folder path."));
+                        return;
+                    }
+                    var main = AppPaths.applications_dir;
+                    if (AppPaths.path_is_inside(path, main) || AppPaths.path_is_inside(main, path)) {
+                        show_error_dialog(_("Invalid Path"),
+                            _("An installation path cannot be inside the main installation folder (%s), and the main folder cannot sit inside it either.").printf(main));
+                        return;
+                    }
+                    foreach (var existing in AppPaths.additional_installation_dirs) {
+                        if (existing == path) {
+                            reload_additional_path_rows();
+                            return;
+                        }
+                    }
+                    if (!GLib.FileUtils.test(path, FileTest.IS_DIR)
+                        && DirUtils.create_with_parents(path, 0755) != 0) {
+                        show_error_dialog(_("Cannot Create Folder"),
+                            _("The folder %s could not be created. Check that the drive is mounted and that you may write to it.").printf(path));
+                        return;
+                    }
+                    append_additional_path(path);
+                    reload_additional_path_rows();
+                    rebuild_install_target_row();
+                } catch (Error e) {
+                    if (!(e is IOError.CANCELLED)) {
+                        warning("Failed to select installation path: %s", e.message);
+                    }
+                }
+            });
+        }
+
+        /** Writes the additional paths back to GSettings, terminator included. */
+        private void append_additional_path(string path) {
+            var current = AppPaths.additional_installation_dirs;
+            var value = new string[current.length + 2];
+            for (int i = 0; i < current.length; i++) {
+                value[i] = current[i];
+            }
+            value[current.length] = path;
+            settings.set_strv("additional-installation-paths", value);
+        }
+
+        private void remove_installation_path(string path) {
+            var installed = count_installed_in(path);
+            if (installed == 0) {
+                apply_installation_path_removal(path);
+                return;
+            }
+            var dialog = new Adw.AlertDialog(
+                _("Remove Installation Path?"),
+                _("%d app(s) are installed there. Removing the path does not delete them: they keep working, and this folder stops being offered for new installs.").printf(installed)
+            );
+            dialog.add_response("cancel", _("Cancel"));
+            dialog.add_response("remove", _("Remove Path"));
+            dialog.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE);
+            dialog.default_response = "cancel";
+            dialog.close_response = "cancel";
+            dialog.response.connect((response) => {
+                if (response == "remove") {
+                    apply_installation_path_removal(path);
+                }
+            });
+            dialog.present(this.get_root() as Gtk.Window);
+        }
+
+        private void apply_installation_path_removal(string path) {
+            var kept = new Gee.ArrayList<string>();
+            foreach (var existing in AppPaths.additional_installation_dirs) {
+                if (existing != path) {
+                    kept.add(existing);
+                }
+            }
+            var value = new string[kept.size + 1];
+            for (int i = 0; i < kept.size; i++) {
+                value[i] = kept.get(i);
+            }
+            settings.set_strv("additional-installation-paths", value);
+            if (settings.get_string("install-target").strip() == path) {
+                settings.set_string("install-target", "");
+            }
+            reload_additional_path_rows();
+            rebuild_install_target_row();
         }
 
         private void on_browse_clicked() {

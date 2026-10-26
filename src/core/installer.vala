@@ -26,12 +26,12 @@ namespace AppManager.Core {
             this.uninstall_prefix = resolve_uninstall_prefix();
         }
 
-        public InstallationRecord install(string file_path, InstallMode override_mode = InstallMode.PORTABLE, AppHubPolicy? policy = null) throws Error {
-            return install_sync(file_path, override_mode, null, policy);
+        public InstallationRecord install(string file_path, InstallMode override_mode = InstallMode.PORTABLE, AppHubPolicy? policy = null, string? target_root = null) throws Error {
+            return install_sync(file_path, override_mode, null, policy, target_root);
         }
 
-        public InstallationRecord upgrade(string file_path, InstallationRecord old_record, AppHubPolicy? policy = null) throws Error {
-            return reinstall(file_path, old_record, old_record.mode, policy);
+        public InstallationRecord upgrade(string file_path, InstallationRecord old_record, AppHubPolicy? policy = null, string? target_root = null) throws Error {
+            return reinstall(file_path, old_record, old_record.mode, policy, target_root);
         }
 
         /**
@@ -304,8 +304,10 @@ namespace AppManager.Core {
          * and either upgrades or installs. Sets is_upgrade to true if an existing
          * installation was replaced. With keep_both, an existing installation is
          * never replaced - the app installs side by side as a numbered copy.
+         * `target_root` overrides the configured installation path for this
+         * install, so a replace can also move the app to another path.
          */
-        public InstallationRecord install_or_upgrade(string file_path, out bool is_upgrade, bool keep_both = false) throws Error {
+        public InstallationRecord install_or_upgrade(string file_path, out bool is_upgrade, bool keep_both = false, string? target_root = null) throws Error {
             is_upgrade = false;
 
             var metadata = new AppImageMetadata(File.new_for_path(file_path));
@@ -315,15 +317,15 @@ namespace AppManager.Core {
             }
 
             if (keep_both) {
-                return install(file_path);
+                return install(file_path, InstallMode.PORTABLE, null, target_root);
             }
 
             var existing = detect_existing(file_path);
             if (existing != null) {
                 is_upgrade = true;
-                return upgrade(file_path, existing);
+                return upgrade(file_path, existing, null, target_root);
             } else {
-                return install(file_path);
+                return install(file_path, InstallMode.PORTABLE, null, target_root);
             }
         }
 
@@ -355,7 +357,7 @@ namespace AppManager.Core {
             return null;
         }
 
-        public InstallationRecord reinstall(string file_path, InstallationRecord old_record, InstallMode mode, AppHubPolicy? policy = null) throws Error {
+        public InstallationRecord reinstall(string file_path, InstallationRecord old_record, InstallMode mode, AppHubPolicy? policy = null, string? target_root = null) throws Error {
             // Validate new AppImage before touching the old installation.
             // Uses the same desktop/icon extraction that install does - if the
             // new package is corrupted or badly packed, we bail out here and
@@ -426,11 +428,32 @@ namespace AppManager.Core {
             if (!AppPaths.sandbox_available) throw new InstallerError.UNKNOWN(_("Install bubblewrap to apply the AppHub sandbox policy."));
         }
 
-        private InstallationRecord install_sync(string file_path, InstallMode override_mode, InstallationRecord? old_record, AppHubPolicy? policy = null) throws Error {
+        private InstallationRecord install_sync(string file_path, InstallMode override_mode, InstallationRecord? old_record, AppHubPolicy? policy = null, string? target_root = null) throws Error {
             var file = File.new_for_path(file_path);
             var metadata = new AppImageMetadata(file);
             if (policy != null && policy.sha256 != null && policy.sha256 != metadata.checksum) {
                 throw new AppHubPolicyError.ARTIFACT_MISMATCH(_("The AppHub sandbox policy could not be matched to this download."));
+            }
+
+            // Which installation path physically holds this app. An explicit
+            // choice wins (the installer window can offer one); otherwise an
+            // upgrade stays on the path it already uses and a fresh install uses
+            // the configured target.
+            string? requested_root = null;
+            if (target_root != null && target_root.strip() != "" && Path.is_absolute(target_root.strip())) {
+                requested_root = target_root.strip();
+            }
+            string install_root;
+            if (requested_root != null) {
+                install_root = requested_root;
+            } else if (old_record != null) {
+                install_root = AppPaths.resolve_install_root(old_record.installed_path);
+            } else {
+                install_root = AppPaths.install_target_dir;
+            }
+            if (!AppPaths.ensure_installation_dir(install_root)) {
+                throw new InstallerError.UNKNOWN(
+                    _("Installation path %s is not available. Check that the drive is mounted and try again.").printf(install_root));
             }
 
             InstallMode mode = override_mode;
@@ -483,6 +506,11 @@ namespace AppManager.Core {
                 record.custom_autostart_args = old_record.custom_autostart_args;
                 record.custom_autostart_delay = old_record.custom_autostart_delay;
                 record.prerelease_enabled = old_record.prerelease_enabled;
+                // The link showing the app in the main installation folder, if it
+                // has one: re-pointed after the reinstall rather than re-derived,
+                // so an app stored on a path since removed from the settings keeps
+                // the link it already had.
+                record.symlink_path = old_record.symlink_path;
                 record.copy_sandbox_from(old_record);
                 // First catalog recognition must not replace existing non-store
                 // permissions, including configurations made by older builds.
@@ -502,7 +530,7 @@ namespace AppManager.Core {
 
             try {
                 if (mode == InstallMode.PORTABLE) {
-                    install_portable(metadata, record, is_upgrade);
+                    install_portable(metadata, record, is_upgrade, install_root);
                     // For fresh installs, apply the global portable-mode defaults (home/config independently).
                     // Upgrades inherit existing portable folders (they stayed in place during reinstall).
                     if (old_record == null && !is_self_record(record)) {
@@ -514,8 +542,22 @@ namespace AppManager.Core {
                         }
                     }
                 } else {
-                    install_extracted(metadata, record, is_upgrade);
+                    install_extracted(metadata, record, is_upgrade, install_root);
                 }
+
+                // An app stored on another drive is shown from the main
+                // installation folder through a symlink, so every installed app
+                // stays reachable from the regular location while the bytes only
+                // ever land on the drive that holds the additional path.
+                var previous_link = old_record != null ? old_record.symlink_path : null;
+                var new_link = AppPaths.sync_installation_symlink(record.installed_path, previous_link);
+                if (previous_link != null && previous_link != new_link) {
+                    // The app moved paths (or its name changed): drop the link it
+                    // had, which now points at the old location.
+                    AppPaths.remove_installation_symlink(previous_link,
+                        old_record != null ? old_record.installed_path : null);
+                }
+                record.symlink_path = new_link;
 
                 // Only delete source after successful installation
                 if (File.new_for_path(file_path).query_exists()) {
@@ -538,20 +580,21 @@ namespace AppManager.Core {
             }
         }
 
-        private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
+        private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade, string install_root) throws Error {
             progress("Preparing Applications folder…");
             record.installed_path = metadata.path;
-            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null);
+            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null, install_root);
         }
 
-        private void install_extracted(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
+        private void install_extracted(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade, string install_root) throws Error {
             progress("Extracting AppImage…");
             var base_name = metadata.sanitized_basename();
-            DirUtils.create_with_parents(AppPaths.extracted_root, 0755);
-            var dest_dir = Utils.FileUtils.unique_path(Path.build_filename(AppPaths.extracted_root, base_name));
+            var installed_root = Path.build_filename(install_root, EXTRACTED_DIRNAME);
+            DirUtils.create_with_parents(installed_root, 0755);
+            var dest_dir = Utils.FileUtils.unique_path(Path.build_filename(installed_root, base_name));
             string staging_dir = "";
             try {
-                var staging_template = Path.build_filename(AppPaths.extracted_root, "%s-extract-XXXXXX".printf(base_name));
+                var staging_template = Path.build_filename(installed_root, "%s-extract-XXXXXX".printf(base_name));
                 staging_dir = DirUtils.mkdtemp(staging_template);
                 run_appimage_extract(metadata.path, staging_dir);
                 var extracted_root = Path.build_filename(staging_dir, SQUASHFS_ROOT_DIR);
@@ -643,7 +686,7 @@ namespace AppManager.Core {
             } catch (Error e) {
                 debug("install_extracted: could not compute source SHA-1 baseline: %s", e.message);
             }
-                finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run);
+                finalize_desktop_and_icon(record, metadata, exec_target, metadata.path, is_upgrade, app_run, install_root);
         }
 
         /**
@@ -838,7 +881,7 @@ namespace AppManager.Core {
             }
         }
 
-        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path) throws Error {
+        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path, string install_root) throws Error {
             string exec_path = exec_target.dup();
             string assets_path = appimage_for_assets.dup();
             string? resolved_entry_exec = null;
@@ -945,7 +988,7 @@ namespace AppManager.Core {
                             app_name = sanitized;
                         }
                     }
-                    renamed_path = move_portable_to_applications(record.installed_path, app_name);
+                    renamed_path = move_portable_to_applications(record.installed_path, app_name, install_root);
                 }
                 if (renamed_path != record.installed_path) {
                     if (rename_for_extracted) {
@@ -1193,6 +1236,12 @@ namespace AppManager.Core {
                 if (record.icon_path != null && File.new_for_path(record.icon_path).query_exists()) {
                     File.new_for_path(record.icon_path).delete(null);
                 }
+                // Drop the link that showed this app in the main installation
+                // folder, so an app stored on another path leaves nothing behind
+                // in the regular location.
+                AppPaths.remove_installation_symlink(
+                    record.symlink_path ?? AppPaths.symlink_path_for(record.installed_path),
+                    record.installed_path);
                 remove_autostart_entry(record);
                 // Only unlink what we created
                 if (record.bin_symlink != null && bin_launcher_is_ours(record.bin_symlink, record)) {
@@ -1260,6 +1309,9 @@ namespace AppManager.Core {
                 if (record.icon_path != null && File.new_for_path(record.icon_path).query_exists()) {
                     File.new_for_path(record.icon_path).delete(null);
                 }
+                AppPaths.remove_installation_symlink(
+                    record.symlink_path ?? AppPaths.symlink_path_for(record.installed_path),
+                    record.installed_path);
                 if (record.bin_symlink != null && bin_launcher_is_ours(record.bin_symlink, record)) {
                     File.new_for_path(record.bin_symlink).delete(null);
                 }
@@ -1868,9 +1920,8 @@ namespace AppManager.Core {
             return final_target;
         }
 
-        private string move_portable_to_applications(string source_path, string app_name) throws Error {
-            var apps_dir = AppPaths.ensure_applications_dir();
-            var desired = Path.build_filename(apps_dir, app_name);
+        private string move_portable_to_applications(string source_path, string app_name, string install_root) throws Error {
+            var desired = Path.build_filename(install_root, app_name);
             var final_path = Utils.FileUtils.unique_path(desired);
             var source = File.new_for_path(source_path);
             var dest = File.new_for_path(final_path);

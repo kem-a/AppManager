@@ -15,6 +15,10 @@ namespace AppManager.Core {
         private FileMonitor? applications_monitor;
         private FileMonitor? extracted_monitor;
         private FileMonitor? registry_file_monitor;
+        // One monitor per additional installation path (its folder and its
+        // .installed folder), so deleting an app on another drive is noticed
+        // just like deleting one in the main folder.
+        private Gee.ArrayList<FileMonitor> additional_monitors = new Gee.ArrayList<FileMonitor>();
         private InstallationRegistry registry;
         
         /** Pending deletion checks: installed_path → GLib timeout source id */
@@ -59,9 +63,41 @@ namespace AppManager.Core {
                 );
                 registry_file_monitor.changed.connect(on_registry_file_changed);
                 
+                monitor_additional_installation_dirs();
+                
                 debug("Directory monitoring started for %s", AppPaths.applications_dir);
             } catch (Error e) {
                 warning("Failed to start directory monitoring: %s", e.message);
+            }
+        }
+        
+        /**
+         * Watches every additional installation path with the same handlers as
+         * the main one. An unplugged or unmounted path simply fails to add its
+         * monitor - the apps on it are picked up again when it comes back.
+         */
+        private void monitor_additional_installation_dirs() {
+            foreach (var root in AppPaths.additional_installation_dirs) {
+                if (!FileUtils.test(root, FileTest.IS_DIR)) {
+                    debug("Not monitoring %s: not available", root);
+                    continue;
+                }
+                var extracted = Path.build_filename(root, EXTRACTED_DIRNAME);
+                DirUtils.create_with_parents(extracted, 0755);
+                try {
+                    var root_monitor = File.new_for_path(root).monitor_directory(FileMonitorFlags.NONE, null);
+                    root_monitor.changed.connect(on_applications_changed);
+                    additional_monitors.add(root_monitor);
+                    
+                    var extra_extracted_monitor = File.new_for_path(extracted).monitor_directory(FileMonitorFlags.NONE, null);
+                    extra_extracted_monitor.changed.connect(on_extracted_changed);
+                    additional_monitors.add(extra_extracted_monitor);
+                } catch (Error e) {
+                    warning("Failed to monitor additional installation path %s: %s", root, e.message);
+                }
+            }
+            if (additional_monitors.size > 0) {
+                debug("Monitoring %d additional installation path(s)", additional_monitors.size);
             }
         }
         
@@ -81,6 +117,10 @@ namespace AppManager.Core {
                 registry_file_monitor.cancel();
                 registry_file_monitor = null;
             }
+            foreach (var monitor in additional_monitors) {
+                monitor.cancel();
+            }
+            additional_monitors.clear();
             debug("Directory monitoring stopped");
         }
         
@@ -136,6 +176,20 @@ namespace AppManager.Core {
                 // apps with built-in updaters (e.g. Bitwarden) that replace their
                 // own AppImage file are not mistakenly considered uninstalled.
                 schedule_pending_deletion(path, record.name);
+                return;
+            }
+            
+            // Deleting the link in the main folder is how removing an app that
+            // lives on another path looks. The app itself is still on disk, so
+            // this is not an uninstall - reconcile puts the link back (see
+            // InstallationRegistry.repair_installation_symlink).
+            var linked_record = registry.lookup_by_symlink_path(path);
+            if (linked_record != null) {
+                if (registry.is_in_flight(linked_record.id)) {
+                    debug("Ignoring deletion of in-flight install link: %s", path);
+                    return;
+                }
+                schedule_pending_deletion(path, linked_record.name);
             }
         }
         

@@ -17,6 +17,11 @@ namespace AppManager.Core {
         public string desktop_file { get; set; }
         public string? icon_path { get; set; }
         public string? bin_symlink { get; set; }
+        // Link in the main installation directory pointing at installed_path, set
+        // only when the app is stored on an additional installation path. It is
+        // what makes an app on another drive show up in the regular folder, so it
+        // is recorded (rather than re-derived) to be removed or re-pointed later.
+        public string? symlink_path { get; set; }
         // Additional desktop entries installed from usr/share/applications/ inside the AppImage
         // (issue #106 - multi-component apps like WPS Office). Custom env vars and command-line
         // args propagate to sub-entries too; these arrays track files for cleanup on uninstall/upgrade.
@@ -364,6 +369,8 @@ namespace AppManager.Core {
             builder.add_string_value(icon_path ?? "");
             builder.set_member_name("bin_symlink");
             builder.add_string_value(bin_symlink ?? "");
+            builder.set_member_name("symlink_path");
+            builder.add_string_value(symlink_path ?? "");
             builder.set_member_name("installed_at");
             builder.add_int_value(installed_at);
             builder.set_member_name("updated_at");
@@ -729,6 +736,8 @@ namespace AppManager.Core {
             record.icon_path = icon == "" ? null : icon;
             var bin = obj.get_string_member_with_default("bin_symlink", "");
             record.bin_symlink = bin == "" ? null : bin;
+            var symlink = obj.get_string_member_with_default("symlink_path", "");
+            record.symlink_path = symlink == "" ? null : symlink;
             record.installed_at = (int64)obj.get_int_member("installed_at");
             record.updated_at = (int64)obj.get_int_member_with_default("updated_at", 0);
             record.copy_index = (int)obj.get_int_member_with_default("copy_index", 0);

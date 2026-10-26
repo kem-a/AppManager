@@ -99,6 +99,28 @@ namespace AppManager.Core {
             return result;
         }
 
+        /**
+         * Finds the record whose link in the main installation directory is
+         * `path`. Apps stored on an additional installation path are shown
+         * through that link, so deleting it - in a file manager, say - has to
+         * be recognized as deleting the app itself.
+         */
+        public InstallationRecord? lookup_by_symlink_path(string path) {
+            if (path == null || path.strip() == "") {
+                return null;
+            }
+            registry_mutex.lock();
+            InstallationRecord? result = null;
+            foreach (var record in records.get_values()) {
+                if (record.symlink_path != null && record.symlink_path == path) {
+                    result = record;
+                    break;
+                }
+            }
+            registry_mutex.unlock();
+            return result;
+        }
+
         public InstallationRecord? lookup_by_source(string path) {
             registry_mutex.lock();
             InstallationRecord? result = null;
@@ -356,6 +378,7 @@ namespace AppManager.Core {
             
             var orphaned = new Gee.ArrayList<InstallationRecord>();
             var records_to_remove = new Gee.ArrayList<string>();
+            bool links_repaired = false;
             
             foreach (var record in records.get_values()) {
                 // Skip apps that are currently being installed/uninstalled
@@ -366,6 +389,10 @@ namespace AppManager.Core {
                 
                 var installed_file = File.new_for_path(record.installed_path);
                 if (!installed_file.query_exists()) {
+                    if (!installation_path_available(record.installed_path)) {
+                        debug("Keeping %s: its installation path is not mounted", record.name);
+                        continue;
+                    }
                     debug("Found orphaned record: %s (path: %s)", record.name, record.installed_path);
                     orphaned.add(record);
                     records_to_remove.add(record.id);
@@ -374,6 +401,8 @@ namespace AppManager.Core {
                     
                     // Clean up associated files
                     cleanup_record_files(record);
+                } else if (repair_installation_symlink(record)) {
+                    links_repaired = true;
                 }
             }
             
@@ -382,7 +411,7 @@ namespace AppManager.Core {
                 records.remove(id);
             }
             
-            if (records_to_remove.size > 0) {
+            if (records_to_remove.size > 0 || links_repaired) {
                 save_unlocked();
             }
             registry_mutex.unlock();
@@ -394,8 +423,64 @@ namespace AppManager.Core {
             return orphaned;
         }
 
+        /**
+         * Whether an app's installation path can be judged at all. An additional
+         * path on a drive that is currently unmounted holds nothing, so a missing
+         * file there says nothing about the app - pruning on it would quietly
+         * uninstall everything that lives on that drive. The main path, and any
+         * path that is actually there, are judged as usual.
+         */
+        private static bool installation_path_available(string installed_path) {
+            var root = AppPaths.installation_dir_containing(installed_path);
+            if (root == null || root == AppPaths.applications_dir) {
+                return true;
+            }
+            if (!FileUtils.test(root, FileTest.IS_DIR)) {
+                return false;
+            }
+            // An unmounted mountpoint is still a folder - an empty one
+            try {
+                var dir = Dir.open(root);
+                return dir.read_name() != null;
+            } catch (Error e) {
+                return false;
+            }
+        }
+
+        /**
+         * Puts back the link that shows an app stored on an additional
+         * installation path in the main installation folder. The link is derived
+         * state - like the .desktop entry - so one that is missing while the app
+         * itself is intact is restored, never read as an uninstall. Returns true
+         * when the record's link path changed and the registry needs saving.
+         */
+        private bool repair_installation_symlink(InstallationRecord record) {
+            var wanted = record.symlink_path ?? AppPaths.symlink_path_for(record.installed_path);
+            if (wanted == null) {
+                return false;
+            }
+            // query_exists follows the link, so a dangling one counts as missing
+            // here and sync_installation_symlink replaces it below.
+            if (File.new_for_path(wanted).query_exists()) {
+                return false;
+            }
+            var created = AppPaths.sync_installation_symlink(record.installed_path, wanted);
+            if (created == null || created == record.symlink_path) {
+                return false;
+            }
+            debug("Restored install link for %s: %s", record.name, created);
+            record.symlink_path = created;
+            return true;
+        }
+
         private void cleanup_record_files(InstallationRecord record) {
             try {
+                // The link showing the app in the main installation folder is
+                // dangling now that the app itself is gone
+                AppPaths.remove_installation_symlink(
+                    record.symlink_path ?? AppPaths.symlink_path_for(record.installed_path),
+                    record.installed_path);
+
                 // Clean up desktop file
                 if (record.desktop_file != null) {
                     var desktop_file = File.new_for_path(record.desktop_file);

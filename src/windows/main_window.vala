@@ -2338,7 +2338,8 @@ namespace AppManager {
                 if (AppPaths.is_inside_applications_dir(folder.get_path())) {
                     var err_dialog = new Adw.AlertDialog(
                         _("Cannot import from this location"),
-                        _("This folder is inside the install folder (%s). Select a different folder to import from.").printf(AppPaths.applications_dir));
+                        _("This folder is inside the install folder (%s). Select a different folder to import from.").printf(
+                            AppPaths.installation_dir_containing(folder.get_path()) ?? AppPaths.applications_dir));
                     err_dialog.add_response("close", _("Close"));
                     err_dialog.present(this);
                     return;

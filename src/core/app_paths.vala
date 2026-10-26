@@ -65,8 +65,10 @@ namespace AppManager.Core {
         }
 
         /**
-         * Returns the current applications directory.
-         * Uses custom path from GSettings if set, otherwise defaults to ~/Applications.
+         * Returns the current applications directory - the *main* installation
+         * path. Uses custom path from GSettings if set, otherwise defaults to
+         * ~/Applications. Every installed app is reachable from here, either
+         * directly or through the symlink created for it (see symlink_path_for).
          * Note: This does NOT create the directory - callers should use ensure_applications_dir()
          * when they need to write to the directory.
          */
@@ -82,6 +84,135 @@ namespace AppManager.Core {
         }
 
         /**
+         * Extra installation paths the user added, in the order they were added.
+         * Apps stored on one of these keep their files on that drive; only a
+         * symlink lives in the main installation path.
+         *
+         * Entries are validated on read so a stale or hand-edited setting cannot
+         * poison installs: absolute, non-empty, unique, and neither equal to nor
+         * overlapping the main path (a path nested inside the main folder would
+         * add nothing - its apps are already visible there).
+         */
+        public static string[] additional_installation_dirs {
+            owned get {
+                var stored = new Settings(APPLICATION_ID).get_strv("additional-installation-paths");
+                var main = applications_dir;
+                var kept = new Gee.ArrayList<string>();
+                foreach (var raw in stored) {
+                    if (raw == null) {
+                        continue;
+                    }
+                    var path = normalize_dir(raw.strip());
+                    if (path == null || !Path.is_absolute(path)) {
+                        continue;
+                    }
+                    if (paths_overlap(path, main)) {
+                        continue;
+                    }
+                    if (kept.contains(path)) {
+                        continue;
+                    }
+                    kept.add(path);
+                }
+                return kept.to_array();
+            }
+        }
+
+        /**
+         * Main path first, then every additional path - the full set of
+         * directories AppManager may install into or find an app in.
+         */
+        public static string[] all_installation_dirs {
+            owned get {
+                var additional = additional_installation_dirs;
+                var result = new string[additional.length + 1];
+                result[0] = applications_dir;
+                for (int i = 0; i < additional.length; i++) {
+                    result[i + 1] = additional[i];
+                }
+                return result;
+            }
+        }
+
+        /**
+         * Where a fresh installation is stored: the configured target when it
+         * names a path that still exists in the settings, the main path
+         * otherwise. Individual installs may pass their own choice instead
+         * (Installer.install's target_root parameter).
+         */
+        public static string install_target_dir {
+            owned get {
+                var settings = new Settings(APPLICATION_ID);
+                var target = settings.get_string("install-target");
+                if (target == null || target.strip() == "") {
+                    return applications_dir;
+                }
+                target = target.strip();
+                if (target == applications_dir) {
+                    return applications_dir;
+                }
+                foreach (var root in additional_installation_dirs) {
+                    if (root == target) {
+                        return root;
+                    }
+                }
+                return applications_dir;
+            }
+        }
+
+        /**
+         * The installation path an app should live on. Upgrades keep the path
+         * they already use - including one dropped from the settings, so an app
+         * on a drive that is only occasionally mounted is not pulled onto
+         * another drive by an update. Fresh installs use install_target_dir.
+         */
+        public static string resolve_install_root(string? current_installed_path) {
+            if (current_installed_path != null && current_installed_path.strip() != "") {
+                var current = current_installed_path.strip();
+                // Longest match wins, so nested paths resolve to the inner one
+                var configured = installation_dir_containing(current);
+                if (configured != null) {
+                    return configured;
+                }
+
+                // Not under any configured path any more - possibly because its
+                // drive is unmounted. Keep the app where it is rather than
+                // relocating it behind the user's back: for an extracted install
+                // that means the folder holding .installed, for a portable one
+                // the folder holding the AppImage. Deliberately not conditioned
+                // on the directory currently existing - a path that is merely
+                // unmounted must not turn an upgrade into a move to another
+                // drive (ensure_installation_dir reports it as unavailable).
+                var parent = Path.get_dirname(current);
+                if (Path.get_basename(parent) == EXTRACTED_DIRNAME) {
+                    parent = Path.get_dirname(parent);
+                }
+                if (parent != null && parent != "/" && parent != ".") {
+                    return parent;
+                }
+            }
+            return install_target_dir;
+        }
+
+        /**
+         * The configured installation path `path` belongs to, or null when it is
+         * in none of them. Used to tell the user which folder an existing file is
+         * already inside.
+         */
+        public static string? installation_dir_containing(string? path) {
+            if (path == null || path.strip() == "") {
+                return null;
+            }
+            string? best = null;
+            foreach (var root in all_installation_dirs) {
+                if (path_is_inside(root, path) && (best == null || root.length > best.length)) {
+                    best = root;
+                }
+            }
+            return best;
+        }
+
+        /**
          * Ensures the applications directory exists and returns its path.
          * Creates the directory if it doesn't exist.
          */
@@ -92,15 +223,232 @@ namespace AppManager.Core {
         }
 
         /**
-         * Returns true if `path` is inside the configured applications directory
-         * or any of its subdirectories. Used to refuse installs sourced from the
-         * install folder itself (e.g. accidental re-drags of already-installed
-         * AppImages).
+         * Makes sure an installation root exists, returning false when it does
+         * not and cannot be brought back. The main path is created on demand
+         * (it may not exist yet on a fresh account); additional paths are created
+         * when they are added, so one missing at install time means its drive is
+         * not mounted - recreating the tree would land it on the root filesystem.
+         */
+        public static bool ensure_installation_dir(string dir) {
+            if (FileUtils.test(dir, FileTest.IS_DIR)) {
+                return true;
+            }
+            if (dir == applications_dir) {
+                return DirUtils.create_with_parents(dir, 0755) == 0;
+            }
+            return false;
+        }
+
+        /**
+         * Returns true if `path` is inside any configured installation path or
+         * one of its subdirectories. Used to refuse installs sourced from the
+         * install folders themselves (e.g. accidental re-drags of already
+         * installed AppImages) and to recognize what we installed.
          */
         public static bool is_inside_applications_dir(string path) {
-            var src = File.new_for_path(path);
-            var apps = File.new_for_path(applications_dir);
-            return apps.equal(src) || src.has_prefix(apps);
+            foreach (var root in all_installation_dirs) {
+                if (path_is_inside(root, path)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Whether `path` is `dir` itself or lives below it. Compared on
+         * components (a trailing "/" is ignored), so /home/u/Applications-2 is
+         * not inside /home/u/Applications.
+         */
+        public static bool path_is_inside(string dir, string? path) {
+            if (dir == null || path == null) {
+                return false;
+            }
+            var base_dir = dir;
+            while (base_dir.length > 1 && base_dir.has_suffix("/")) {
+                base_dir = base_dir.substring(0, base_dir.length - 1);
+            }
+            var candidate = path;
+            while (candidate.length > 1 && candidate.has_suffix("/")) {
+                candidate = candidate.substring(0, candidate.length - 1);
+            }
+            return candidate == base_dir || candidate.has_prefix(base_dir + "/");
+        }
+
+        /**
+         * The location in the main installation directory that shows the app
+         * stored at `installed_path`: <main>/<same relative path>. Null when the
+         * app is already in the main directory, or when `installed_path` is not
+         * under a configured additional path.
+         */
+        public static string? symlink_path_for(string? installed_path) {
+            if (installed_path == null || installed_path.strip() == "") {
+                return null;
+            }
+            var path = installed_path.strip();
+            var main = applications_dir;
+            if (path_is_inside(main, path)) {
+                return null;   // already in the regular location
+            }
+            foreach (var root in additional_installation_dirs) {
+                if (path_is_inside(root, path)) {
+                    var relative = path.substring(root.length);
+                    while (relative.has_prefix("/")) {
+                        relative = relative.substring(1);
+                    }
+                    return Path.build_filename(main, relative);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Creates (or re-points) the symlink that shows `installed_path` in the
+         * main installation directory, so an app stored on another drive stays
+         * visible in the regular folder. `link_path` is a link recorded on an
+         * earlier install of the same app; when it is null the location is
+         * derived from the installed path.
+         *
+         * Returns the link to record on the installation, or null when the app
+         * needs none (it lives in the main directory) or the link could not be
+         * created - a missing link never fails an install.
+         */
+        public static string? sync_installation_symlink(string installed_path, string? link_path, string? main_dir = null) {
+            if (installed_path == null || installed_path.strip() == "") {
+                return null;
+            }
+            var target = link_path != null && link_path.strip() != "" ? link_path.strip() : symlink_path_for(installed_path);
+            if (target == null) {
+                return null;
+            }
+            var main = main_dir != null && main_dir.strip() != "" ? main_dir.strip() : applications_dir;
+            if (!path_is_inside(main, target)) {
+                // Never link outside the main folder: the record would point at
+                // something the settings no longer describe.
+                return null;
+            }
+
+            DirUtils.create_with_parents(Path.get_dirname(target), 0755);
+            var link = File.new_for_path(target);
+
+            FileInfo? info = null;
+            try {
+                info = link.query_info(
+                    FileAttribute.STANDARD_IS_SYMLINK + "," + FileAttribute.STANDARD_SYMLINK_TARGET,
+                    FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+            } catch (Error e) {
+                info = null;   // absent: nothing in the way
+            }
+
+            if (info != null) {
+                if (info.get_is_symlink()) {
+                    var existing = resolve_link_target(target, info.get_symlink_target());
+                    if (existing == installed_path) {
+                        return target;   // already correct (e.g. re-install over the same path)
+                    }
+                    if (existing != null && !File.new_for_path(existing).query_exists()) {
+                        // Dangling link left by an unmounted drive or an older
+                        // version of the app: ours to reuse.
+                        try {
+                            link.delete(null);
+                        } catch (Error e) {
+                            warning("Failed to replace stale install link %s: %s", target, e.message);
+                            return null;
+                        }
+                    } else {
+                        target = Utils.FileUtils.unique_path(target);
+                        link = File.new_for_path(target);
+                    }
+                } else if (link.query_exists()) {
+                    // A real file or folder sits where the link belongs - not ours
+                    // to overwrite, so link beside it.
+                    target = Utils.FileUtils.unique_path(target);
+                    link = File.new_for_path(target);
+                }
+            }
+
+            try {
+                link.make_symbolic_link(installed_path, null);
+            } catch (Error e) {
+                warning("Failed to link %s into %s: %s", installed_path, target, e.message);
+                return null;
+            }
+            debug("Linked %s -> %s", target, installed_path);
+            return target;
+        }
+
+        /**
+         * Removes the symlink showing `installed_path` in the main installation
+         * directory. Only a link that still points where we put it is touched:
+         * a real file that replaced it, or a link the user repointed, is left
+         * alone. Absent links are not an error.
+         */
+        public static void remove_installation_symlink(string? link_path, string? installed_path = null) {
+            if (link_path == null || link_path.strip() == "") {
+                return;
+            }
+            var path = link_path.strip();
+            var link = File.new_for_path(path);
+            try {
+                var info = link.query_info(
+                    FileAttribute.STANDARD_IS_SYMLINK + "," + FileAttribute.STANDARD_SYMLINK_TARGET,
+                    FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+                if (!info.get_is_symlink()) {
+                    return;
+                }
+                var target = resolve_link_target(path, info.get_symlink_target());
+                if (target == null) {
+                    return;
+                }
+                if (installed_path != null && installed_path.strip() != "") {
+                    if (target != installed_path.strip()) {
+                        return;
+                    }
+                } else if (!points_into_additional_installation_dir(target)) {
+                    return;
+                }
+                link.delete(null);
+                debug("Removed install link %s", path);
+            } catch (Error e) {
+                // Absent, or unreadable: nothing to clean up
+            }
+        }
+
+        private static bool points_into_additional_installation_dir(string target) {
+            foreach (var root in additional_installation_dirs) {
+                if (path_is_inside(root, target)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** Turns a possibly relative symlink target into an absolute path. */
+        private static string? resolve_link_target(string link_path, string? target) {
+            if (target == null || target.strip() == "") {
+                return null;
+            }
+            var resolved = target.strip();
+            if (!Path.is_absolute(resolved)) {
+                resolved = Path.build_filename(Path.get_dirname(link_path), resolved);
+            }
+            return resolved;
+        }
+
+        /** Strips trailing slashes; returns null for an empty/root-less value. */
+        private static string? normalize_dir(string path) {
+            if (path == null || path == "") {
+                return null;
+            }
+            var normalized = path;
+            while (normalized.length > 1 && normalized.has_suffix("/")) {
+                normalized = normalized.substring(0, normalized.length - 1);
+            }
+            return normalized;
+        }
+
+        /** True when the two paths are equal or one contains the other. */
+        private static bool paths_overlap(string a, string b) {
+            return path_is_inside(a, b) || path_is_inside(b, a);
         }
 
         public static string extracted_root {

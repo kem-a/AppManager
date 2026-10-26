@@ -550,7 +550,8 @@ Examples:
             if (AppPaths.is_inside_applications_dir(path)) {
                 var err_dialog = new Adw.AlertDialog(
                     _("Cannot install from this location"),
-                    _("This AppImage is already inside the install folder (%s). Move it elsewhere first to install it.").printf(AppPaths.applications_dir));
+                    _("This AppImage is already inside the install folder (%s). Move it elsewhere first to install it.").printf(
+                        AppPaths.installation_dir_containing(path) ?? AppPaths.applications_dir));
                 err_dialog.add_response("close", _("Close"));
                 err_dialog.present(this.get_active_window());
                 release_drop_window_lock(path);

@@ -44,7 +44,17 @@
     <key name="applications-dir" type="s">
       <default>''</default>
       <summary>Custom installation directory for AppImages</summary>
-      <description>Custom directory path for installed AppImages. When empty, uses the default ~/Applications directory.</description>
+      <description>Custom directory path for installed AppImages. When empty, uses the default ~/Applications directory. This is the main installation path: it stays the place every installed app is listed in, including apps stored on an additional path.</description>
+    </key>
+    <key name="additional-installation-paths" type="as">
+      <default>[]</default>
+      <summary>Additional installation paths for AppImages</summary>
+      <description>Extra directories AppManager may install into, typically on another drive. Apps stored there keep their files on that drive and only a symlink is created in the main installation path, so the regular folder keeps listing every app while the disk space is used on the additional drive.</description>
+    </key>
+    <key name="install-target" type="s">
+      <default>''</default>
+      <summary>Installation path used for new apps</summary>
+      <description>Which configured installation path new AppImages are stored on. Empty or an unknown value means the main installation path. Individual installs may override this from the installer window.</description>
     </key>
     <key name="skip-drop-window" type="b">
       <default>false</default>

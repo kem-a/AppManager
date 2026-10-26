@@ -43,6 +43,12 @@ namespace AppManager {
         private Adw.Banner architecture_banner;
         private Adw.Banner verification_banner;
         private Gtk.Label subtitle;
+        // Installation path for this install only; null keeps the configured
+        // default (or, when replacing, the path the app already uses).
+        private string? install_target_choice = null;
+        private Gtk.DropDown? target_dropdown = null;
+        private string[] target_choices = {};
+        private bool suppress_target_change = false;
         private string appimage_path;
         private bool installing = false;
         private bool install_prompt_visible = false;
@@ -289,6 +295,12 @@ namespace AppManager {
             subtitle.wrap = true;
             outer.append(subtitle);
 
+            // Only worth asking when there is somewhere else to put it: with a
+            // single configured path there is nothing to choose.
+            if (AppPaths.additional_installation_dirs.length > 0) {
+                build_target_selector(outer);
+            }
+
             drag_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 32);
             drag_box.halign = Gtk.Align.CENTER;
             drag_box.valign = Gtk.Align.CENTER;
@@ -345,7 +357,7 @@ namespace AppManager {
             folder_column = build_icon_column(folder_icon, out folder_name_label, install_dir_name);
             drag_box.append(folder_column);
             setup_double_click(folder_column, null, () => {
-                UiUtils.open_folder(AppPaths.applications_dir, this);
+                UiUtils.open_folder(install_target_choice ?? AppPaths.install_target_dir, this);
             });
 
             drag_overlay = new Gtk.Overlay();
@@ -399,6 +411,118 @@ namespace AppManager {
             // is selected.
             footer_bar.set_opacity(0.0);
             toolbar_view.add_bottom_bar(footer_bar);
+        }
+
+        /**
+         * The "Install to" chooser shown above the drop area when more than one
+         * installation path is configured. It picks a path for this install
+         * only; the global default stays in Preferences.
+         */
+        private void build_target_selector(Gtk.Box parent) {
+            var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
+            box.halign = Gtk.Align.CENTER;
+            box.valign = Gtk.Align.CENTER;
+
+            var label = new Gtk.Label(_("Install to"));
+            label.add_css_class("dim-label");
+            box.append(label);
+
+            var dropdown = new Gtk.DropDown(null, null);
+            dropdown.valign = Gtk.Align.CENTER;
+            dropdown.tooltip_text = _("Where this app is stored. Apps on another path are linked into the main folder.");
+            box.append(dropdown);
+            target_dropdown = dropdown;
+
+            rebuild_target_dropdown();
+            dropdown.notify["selected"].connect(on_target_selection_changed);
+            parent.append(box);
+        }
+
+        private void rebuild_target_dropdown() {
+            if (target_dropdown == null) {
+                return;
+            }
+            target_choices = AppPaths.all_installation_dirs;
+            var model = new Gtk.StringList(null);
+            foreach (var path in target_choices) {
+                model.append(shorten_path(path));
+            }
+
+            var wanted = install_target_choice ?? AppPaths.install_target_dir;
+            uint selected = 0;
+            for (int i = 0; i < target_choices.length; i++) {
+                if (target_choices[i] == wanted) {
+                    selected = (uint) i;
+                    break;
+                }
+            }
+
+            suppress_target_change = true;
+            target_dropdown.model = model;
+            target_dropdown.selected = selected;
+            suppress_target_change = false;
+            update_target_labels();
+        }
+
+        private void on_target_selection_changed() {
+            if (suppress_target_change || target_dropdown == null) {
+                return;
+            }
+            var index = (int) target_dropdown.selected;
+            if (index < 0 || index >= target_choices.length) {
+                return;
+            }
+            install_target_choice = target_choices[index];
+            update_target_labels();
+        }
+
+        /** Shows the path this install would go to on the folder and subtitle. */
+        private void update_target_labels() {
+            var chosen = install_target_choice ?? AppPaths.install_target_dir;
+            var name = Path.get_basename(chosen);
+            if (name == "" || name == "/") {
+                name = chosen;
+            }
+            if (folder_name_label != null) {
+                folder_name_label.set_text(name);
+            }
+            if (target_dropdown != null) {
+                target_dropdown.tooltip_text = chosen;
+            }
+            // Leave the label alone while it reports download or install progress.
+            if (subtitle != null && !downloading && !installing && !install_completed) {
+                subtitle.set_text(_("Drag and drop to install into %s").printf(name));
+            }
+            refresh_folder_icon();
+        }
+
+        /** Locks the chooser to the path an app being replaced already uses. */
+        private void select_installation_path(string path) {
+            if (target_dropdown == null) {
+                return;
+            }
+            for (int i = 0; i < target_choices.length; i++) {
+                if (target_choices[i] == path) {
+                    suppress_target_change = true;
+                    target_dropdown.selected = (uint) i;
+                    suppress_target_change = false;
+                    install_target_choice = path;
+                    update_target_labels();
+                    return;
+                }
+            }
+        }
+
+        /** Shortened path for labels: the home folder reads as ~/. */
+        private static string shorten_path(string path) {
+            var home = Environment.get_home_dir();
+            if (home != null && home != "/" && path == home) {
+                return "~";
+            }
+            if (home != null && home != "/" && path.has_prefix(home + "/")) {
+                return "~" + path.substring(home.length);
+            }
+            return path;
         }
 
         private void present_install_warning_dialog() {
@@ -553,6 +677,11 @@ namespace AppManager {
                 return;
             }
 
+            // An app being replaced stays where it is unless the chooser says
+            // otherwise, so the dropdown shows the path it is on rather than the
+            // default for new installs.
+            select_installation_path(AppPaths.resolve_install_root(record.installed_path));
+
             // Use icon with verification badge overlay
             var icon_overlay = create_dialog_icon_with_badge(record, true);
 
@@ -622,10 +751,16 @@ namespace AppManager {
 
             var staged_copy = staged_path;
             var staged_dir_capture = staged_dir;
-            run_installation_async.begin(staged_copy, staged_dir_capture, existing_target, mode, intent);
+            // The chooser's pick, or - when replacing - the path the app is
+            // already on. Null hands the decision back to the settings.
+            var target_root = install_target_choice;
+            if (target_root == null && existing_target != null) {
+                target_root = AppPaths.resolve_install_root(existing_target.installed_path);
+            }
+            run_installation_async.begin(staged_copy, staged_dir_capture, existing_target, mode, intent, target_root);
         }
 
-        private async void run_installation_async(string staged_copy, string staged_dir_capture, InstallationRecord? existing_target, InstallMode mode, InstallIntent intent) {
+        private async void run_installation_async(string staged_copy, string staged_dir_capture, InstallationRecord? existing_target, InstallMode mode, InstallIntent intent, string? target_root) {
             SourceFunc callback = run_installation_async.callback;
             InstallationRecord? record = null;
             Error? error = null;
@@ -633,9 +768,9 @@ namespace AppManager {
             new Thread<void>("appmgr-install", () => {
                 try {
                     if (existing_target != null) {
-                        record = installer.upgrade(staged_copy, existing_target, download_policy);
+                        record = installer.upgrade(staged_copy, existing_target, download_policy, target_root);
                     } else {
-                        record = installer.install(staged_copy, mode, download_policy);
+                        record = installer.install(staged_copy, mode, download_policy, target_root);
                     }
                 } catch (Error e) {
                     error = e;
@@ -1166,38 +1301,64 @@ namespace AppManager {
             var image = new Gtk.Image();
             image.set_pixel_size(ICON_SIZE);
 
-            var display = Gdk.Display.get_default();
-            if (display != null) {
-                var theme = Gtk.IconTheme.get_for_display(display);
-                var gicon = load_applications_gicon();
-                if (theme != null && gicon != null) {
-                    var paintable = theme.lookup_by_gicon(gicon, ICON_SIZE, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR);
-                    if (paintable != null) {
-                        image.set_from_paintable(paintable);
-                        return image;
-                    }
-                }
-
-                string[] icon_candidates = { "folder-applications", "folder-apps", "folder" };
-                foreach (var name in icon_candidates) {
-                    if (theme != null && theme.has_icon(name)) {
-                        image.set_from_icon_name(name);
-                        return image;
-                    }
-                }
+            var paintable = lookup_folder_paintable(install_target_choice ?? AppPaths.install_target_dir, ICON_SIZE);
+            if (paintable != null) {
+                image.set_from_paintable(paintable);
+            } else {
+                image.set_from_icon_name("folder");
             }
-
-            image.set_from_icon_name("folder");
             return image;
         }
 
-        private GLib.Icon? load_applications_gicon() {
-            var applications_path = AppPaths.applications_dir;
+        /** Replaces the folder artwork when the chosen installation path changes. */
+        private void refresh_folder_icon() {
+            if (folder_icon == null) {
+                return;
+            }
+            var paintable = lookup_folder_paintable(install_target_choice ?? AppPaths.install_target_dir, 96);
+            if (paintable != null) {
+                folder_icon.set_from_paintable(paintable);
+            } else {
+                folder_icon.set_from_icon_name("folder");
+            }
+        }
+
+        private Gdk.Paintable? lookup_folder_paintable(string path, int size) {
+            var display = Gdk.Display.get_default();
+            if (display == null) {
+                return null;
+            }
+            var theme = Gtk.IconTheme.get_for_display(display);
+            if (theme == null) {
+                return null;
+            }
+            var gicon = load_applications_gicon(path);
+            if (gicon != null) {
+                var paintable = theme.lookup_by_gicon(gicon, size, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR);
+                if (paintable != null) {
+                    return paintable;
+                }
+            }
+
+            string[] icon_candidates = { "folder-applications", "folder-apps", "folder" };
+            foreach (var name in icon_candidates) {
+                if (theme.has_icon(name)) {
+                    return theme.lookup_icon(name, null, size, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR);
+                }
+            }
+            return null;
+        }
+
+        private GLib.Icon? load_applications_gicon(string applications_path) {
             var applications_dir = File.new_for_path(applications_path);
-            
-            // Ensure the directory exists before querying its icon
-            DirUtils.create_with_parents(applications_path, 0755);
-            
+
+            // Only the main path may be created on demand - an additional path
+            // missing right now means its drive is not mounted, and recreating
+            // the tree would land it on the root filesystem.
+            if (applications_path == AppPaths.applications_dir) {
+                DirUtils.create_with_parents(applications_path, 0755);
+            }
+
             try {
                 // Always query custom-icon metadata - it can be set by any file
                 // manager (Nautilus, Nemo, Caja, etc.) and must not be gated on
@@ -1214,7 +1375,7 @@ namespace AppManager {
                     return info.get_icon();
                 }
             } catch (Error e) {
-                warning("Applications icon lookup failed: %s", e.message);
+                debug("Folder icon lookup for %s failed: %s", applications_path, e.message);
             }
 
             var themed_fallback = new GLib.ThemedIcon.from_names({ "folder-applications", "folder-apps" });

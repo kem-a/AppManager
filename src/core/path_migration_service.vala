@@ -223,6 +223,12 @@ namespace AppManager.Core {
                 return;
             }
 
+            // An app stored on an additional installation path keeps its files
+            // where they are, but the link showing it in the main folder belongs
+            // to the folder being migrated - it has to follow it, or the app
+            // disappears from the regular location.
+            relocate_installation_symlink(record, old_base, new_base);
+
             var old_path = record.installed_path;
             
             // Only migrate if the app is under the old base directory
@@ -313,6 +319,38 @@ namespace AppManager.Core {
                 }
                 update_symlink(extra_symlink, old_path, new_path);
             }
+        }
+
+        /**
+         * Moves the link that shows `record` in the main installation folder from
+         * the old folder to the new one. Only the link moves - the app itself
+         * stays on its own installation path, which is the point of storing it
+         * there. The new link is created before the old one is dropped so the app
+         * is visible throughout.
+         */
+        private void relocate_installation_symlink(InstallationRecord record, string old_base, string new_base) {
+            if (record.symlink_path == null || record.symlink_path.strip() == "") {
+                return;
+            }
+            var old_link = record.symlink_path.strip();
+            if (!AppPaths.path_is_inside(old_base, old_link)) {
+                return;
+            }
+
+            var relative = old_link.substring(old_base.length);
+            while (relative.has_prefix("/")) {
+                relative = relative.substring(1);
+            }
+            var new_link = Path.build_filename(new_base, relative);
+            DirUtils.create_with_parents(Path.get_dirname(new_link), 0755);
+
+            var created = AppPaths.sync_installation_symlink(record.installed_path, new_link, new_base);
+            if (created == null || created == old_link) {
+                warning("Could not move install link for %s to %s", record.name, new_base);
+                return;
+            }
+            AppPaths.remove_installation_symlink(old_link, record.installed_path);
+            record.symlink_path = created;
         }
 
         private async void copy_directory_recursive(string src, string dest) throws Error {
