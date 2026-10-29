@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: app-manager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-27 12:22+0200\n"
-"PO-Revision-Date: 2026-07-26 12:00+0000\n"
+"PO-Revision-Date: 2026-10-27 12:00+0000\n"
 "Last-Translator: denisrennes\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -143,17 +143,17 @@ msgid ""
 "An older item named \"%s\" already exists in this location. Do you want to "
 "replace it with newer one you're copying?"
 msgstr ""
-"Un élément plus vieux nommé \"%s\" existe déjà à cet emplacement. Voulez-"
-"vous le remplacer par celui-ci, plus récent ?"
+"Un élément plus vieux nommé \"%s\" existe déjà à cet emplacement. Voulez-vous "
+"le remplacer par celui-ci, plus récent ?"
 
 #: src/application.vala:760 src/windows/drop_window.vala:566
 #, c-format
 msgid ""
-"A newer item named %s already exists in this location. Do you want to "
-"replace it with the older one you're copying?"
+"A newer item named %s already exists in this location. Do you want to replace "
+"it with the older one you're copying?"
 msgstr ""
-"Un élément plus récent nommé %s existe déjà à cet emplacement. Voulez-vous "
-"le remplacer par celui-ci, plus ancien ?"
+"Un élément plus récent nommé %s existe déjà à cet emplacement. Voulez-vous le "
+"remplacer par celui-ci, plus ancien ?"
 
 #: src/application.vala:762 src/windows/drop_window.vala:568
 #, c-format
@@ -224,10 +224,10 @@ msgstr "Dossier portable abandonné trouvé"
 #: src/application.vala:1028
 #, c-format
 msgid ""
-"A leftover portable folder was found next to AppManager (%s). AppManager "
-"does not support portable mode for itself. The folder may contain apps "
-"installed while this bug was active - move anything you need out of it (e.g. "
-"AppImages under its Applications subfolder), then delete it."
+"A leftover portable folder was found next to AppManager (%s). AppManager does "
+"not support portable mode for itself. The folder may contain apps installed "
+"while this bug was active - move anything you need out of it (e.g. AppImages "
+"under its Applications subfolder), then delete it."
 msgstr ""
 "Un dossier portable orphelin a été détecté à côté d'AppManager (%s). "
 "AppManager ne prend pas en charge le mode portable pour lui-même. Ce dossier "
@@ -395,8 +395,8 @@ msgstr ""
 #: src/core/installer.vala:374 src/core/installer.vala:433
 msgid "The AppHub sandbox policy could not be matched to this download."
 msgstr ""
-"La politique de sandbox AppHub n'a pas pu être mise en correspondance avec "
-"ce téléchargement."
+"La politique de sandbox AppHub n'a pas pu être mise en correspondance avec ce "
+"téléchargement."
 
 #: src/core/apphub_policy.vala:33
 #, c-format
@@ -405,11 +405,10 @@ msgstr "Politique de sandbox AppHub invalide : %s"
 
 #: src/core/apphub_policy.vala:149
 msgid ""
-"AppHub policy requires FUSE access inside the sandbox, which is not "
-"supported."
+"AppHub policy requires FUSE access inside the sandbox, which is not supported."
 msgstr ""
-"La politique de l'AppHub nécessite un accès FUSE à l'intérieur de la "
-"sandbox, ce qui n'est pas supporté."
+"La politique de l'AppHub nécessite un accès FUSE à l'intérieur de la sandbox, "
+"ce qui n'est pas supporté."
 
 #: src/core/apphub_policy.vala:279 src/core/apphub_policy.vala:289
 msgid "This AppHub artifact is not available for installation."
@@ -706,11 +705,11 @@ msgstr ""
 
 #: src/windows/details_window.vala:305
 msgid "FUSE is missing, this app cannot run."
-msgstr ""
+msgstr "FUSE est manquant, cette application ne peut pas s'exécuter."
 
 #: src/windows/details_window.vala:306 src/windows/main_window.vala:1112
 msgid "Learn more"
-msgstr ""
+msgstr "En savoir plus"
 
 #: src/windows/details_window.vala:436 src/windows/drop_window.vala:829
 msgid "Show in Files"
@@ -754,19 +753,19 @@ msgstr "Arguments de ligne de commande"
 
 #: src/windows/details_window.vala:560
 msgid "Start on login"
-msgstr ""
+msgstr "Lancer à la connexion"
 
 #: src/windows/details_window.vala:561
 msgid "Run this app automatically when you log in"
-msgstr ""
+msgstr "Lancer cette application automatiquement quand vous vous connectez"
 
 #: src/windows/details_window.vala:578
 msgid "Extra arguments at login"
-msgstr ""
+msgstr "Arguments supplémentaires à la connexion"
 
 #: src/windows/details_window.vala:591
 msgid "Delay in seconds"
-msgstr ""
+msgstr "Délai en secondes"
 
 #: src/windows/details_window.vala:604 src/windows/details_window.vala:660
 msgid "App Updates"
@@ -788,8 +787,8 @@ msgstr "Désactivé"
 
 #: src/windows/details_window.vala:627
 msgid ""
-"Update info lets AppManager fetch new builds for you. Paste the download "
-"link and AppManager will do the rest."
+"Update info lets AppManager fetch new builds for you. Paste the download link "
+"and AppManager will do the rest."
 msgstr ""
 "Les informations de mise à jour permettent à AppManager de récupérer les "
 "nouvelles versions pour vous. Collez le lien de téléchargement et AppManager "
@@ -885,8 +884,8 @@ msgstr "Le mode sandbox n'est pas disponible pour cette application."
 #: src/windows/details_window.vala:927
 msgid "Only apps installed in portable mode can be sandboxed."
 msgstr ""
-"Seules les applications installées en mode portable peuvent être exécutées "
-"en sandbox."
+"Seules les applications installées en mode portable peuvent être exécutées en "
+"sandbox."
 
 #: src/windows/details_window.vala:928
 msgid "AppManager cannot sandbox itself."
@@ -898,8 +897,7 @@ msgstr "Le mode sandbox nécessite Bubblewrap"
 
 #: src/windows/details_window.vala:931 src/windows/preferences_window.vala:399
 msgid "Install the bubblewrap and xdg-dbus-proxy packages to use this."
-msgstr ""
-"Installez les packages bubblewrap et xdg-dbus-proxy pour utiliser cela."
+msgstr "Installez les packages bubblewrap et xdg-dbus-proxy pour utiliser cela."
 
 #: src/windows/details_window.vala:942 src/windows/preferences_window.vala:355
 msgid "Portable folders"
@@ -936,12 +934,12 @@ msgid ""
 "that need something you have not granted may fail to start or silently "
 "misbehave."
 msgstr ""
-"Une application en mode sandbox dispose de son propre dossier personnel et "
-"ne peut pas accéder au reste de vos fichiers. Le mode « Standard » permet de "
-"conserver l'accès au réseau et au son ; le mode « Strict » les désactive "
-"tous les deux. Les applications qui ont besoin d'une autorisation que vous "
-"ne leur avez pas accordée peuvent ne pas démarrer ou présenter des "
-"dysfonctionnements sans symptômes visibles."
+"Une application en mode sandbox dispose de son propre dossier personnel et ne "
+"peut pas accéder au reste de vos fichiers. Le mode « Standard » permet de "
+"conserver l'accès au réseau et au son ; le mode « Strict » les désactive tous "
+"les deux. Les applications qui ont besoin d'une autorisation que vous ne leur "
+"avez pas accordée peuvent ne pas démarrer ou présenter des dysfonctionnements "
+"sans symptômes visibles."
 
 #: src/windows/details_window.vala:967
 msgid "Profile"
@@ -1006,8 +1004,9 @@ msgid ""
 "Unfiltered access to desktop services. Weakens the sandbox, so grant it only "
 "to apps you trust."
 msgstr ""
-"Accès sans restriction aux services du bureau. Cela affaiblit la sandbox, ne "
-"l'accordez donc qu'aux applications auxquelles vous faites confiance."
+"Accès sans restriction aux services du bureau. Cela affaiblit la sandbox. "
+"N'accordez donc cette autorisation qu'aux applications auxquelles vous faites "
+"confiance."
 
 #: src/windows/details_window.vala:1018 src/windows/details_window.vala:1188
 msgid "Devices"
@@ -1039,8 +1038,7 @@ msgstr "Manettes de jeu"
 
 #: src/windows/details_window.vala:1036
 msgid ""
-"Also exposes keyboards and mice, so grant it only to apps that need a "
-"gamepad."
+"Also exposes keyboards and mice, so grant it only to apps that need a gamepad."
 msgstr ""
 "Cette fonctionnalité donne également accès aux claviers et aux souris. Ne "
 "l'accordez donc qu'aux applications qui ont besoin d'une manette de jeu."
@@ -1075,8 +1073,8 @@ msgstr "Se connecter au service d'accessibilité du bureau via un bus filtré."
 
 #: src/windows/details_window.vala:1071
 msgid ""
-"Reaches the system location service. AppManager alone enforces this - it "
-"does not appear in your desktop's location settings."
+"Reaches the system location service. AppManager alone enforces this - it does "
+"not appear in your desktop's location settings."
 msgstr ""
 "Accède au service de localisation du système. Seul AppManager gère cette "
 "fonctionnalité, elle n'apparaît pas dans les paramètres de localisation de "
@@ -1093,7 +1091,7 @@ msgstr ""
 
 #: src/windows/details_window.vala:1083
 msgid "Online accounts"
-msgstr ""
+msgstr "Comptes en ligne"
 
 #: src/windows/details_window.vala:1083
 msgid ""
@@ -1101,20 +1099,27 @@ msgid ""
 "calendar and contact data. The app can reach every configured account, so "
 "grant it only to apps you trust."
 msgstr ""
+"Utiliser GNOME Comptes En Ligne et Evolution Data Server pour lire et "
+"modifier les données de mail, agenda et contacts. Cette application pourra "
+"accéder à tous les comptes configurés. N'accordez donc cette autorisation "
+"qu'aux applications auxquelles vous faites confiance."
 
 #: src/windows/details_window.vala:1089
 msgid "Keyring"
-msgstr ""
+msgstr "Keyring"
 
 #: src/windows/details_window.vala:1089
 msgid ""
-"Save logins in GNOME Keyring or KWallet. The app can also read every "
-"password stored there, so grant it only to apps you trust."
+"Save logins in GNOME Keyring or KWallet. The app can also read every password "
+"stored there, so grant it only to apps you trust."
 msgstr ""
+"Enregistrer vos identifiants dans GNOME Keyrings ou KWallet. L'application "
+"pourra aussi lire tous les mots de passe qui y sont stockés. N'accordez donc "
+"cette autorisation qu'aux applications auxquelles vous faites confiance."
 
 #: src/windows/details_window.vala:1095
 msgid "System authentication"
-msgstr ""
+msgstr "Authentification Système"
 
 #: src/windows/details_window.vala:1095
 msgid ""
@@ -1122,16 +1127,24 @@ msgid ""
 "other processes and read their command lines and environment, so grant it "
 "only to apps you trust."
 msgstr ""
+"Déverrouillez l'application à l'aide de votre mot de passe système ou de "
+"votre empreinte digitale. L'application pourra également accéder aux autres "
+"process et lire leurs lignes de commande ainsi que leur environnement. "
+"N'accordez donc cette autorisation qu'aux applications auxquelles vous faites "
+"confiance."
 
 #: src/windows/details_window.vala:1101
 msgid "Screenshots"
-msgstr ""
+msgstr "Captures d'écrans"
 
 #: src/windows/details_window.vala:1101
 msgid ""
 "Take screenshots with the desktop's screenshot tool. They are saved in "
 "Pictures, so the app also needs that folder."
 msgstr ""
+"Faire des captures d'écran à l'aide de l'outil de capture d'écran du bureau. "
+"Celles-ci sont enregistrées dans le dossier Images. L'application a donc "
+"également besoin de ce dossier."
 
 #: src/windows/details_window.vala:1109 src/windows/details_window.vala:1181
 msgid "Folders"
@@ -1139,9 +1152,9 @@ msgstr "Dossiers"
 
 #: src/windows/details_window.vala:1110
 msgid ""
-"Folders shared with the app. Choose read-only or read and write access. "
-"Other folders stay hidden, including anything you pick in a file dialog "
-"inside the app."
+"Folders shared with the app. Choose read-only or read and write access. Other "
+"folders stay hidden, including anything you pick in a file dialog inside the "
+"app."
 msgstr ""
 "Dossiers partagés avec l'application. Choisissez entre un accès en lecture "
 "seule ou en lecture-écriture. Les autres dossiers restent masqués, y compris "
@@ -1218,8 +1231,7 @@ msgstr "Sanbox globale"
 
 #: src/windows/details_window.vala:1217
 msgid ""
-"Folders granted to every sandboxed app. Change them in AppManager "
-"preferences."
+"Folders granted to every sandboxed app. Change them in AppManager preferences."
 msgstr ""
 "Dossiers fournis à chaque application en mode sandbox. Vous pouvez les "
 "modifier dans les préférences d'AppManager."
@@ -1229,15 +1241,15 @@ msgid ""
 "Off while this app is sandboxed. The sandbox gives it a home folder of its "
 "own, and anything these folders held has been moved into that."
 msgstr ""
-"Désactivé tant que cette application est en mode sandbox. Le mode sandbox "
-"lui attribue son propre dossier personnel, et tout ce que contenaient ces "
+"Désactivé tant que cette application est en mode sandbox. Le mode sandbox lui "
+"attribue son propre dossier personnel, et tout ce que contenaient ces "
 "dossiers a été déplacé dedans."
 
 #: src/windows/details_window.vala:1307
 msgid ""
-"The AppImage runtime redirects the app's home and config into folders next "
-"to the AppImage, so its data travels with the file. A sandboxed app never "
-"runs that runtime, so this and the sandbox are alternatives."
+"The AppImage runtime redirects the app's home and config into folders next to "
+"the AppImage, so its data travels with the file. A sandboxed app never runs "
+"that runtime, so this and the sandbox are alternatives."
 msgstr ""
 "Le moteur d'exécution d'AppImage redirige le répertoire personnel et le "
 "répertoire de configuration de l'application vers des dossiers situés à côté "
@@ -1277,8 +1289,8 @@ msgstr "Paramètres avancés"
 msgid ""
 "Change app icon, Startup WM Class, Keywords, $PATH or environment variables"
 msgstr ""
-"Modifier l'icône d'application, la classe Startup WM, les mots clés, $PATH "
-"ou les variables d'environnement"
+"Modifier l'icône d'application, la classe Startup WM, les mots clés, $PATH ou "
+"les variables d'environnement"
 
 #: src/windows/details_window.vala:1602
 msgid "App Settings"
@@ -1383,7 +1395,7 @@ msgstr "Créer un lanceur dans %s pour pouvoir l'exécuter depuis le terminal"
 #: src/windows/details_window.vala:2051
 #, c-format
 msgid "Not added to $PATH: '%s' already exists in %s"
-msgstr ""
+msgstr "N'a pas été ajouté à $PATH : '%s' existe déjà dans %s"
 
 #: src/windows/details_window.vala:2072
 msgid "Actions"
@@ -1404,7 +1416,7 @@ msgstr "Restaurer par défaut"
 
 #: src/windows/details_window.vala:2206
 msgid "Installation cannot be cancelled"
-msgstr ""
+msgstr "L'installation ne peut pas être annulée."
 
 #: src/windows/details_window.vala:2218
 msgid "Updating..."
@@ -1577,11 +1589,11 @@ msgstr "Aucune application"
 
 #: src/windows/main_window.vala:219
 msgid ""
-"To install AppImages, drag and drop them onto this window or double click "
-"the file"
+"To install AppImages, drag and drop them onto this window or double click the "
+"file"
 msgstr ""
-"Pour installer des AppImages, glisser-déposer celles-ci dans cette fenêtre "
-"ou double-cliquez sur le fichier AppImage."
+"Pour installer des AppImages, glisser-déposer celles-ci dans cette fenêtre ou "
+"double-cliquez sur le fichier AppImage."
 
 #: src/windows/main_window.vala:299
 msgid "Get more ..."
@@ -1597,7 +1609,7 @@ msgstr "Parcourez ces sources pour découvrir et télécharger des AppImages"
 
 #: src/windows/main_window.vala:315
 msgid "AppHub (Recommended)"
-msgstr ""
+msgstr "AppHub (Recommandé)"
 
 #: src/windows/main_window.vala:348
 msgid "Import AppImages from folder ..."
@@ -1609,11 +1621,11 @@ msgstr "Aucune application AppImage installée"
 
 #: src/windows/main_window.vala:392
 msgid ""
-"To install AppImages, drag and drop them onto this window or double click "
-"the files"
+"To install AppImages, drag and drop them onto this window or double click the "
+"files"
 msgstr ""
-"Pour installer des AppImages, glisser-déposer celles-ci dans cette fenêtre "
-"ou double-cliquez sur les fichiers AppImage."
+"Pour installer des AppImages, glisser-déposer celles-ci dans cette fenêtre ou "
+"double-cliquez sur les fichiers AppImage."
 
 #: src/windows/main_window.vala:469
 msgid "No results found"
@@ -1763,6 +1775,7 @@ msgstr "Rechercher des applications..."
 #: src/windows/main_window.vala:1111
 msgid "FUSE is missing, some apps may fail to run."
 msgstr ""
+"FUSE est manquant. Certaines applications risquent de ne pas fonctionner."
 
 #: src/windows/main_window.vala:1136
 msgid "Shift+click to launch app"
@@ -1806,11 +1819,11 @@ msgstr "Les mises à jour sont déjà en cours"
 
 #: src/windows/main_window.vala:1444
 msgid "Clear pending updates"
-msgstr ""
+msgstr "Effacer les mises à jour en attente"
 
 #: src/windows/main_window.vala:1506
 msgid "Pending updates cleared"
-msgstr ""
+msgstr "Mises à jour en attente effacées"
 
 #: src/windows/main_window.vala:1574
 msgid "Update check cancelled"
@@ -1831,7 +1844,7 @@ msgstr "Aucune mise à jour en attente"
 
 #: src/windows/main_window.vala:1646 src/windows/main_window.vala:1720
 msgid "Canceled"
-msgstr ""
+msgstr "Annulé"
 
 #: src/windows/main_window.vala:1758 src/windows/main_window.vala:1779
 #: src/windows/main_window.vala:2114 src/windows/main_window.vala:2172
@@ -1871,8 +1884,7 @@ msgstr "%d mise(s) à jour échouée(s)"
 #: src/windows/main_window.vala:1924
 msgid "Add update addresses in Details to enable updates"
 msgstr ""
-"Ajoutez des adresses de mise à jour dans Détails pour activer les mises à "
-"jour"
+"Ajoutez des adresses de mise à jour dans Détails pour activer les mises à jour"
 
 #: src/windows/main_window.vala:1926
 msgid "All supported apps are already up to date"
@@ -1881,8 +1893,7 @@ msgstr "Toutes les applications prises en charge sont déjà à jour"
 #: src/windows/main_window.vala:1930
 #, c-format
 msgid "%d app(s) use unsupported update links"
-msgstr ""
-"%d application(s) utilisent des liens de mise à jour non pris en charge"
+msgstr "%d application(s) utilisent des liens de mise à jour non pris en charge"
 
 #: src/windows/main_window.vala:2015
 #, c-format
@@ -1903,7 +1914,7 @@ msgstr "Rechercher des mises à jour"
 
 #: src/windows/main_window.vala:2218
 msgid "Update apps"
-msgstr ""
+msgstr "Mettre à jour les applications"
 
 #: src/windows/main_window.vala:2219
 msgid "Show main menu"
@@ -2051,8 +2062,8 @@ msgstr "Conserver l'extension du nom de fichier"
 
 #: src/windows/preferences_window.vala:118
 msgid ""
-"Replace spaces with underscores in installed filenames and keep "
-"the .AppImage extension"
+"Replace spaces with underscores in installed filenames and keep the .AppImage "
+"extension"
 msgstr ""
 "Remplacer les espaces par des soulignés dans les noms de fichiers installés "
 "et garder l'extension .AppImage"
@@ -2131,8 +2142,8 @@ msgid ""
 "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 "
 "requests per hour"
 msgstr ""
-"S'authentifier sur GitHub pour élever la limite de requêtes API de 60 à 5 "
-"000 par heure"
+"S'authentifier sur GitHub pour élever la limite de requêtes API de 60 à 5 000 "
+"par heure"
 
 #: src/windows/preferences_window.vala:232
 msgid "Personal access token"
@@ -2178,8 +2189,8 @@ msgstr "Créer un jeton sur GitHub"
 #: src/windows/preferences_window.vala:304
 msgid "Fine-grained token with read-only public repo access is sufficient"
 msgstr ""
-"Un jeton à granularité fine avec un accès en lecture seule aux dépôts "
-"publics est suffisant."
+"Un jeton à granularité fine avec un accès en lecture seule aux dépôts publics "
+"est suffisant."
 
 #: src/windows/preferences_window.vala:330
 #: src/windows/preferences_window.vala:454
@@ -2189,8 +2200,8 @@ msgstr "Sécurité et Vie Privée"
 #: src/windows/preferences_window.vala:331
 msgid "App sandboxing and the folders every sandboxed app may use"
 msgstr ""
-"Le sandboxing des applications et les dossiers auxquels chaque application "
-"en mode sandbox peut accéder"
+"Le mode sandbox d'applications et les dossiers auxquels chaque application en "
+"mode sandbox peut accéder"
 
 #: src/windows/preferences_window.vala:356
 msgid ""
@@ -2224,16 +2235,16 @@ msgstr ""
 
 #: src/windows/preferences_window.vala:374
 msgid "App sandboxing"
-msgstr "Sandboxing d'application"
+msgstr "Mode sandbox d'applications"
 
 #: src/windows/preferences_window.vala:378
 msgid "Sandboxing is <b>experimental</b>"
-msgstr "Le Sandboxing est <b>expérimental</b>"
+msgstr "Le mode sandbox est <b>expérimental</b>"
 
 #: src/windows/preferences_window.vala:381
 msgid ""
-"Sandboxed apps may misbehave or stop working entirely. If an app breaks, "
-"turn its sandbox off in that app's security settings."
+"Sandboxed apps may misbehave or stop working entirely. If an app breaks, turn "
+"its sandbox off in that app's security settings."
 msgstr ""
 "Les applications en mode sandbox peuvent présenter des dysfonctionnements ou "
 "cesser complètement de fonctionner. Si une application ne fonctionne plus, "
@@ -2263,6 +2274,10 @@ msgid ""
 "Choose read-only or read and write access. A symlink only works if you also "
 "add the folder it points at."
 msgstr ""
+"Dossiers partagés avec toutes les applications en mode sandbox, en plus de "
+"leurs propres autorisations. Choisissez entre un accès en lecture seule ou en "
+"lecture-écriture. Un lien symbolique ne fonctionne que si vous ajoutez "
+"également le dossier vers lequel il pointe."
 
 #: src/windows/preferences_window.vala:472
 msgid ""
@@ -2272,20 +2287,32 @@ msgid ""
 "windows. Apps may need reconfiguration or fail; inaccessible files, browser "
 "links and remote folders may not work."
 msgstr ""
+"Le mode sandbox attribue à chaque application un espace privé et limite "
+"l'accès aux fichiers, aux périphériques et aux services du bureau. Il ne "
+"s'agit pas d'une garantie de sécurité : des autorisations trop larges "
+"affaiblissent l'isolation. Le son inclut l'accès au microphone et X11 peut "
+"exposer les entrées et les fenêtres d'autres applications. Les applications "
+"pourraient nécessiter une reconfiguration ou ne pas fonctionner. Des fichiers "
+"inaccessibles, des liens de navigateur et des dossiers distants pourraient ne "
+"pas fonctionner."
 
 #: src/windows/preferences_window.vala:474
 msgid "Learn more..."
-msgstr ""
+msgstr "En savoir plus..."
 
 #: src/windows/preferences_window.vala:479
 msgid ""
 "These 15 hidden paths in your home are always shared read-only when present:"
 msgstr ""
+"Ces 15 dossiers cachés de votre ordinateur sont toujours partagés en lecture "
+"seule lorsqu'ils sont présents : "
 
 #: src/windows/preferences_window.vala:493
 msgid ""
 "Every sandboxed app can also use these desktop services. They have no switch:"
-msgstr "Chaque application en sandbox peut aussi utiliser ces services du bureau. Ils n'ont pas d'interrupteur :"
+msgstr ""
+"Chaque application en sandbox peut aussi utiliser ces services du bureau. Ils "
+"n'ont pas d'interrupteur :"
 
 #: src/windows/preferences_window.vala:499
 msgid "Appearance settings, through the Settings portal"
@@ -2293,13 +2320,17 @@ msgstr "Paramètres d'apparence, via le portail Settings"
 
 #: src/windows/preferences_window.vala:500
 msgid "Its own name on the session bus, so single-instance apps work"
-msgstr "Son propre nom sur le bus de session, pour que les applications à instance unique fonctionnent"
+msgstr ""
+"Son propre nom sur le bus de session, pour que les applications à instance "
+"unique fonctionnent"
 
 #: src/windows/preferences_window.vala:501
 msgid ""
-"Sleep and shutdown notices. The app may delay sleep for a few seconds to "
-"lock or save."
-msgstr "Notifications de mise en veille et d'arrêt. L'application peut retarder la mise en veille de quelques secondes pour se verrouiller ou enregistrer."
+"Sleep and shutdown notices. The app may delay sleep for a few seconds to lock "
+"or save."
+msgstr ""
+"Notifications de mise en veille et d'arrêt. L'application peut retarder la "
+"mise en veille de quelques secondes pour se verrouiller ou enregistrer."
 
 #: src/windows/preferences_window.vala:502
 msgid "Screen lock state"
@@ -2311,7 +2342,7 @@ msgstr "Enregistrement du menu global, sur les bureaux qui en affichent un"
 
 #: src/windows/preferences_window.vala:518
 msgid "About app sandboxing"
-msgstr ""
+msgstr "A propos du mode sandbox d'application"
 
 #: src/windows/preferences_window.vala:677
 msgid "Select Installation Directory"
@@ -2332,8 +2363,8 @@ msgstr "Déplacer les applications installées ?"
 #: src/windows/preferences_window.vala:765
 #, c-format
 msgid ""
-"This will move %d installed app(s) to the new location. This may take a "
-"while depending on the size of your apps."
+"This will move %d installed app(s) to the new location. This may take a while "
+"depending on the size of your apps."
 msgstr ""
 "Cela va déplacer %d application(s) installée(s) vers le nouvel emplacement. "
 "Cela peut prendre un certain temps selon la taille de vos applications."
@@ -2408,8 +2439,7 @@ msgstr "Arnis Kemlers"
 #. (itstool) path: component/summary
 #: data/com.github.AppManager.metainfo.xml:9
 msgid "Drag-and-drop AppImage installer and management application"
-msgstr ""
-"Installateur d'AppImage par glisser-déposer et gestionnaire d'AppImages"
+msgstr "Installateur d'AppImage par glisser-déposer et gestionnaire d'AppImages"
 
 #. (itstool) path: component/metadata_license
 #: data/com.github.AppManager.metainfo.xml:10
@@ -2519,8 +2549,8 @@ msgstr "app-manager"
 #~ "permissions. A symlink only works if you also add the folder it points at."
 #~ msgstr ""
 #~ "Dossiers que toute application en mode sandbox peut lire et modifier, en "
-#~ "plus de ses propres autorisations. Un lien symbolique ne fonctionne que "
-#~ "si vous ajoutez également le dossier vers lequel il pointe."
+#~ "plus de ses propres autorisations. Un lien symbolique ne fonctionne que si "
+#~ "vous ajoutez également le dossier vers lequel il pointe."
 
 #~ msgid "zsync2"
 #~ msgstr "zsync2"
