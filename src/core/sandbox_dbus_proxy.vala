@@ -292,14 +292,32 @@ namespace AppManager.Core {
             rules.add_all(settings_portal_rules());
             rules.add_all(screen_lock_rules());
             rules.add_all(app_menu_rules());
+            rules.add_all(file_manager_rules());
 
+            return rules;
+        }
+
+        /**
+         * "Show in folder" for every app (GIMP, Chromium and Electron apps): the file
+         * manager opens a window or properties dialog at a path the app names, and
+         * nothing comes back. Files in the private home have other host paths, so
+         * only granted folders show the right place.
+         */
+        public static Gee.ArrayList<string> file_manager_rules() {
+            var rules = new Gee.ArrayList<string>();
+            const string service = "org.freedesktop.FileManager1";
+            const string path = "/org/freedesktop/FileManager1";
+            foreach (var member in new string[] { "ShowItems", "ShowFolders", "ShowItemProperties" }) {
+                rules.add("--call=%s=%s.%s@%s".printf(service, service, member, path));
+            }
             return rules;
         }
 
         /**
          * Screen-lock state for every app: password managers such as Bitwarden lock
          * their vault when the screen locks. Reading the state and hearing it change,
-         * never Lock, SetActive or idle inhibition.
+         * plus GNOME's WakeUpScreen notice (Planify refreshes its day on it), never
+         * Lock, SetActive or idle inhibition.
          */
         public static Gee.ArrayList<string> screen_lock_rules() {
             var rules = new Gee.ArrayList<string>();
@@ -308,6 +326,7 @@ namespace AppManager.Core {
                 rules.add("--call=%s=%s.GetActive@%s".printf(name, name, path));
                 rules.add("--broadcast=%s=%s.ActiveChanged@%s".printf(name, name, path));
             }
+            rules.add("--broadcast=org.gnome.ScreenSaver=org.gnome.ScreenSaver.WakeUpScreen@/org/gnome/ScreenSaver");
             return rules;
         }
 
@@ -356,26 +375,28 @@ namespace AppManager.Core {
             return rules;
         }
 
-        // Secret Service (GNOME Keyring, KeePassXC, recent KWallet) and the KWallet
-        // names Chromium and Electron call directly. Whole-service grants: the proxy
-        // cannot filter on call arguments, so per-item access is not expressible.
+        // Secret Service (GNOME Keyring, KeePassXC, recent KWallet), the KWallet
+        // names Chromium and Electron call directly, and the GNOME Keyring prompter
+        // for unlock and passphrase dialogs (Convey does not start without it).
+        // Whole-service grants: the proxy cannot filter on call arguments, so
+        // per-item access is not expressible.
         public const string[] KEYRING_NAMES = {
             "org.freedesktop.secrets",
             "org.kde.kwalletd5",
-            "org.kde.kwalletd6"
+            "org.kde.kwalletd6",
+            "org.gnome.keyring.SystemPrompter"
         };
 
         // GNOME Online Accounts plus the services Convey (and other GOA-backed mail
-        // and calendar apps) use: Contacts for contact cards, Settings to open the
-        // Online Accounts panel, and the keyring prompter for passphrase prompts.
-        // Evolution Data Server is a namespace because its versioned service names
-        // change between releases. Whole services: the proxy cannot filter on call
-        // arguments, and GOA returns credentials for every configured account.
+        // and calendar apps) use: Contacts for contact cards and Settings to open
+        // the Online Accounts panel. Evolution Data Server is a namespace because
+        // its versioned service names change between releases. Whole services: the
+        // proxy cannot filter on call arguments, and GOA returns credentials for
+        // every configured account.
         public const string[] ONLINE_ACCOUNTS_NAMES = {
             "org.gnome.OnlineAccounts",
             "org.gnome.Contacts",
-            "org.gnome.Settings",
-            "org.gnome.keyring.SystemPrompter"
+            "org.gnome.Settings"
         };
         public const string EVOLUTION_DATASERVER_NAMESPACE = "org.gnome.evolution.dataserver";
 

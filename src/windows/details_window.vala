@@ -381,7 +381,7 @@ namespace AppManager {
             open_button.add_css_class("open-button");
             open_button.sensitive = !FuseSupport.record_cannot_mount(record);
 
-            var launch_spinner = new Gtk.Spinner();
+            var launch_spinner = new Adw.Spinner();
             launch_spinner.set_visible(false);
 
             open_button.clicked.connect(() => {
@@ -392,10 +392,8 @@ namespace AppManager {
 
                         // Show spinner for 3 seconds as launch feedback
                         launch_spinner.set_visible(true);
-                        launch_spinner.start();
                         open_button.sensitive = false;
                         Timeout.add(3000, () => {
-                            launch_spinner.stop();
                             launch_spinner.set_visible(false);
                             open_button.sensitive = true;
                             return Source.REMOVE;
@@ -854,8 +852,20 @@ namespace AppManager {
                 case Core.SANDBOX_PROFILE_STANDARD: return _("Standard");
                 case Core.SANDBOX_PROFILE_STRICT:   return _("Strict");
                 case Core.SANDBOX_PROFILE_APPHUB:   return _("AppHub");
+                case Core.SANDBOX_PROFILE_FLATHUB:  return _("Flathub");
                 default:                            return _("Custom");
             }
+        }
+
+        // The update dot, here leading from this page to the Flathub profile. It is
+        // shown once after install, until the profile list has been opened.
+        private static Gtk.Label build_flathub_notice_dot(bool visible) {
+            var dot = new Gtk.Label("●");
+            dot.add_css_class("update-indicator");
+            dot.valign = Gtk.Align.CENTER;
+            dot.tooltip_text = _("Flathub permissions available");
+            dot.visible = visible;
+            return dot;
         }
 
         private Adw.ActionRow build_security_action_row() {
@@ -866,6 +876,9 @@ namespace AppManager {
             row.subtitle = _("Run this app isolated from the rest of your files");
             row.add_prefix(new Gtk.Image.from_icon_name("security-high-symbolic"));
 
+            var notice_dot = build_flathub_notice_dot(record.flathub_notice);
+            row.add_suffix(notice_dot);
+
             var status_label = new Gtk.Label(sandbox_status_label());
             status_label.add_css_class("dim-label");
             row.add_suffix(status_label);
@@ -874,7 +887,7 @@ namespace AppManager {
             row.add_suffix(icon);
             row.activatable = true;
             row.activated.connect(() => {
-                var page = build_security_page(status_label);
+                var page = build_security_page(status_label, notice_dot);
                 var main_win = (MainWindow) this.get_root();
                 main_win.push_page(page);
             });
@@ -883,12 +896,16 @@ namespace AppManager {
 
         private const string[] SANDBOX_DISPLAY_ORDER = { "legacy", "wayland-or-x11", "wayland", "x11", "none" };
 
-        private int sandbox_display_index() {
-            var display = record.sandbox_display ?? (record.sandbox_allow_x11 ? "legacy" : "wayland");
+        private int sandbox_display_index(InstallationRecord r) {
+            var display = r.sandbox_display ?? (r.sandbox_allow_x11 ? "legacy" : "wayland");
             for (int i = 0; i < SANDBOX_DISPLAY_ORDER.length; i++) {
                 if (SANDBOX_DISPLAY_ORDER[i] == display) return i;
             }
             return 0;
+        }
+
+        private static string[] sandbox_display_labels() {
+            return { _("Wayland and X11"), _("Prefer Wayland, otherwise X11"), _("Wayland only"), _("X11 only"), _("None") };
         }
 
         private Adw.ComboRow build_folder_permission_row(string title, string icon_name, string location) {
@@ -911,7 +928,7 @@ namespace AppManager {
             return row;
         }
 
-        private Adw.NavigationPage build_security_page(Gtk.Label status_label) {
+        private Adw.NavigationPage build_security_page(Gtk.Label status_label, Gtk.Widget notice_dot) {
             var prefs_page = new Adw.PreferencesPage();
 
             bool supported = Core.SandboxConfig.supports_record(record);
@@ -970,6 +987,79 @@ namespace AppManager {
                 _("Off"), _("Standard"), _("Strict"), _("Custom")
             });
             if (has_apphub) ((Gtk.StringList) profile_row.model).append(_("AppHub"));
+            // Only for apps Flathub has. Fetched again when picked and reviewed in a
+            // dialog: unlike an AppHub template, the match rests on an id the
+            // AppImage declares about itself.
+            UpdateFunc add_flathub_option = () => {
+                profile_order.add(Core.SANDBOX_PROFILE_FLATHUB);
+                ((Gtk.StringList) profile_row.model).append(_("Flathub"));
+            };
+            if (record.flathub_id != null) add_flathub_option();
+            // The row's value gets its own factory only to put the dot right before it;
+            // suffixes would land after the dropdown arrow.
+            Gtk.Widget? profile_dot = null;
+            var profile_value = new Gtk.SignalListItemFactory();
+            profile_value.setup.connect((obj) => {
+                var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
+                box.append(build_flathub_notice_dot(false));
+                var label = new Gtk.Label(null);
+                label.ellipsize = Pango.EllipsizeMode.END;
+                box.append(label);
+                ((Gtk.ListItem) obj).child = box;
+            });
+            profile_value.bind.connect((obj) => {
+                var item = (Gtk.ListItem) obj;
+                profile_dot = item.child.get_first_child();
+                profile_dot.visible = record.flathub_notice;
+                ((Gtk.Label) profile_dot.get_next_sibling()).label = ((Gtk.StringObject) item.item).string;
+            });
+            profile_row.factory = profile_value;
+
+            // A custom popup list only to put the dot on the Flathub entry. Libadwaita
+            // draws the selection check only in its default factory, so it is redone here.
+            Gtk.Widget? flathub_item_dot = null;
+            var profile_items = new Gtk.SignalListItemFactory();
+            profile_items.setup.connect((obj) => {
+                var item = (Gtk.ListItem) obj;
+                var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
+                var label = new Gtk.Label(null);
+                label.xalign = 0;
+                box.append(label);
+                box.append(build_flathub_notice_dot(false));
+                var check = new Gtk.Image.from_icon_name("object-select-symbolic");
+                check.hexpand = true;
+                check.halign = Gtk.Align.END;
+                box.append(check);
+                item.child = box;
+                profile_row.notify["selected-item"].connect(() => {
+                    check.opacity = profile_row.selected_item == item.item ? 1 : 0;
+                });
+            });
+            profile_items.bind.connect((obj) => {
+                var item = (Gtk.ListItem) obj;
+                var label = (Gtk.Label) item.child.get_first_child();
+                var dot = label.get_next_sibling();
+                label.label = ((Gtk.StringObject) item.item).string;
+                bool flathub = profile_order[(int) item.position] == Core.SANDBOX_PROFILE_FLATHUB;
+                dot.visible = flathub && record.flathub_notice;
+                if (flathub) flathub_item_dot = dot;
+                item.child.get_last_child().opacity = profile_row.selected_item == item.item ? 1 : 0;
+            });
+            profile_row.list_factory = profile_items;
+
+            // Opening the list is looking at it: when it closes, the dots go.
+            bool profile_popup_open = false;
+            profile_row.notify["css-classes"].connect(() => {
+                bool open = profile_row.has_css_class("has-open-popup");
+                if (profile_popup_open && !open && record.flathub_notice) {
+                    record.flathub_notice = false;
+                    registry.update(record, false);
+                    notice_dot.visible = false;
+                    if (profile_dot != null) profile_dot.visible = false;
+                    if (flathub_item_dot != null) flathub_item_dot.visible = false;
+                }
+                profile_popup_open = open;
+            });
             profile_group.add(profile_row);
             if (record.apphub_id != null) {
                 var source_row = new Adw.ActionRow();
@@ -1000,8 +1090,8 @@ namespace AppManager {
             display_row.use_subtitle = true;
             display_row.subtitle_lines = 0;
             display_row.tooltip_text = _("Prefer Wayland when available; otherwise use X11.");
-            display_row.model = new Gtk.StringList({ _("Wayland and X11"), _("Prefer Wayland, otherwise X11"), _("Wayland only"), _("X11 only"), _("None") });
-            display_row.selected = sandbox_display_index();
+            display_row.model = new Gtk.StringList(sandbox_display_labels());
+            display_row.selected = sandbox_display_index(record);
             display_row.add_prefix(new Gtk.Image.from_icon_name("video-display-symbolic"));
             access_group.add(display_row);
 
@@ -1250,7 +1340,7 @@ namespace AppManager {
                 suppress = true;
                 network_row.active       = record.sandbox_allow_network;
                 audio_row.active         = record.sandbox_allow_audio;
-                display_row.selected     = sandbox_display_index();
+                display_row.selected     = sandbox_display_index(record);
                 dbus_row.active          = record.sandbox_allow_dbus;
                 gpu_row.active           = record.sandbox_allow_gpu;
                 camera_row.active        = record.sandbox_allow_camera;
@@ -1401,7 +1491,7 @@ namespace AppManager {
                 foreach (var service in service_rows.keys) previous_services.set(service, Core.SandboxConfig.service_enabled(record, service));
                 record.sandbox_allow_network       = network_row.active;
                 record.sandbox_allow_audio         = audio_row.active;
-                if ((int) display_row.selected != sandbox_display_index()) {
+                if ((int) display_row.selected != sandbox_display_index(record)) {
                     var display = SANDBOX_DISPLAY_ORDER[display_row.selected];
                     record.sandbox_display = display == "legacy" ? null : display;
                     record.sandbox_allow_x11 = display == "legacy" || display == "wayland-or-x11" || display == "x11";
@@ -1438,8 +1528,33 @@ namespace AppManager {
             }
             update_sensitivity();
 
+            // Installs from before the check, or made offline, are looked up once
+            // here, quietly: the notice dots are only for fresh installs.
+            if (Core.FlathubPermissions.should_check(record)) {
+                lookup_flathub.begin(Core.FlathubPermissions.candidate_ids(record), (obj, res) => {
+                    try {
+                        var found = lookup_flathub.end(res);
+                        record.flathub_checked = true;
+                        if (found != null) {
+                            record.flathub_id = found.app_id;
+                            add_flathub_option();
+                            sync_profile_row();
+                        }
+                        registry.update(record, false);
+                    } catch (Error e) {
+                        debug("Flathub check for %s failed: %s", record.id, e.message);
+                    }
+                });
+            }
+
+            // Fetched when the Flathub entry is picked, applied once the dialog is accepted.
+            Core.FlathubPermissions? flathub_choice = null;
+
             StringUpdateFunc apply_profile = (picked) => {
-                if (picked == Core.SANDBOX_PROFILE_APPHUB) {
+                if (picked == Core.SANDBOX_PROFILE_FLATHUB) {
+                    flathub_choice.apply(record);
+                    sync_permission_rows();
+                } else if (picked == Core.SANDBOX_PROFILE_APPHUB) {
                     try {
                         Core.SandboxConfig.restore_apphub_profile(record);
                     } catch (Error e) {
@@ -1462,16 +1577,7 @@ namespace AppManager {
                 commit(picked != Core.SANDBOX_PROFILE_APPHUB);
             };
 
-            profile_row.notify["selected"].connect(() => {
-                if (suppress) {
-                    return;
-                }
-                var index = profile_row.selected;
-                if (index >= profile_order.size) {
-                    return;
-                }
-                var picked = profile_order[(int) index];
-
+            StringUpdateFunc switch_profile = (picked) => {
                 // Switching the sandbox on takes the app's portable data with it, since
                 // nothing would read it where it is. Only a sandboxed home that already
                 // holds data raises a question worth asking.
@@ -1491,6 +1597,50 @@ namespace AppManager {
                     installer.migrate_portable_to_sandbox(record, false);
                 }
                 apply_profile(picked);
+            };
+
+            // Nothing moves until the dialog is accepted; every other outcome puts
+            // the combo back on the current profile.
+            UpdateFunc choose_flathub = () => {
+                profile_row.sensitive = false;
+                lookup_flathub.begin({ record.flathub_id }, (obj, res) => {
+                    update_sensitivity();
+                    try {
+                        flathub_choice = lookup_flathub.end(res);
+                    } catch (Error e) {
+                        var error_dialog = new Adw.AlertDialog(_("Unable to check Flathub"), e.message);
+                        error_dialog.add_response("ok", _("OK"));
+                        error_dialog.present(this);
+                        sync_profile_row();
+                        return;
+                    }
+                    if (flathub_choice == null) {
+                        show_toast(_("This app was not found on Flathub"));
+                        sync_profile_row();
+                        return;
+                    }
+                    present_flathub_suggestion(flathub_choice, () => {
+                        switch_profile(Core.SANDBOX_PROFILE_FLATHUB);
+                    }, () => {
+                        sync_profile_row();
+                    });
+                });
+            };
+
+            profile_row.notify["selected"].connect(() => {
+                if (suppress) {
+                    return;
+                }
+                var index = profile_row.selected;
+                if (index >= profile_order.size) {
+                    return;
+                }
+                var picked = profile_order[(int) index];
+                if (picked == Core.SANDBOX_PROFILE_FLATHUB) {
+                    choose_flathub();
+                } else {
+                    switch_profile(picked);
+                }
             });
 
             // The parent page's status reads "Portable" whenever one of these folders
@@ -1633,6 +1783,7 @@ namespace AppManager {
         private delegate void UpdateFunc();
         private delegate void CommitFunc(bool permission_edit);
         private delegate void StringUpdateFunc(string value);
+        private delegate void ChangeRowFunc(string title, string before, string after);
         private delegate Adw.ActionRow EnvRowFunc(string? name, string? value, Gtk.Button add_button);
 
         /**
@@ -1657,6 +1808,143 @@ namespace AppManager {
                     on_cancel();
                 } else {
                     on_choice(response == "replace");
+                }
+            });
+            dialog.present(this);
+        }
+
+        private async Core.FlathubPermissions? lookup_flathub(owned string[] ids) throws Error {
+            SourceFunc callback = lookup_flathub.callback;
+            Core.FlathubPermissions? found = null;
+            Error? error = null;
+            new Thread<void>("appmgr-flathub", () => {
+                try {
+                    found = Core.FlathubPermissions.lookup(ids);
+                } catch (Error e) {
+                    error = e;
+                }
+                Idle.add((owned) callback);
+            });
+            yield;
+            if (error != null) throw error;
+            return found;
+        }
+
+        /** Lists what Flathub's permissions would change, and applies them only on request. */
+        private void present_flathub_suggestion(Core.FlathubPermissions flathub, owned UpdateFunc on_apply, owned UpdateFunc on_cancel) {
+            var preview = InstallationRecord.from_json(record.to_json().get_object());
+            var skipped = flathub.apply(preview);
+
+            var changes = new Gtk.ListBox();
+            changes.add_css_class("boxed-list");
+            changes.selection_mode = Gtk.SelectionMode.NONE;
+            int count = 0;
+            ChangeRowFunc add_change = (title, before, after) => {
+                if (before == after) return;
+                var row = new Adw.ActionRow();
+                row.use_markup = false;
+                row.title = title;
+                row.subtitle = "%s → %s".printf(before, after);
+                changes.append(row);
+                count++;
+            };
+
+            var on = _("On");
+            var off = _("Off");
+            string[] switch_labels = { _("Network"), _("Sound"), _("Full session bus"), _("Full system bus"),
+                _("Hardware acceleration"), _("Camera"), _("Game controllers"), _("Security keys") };
+            bool[] before = { record.sandbox_allow_network, record.sandbox_allow_audio, record.sandbox_allow_dbus,
+                record.sandbox_system_bus == "full", record.sandbox_allow_gpu, record.sandbox_allow_camera,
+                record.sandbox_allow_input, record.sandbox_allow_security_keys };
+            bool[] after = { preview.sandbox_allow_network, preview.sandbox_allow_audio, preview.sandbox_allow_dbus,
+                preview.sandbox_system_bus == "full", preview.sandbox_allow_gpu, preview.sandbox_allow_camera,
+                preview.sandbox_allow_input, preview.sandbox_allow_security_keys };
+            for (int i = 0; i < switch_labels.length; i++) {
+                add_change(switch_labels[i], before[i] ? on : off, after[i] ? on : off);
+            }
+            var displays = sandbox_display_labels();
+            add_change(_("Display"), displays[sandbox_display_index(record)], displays[sandbox_display_index(preview)]);
+
+            string[] services = { "notifications", "accessibility", "location", "network-information",
+                "online-accounts", "keyring", "system-authentication", "screenshots", "bluetooth" };
+            string[] service_labels = { _("Notifications"), _("Accessibility"), _("Location"), _("Network information"),
+                _("Online accounts"), _("Keyring"), _("System authentication"), _("Screenshots"), _("Bluetooth") };
+            for (int i = 0; i < services.length; i++) {
+                add_change(service_labels[i],
+                    Core.SandboxConfig.service_enabled(record, services[i]) ? on : off,
+                    Core.SandboxConfig.service_enabled(preview, services[i]) ? on : off);
+            }
+
+            string[] folders = { "downloads", "documents", "desktop", "pictures", "videos", "music" };
+            string[] folder_labels = { _("Downloads"), _("Documents"), _("Desktop"), _("Pictures"), _("Videos"), _("Music") };
+            string[] access = { off, _("Read-only"), _("Read and write") };
+            for (int i = 0; i < folders.length; i++) {
+                add_change(folder_labels[i],
+                    access[Core.SandboxConfig.folder_access(record, folders[i])],
+                    access[Core.SandboxConfig.folder_access(preview, folders[i])]);
+            }
+
+            // Imported grants have no switch of their own, so they go by manifest token.
+            var tokens_before = new Gee.HashSet<string>();
+            var tokens_after = new Gee.HashSet<string>();
+            foreach (var token in record.sandbox_other_dirs ?? new string[0]) tokens_before.add(token);
+            foreach (var token in record.sandbox_extra_devices ?? new string[0]) tokens_before.add(token);
+            foreach (var token in record.sandbox_media_names ?? new string[0]) tokens_before.add(token);
+            foreach (var token in preview.sandbox_other_dirs ?? new string[0]) tokens_after.add(token);
+            foreach (var token in preview.sandbox_extra_devices ?? new string[0]) tokens_after.add(token);
+            foreach (var token in preview.sandbox_media_names ?? new string[0]) tokens_after.add(token);
+            var all_tokens = new Gee.TreeSet<string>();
+            all_tokens.add_all(tokens_before);
+            all_tokens.add_all(tokens_after);
+            foreach (var token in all_tokens) {
+                add_change(token, token in tokens_before ? on : off, token in tokens_after ? on : off);
+            }
+
+            var box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
+            var changes_label = new Gtk.Label(count > 0 ? _("Changes") : _("The current settings already match."));
+            changes_label.halign = Gtk.Align.START;
+            changes_label.add_css_class(count > 0 ? "heading" : "dim-label");
+            box.append(changes_label);
+            if (count > 0) box.append(changes);
+            if (skipped.length > 0) {
+                var skipped_label = new Gtk.Label(_("Not applied"));
+                skipped_label.halign = Gtk.Align.START;
+                skipped_label.add_css_class("heading");
+                box.append(skipped_label);
+                var skipped_list = new Gtk.ListBox();
+                skipped_list.add_css_class("boxed-list");
+                skipped_list.selection_mode = Gtk.SelectionMode.NONE;
+                foreach (var option in skipped) {
+                    var row = new Adw.ActionRow();
+                    row.use_markup = false;
+                    row.title = option;
+                    skipped_list.append(row);
+                }
+                box.append(skipped_list);
+            }
+            var scroller = new Gtk.ScrolledWindow();
+            scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
+            scroller.propagate_natural_height = true;
+            scroller.max_content_height = 360;
+            scroller.child = box;
+
+            var dialog = new Adw.AlertDialog(
+                _("Flathub permissions"),
+                _("Flathub lists these permissions for %s. AppManager cannot confirm that this AppImage is the same app, so review them before applying. Flatpak apps also open files through a desktop portal the sandbox does not provide, so file access may need adjusting.").printf(flathub.app_id)
+            );
+            dialog.extra_child = scroller;
+            dialog.add_response("cancel", _("Cancel"));
+            dialog.add_response("apply", _("Apply"));
+            // Enabled even with nothing to change: applying still switches the profile
+            // to Flathub, so the page shows where these settings come from.
+            dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED);
+            dialog.set_close_response("cancel");
+            dialog.set_default_response("cancel");
+            dialog.response.connect((response) => {
+                if (response == "apply") {
+                    on_apply();
+                } else {
+                    on_cancel();
                 }
             });
             dialog.present(this);

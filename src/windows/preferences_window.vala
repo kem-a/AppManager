@@ -274,7 +274,7 @@ namespace AppManager {
             token_test_row.subtitle = _( "Verify your token works and check rate limit status");
             token_test_row.add_prefix(new Gtk.Image.from_icon_name("object-select-symbolic"));
 
-            var test_spinner = new Gtk.Spinner();
+            var test_spinner = new Adw.Spinner();
             test_spinner.visible = false;
             var test_button = new Gtk.Button.with_label(_( "Test"));
             test_button.valign = Gtk.Align.CENTER;
@@ -284,13 +284,11 @@ namespace AppManager {
                 TokenStore.set_token(token_row.text.strip());
                 test_button.sensitive = false;
                 test_spinner.visible = true;
-                test_spinner.spinning = true;
                 token_test_row.subtitle = _( "Testing…");
                 test_github_token.begin(token_row.text.strip(), (obj, res) => {
                     var result = test_github_token.end(res);
                     token_test_row.subtitle = result;
                     test_button.sensitive = true;
-                    test_spinner.spinning = false;
                     test_spinner.visible = false;
                 });
             });

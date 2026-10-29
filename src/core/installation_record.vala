@@ -45,6 +45,11 @@ namespace AppManager.Core {
         public string? apphub_id { get; set; }
         public string? apphub_policy { get; set; }
         public bool apphub_policy_customized { get; set; default = false; }
+        // The Flathub app matching this one, once looked up; the Flathub profile needs it.
+        public string? flathub_id { get; set; }
+        public bool flathub_checked { get; set; default = false; }
+        // Flathub has this app, found right after install and not yet looked at.
+        public bool flathub_notice { get; set; default = false; }
         public string? last_modified { get; set; }  // HTTP Last-Modified header for change detection
         public int64 content_length { get; set; default = 0; }  // HTTP Content-Length for change detection
         public string? last_release_tag { get; set; }  // Stores release tag_name for apps without version
@@ -258,6 +263,9 @@ namespace AppManager.Core {
             apphub_id                   = other.apphub_id;
             apphub_policy               = other.apphub_policy;
             apphub_policy_customized    = other.apphub_policy_customized;
+            flathub_id                  = other.flathub_id;
+            flathub_checked             = other.flathub_checked;
+            flathub_notice              = other.flathub_notice;
         }
 
         public InstallationRecord(string id, string name, InstallMode mode) {
@@ -386,6 +394,10 @@ namespace AppManager.Core {
             builder.set_member_name("apphub_policy");
             builder.add_string_value(apphub_policy ?? "");
             put_bool(builder, "apphub_policy_customized", apphub_policy_customized);
+            builder.set_member_name("flathub_id");
+            builder.add_string_value(flathub_id ?? "");
+            put_bool(builder, "flathub_checked", flathub_checked);
+            put_bool(builder, "flathub_notice", flathub_notice);
             builder.set_member_name("last_modified");
             builder.add_string_value(last_modified ?? "");
             builder.set_member_name("content_length");
@@ -750,6 +762,10 @@ namespace AppManager.Core {
             var apphub_policy = obj.get_string_member_with_default("apphub_policy", "");
             record.apphub_policy = apphub_policy == "" ? null : apphub_policy;
             record.apphub_policy_customized = read_bool(obj, "apphub_policy_customized", false);
+            var flathub_id = obj.get_string_member_with_default("flathub_id", "");
+            record.flathub_id = flathub_id == "" ? null : flathub_id;
+            record.flathub_checked = read_bool(obj, "flathub_checked", false);
+            record.flathub_notice = read_bool(obj, "flathub_notice", false);
             var last_modified = obj.get_string_member_with_default("last_modified", "");
             record.last_modified = last_modified == "" ? null : last_modified;
             record.content_length = (int64)obj.get_int_member_with_default("content_length", 0);

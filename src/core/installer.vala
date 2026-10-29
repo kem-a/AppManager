@@ -11,6 +11,13 @@ namespace AppManager.Core {
         UNKNOWN
     }
 
+    /** A fresh install's sandbox: the Preferences default, or an explicit pick. */
+    public enum SandboxChoice {
+        DEFAULT,
+        ON,
+        OFF
+    }
+
     public class Installer : Object {
         private InstallationRegistry registry;
         private Settings settings;
@@ -26,8 +33,9 @@ namespace AppManager.Core {
             this.uninstall_prefix = resolve_uninstall_prefix();
         }
 
-        public InstallationRecord install(string file_path, InstallMode override_mode = InstallMode.PORTABLE, AppHubPolicy? policy = null) throws Error {
-            return install_sync(file_path, override_mode, null, policy);
+        public InstallationRecord install(string file_path, InstallMode override_mode = InstallMode.PORTABLE, AppHubPolicy? policy = null,
+                                          SandboxChoice sandbox = SandboxChoice.DEFAULT) throws Error {
+            return install_sync(file_path, override_mode, null, policy, sandbox);
         }
 
         public InstallationRecord upgrade(string file_path, InstallationRecord old_record, AppHubPolicy? policy = null) throws Error {
@@ -426,7 +434,8 @@ namespace AppManager.Core {
             if (!AppPaths.sandbox_available) throw new InstallerError.UNKNOWN(_("Install bubblewrap to apply the AppHub sandbox policy."));
         }
 
-        private InstallationRecord install_sync(string file_path, InstallMode override_mode, InstallationRecord? old_record, AppHubPolicy? policy = null) throws Error {
+        private InstallationRecord install_sync(string file_path, InstallMode override_mode, InstallationRecord? old_record, AppHubPolicy? policy = null,
+                                                SandboxChoice sandbox = SandboxChoice.DEFAULT) throws Error {
             var file = File.new_for_path(file_path);
             var metadata = new AppImageMetadata(file);
             if (policy != null && policy.sha256 != null && policy.sha256 != metadata.checksum) {
@@ -502,10 +511,11 @@ namespace AppManager.Core {
 
             try {
                 if (mode == InstallMode.PORTABLE) {
-                    install_portable(metadata, record, is_upgrade);
+                    install_portable(metadata, record, is_upgrade, sandbox);
                     // For fresh installs, apply the global portable-mode defaults (home/config independently).
                     // Upgrades inherit existing portable folders (they stayed in place during reinstall).
-                    if (old_record == null && !is_self_record(record)) {
+                    // A sandboxed app never runs the runtime that reads them.
+                    if (old_record == null && !is_self_record(record) && !record.sandbox_enabled()) {
                         if (settings.get_boolean("portable-home-default")) {
                             create_portable_home(record);
                         }
@@ -538,10 +548,10 @@ namespace AppManager.Core {
             }
         }
 
-        private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
+        private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade, SandboxChoice sandbox) throws Error {
             progress("Preparing Applications folder…");
             record.installed_path = metadata.path;
-            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null);
+            finalize_desktop_and_icon(record, metadata, metadata.path, metadata.path, is_upgrade, null, sandbox);
         }
 
         private void install_extracted(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade) throws Error {
@@ -838,7 +848,8 @@ namespace AppManager.Core {
             }
         }
 
-        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path) throws Error {
+        private void finalize_desktop_and_icon(InstallationRecord record, AppImageMetadata metadata, string exec_target, string appimage_for_assets, bool is_upgrade, string? app_run_path,
+                                               SandboxChoice sandbox = SandboxChoice.DEFAULT) throws Error {
             string exec_path = exec_target.dup();
             string assets_path = appimage_for_assets.dup();
             string? resolved_entry_exec = null;
@@ -1047,12 +1058,18 @@ namespace AppManager.Core {
 
                 if (record.apphub_policy != null && record.apphub_id != null
                     && !record.apphub_policy_customized && !record.is_self_app()) {
-                    validate_policy_install(record.mode);
-                    AppHubPolicy.parse(record.apphub_id, record.apphub_policy).apply(record);
+                    if (!is_upgrade && sandbox == SandboxChoice.OFF) {
+                        // Turned off in the installer: the template stays for a later restore.
+                        record.sandbox_profile = SANDBOX_PROFILE_OFF;
+                        record.apphub_policy_customized = true;
+                    } else {
+                        validate_policy_install(record.mode);
+                        AppHubPolicy.parse(record.apphub_id, record.apphub_policy).apply(record);
+                    }
                 }
 
                 // Fresh-install default: opt in to the Standard profile when the user asked
-                // for it in Preferences. Special-folder history does not select a profile. Placed after
+                // for it in Preferences or in the installer. Special-folder history does not select a profile. Placed after
                 // original_startup_wm_class is known, since supports_record() uses it to keep
                 // AppManager from sandboxing itself.
                 if (!is_upgrade
@@ -1060,7 +1077,8 @@ namespace AppManager.Core {
                     && !record.apphub_policy_customized
                     && AppPaths.sandbox_available
                     && SandboxConfig.supports_record(record)
-                    && settings.get_boolean("default-sandbox-enabled")) {
+                    && (sandbox == SandboxChoice.ON
+                        || (sandbox == SandboxChoice.DEFAULT && settings.get_boolean("default-sandbox-enabled")))) {
                     SandboxConfig.apply_preset(record, SANDBOX_PROFILE_STANDARD);
                 }
                 // Carried active settings may be unsupported after a mode change or

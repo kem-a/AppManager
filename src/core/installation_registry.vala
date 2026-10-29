@@ -266,6 +266,21 @@ namespace AppManager.Core {
             }
         }
 
+        // Set by the post-install Flathub check, only on the installation it checked.
+        // A match also raises the one-time notice.
+        public void set_flathub_result(string id, string checksum, string? flathub_id) {
+            registry_mutex.lock();
+            var record = records.get(id);
+            if (record != null && !migration_in_progress && !in_flight.contains(id)
+                && record.source_checksum == checksum) {
+                record.flathub_id = flathub_id;
+                record.flathub_checked = true;
+                record.flathub_notice = flathub_id != null;
+                save_unlocked();
+            }
+            registry_mutex.unlock();
+        }
+
         // Apply worker metadata only if this exact installation is still current.
         public void update_appstream_metadata(string id, string path, string checksum,
                                              int64 installed_at, string? appstream_id) {

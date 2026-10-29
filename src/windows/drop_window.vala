@@ -38,7 +38,7 @@ namespace AppManager {
         private Gtk.Label footer_label;
         private Gtk.PopoverMenu context_popover;
         private Adw.TimedAnimation? ghost_return_animation = null;
-        private Gtk.Spinner drag_spinner;
+        private Adw.Spinner drag_spinner;
         private Adw.Banner incompatibility_banner;
         private Adw.Banner architecture_banner;
         private Adw.Banner verification_banner;
@@ -72,6 +72,13 @@ namespace AppManager {
         private Gtk.Overlay app_icon_overlay;
         private Gtk.Image verification_badge;
         private Gtk.Button verify_button;
+
+        // Whether a fresh install is sandboxed: the Preferences default (or the
+        // AppHub template) until the context menu overrides it.
+        private Gtk.Image sandbox_badge;
+        private GLib.SimpleAction sandbox_action;
+        private bool sandbox_overridden = false;
+        private bool is_self_app = false;
 
         public DropWindow(Application app, InstallationRegistry registry, Installer installer, Settings settings, string path) throws Error {
             Object(application: app,
@@ -167,6 +174,7 @@ namespace AppManager {
 
             resolved_app_name = extract_app_name();
             app_name_label.set_text(resolved_app_name);
+            sync_sandbox_state();
             title = compute_window_title();
             footer_label.set_text(appimage_path);
             var install_dir_name = Path.get_basename(AppPaths.applications_dir);
@@ -313,11 +321,14 @@ namespace AppManager {
             verification_badge.valign = Gtk.Align.END;
             verification_badge.visible = false;
             app_icon_overlay.add_overlay(verification_badge);
-            
-            app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true);
+
+            sandbox_badge = UiUtils.sandbox_indicator();
+
+            app_column = build_icon_column_with_overlay(app_icon_overlay, out app_name_label, resolved_app_name, true, sandbox_badge);
             drag_box.append(app_column);
             setup_double_click(app_column, appimage_path, run_appimage_standalone);
             setup_context_menu(app_column);
+            sync_sandbox_state();
 
             arrow_icon = new Gtk.Image.from_icon_name("go-next-symbolic");
             arrow_icon.set_pixel_size(48);
@@ -326,7 +337,7 @@ namespace AppManager {
             arrow_icon.valign = Gtk.Align.CENTER;
             arrow_icon.add_css_class("dim-label");
 
-            drag_spinner = new Gtk.Spinner();
+            drag_spinner = new Adw.Spinner();
             drag_spinner.set_size_request(48, 48);
             drag_spinner.halign = Gtk.Align.CENTER;
             drag_spinner.valign = Gtk.Align.CENTER;
@@ -629,13 +640,14 @@ namespace AppManager {
             SourceFunc callback = run_installation_async.callback;
             InstallationRecord? record = null;
             Error? error = null;
+            var sandbox = sandbox_choice();
 
             new Thread<void>("appmgr-install", () => {
                 try {
                     if (existing_target != null) {
                         record = installer.upgrade(staged_copy, existing_target, download_policy);
                     } else {
-                        record = installer.install(staged_copy, mode, download_policy);
+                        record = installer.install(staged_copy, mode, download_policy, sandbox);
                     }
                 } catch (Error e) {
                     error = e;
@@ -658,6 +670,9 @@ namespace AppManager {
             set_drag_spinner_install_active(false);
             cleanup_staging_dir(staging_dir);
             remove_source_appimage();
+            if (!upgraded) {
+                FlathubPermissions.check_new_install(registry, record);
+            }
             var title = _("Successfully Installed");
             if (upgraded) {
                 title = intent == InstallIntent.UPDATE ? _("Successfully Updated") : _("Successfully Replaced");
@@ -749,11 +764,6 @@ namespace AppManager {
             var active = spinner_icon_active || spinner_install_active;
             drag_spinner.visible = active;
             arrow_icon.visible = !active;
-            if (active) {
-                drag_spinner.start();
-            } else {
-                drag_spinner.stop();
-            }
         }
 
         private void load_icons_async() {
@@ -832,6 +842,9 @@ namespace AppManager {
                 secondary.append(_("New Terminal at Folder"), "appicon.terminal");
             }
             menu.append_section(null, secondary);
+            var sandbox_section = new GLib.Menu();
+            sandbox_section.append(_("Sandboxed"), "appicon.sandbox");
+            menu.append_section(null, sandbox_section);
 
             var actions = new GLib.SimpleActionGroup();
             var open_action = new GLib.SimpleAction("open", null);
@@ -849,6 +862,13 @@ namespace AppManager {
             var terminal_action = new GLib.SimpleAction("terminal", null);
             terminal_action.activate.connect(() => UiUtils.open_terminal(Path.get_dirname(appimage_path)));
             actions.add_action(terminal_action);
+            sandbox_action = new GLib.SimpleAction.stateful("sandbox", null, new Variant.boolean(false));
+            sandbox_action.change_state.connect((value) => {
+                sandbox_overridden = true;
+                sandbox_action.set_state(value);
+                sync_sandbox_state();
+            });
+            actions.add_action(sandbox_action);
             widget.insert_action_group("appicon", actions);
 
             var popover = new Gtk.PopoverMenu.from_model(menu);
@@ -869,6 +889,24 @@ namespace AppManager {
                 popover.popup();
             });
             widget.add_controller(gesture);
+        }
+
+        private void sync_sandbox_state() {
+            // AppManager never sandboxes itself, so neither the switch nor the shield applies.
+            bool available = AppPaths.sandbox_available && !is_self_app;
+            if (!sandbox_overridden) {
+                bool by_default = download_policy != null || settings.get_boolean("default-sandbox-enabled");
+                sandbox_action.set_state(new Variant.boolean(available && by_default));
+            }
+            sandbox_action.set_enabled(available);
+            sandbox_badge.visible = available && sandbox_action.get_state().get_boolean();
+        }
+
+        private SandboxChoice sandbox_choice() {
+            if (!sandbox_overridden) {
+                return SandboxChoice.DEFAULT;
+            }
+            return sandbox_action.get_state().get_boolean() ? SandboxChoice.ON : SandboxChoice.OFF;
         }
 
         private void show_info_window() {
@@ -1133,6 +1171,7 @@ namespace AppManager {
             var resolved = metadata.display_name;
             resolved_app_version = null;
             is_terminal_app = false;
+            is_self_app = false;
             string temp_dir;
             try {
                 temp_dir = Utils.FileUtils.create_temp_dir("appmgr-name-");
@@ -1151,6 +1190,7 @@ namespace AppManager {
                         resolved_app_version = desktop_info.appimage_version;
                     }
                     is_terminal_app = desktop_info.terminal;
+                    is_self_app = Path.get_basename(desktop_file) == APPLICATION_ID + ".desktop";
                 }
             } catch (Error e) {
                 warning("Desktop file extraction error: %s", e.message);
@@ -1288,7 +1328,7 @@ namespace AppManager {
             return column;
         }
 
-        private Gtk.Box build_icon_column_with_overlay(Gtk.Overlay icon_overlay, out Gtk.Label label, string text, bool emphasize = false) {
+        private Gtk.Box build_icon_column_with_overlay(Gtk.Overlay icon_overlay, out Gtk.Label label, string text, bool emphasize = false, Gtk.Widget? label_prefix = null) {
             var column = new Gtk.Box(Gtk.Orientation.VERTICAL, 6);
             column.halign = Gtk.Align.CENTER;
             column.valign = Gtk.Align.START;
@@ -1306,7 +1346,16 @@ namespace AppManager {
             } else {
                 label.add_css_class("title-6");
             }
-            column.append(label);
+            if (label_prefix != null) {
+                // A hidden prefix takes no spacing, so the name stays centred without it.
+                var title_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
+                title_box.halign = Gtk.Align.CENTER;
+                title_box.append(label_prefix);
+                title_box.append(label);
+                column.append(title_box);
+            } else {
+                column.append(label);
+            }
 
             return column;
         }

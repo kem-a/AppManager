@@ -851,6 +851,9 @@ Examples:
             if (error != null) {
                 quick_install_show_error(error.message);
             } else if (record != null) {
+                if (!upgraded) {
+                    FlathubPermissions.check_new_install(registry, record);
+                }
                 quick_install_show_success(record, upgraded);
             }
 
@@ -1157,6 +1160,7 @@ Examples:
                     if (is_upgrade) {
                         command_line.print("Updated %s\n", record.name);
                     } else {
+                        FlathubPermissions.check_new_install(registry, record);
                         command_line.print("Installed %s\n", record.name);
                     }
                     return 0;

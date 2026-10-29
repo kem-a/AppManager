@@ -426,22 +426,35 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             return add_cache_dir();
         }
 
+        // Theming folders, named under the host's XDG config and data homes, and under
+        // $HOME for the legacy dotfiles.
+        private const string[] APPEARANCE_CONFIG = { "gtk-3.0", "gtk-4.0", "dconf", "fontconfig", "Kvantum", "qt5ct", "qt6ct" };
+        private const string[] APPEARANCE_DATA = { "icons", "themes", "fonts", "gnome-shell/extensions" };
+        private const string[] APPEARANCE_HOME = { ".gtkrc-2.0", ".themes", ".icons", ".fonts" };
+
+        /** Host paths every sandbox reads its theming from, in bind order. */
+        public static string[] host_appearance_paths() {
+            var paths = new Gee.ArrayList<string>();
+            foreach (var name in APPEARANCE_CONFIG) paths.add(Path.build_filename(Environment.get_user_config_dir(), name));
+            foreach (var name in APPEARANCE_DATA) paths.add(Path.build_filename(Environment.get_user_data_dir(), name));
+            foreach (var name in APPEARANCE_HOME) paths.add(Path.build_filename(Environment.get_home_dir(), name));
+            return paths.to_array();
+        }
+
         private void add_host_appearance(string destination_home) {
             // Theming, read-only, on top of the private home: without these the app
             // renders with the default GTK/Qt theme, fonts and cursor while everything
             // around it does not. Legacy dotfile locations are included because plenty
             // of apps still read them, and the GNOME extensions tree because a user
-            // gtk.css commonly @imports from it.
-            string[] theme_paths = {
-                ".config/gtk-3.0", ".config/gtk-4.0", ".config/dconf", ".config/fontconfig",
-                ".config/Kvantum", ".config/qt5ct", ".config/qt6ct",
-                ".local/share/icons", ".local/share/themes", ".local/share/fonts",
-                ".gtkrc-2.0", ".themes", ".icons", ".fonts",
-                ".local/share/gnome-shell/extensions"
-            };
-            foreach (var rel in theme_paths) {
-                var source = Path.build_filename(home, rel);
-                ro_bind_try(SandboxConfig.canonicalize(source), Path.build_filename(destination_home, rel));
+            // gtk.css commonly @imports from it. Sources follow the host's XDG homes;
+            // inside they land at the defaults, since the sandbox does not set those.
+            var sources = host_appearance_paths();
+            var inside = new Gee.ArrayList<string>();
+            foreach (var name in APPEARANCE_CONFIG) inside.add(Path.build_filename(destination_home, ".config", name));
+            foreach (var name in APPEARANCE_DATA) inside.add(Path.build_filename(destination_home, ".local", "share", name));
+            foreach (var name in APPEARANCE_HOME) inside.add(Path.build_filename(destination_home, name));
+            for (int i = 0; i < sources.length; i++) {
+                ro_bind_try(SandboxConfig.canonicalize(sources[i]), inside[i]);
             }
         }
 

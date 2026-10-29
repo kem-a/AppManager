@@ -2450,6 +2450,7 @@ namespace AppManager {
                 SourceFunc callback = run_folder_import.callback;
                 InstallationRecord? record = null;
                 Error? install_error = null;
+                bool upgraded = false;
 
                 string staged_path;
                 string staged_dir;
@@ -2473,8 +2474,7 @@ namespace AppManager {
                 var final_staged_dir = staged_dir;
                 new Thread<void>("appmgr-import", () => {
                     try {
-                        bool unused;
-                        record = installer.install_or_upgrade(staged_path, out unused);
+                        record = installer.install_or_upgrade(staged_path, out upgraded);
                     } catch (Error e) {
                         install_error = e;
                     }
@@ -2495,6 +2495,9 @@ namespace AppManager {
                     }
                 } else {
                     imported++;
+                    if (!upgraded && record != null) {
+                        FlathubPermissions.check_new_install(registry, record);
+                    }
                 }
 
                 progress_bar.fraction = (double)index / (double)total;

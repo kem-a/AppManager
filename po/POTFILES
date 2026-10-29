@@ -5,6 +5,7 @@ src/main.vala
 src/core/appimg_link.vala
 src/core/apphub_policy.vala
 src/core/background_update_service.vala
+src/core/flathub_permissions.vala
 src/core/installer.vala
 src/core/path_migration_service.vala
 src/core/updater.vala

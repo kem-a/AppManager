@@ -16,6 +16,7 @@ namespace AppManager.Core {
     public const string SANDBOX_PROFILE_STRICT = "strict";
     public const string SANDBOX_PROFILE_CUSTOM = "custom";
     public const string SANDBOX_PROFILE_APPHUB = "apphub";
+    public const string SANDBOX_PROFILE_FLATHUB = "flathub";
 
     // Per-app sandbox manifests live in
     // <data_dir>/<SANDBOX_DIRNAME>/<record-id><SANDBOX_MANIFEST_SUFFIX>.
