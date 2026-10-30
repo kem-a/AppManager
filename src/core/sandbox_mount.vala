@@ -221,8 +221,12 @@ namespace AppManager.Core {
                                           string appimage_path, string mount_dir, int64 offset) {
             // Both drivers take the payload offset the same way, and both daemonize on
             // success, so a zero exit status means the filesystem is up.
+            // dwarfs: the default 512M block cache thrashes on big apps (WPS Office
+            // takes 12-20s to its window instead of 6.5s) and is never released.
+            // uruntime's values: a larger cache, emptied of blocks idle for 10s.
             string[] argv = (format == AppImageFormat.DWARFS)
-                ? new string[] { driver, appimage_path, mount_dir, "-o", "offset=%lld".printf(offset) }
+                ? new string[] { driver, appimage_path, mount_dir, "-o",
+                    "offset=%lld,cachesize=1536M,tidy_strategy=time,tidy_interval=2s,tidy_max_age=10s".printf(offset) }
                 : new string[] { driver, "-o", "offset=%lld".printf(offset), appimage_path, mount_dir };
 
             try {
