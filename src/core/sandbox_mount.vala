@@ -9,9 +9,12 @@ namespace AppManager.Core {
      * bound into the sandbox — the same approach flatpak takes with its own
      * deployments, and the reason /dev/fuse never has to be exposed.
      *
-     * Mount point: $XDG_RUNTIME_DIR/app-manager/mounts-v2/<record-id>/<generation>/mnt
+     * Mount point: $XDG_RUNTIME_DIR/app-manager/m3/<record>/<generation>/mnt, where
+     * <record> is 16 hex of sha256(record id) and <generation> 8 hex of the file's
+     * mtime, inode and size. It becomes $APPDIR, so it is kept short: apps put it in
+     * socket paths, shebangs and fixed-size buffers.
      *
-     * The <mtime> in the path means an upgraded AppImage never collides with a stale
+     * The generation means an upgraded AppImage never collides with a stale
      * mount of the file it replaced. Everything lives under $XDG_RUNTIME_DIR, so a
      * mount orphaned by a killed supervisor disappears with the session.
      *
@@ -72,10 +75,12 @@ namespace AppManager.Core {
 
             var self = new SandboxMount();
             // Versioned layout prevents old supervisors from sharing this lock protocol.
-            var record_root = Path.build_filename(AppPaths.sandbox_runtime_dir, "mounts-v2", record_id);
+            var record_root = Path.build_filename(AppPaths.sandbox_runtime_dir, "m3",
+                Checksum.compute_for_string(ChecksumType.SHA256, record_id).substring(0, 16));
             self.guard_path = Path.build_filename(record_root, "guard");
+            var generation = "%ld-%llu-%lld".printf((long) st.st_mtime, (uint64) st.st_ino, (int64) st.st_size);
             self.root = Path.build_filename(record_root,
-                "%ld-%llu-%lld".printf((long) st.st_mtime, (uint64) st.st_ino, (int64) st.st_size));
+                Checksum.compute_for_string(ChecksumType.SHA256, generation).substring(0, 8));
             self.mount_dir = Path.build_filename(self.root, "mnt");
             if (DirUtils.create_with_parents(record_root, 0700) != 0) {
                 warning("Sandbox: cannot create mount state %s: %s", record_root, Posix.strerror(Posix.errno));
