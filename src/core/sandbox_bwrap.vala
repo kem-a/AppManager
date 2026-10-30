@@ -344,10 +344,14 @@ namespace AppManager.Core {
          * shows no icon. Flatpak's Electron apps use $XDG_RUNTIME_DIR/app/<id> for the
          * same reason. The id is hashed to keep the path short: Chromium also puts its
          * single-instance socket here, and a socket path must fit in 107 bytes.
+         *
+         * Chromium-based apps only. Any $TMPDIR longer than /tmp leaves less room for
+         * socket names, and WPS Office's 74-byte IPC socket no longer fit: its web
+         * helper could not connect and aborted on every launch. Others keep /tmp.
          */
         private void add_tmp_dir() {
             var id = manifest.app_id.strip();
-            if (id == "") {
+            if (id == "" || !chromium_compat) {
                 return;
             }
             var dir = Path.build_filename(AppPaths.sandbox_runtime_dir, "tmp",
