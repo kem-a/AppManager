@@ -2,6 +2,9 @@ namespace AppManager.Utils {
     /** Animates stable app identities across rebuilds of a grid or list. */
     public class AnimatedAppView : Gtk.Widget {
         public Gtk.Widget items { get; private set; }
+        // Widgets whose children are animated. Positions are compared in
+        // items, so rows can slide between nested lists (list view groups).
+        private Gtk.Widget[] containers;
 
         private class Position : Object {
             public float x;
@@ -19,8 +22,9 @@ namespace AppManager.Utils {
         private double progress = 1;
         private bool reorder_pending = false;
 
-        public AnimatedAppView(Gtk.Widget items) {
+        public AnimatedAppView(Gtk.Widget items, Gtk.Widget[]? containers = null) {
             this.items = items;
+            this.containers = containers != null ? containers : new Gtk.Widget[] { items };
             items.set_parent(this);
             weak AnimatedAppView view = this;
             var target = new Adw.CallbackAnimationTarget((value) => {
@@ -53,7 +57,7 @@ namespace AppManager.Utils {
 
             previous_positions.clear();
             if (get_mapped() && Adw.get_enable_animations(this)) {
-                for (var child = items.get_first_child(); child != null; child = child.get_next_sibling()) {
+                foreach (var child in tracked_children()) {
                     var id = child.get_data<string>("app-id");
                     var bounds = Graphene.Rect();
                     if (id == null || !child.compute_bounds(items, out bounds)) {
@@ -66,6 +70,16 @@ namespace AppManager.Utils {
             animation.reset();
             offsets.clear();
             reorder_pending = !previous_positions.is_empty;
+        }
+
+        private Gee.ArrayList<Gtk.Widget> tracked_children() {
+            var children = new Gee.ArrayList<Gtk.Widget>();
+            foreach (var container in containers) {
+                for (var child = container.get_first_child(); child != null; child = child.get_next_sibling()) {
+                    children.add(child);
+                }
+            }
+            return children;
         }
 
         public override Gtk.SizeRequestMode get_request_mode() {
@@ -83,7 +97,9 @@ namespace AppManager.Utils {
             // Restore the container's natural allocations before applying this
             // frame's transforms. Moving allocations also keeps pointer picking
             // and focus outlines aligned with the animated cells.
-            items.queue_allocate();
+            foreach (var container in containers) {
+                container.queue_allocate();
+            }
             items.allocate(width, height, baseline, null);
 
             if (!Adw.get_enable_animations(this)) {
@@ -96,7 +112,7 @@ namespace AppManager.Utils {
 
             bool start_animation = reorder_pending;
             reorder_pending = false;
-            for (var child = items.get_first_child(); child != null; child = child.get_next_sibling()) {
+            foreach (var child in tracked_children()) {
                 var id = child.get_data<string>("app-id");
                 var bounds = Graphene.Rect();
                 if (id == null || !child.compute_bounds(items, out bounds)) {
@@ -115,9 +131,12 @@ namespace AppManager.Utils {
                 var offset = offsets.get(id);
                 if (offset != null) {
                     float remaining = start_animation ? 1 : (float) (1 - progress);
+                    // The transform is relative to the row's own list.
+                    var local = Graphene.Rect();
+                    child.compute_bounds(child.get_parent(), out local);
                     var transform = new Gsk.Transform().translate(Graphene.Point() {
-                        x = bounds.origin.x + offset.x * remaining,
-                        y = bounds.origin.y + offset.y * remaining
+                        x = local.origin.x + offset.x * remaining,
+                        y = local.origin.y + offset.y * remaining
                     });
                     child.allocate((int) bounds.size.width, (int) bounds.size.height, -1, transform);
                 }

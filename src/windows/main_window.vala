@@ -11,6 +11,9 @@ namespace AppManager {
         private Adw.PreferencesGroup apps_group;
         private Gtk.ListBox apps_list_box;
         private AnimatedAppView animated_list;
+        private Adw.PreferencesGroup updates_group;
+        private Gtk.ListBox updates_list_box;
+        private Adw.PreferencesGroup others_group;
         private Adw.PreferencesPage general_page;
         private Gtk.Stack content_stack;
         private Gtk.Box empty_state_box;
@@ -171,11 +174,27 @@ namespace AppManager {
             general_page = new Adw.PreferencesPage();
             general_page.add_css_class("main-apps-page");
 
-            apps_group = new Adw.PreferencesGroup();
+            // List view: apps with pending updates get their own group on top.
+            // One animated view spans both groups so rows slide between them.
+            updates_group = new Adw.PreferencesGroup();
+            updates_group.visible = false;
+            updates_list_box = new Gtk.ListBox();
+            updates_list_box.selection_mode = Gtk.SelectionMode.NONE;
+            updates_list_box.add_css_class("boxed-list");
+            updates_group.add(updates_list_box);
+
+            others_group = new Adw.PreferencesGroup();
             apps_list_box = new Gtk.ListBox();
             apps_list_box.selection_mode = Gtk.SelectionMode.NONE;
             apps_list_box.add_css_class("boxed-list");
-            animated_list = new AnimatedAppView(apps_list_box);
+            others_group.add(apps_list_box);
+
+            var list_groups = new Gtk.Box(Gtk.Orientation.VERTICAL, 24);
+            list_groups.append(updates_group);
+            list_groups.append(others_group);
+
+            apps_group = new Adw.PreferencesGroup();
+            animated_list = new AnimatedAppView(list_groups, { updates_list_box, apps_list_box });
             apps_group.add(animated_list);
             general_page.add(apps_group);
 
@@ -376,8 +395,9 @@ namespace AppManager {
             }
 
             foreach (var row in app_rows) {
-                if (row.get_parent() != null) {
-                    apps_list_box.remove(row);
+                var parent = row.get_parent() as Gtk.ListBox;
+                if (parent != null) {
+                    parent.remove(row);
                 }
             }
             app_rows.clear();
@@ -433,7 +453,7 @@ namespace AppManager {
         private void refresh_installations() {
             debug("MainWindow: refresh_installations called");
             ensure_apps_group_present();
-            animated_list.begin_reorder(view_mode == "list" && sort_mode == "default");
+            animated_list.begin_reorder(view_mode == "list");
             clear_apps_group_rows();
 
             var all_records = with_updating_records(registry.list());
@@ -475,12 +495,29 @@ namespace AppManager {
             sorted.add_all(filtered_list);
             sort_records(sorted);
 
+            // Apps with pending updates come first, keeping the sort order.
+            var updates = new Gee.ArrayList<InstallationRecord>();
+            var others = new Gee.ArrayList<InstallationRecord>();
+            foreach (var record in sorted) {
+                if (pending_update_keys.contains(record_state_key(record))) {
+                    updates.add(record);
+                } else {
+                    others.add(record);
+                }
+            }
+
             if (view_mode == "grid") {
                 show_grid_state();
-                populate_grid(sorted);
+                updates.add_all(others);
+                populate_grid(updates);
             } else {
                 show_list_state();
-                populate_list(sorted);
+                updates_group.title = "%s (%d)".printf(_("Pending Updates"), updates.size);
+                updates_group.visible = updates.size > 0;
+                others_group.title = updates.size > 0 ? _("Updated Recently") : "";
+                others_group.visible = others.size > 0;
+                populate_list(updates, updates_list_box);
+                populate_list(others, apps_list_box);
             }
         }
 
@@ -608,7 +645,7 @@ namespace AppManager {
             return name_box;
         }
 
-        private void populate_list(Gee.ArrayList<InstallationRecord> records) {
+        private void populate_list(Gee.ArrayList<InstallationRecord> records, Gtk.ListBox list_box) {
             foreach (var record in records) {
                 var row = new Adw.ActionRow();
                 row.update_property(Gtk.AccessibleProperty.LABEL, record.name, -1);
@@ -677,7 +714,7 @@ namespace AppManager {
                 row.add_suffix(suffix_box);
 
                 row.set_data<string>("app-id", state_key);
-                apps_list_box.append(row);
+                list_box.append(row);
                 app_rows.add(row);
             }
         }
@@ -695,7 +732,7 @@ namespace AppManager {
         }
 
         private void populate_grid(Gee.ArrayList<InstallationRecord> records) {
-            animated_grid.begin_reorder(sort_mode == "default");
+            animated_grid.begin_reorder(true);
             clear_grid_children();
             foreach (var record in records) {
                 var cell = build_grid_cell(record);
