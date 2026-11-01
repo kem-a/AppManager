@@ -603,7 +603,7 @@ namespace AppManager {
             row.subtitle = _("Edit app update details");
             row.add_prefix(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
 
-            var status_label = new Gtk.Label(record.updates_enabled ? _("On") : _("Off"));
+            var status_label = new Gtk.Label(record.updates_enabled && has_update_source(record.get_effective_update_link()) ? _("On") : _("Off"));
             status_label.add_css_class("dim-label");
             row.add_suffix(status_label);
             
@@ -634,21 +634,20 @@ namespace AppManager {
             var enable_updates_row = new Adw.SwitchRow();
             enable_updates_row.title = _("Enable app updates");
             enable_updates_row.add_prefix(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
-            enable_updates_row.active = record.updates_enabled;
             toggle_group.add(enable_updates_row);
             prefs_page.add(toggle_group);
 
             // Update link / web page rows
-            var update_group = build_update_info_group();
+            var update_group = build_update_info_group(enable_updates_row);
             prefs_page.add(update_group);
 
             // Sync logic
-            update_group.sensitive = record.updates_enabled;
             enable_updates_row.notify["active"].connect(() => {
+                status_label.set_label(enable_updates_row.active ? _("On") : _("Off"));
+                // Locked "Off" only reflects a missing link; keep the stored preference.
+                if (!enable_updates_row.sensitive) return;
                 record.updates_enabled = enable_updates_row.active;
-                update_group.sensitive = enable_updates_row.active;
                 registry.update(record);
-                status_label.set_label(record.updates_enabled ? _("On") : _("Off"));
             });
 
             var toolbar = new Adw.ToolbarView();
@@ -657,7 +656,7 @@ namespace AppManager {
 
             return new Adw.NavigationPage(toolbar, _("App Updates"));
         }
-        private Adw.PreferencesGroup build_update_info_group() {
+        private Adw.PreferencesGroup build_update_info_group(Adw.SwitchRow enable_updates_row) {
             var update_group = new Adw.PreferencesGroup();
             update_group.title = _("Update details");
             
@@ -695,6 +694,14 @@ namespace AppManager {
             }
             update_group.add(update_row);
 
+            // The switch needs a usable link; pre-release follows the switch.
+            sync_updates_switch(enable_updates_row, update_row.text);
+            update_row.changed.connect(() => sync_updates_switch(enable_updates_row, update_row.text));
+            prerelease_row.sensitive = enable_updates_row.active;
+            enable_updates_row.notify["active"].connect(() => {
+                prerelease_row.sensitive = enable_updates_row.active;
+            });
+
             // Web page row
             var webpage_row = build_webpage_row();
             update_group.add(webpage_row);
@@ -703,6 +710,18 @@ namespace AppManager {
             update_group.add(prerelease_row);
             
             return update_group;
+        }
+
+        private bool has_update_source(string? link) {
+            if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") return true;
+            return link != null && DirectUrlSource.parse(link.strip()) != null;
+        }
+
+        private void sync_updates_switch(Adw.SwitchRow row, string? link) {
+            var available = has_update_source(link);
+            // Sensitivity first: the notify handler skips saving while locked.
+            row.sensitive = available;
+            row.active = available && record.updates_enabled;
         }
 
         /**
