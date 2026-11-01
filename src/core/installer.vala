@@ -422,7 +422,9 @@ namespace AppManager.Core {
             var temp_dir = Utils.FileUtils.create_temp_dir("appmgr-validate-");
             try {
                 var desktop_path = AppImageAssets.extract_desktop_entry(metadata.path, temp_dir);
-                DesktopEntry.parse_exec(new DesktopEntry(desktop_path).exec ?? "");
+                // Keep the entry alive: with `??` valac frees a temporary before reading its unowned exec.
+                var entry = new DesktopEntry(desktop_path);
+                DesktopEntry.parse_exec(entry.exec ?? "");
                 AppImageAssets.extract_icon(metadata.path, temp_dir);
             } finally {
                 Utils.FileUtils.remove_dir_recursive(temp_dir);
