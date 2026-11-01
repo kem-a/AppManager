@@ -173,6 +173,7 @@ namespace AppManager {
         private Adw.Banner? path_banner;
         private Adw.SwitchRow? path_row;
         private Gtk.Button? delete_button;
+        private Gtk.Button web_badge;
         private bool shift_held = false;
         
         // Shared state for build_ui sub-methods
@@ -483,27 +484,30 @@ namespace AppManager {
             }
 
             // Web page badge - clickable, shown only when a URL is set
-            var web_url = record.get_effective_web_page() ?? "";
-            if (web_url.strip() != "") {
-                var web_badge = new Gtk.Button();
-                web_badge.add_css_class("card");
-                web_badge.set_valign(Gtk.Align.CENTER);
-                web_badge.set_tooltip_text(web_url.strip());
-                var web_label = new Gtk.Label(_("Web"));
-                web_label.add_css_class("caption");
-                web_label.set_margin_start(8);
-                web_label.set_margin_end(8);
-                web_label.set_margin_top(6);
-                web_label.set_margin_bottom(6);
-                web_badge.set_child(web_label);
-                web_badge.clicked.connect(() => {
-                    UiUtils.open_url(web_url.strip());
-                });
-                cards_box.append(web_badge);
-            }
+            web_badge = new Gtk.Button();
+            web_badge.add_css_class("card");
+            web_badge.set_valign(Gtk.Align.CENTER);
+            var web_label = new Gtk.Label(_("Web"));
+            web_label.add_css_class("caption");
+            web_label.set_margin_start(8);
+            web_label.set_margin_end(8);
+            web_label.set_margin_top(6);
+            web_label.set_margin_bottom(6);
+            web_badge.set_child(web_label);
+            web_badge.clicked.connect(() => {
+                UiUtils.open_url((record.get_effective_web_page() ?? "").strip());
+            });
+            refresh_web_badge();
+            cards_box.append(web_badge);
 
             cards_group.add(cards_box);
             return cards_group;
+        }
+
+        private void refresh_web_badge() {
+            var web_url = (record.get_effective_web_page() ?? "").strip();
+            web_badge.set_tooltip_text(web_url);
+            web_badge.set_visible(web_url != "");
         }
 
         private Adw.PreferencesGroup build_properties_group() {
@@ -827,6 +831,7 @@ namespace AppManager {
                     record.custom_web_page = new_val;
                 }
                 restore_webpage_button.set_visible(record.custom_web_page != null);
+                refresh_web_badge();
             });
             var webpage_focus = new Gtk.EventControllerFocus();
             webpage_focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
