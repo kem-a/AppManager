@@ -61,6 +61,8 @@ fi
 DESTDIR=$(mktemp -d)
 APPDIR=$(mktemp -d)
 trap "rm -rf '$DESTDIR' '$APPDIR'" EXIT
+# mktemp creates 0700 dirs; appimagetool requires the AppDir to be world-readable
+chmod 755 "$APPDIR"
 
 # Get the prefix from the build configuration
 PREFIX=$(meson introspect "$BUILD_DIR" --buildoptions | jq -r '.[] | select(.name == "prefix") | .value')
@@ -131,6 +133,19 @@ chmod +x "$APPDIR/AppRun"
 # Desktop and icon at AppDir root
 install -Dm644 "$APPDIR/usr/share/applications/$APP_ID.desktop" "$APPDIR/$APP_ID.desktop"
 install -Dm644 "$APPDIR/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg" "$APPDIR/$APP_ID.svg"
+
+# .DirIcon must be a PNG; render one from the SVG if a converter is available
+if command -v rsvg-convert &>/dev/null; then
+    rsvg-convert -w 256 -h 256 "$APPDIR/$APP_ID.svg" -o "$APPDIR/$APP_ID.png"
+elif command -v magick &>/dev/null; then
+    magick -background none -density 384 "$APPDIR/$APP_ID.svg" -resize 256x256 "$APPDIR/$APP_ID.png"
+else
+    echo "Warning: rsvg-convert/magick not found, .DirIcon will not be a PNG"
+fi
+if [ -f "$APPDIR/$APP_ID.png" ]; then
+    chmod 644 "$APPDIR/$APP_ID.png"
+    ln -sf "$APP_ID.png" "$APPDIR/.DirIcon"
+fi
 
 # Add X-AppImage-Version to desktop file (used by AppManager to detect version during install)
 if ! grep -q "^X-AppImage-Version=" "$APPDIR/$APP_ID.desktop"; then
