@@ -432,7 +432,7 @@ x-scheme-handler/https=app-manager-open-uri.desktop
 
         // Theming folders, named under the host's XDG config and data homes, and under
         // $HOME for the legacy dotfiles.
-        private const string[] APPEARANCE_CONFIG = { "gtk-3.0", "gtk-4.0", "dconf", "fontconfig", "Kvantum", "qt5ct", "qt6ct" };
+        private const string[] APPEARANCE_CONFIG = { "gtk-3.0", "gtk-4.0", "dconf", "fontconfig", "Kvantum", "qt5ct", "qt6ct", "kdeglobals" };
         private const string[] APPEARANCE_DATA = { "icons", "themes", "fonts", "gnome-shell/extensions" };
         private const string[] APPEARANCE_HOME = { ".gtkrc-2.0", ".themes", ".icons", ".fonts" };
 
@@ -1042,6 +1042,12 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             }
             if (host_home_access != null) add2(host_home_access.has_suffix(":ro") ? "--ro-bind" : "--bind", home, home);
             foreach (var name in manifest.xdg_dirs) {
+                string runtime_mode;
+                var runtime_path = SandboxConfig.runtime_grant(name, out runtime_mode);
+                if (runtime_path != null) {
+                    add_runtime_grant(runtime_path, runtime_mode);
+                    continue;
+                }
                 bool read_only = name.has_suffix(":ro");
                 var location = (read_only || name.has_suffix(":rw")) ? name.substring(0, name.length - 3) : name;
                 if (location == "home") continue;
@@ -1085,6 +1091,30 @@ x-scheme-handler/https=app-manager-open-uri.desktop
                 if (cache != null) add2("--bind", cache, cache);
                 else setenv("XDG_CACHE_HOME", storage + "/.cache");
             }
+        }
+
+        /**
+         * A host folder under $XDG_RUNTIME_DIR, bound at its own path: Nextcloud's
+         * file-manager socket, Discord's IPC folder. The runtime dir is wiped at
+         * logout, so "create" makes the folder again at every launch, as flatpak does.
+         */
+        private void add_runtime_grant(string relative, string mode) {
+            var path = Path.build_filename(runtime_base, relative);
+            if (mode == "create" && DirUtils.create_with_parents(path, 0700) != 0) {
+                warning("Sandbox: cannot create %s: %s", path, Posix.strerror(Posix.errno));
+                return;
+            }
+            if (!GLib.FileUtils.test(path, FileTest.EXISTS)) return;
+            // A symlink must not lead the grant onto what runtime_grant refuses.
+            var base_dir = SandboxConfig.canonicalize(runtime_base);
+            var source = SandboxConfig.canonicalize(path);
+            string ignored;
+            if (!source.has_prefix(base_dir + "/")
+                || SandboxConfig.runtime_grant("xdg-run/" + source.substring(base_dir.length + 1), out ignored) == null) {
+                warning("Sandbox: refusing runtime grant %s, it resolves to %s", relative, source);
+                return;
+            }
+            add2(mode == "ro" ? "--ro-bind-try" : "--bind-try", source, path);
         }
 
         /**

@@ -200,6 +200,7 @@ namespace AppManager.Core {
             record.sandbox_extra_devices = extra_devices.size > 0 ? extra_devices.to_array() : null;
 
             var others = new HashMap<string, bool>();
+            var runtime = new HashMap<string, string>();
             // Paths with no switch of their own, judged once every grant is known.
             var unmapped = new ArrayList<string>();
             foreach (var entry in strings(permissions, "filesystems")) {
@@ -227,8 +228,14 @@ namespace AppManager.Core {
                     // The closest grant there is: the user's own files and mounted drives.
                     case "host": locations = new string[] { "home", "removable-media" }; break;
                 }
+                string runtime_mode;
+                var runtime_path = SandboxConfig.runtime_grant(entry, out runtime_mode);
                 if (!(mode in new string[] { "ro", "rw", "create" })) {
                     skipped.add("--filesystem=" + entry);
+                } else if (runtime_path != null) {
+                    if (!runtime.has_key(runtime_path) || mode_rank(runtime_mode) > mode_rank(runtime.get(runtime_path))) {
+                        runtime.set(runtime_path, runtime_mode);
+                    }
                 } else if (folder == null && locations.length == 0) {
                     unmapped.add(entry);
                 } else if (folder != null) {
@@ -241,6 +248,7 @@ namespace AppManager.Core {
             }
             var other_dirs = new ArrayList<string>();
             foreach (var location in others.keys) other_dirs.add(location + (others.get(location) ? ":rw" : ":ro"));
+            foreach (var path in runtime.keys) other_dirs.add("xdg-run/%s:%s".printf(path, runtime.get(path)));
             other_dirs.sort();
             record.sandbox_other_dirs = other_dirs.size > 0 ? other_dirs.to_array() : null;
             var reachable = reachable_paths(record);
@@ -268,8 +276,13 @@ namespace AppManager.Core {
             return skipped.to_array();
         }
 
-        // The host path a Flatpak filesystem entry names; null for xdg-run and the
-        // like, which point at per-session places no grant here reaches.
+        // A repeated runtime path keeps its widest mode.
+        private static int mode_rank(string mode) {
+            return mode == "create" ? 2 : mode == "rw" ? 1 : 0;
+        }
+
+        // The host path a Flatpak filesystem entry names; null for the rest of xdg-run
+        // (what runtime_grant refuses) and the like, which no grant here reaches.
         private static string? host_path(string spec) {
             if (spec.has_prefix("~/")) return Path.build_filename(Environment.get_home_dir(), spec.substring(2));
             if (spec.has_prefix("xdg-config/")) return Path.build_filename(Environment.get_user_config_dir(), spec.substring("xdg-config/".length));
@@ -347,6 +360,12 @@ namespace AppManager.Core {
         // which the Screenshots switch grants; apply_bus turns it on for them.
         private const string[] SCREENSHOT_NAMES = { "org.gnome.Shell.Screenshot", "org.kde.kwin.Screenshot" };
 
+        // KDE's settings-change interfaces. Their signals come from connections that
+        // own no such name, and xdg-dbus-proxy passes a broadcast only from a name the
+        // app may talk to, so the grant does nothing under Flatpak either. Apps read
+        // kdeglobals, part of the shared theming, at startup instead.
+        private const string[] BROADCAST_ONLY_NAMES = { "org.kde.kconfig.notify", "org.kde.KGlobalSettings" };
+
         private void report_bus(string key, Gee.List<string> rules, ArrayList<string> skipped) {
             var node = permissions.get_member(key);
             if (node == null || node.get_node_type() != Json.NodeType.OBJECT) return;
@@ -354,7 +373,8 @@ namespace AppManager.Core {
             foreach (var access in new string[] { "talk", "own" }) {
                 foreach (var name in strings(node.get_object(), access)) {
                     bool portal_screenshot = access == "talk" && name in SCREENSHOT_NAMES;
-                    if (!(name in CALL_ONLY_NAMES) && !portal_screenshot && !granted(rules, access, name)) {
+                    bool broadcast_only = access == "talk" && name in BROADCAST_ONLY_NAMES;
+                    if (!(name in CALL_ONLY_NAMES) && !portal_screenshot && !broadcast_only && !granted(rules, access, name)) {
                         skipped.add("%s%s-name=%s".printf(prefix, access, name));
                     }
                 }

@@ -355,6 +355,41 @@ namespace AppManager.Core {
             return (resolved != null && resolved != "") ? resolved : path;
         }
 
+        // What the sandbox provides itself at the top of $XDG_RUNTIME_DIR, plus the raw
+        // sockets behind its filtered ones: the session bus, the a11y bus and systemd's
+        // private socket each give the app the whole desktop.
+        private const string[] RESERVED_RUNTIME_ENTRIES = { "bus", "pulse", "Xauthority", "pulse-client.conf", "at-spi", "systemd" };
+
+        /**
+         * The path below $XDG_RUNTIME_DIR a Flatpak "xdg-run/<path>[:ro|:rw|:create]"
+         * grant names, with its mode (rw when unstated), or null when it is not one or
+         * would reach a reserved entry, AppManager's runtime files or another sandbox's.
+         */
+        public static string? runtime_grant(string token, out string mode) {
+            mode = "rw";
+            var spec = token.strip();
+            if (!spec.has_prefix("xdg-run/")) return null;
+            spec = spec.substring("xdg-run/".length);
+            foreach (var suffix in new string[] { "ro", "rw", "create" }) {
+                if (spec.has_suffix(":" + suffix)) {
+                    mode = suffix;
+                    spec = spec.substring(0, spec.length - suffix.length - 1);
+                    break;
+                }
+            }
+            if (spec == "") return null;
+            var parts = spec.split("/");
+            foreach (var part in parts) {
+                if (part == "" || part == "." || part == ".." || ":" in part) return null;
+            }
+            var first = parts[0];
+            if (first in RESERVED_RUNTIME_ENTRIES || first.has_prefix("wayland-") || first.has_prefix("pipewire-")
+                || first == DATA_DIRNAME || first.has_prefix(DATA_DIRNAME + "-")) {
+                return null;
+            }
+            return spec;
+        }
+
         /**
          * A granted-folder entry without its ":rw" access suffix.
          */
