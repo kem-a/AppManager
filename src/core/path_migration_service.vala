@@ -252,6 +252,9 @@ namespace AppManager.Core {
                 return;
             }
 
+            // A cross-filesystem copy gets a new inode and mtime; that is not an external update.
+            var unchanged = record.file_fingerprint != null && record.file_fingerprint == Installer.file_fingerprint(old_path);
+
             // Use move for same filesystem, copy+delete for cross-filesystem
             try {
                 old_file.move(new_file, FileCopyFlags.OVERWRITE | FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
@@ -273,6 +276,7 @@ namespace AppManager.Core {
 
             // Update record path
             record.installed_path = new_path;
+            if (unchanged) record.file_fingerprint = Installer.file_fingerprint(new_path);
 
             // Update desktop file - replace old base directory with new base directory
             // This updates both the app's Exec path AND the AppManager uninstall path

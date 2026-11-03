@@ -250,6 +250,11 @@ Examples:
             });
             directory_monitor.start();
             backfill_appstream_metadata.begin();
+            // Catch AppImages replaced by their own updater while AppManager was closed.
+            var records = registry.list();
+            new Thread<void>("file-refresh", () => {
+                foreach (var record in records) installer.refresh_from_file(record, true);
+            });
             
             var quit_action = new GLib.SimpleAction("quit", null);
             quit_action.activate.connect(() => this.quit());

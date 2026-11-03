@@ -62,6 +62,10 @@ namespace AppManager.Core {
         // when app filename has no version (e.g., zen-x86_64.AppImage)
         public string? zsync_sha1 { get; set; }
         
+        // size:mtime:inode of the portable AppImage when last read. A change means the
+        // file was replaced outside AppManager, e.g. by the app's own updater (issue #219).
+        public string? file_fingerprint { get; set; }
+        
         // Original values captured from AppImage's .desktop during install/update
         // original_name is the name AppManager assigns at install (base name, plus the
         // " N" suffix for secondary copies); it is the restore target for custom_name.
@@ -420,6 +424,8 @@ namespace AppManager.Core {
                 builder.set_member_name("zsync_sha1");
                 builder.add_string_value(zsync_sha1);
             }
+            builder.set_member_name("file_fingerprint");
+            builder.add_string_value(file_fingerprint ?? "");
             
             // Original values from AppImage's .desktop
             builder.set_member_name("original_name");
@@ -795,6 +801,8 @@ namespace AppManager.Core {
                 var sha1 = obj.get_string_member("zsync_sha1");
                 record.zsync_sha1 = (sha1 != null && sha1.strip() != "") ? sha1 : null;
             }
+            var file_fingerprint = obj.get_string_member_with_default("file_fingerprint", "");
+            record.file_fingerprint = file_fingerprint == "" ? null : file_fingerprint;
             
             // Original values from AppImage's .desktop
             var original_name = obj.get_string_member_with_default("original_name", "");

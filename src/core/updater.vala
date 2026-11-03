@@ -662,6 +662,7 @@ namespace AppManager.Core {
         // ─────────────────────────────────────────────────────────────────────
 
         private UpdateProbeResult probe_record(InstallationRecord record, GLib.Cancellable? cancellable) {
+            installer.refresh_from_file(record);
             // Check if app uses zsync delta updates
             if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {
                 var zsync_source = resolve_zsync_source(record.zsync_update_info, record.prerelease_enabled, cancellable);
@@ -729,6 +730,7 @@ namespace AppManager.Core {
 
         private UpdateResult update_record(InstallationRecord record, GLib.Cancellable? cancellable) {
             record_checking(record);
+            installer.refresh_from_file(record);
 
             // Check if app uses zsync delta updates
             if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {

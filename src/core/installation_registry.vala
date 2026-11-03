@@ -297,6 +297,33 @@ namespace AppManager.Core {
             registry_mutex.unlock();
         }
 
+        // Apply a re-read of a replaced AppImage only if this installation is still current.
+        public void update_file_metadata(string id, string path, string checksum,
+                                         string? old_fingerprint, string fingerprint, string? version) {
+            bool version_changed = false;
+            registry_mutex.lock();
+            var record = records.get(id);
+            if (record != null && !migration_in_progress && !in_flight.contains(id)
+                && record.installed_path == path && record.source_checksum == checksum
+                && record.file_fingerprint == old_fingerprint) {
+                version_changed = version != null && version != record.version;
+                // Records from older builds have no fingerprint: only a new version
+                // proves their file changed.
+                if (old_fingerprint != null || version_changed) {
+                    if (version != null) record.version = version;
+                    // These describe the previous file.
+                    record.last_release_tag = null;
+                    record.zsync_sha1 = null;
+                    record.last_modified = null;
+                    record.content_length = 0;
+                }
+                record.file_fingerprint = fingerprint;
+                save_unlocked();
+            }
+            registry_mutex.unlock();
+            if (version_changed) notify_changed();
+        }
+
         public void unregister(string id) {
             registry_mutex.lock();
             // Before removing, save custom values for potential reinstall

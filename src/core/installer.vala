@@ -533,6 +533,9 @@ namespace AppManager.Core {
                 if (File.new_for_path(file_path).query_exists()) {
                     File.new_for_path(file_path).delete();
                 }
+                if (mode == InstallMode.PORTABLE) {
+                    record.file_fingerprint = file_fingerprint(record.installed_path);
+                }
 
                 debug("Installer: calling registry.register() for %s", record.name);
                 registry.register(record);
@@ -548,6 +551,55 @@ namespace AppManager.Core {
                 cleanup_failed_installation(record);
                 throw e;
             }
+        }
+
+        // size:mtime:inode, or null when path is not a regular file.
+        public static string? file_fingerprint(string? path) {
+            if (path == null) return null;
+            try {
+                var info = File.new_for_path(path).query_info(
+                    "standard::type,standard::size,time::modified,time::modified-usec,unix::inode",
+                    FileQueryInfoFlags.NONE);
+                if (info.get_file_type() != FileType.REGULAR) return null;
+                return "%lld:%llu.%06u:%llu".printf(info.get_size(),
+                    info.get_attribute_uint64(FileAttribute.TIME_MODIFIED),
+                    info.get_attribute_uint32(FileAttribute.TIME_MODIFIED_USEC),
+                    info.get_attribute_uint64(FileAttribute.UNIX_INODE));
+            } catch (Error e) {
+                return null;
+            }
+        }
+
+        /**
+         * Re-reads the version of a portable AppImage replaced outside AppManager,
+         * e.g. by the app's own updater (issue #219). Blocking: call off the main loop.
+         * Records without a fingerprint (older builds) are only examined when backfilling,
+         * so an update check never pays for re-reading every app.
+         */
+        public void refresh_from_file(InstallationRecord record, bool backfill = false) {
+            if (record.mode != InstallMode.PORTABLE) return;
+            var path = record.installed_path;
+            var old_fingerprint = record.file_fingerprint;
+            var fingerprint = file_fingerprint(path);
+            if (fingerprint == null || fingerprint == old_fingerprint) return;
+            if (old_fingerprint == null && !backfill) return;
+
+            string? version = null;
+            string? temp = null;
+            try {
+                temp = Utils.FileUtils.create_temp_dir("refresh-");
+                var desktop = AppImageAssets.extract_desktop_entry(path, temp);
+                var entry = new DesktopEntry(desktop);
+                version = entry.appimage_version
+                    ?? AppImageAssets.extract_version_from_metainfo(path, temp, Path.get_basename(desktop), entry.name);
+            } catch (Error e) {
+                // Possibly still being written: retried on the next pass.
+                debug("Re-reading %s failed: %s", path, e.message);
+                return;
+            } finally {
+                if (temp != null) Utils.FileUtils.remove_dir_recursive(temp);
+            }
+            registry.update_file_metadata(record.id, path, record.source_checksum, old_fingerprint, fingerprint, version);
         }
 
         private void install_portable(AppImageMetadata metadata, InstallationRecord record, bool is_upgrade, SandboxChoice sandbox) throws Error {
