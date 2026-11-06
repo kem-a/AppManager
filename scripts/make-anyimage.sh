@@ -196,14 +196,16 @@ awk '
     { print }
 ' "$path_hook" > "$path_hook.tmp" && mv "$path_hook.tmp" "$path_hook"
 
-# 2) Replace the cert hook with a comment-only stub. TlsSession picks the
-#    host CA bundle from the same candidate list at acquire() time.
+# 2) Replace the cert hook with a comment-only stub. TlsSession ensures the
+#    persistent XDG_CONFIG_HOME/anylinux-ca/trust-anchors.pem link before TLS.
+#    Do this in the app, after main.vala restores non-portable user dirs.
 cert_hook="$APPDIR/bin/01-check-ca-certs.hook"
 [ -f "$cert_hook" ] || { echo "Error: $cert_hook missing; TLS neutralization aborted." >&2; exit 1; }
 cat > "$cert_hook" <<'HOOK_EOF'
 #!/bin/sh
-# AppManager: the host CA symlink is created on-demand by the app
-# (src/core/tls_session.vala). This hook is intentionally a no-op.
+# AppManager: the persistent per-user anylinux-ca/trust-anchors.pem link is
+# ensured before TLS by src/core/tls_session.vala, after user dirs are restored.
+# This hook is intentionally a no-op.
 HOOK_EOF
 
 # ── Restore toolkit locale files removed by quick-sharun debloating ──

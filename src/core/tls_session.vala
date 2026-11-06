@@ -11,7 +11,7 @@ namespace AppManager.Core {
     /**
      * On-demand manager for the /tmp symlinks the AnyLinux AppImage build
      * relies on for TLS. The bundled libgnutls / p11-kit / libgiognutls
-     * are patched by quick-sharun to read CA store + PKCS#11 trust from
+     * are patched by quick-sharun to load libraries and module data from
      * byte-length-matched fixed paths like /tmp/<lib_token>. On a
      * multi-user host these collide because /tmp's sticky bit prevents
      * the second user from replacing the first user's symlinks, and the
@@ -25,6 +25,10 @@ namespace AppManager.Core {
      * processes running as different users so only one user owns the
      * symlinks at a time.
      *
+     * The trust module reads its CA bundle through a persistent per-user
+     * link under XDG_CONFIG_HOME. Unlike the temporary library mappings,
+     * that link must remain available to other AnyLinux applications.
+     *
      * When APPDIR is unset (native install), every public method is a
      * no-op.
      */
@@ -32,8 +36,6 @@ namespace AppManager.Core {
         public delegate void Scope() throws Error;
 
         private const string LOCK_FILE = "/tmp/.appmanager-tls.lock";
-        private const string HOST_CERTS_DIR = "/tmp/.___host-certs";
-        private const string HOST_CERTS_LINK = "/tmp/.___host-certs/ca-certificates.crt";
 
         private static string[] POSSIBLE_CA_BUNDLES = {
             "/etc/ssl/certs/ca-certificates.crt",
@@ -138,7 +140,7 @@ namespace AppManager.Core {
                 }
             }
 
-            if (tok_bin == null && tok_lib == null && tok_share == null && host_ca_source == null) {
+            if (tok_bin == null && tok_lib == null && tok_share == null) {
                 nothing_to_do = true;
             }
         }
@@ -158,6 +160,9 @@ namespace AppManager.Core {
             mutex.lock();
             try {
                 ensure_initialized();
+                if (refcount == 0 && host_ca_source != null) {
+                    ensure_host_ca_link(host_ca_source);
+                }
                 if (!nothing_to_do && refcount == 0) {
                     lock_fd = open_lock_file(LOCK_FILE);
                     int result = -1;
@@ -234,11 +239,37 @@ namespace AppManager.Core {
             create_link(Path.build_filename(appdir, "bin"), tok_bin);
             create_link(Path.build_filename(appdir, "lib"), tok_lib);
             create_link(Path.build_filename(appdir, "share"), tok_share);
+        }
 
-            if (host_ca_source != null) {
-                DirUtils.create_with_parents(HOST_CERTS_DIR, 0777);
-                Posix.chmod(HOST_CERTS_DIR, 0777);
-                create_link_at(host_ca_source, HOST_CERTS_LINK);
+        private void ensure_host_ca_link(string source) throws FileError {
+            // quick-sharun changed p11-kit-trust.so's patched trust path in
+            // September 2026. Creating the old /tmp link leaves it empty (#209).
+            var directory = Path.build_filename(Environment.get_user_config_dir(), "anylinux-ca");
+            var link = Path.build_filename(directory, "trust-anchors.pem");
+            // Keep an existing usable bundle, including user-managed CA files.
+            if (FileUtils.test(link, FileTest.IS_REGULAR)) return;
+            if (DirUtils.create_with_parents(directory, 0700) != 0) {
+                throw new FileError.FAILED("TlsSession: mkdir %s failed: %s",
+                                          directory, Posix.strerror(Posix.errno));
+            }
+            if (Posix.symlink(source, link) == 0) return;
+            int link_error = Posix.errno;
+            if (link_error != Posix.EEXIST || !FileUtils.test(link, FileTest.IS_SYMLINK)) {
+                throw new FileError.FAILED("TlsSession: symlink %s failed: %s",
+                                          link, Posix.strerror(link_error));
+            }
+            // Repair a dangling link atomically so another process never sees
+            // the trust path disappear while it is loading its CA database.
+            var temporary = Path.build_filename(directory, ".trust-anchors-" + Uuid.string_random());
+            if (Posix.symlink(source, temporary) != 0) {
+                throw new FileError.FAILED("TlsSession: symlink %s failed: %s",
+                                          temporary, Posix.strerror(Posix.errno));
+            }
+            if (FileUtils.rename(temporary, link) != 0) {
+                int err = Posix.errno;
+                Posix.unlink(temporary);
+                throw new FileError.FAILED("TlsSession: rename %s failed: %s",
+                                          link, Posix.strerror(err));
             }
         }
 
@@ -282,7 +313,6 @@ namespace AppManager.Core {
             unlink_if_owned(tmp_path_for(tok_bin));
             unlink_if_owned(tmp_path_for(tok_lib));
             unlink_if_owned(tmp_path_for(tok_share));
-            unlink_if_owned(HOST_CERTS_LINK);
         }
 
         private static string? tmp_path_for(string? token) {
@@ -305,7 +335,6 @@ namespace AppManager.Core {
                 unlink_if_stale_and_owned(tmp_path_for(tok_bin));
                 unlink_if_stale_and_owned(tmp_path_for(tok_lib));
                 unlink_if_stale_and_owned(tmp_path_for(tok_share));
-                unlink_if_stale_and_owned(HOST_CERTS_LINK);
             }
             mutex.unlock();
         }
