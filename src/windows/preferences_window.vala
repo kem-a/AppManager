@@ -22,11 +22,13 @@ namespace AppManager {
         private const string APP_CSS_FILENAME = "AppManager.css";
         private const string APP_CSS_IMPORT_LINE = "@import url(\"AppManager.css\");";
         private const string APP_CSS_CONTENT = "/* Remove checkered alpha channel drawing around thumbnails and icons. Creates more cleaner look */\n" +
+            ".nautilus-image.file-thumbnail,\n" +
             ".thumbnail,\n" +
             ".icon .thumbnail,\n" +
             ".grid-view .thumbnail {\n" +
             "  background: none;\n" +
             "  box-shadow: none;\n" +
+            "  filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.3));\n" +
             "}\n";
 
         public PreferencesDialog(GLib.Settings settings, InstallationRegistry? registry = null, DirectoryMonitor? directory_monitor = null) {
