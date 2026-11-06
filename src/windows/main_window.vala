@@ -135,7 +135,13 @@ namespace AppManager {
 
             foreach (var record in records) {
                 if (staged_ids.contains(record.id)) {
-                    pending_update_keys.add(record_state_key(record));
+                    var key = record_state_key(record);
+                    pending_update_keys.add(key);
+                    // A failure from the daemon or an earlier session keeps its badge.
+                    var failure = staged_updates.get_for_record(record.id).failure;
+                    if (failure != null) {
+                        failed_update_keys.set(key, failure);
+                    }
                     loaded++;
                 }
             }
@@ -1797,7 +1803,7 @@ namespace AppManager {
                     active_details_window.refresh_with_record(result.record);
                 }
             } else if (result.status == UpdateStatus.FAILED) {
-                failed_update_keys.set(key, result.message ?? _("Update failed"));
+                mark_update_failed(result.record, result.message ?? _("Update failed"));
             }
             refresh_installations();
             sync_details_window_state(result.record);
@@ -1816,7 +1822,7 @@ namespace AppManager {
                     staged_updates.remove(result.record.id);
                     staged_changed = true;
                 } else if (result.status == UpdateStatus.FAILED) {
-                    failed_update_keys.set(key, result.message ?? _("Update failed"));
+                    mark_update_failed(result.record, result.message ?? _("Update failed"));
                 }
                 // A failed app stays pending (and staged) so it can be retried.
                 if (result.status != UpdateStatus.FAILED) {
@@ -2086,6 +2092,14 @@ namespace AppManager {
             UPDATING
         }
 
+        // Shows the failure badge and keeps the reason in the staged entry, so
+        // the badge survives a restart.
+        private void mark_update_failed(InstallationRecord record, string message) {
+            failed_update_keys.set(record_state_key(record), message);
+            staged_updates.set_failure(record.id, record.name, message);
+            staged_updates.save();
+        }
+
         private void begin_update_indicator(InstallationRecord record) {
             var key = record_state_key(record);
             updating_records.set(key, record);
@@ -2093,6 +2107,11 @@ namespace AppManager {
             indicator.pixel_size = 20;
             update_indicators.set(key, indicator);
             failed_update_keys.unset(key);
+            var staged = staged_updates.get_for_record(record.id);
+            if (staged != null && staged.failure != null) {
+                staged.failure = null;
+                staged_updates.save();
+            }
             var window_ref = WeakRef(this);
             var indicator_ref = WeakRef(indicator);
             indicator.status.dismissed.connect(() => {
@@ -2212,7 +2231,7 @@ namespace AppManager {
                     if (!cancelled) {
                         // Cancelled and failed apps stay pending (and staged) so they can be retried.
                         if (status == UpdateStatus.FAILED) {
-                            failed_update_keys.set(key, reason ?? _("Update failed"));
+                            mark_update_failed(record, reason ?? _("Update failed"));
                         } else {
                             pending_update_keys.remove(key);
                         }

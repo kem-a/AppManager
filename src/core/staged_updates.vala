@@ -12,6 +12,9 @@ namespace AppManager.Core {
         public string record_name { get; set; }
         public string? available_version { get; set; }
         public int64 discovered_at { get; set; }
+        // Why the last attempt to install this update failed, shown as the
+        // library's failure badge; null while the update is untried.
+        public string? failure { get; set; }
 
         public StagedUpdate(string record_id, string record_name, string? available_version) {
             Object();
@@ -28,6 +31,8 @@ namespace AppManager.Core {
             var version = obj.get_string_member_with_default("available_version", "");
             this.available_version = version.length > 0 ? version : null;
             this.discovered_at = obj.get_int_member_with_default("discovered_at", 0);
+            var failure = obj.get_string_member_with_default("failure", "");
+            this.failure = failure.length > 0 ? failure : null;
         }
 
         public Json.Node to_json() {
@@ -41,6 +46,10 @@ namespace AppManager.Core {
             builder.add_string_value(available_version ?? "");
             builder.set_member_name("discovered_at");
             builder.add_int_value(discovered_at);
+            if (failure != null) {
+                builder.set_member_name("failure");
+                builder.add_string_value(failure);
+            }
             builder.end_object();
             return builder.get_root();
         }
@@ -119,6 +128,22 @@ namespace AppManager.Core {
          */
         public void add(string record_id, string record_name, string? available_version) {
             staged.set(record_id, new StagedUpdate(record_id, record_name, available_version));
+        }
+
+        /**
+         * Records why installing a record's update failed, staging it first if
+         * needed, or clears the reason when failure is null.
+         */
+        public void set_failure(string record_id, string record_name, string? failure) {
+            var update = staged.get(record_id);
+            if (update == null) {
+                if (failure == null) {
+                    return;
+                }
+                update = new StagedUpdate(record_id, record_name, null);
+                staged.set(record_id, update);
+            }
+            update.failure = failure;
         }
 
         /**

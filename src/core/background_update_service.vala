@@ -365,15 +365,15 @@ X-XDP-Autostart=com.github.AppManager
                         append_update_log("SKIPPED %s: %s".printf(result.record.name ?? result.record.id, result.message));
                         break;
                     case UpdateStatus.FAILED:
-                        // After a stop request this is the cancellation itself:
-                        // keep the update staged for the next run.
+                        // After a stop request this is the cancellation itself.
                         if (cancelled) {
                             break;
                         }
                         failed++;
                         append_update_log("FAILED %s: %s".printf(result.record.name ?? result.record.id, result.message));
-                        // Remove from staged updates so it doesn't reappear as pending
-                        staged_updates.remove(result.record.id);
+                        // Staged with its reason, so the window lists it as pending
+                        // with a failure badge for a retry.
+                        staged_updates.set_failure(result.record.id, result.record.name ?? result.record.id, result.message);
                         staged_changed = true;
                         break;
                 }
