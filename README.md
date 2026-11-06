@@ -49,8 +49,8 @@ and known limitations.
 
 - Build tools: a C compiler, `valac`, `meson` (>= 0.64), `ninja`, `pkg-config`, `gettext`, `glib-compile-resources`, `glib-compile-schemas`
 - Installation tools: `gtk4-update-icon-cache` (or `gtk-update-icon-cache`, depending on the distribution) and `update-desktop-database` (from `desktop-file-utils`)
-- Libraries (with development headers): `libadwaita-1` (>= 1.6), `gtk4` (>= 4.22), `glib-2.0` (>= 2.74), `gio-2.0`, `gio-unix-2.0`, `gmodule-2.0`, `json-glib-1.0`, `gee-0.8`, `libsoup-3.0`, `libsecret-1`, `gnutls` (>= 3.6.13)
-- Default bundled helpers: `curl`, `tar`, `gzip`, `xz`, `make`, Rust (`rustc` and `cargo`), and development headers for zlib, liblzma and zstd. See the build options below to use host tools instead.
+- Libraries (with development headers): `libadwaita-1` (>= 1.6), `gtk4` (>= 4.22), `glib-2.0` (>= 2.84, required by GTK 4.22), `gio-2.0`, `gio-unix-2.0`, `gmodule-2.0`, `json-glib-1.0`, `gee-0.8`, `libsoup-3.0`, `libsecret-1`, `gnutls` (>= 3.6.13)
+- Default bundled helpers: `curl`, `tar`, `gzip`, `xz`, `make`, Rust (`rustc` and `cargo`, >= 1.85; current stable recommended), and development headers for zlib, liblzma and zstd. See the build options below to use host tools instead.
 - AppImage packaging with `scripts/make-appimage.sh`: `bash`, `jq` and `appimagetool` (downloaded automatically if missing)
 - Optional, for sandbox hardening: `libseccomp` (syscall filtering), `wayland-client` plus `wayland-scanner` (compositor-side isolation). Both are found automatically and can be turned off with `-Dseccomp=disabled` and `-Dwayland_security_context=disabled`.
 - Runtime tools: `unsquashfs`, `dwarfsextract`; optionally `zsync-rs` (0.2.2 or newer, for its `--json` progress) for delta updates
@@ -123,7 +123,7 @@ The helper-specific dependencies are:
 - `curl` for downloading DwarFS, squashfuse and the unsquashfs source.
 - `tar` and `xz` (`xz-utils` on Debian / Ubuntu) for extracting the DwarFS `.tar.xz` archive.
 - `make`, `tar`, `gzip`, and the zlib/liblzma/zstd development headers for building `unsquashfs`. XZ support is enabled in `scripts/build-unsquashfs.sh`, so `liblzma-dev` / `xz-devel` / `xz` is still needed. LZ4 and LZO support are disabled and need no development packages.
-- Rust and Cargo for building `zsync-rs`.
+- Rust and Cargo for building `zsync-rs`. The bundled 0.3.0 release uses Rust edition 2024, which requires Rust >= 1.85; use a current stable toolchain for its locked dependencies.
 
 `desktop-file-utils` is needed for the desktop database update during installation. `jq` is needed by `scripts/make-appimage.sh`, but not by the Meson build itself.
 
