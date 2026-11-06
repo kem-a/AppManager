@@ -243,6 +243,22 @@ if local_tests_available
     args: [files('tests/network_info_proxy_test.py'), core_regression_test], timeout: 30)
 endif
 
+if get_option('build_tests')
+  github_update_test = executable('github-update-test',
+    core_sources + files('tests/github_update_test.vala'),
+    dependencies: [gio_dep, gio_unix_dep, glib_dep, gmodule_dep, json_glib_dep, gee_dep, libsoup_dep, libsecret_dep],
+    link_with: [crypto_shim_lib, seccomp_filter_lib, wayland_sc_lib],
+    include_directories: crypto_shim_inc
+  )
+  github_test_env = environment()
+  github_test_env.set('GSETTINGS_SCHEMA_DIR', meson.current_build_dir() / 'data')
+  github_test_env.set('GSETTINGS_BACKEND', 'memory')
+  github_test_env.prepend('PATH', meson.current_build_dir())
+  test('github-updates', find_program('python3'),
+    args: [files('tests/github_update_test.py'), github_update_test],
+    env: github_test_env, timeout: 90)
+endif
+
 # Fetch and install DwarFS tools if requested and supported
 if bundle_dwarfs and dwarfs_arch != ''
   fetch_script = files('scripts/fetch-dwarfs-tools.sh')
