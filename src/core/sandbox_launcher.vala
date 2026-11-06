@@ -37,6 +37,7 @@ namespace AppManager.Core {
          * Parses the sandbox-run argument list, starts the app and waits for it.
          */
         public static int run(string[] args) {
+            restore_launch_environment();
             string? record_id = null;
             string? target = null;
             var app_args = new Gee.ArrayList<string>();
@@ -115,6 +116,31 @@ namespace AppManager.Core {
             merged_env.add_all(env_vars);
             manifest.env = merged_env.to_array();
             return launch(manifest, id, target, app_args);
+        }
+
+        private static void restore_launch_environment() {
+            // GTK's library constructor stashes and unsets these before main(),
+            // even though sandbox-run never initializes GTK. They belong to the
+            // child app, not this supervisor. Linux keeps the original exec-time
+            // environment in /proc/self/environ, including values since unset.
+            // Recover only the launch tokens, also for the stale-manifest fallback.
+            try {
+                uint8[] contents;
+                GLib.FileUtils.get_data("/proc/self/environ", out contents);
+                int start = 0;
+                for (int i = 0; i < contents.length; i++) {
+                    if (contents[i] != '\0') continue;
+                    string entry = (string) contents[start:i];
+                    start = i + 1;
+                    foreach (var name in new string[] { "DESKTOP_STARTUP_ID", "XDG_ACTIVATION_TOKEN" }) {
+                        if (entry.has_prefix(name + "=") && Environment.get_variable(name) == null) {
+                            Environment.set_variable(name, entry.substring(name.length + 1), true);
+                        }
+                    }
+                }
+            } catch (FileError e) {
+                debug("Sandbox: cannot recover startup notification tokens: %s", e.message);
+            }
         }
 
         /**

@@ -606,6 +606,11 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             }) {
                 copy_env(name);
             }
+            // Let the app acknowledge this launch to the desktop. Dropping these
+            // across --clearenv leaves startup feedback (the busy cursor) running
+            // until it times out, even after the app has shown its window.
+            copy_env("DESKTOP_STARTUP_ID");
+            copy_env("XDG_ACTIVATION_TOKEN");
             if (link_pipe != null) {
                 // The link opener's GIO handler has to win the default-app lookup.
                 prepend_env("XDG_DATA_DIRS", Path.build_filename(helper_dir(), "share"), "/usr/local/share:/usr/share");
