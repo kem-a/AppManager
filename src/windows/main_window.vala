@@ -496,10 +496,13 @@ namespace AppManager {
             sort_records(sorted);
 
             // Apps with pending updates come first, keeping the sort order.
+            // An updated app stays there until its ring has collapsed.
             var updates = new Gee.ArrayList<InstallationRecord>();
             var others = new Gee.ArrayList<InstallationRecord>();
             foreach (var record in sorted) {
-                if (pending_update_keys.contains(record_state_key(record))) {
+                var key = record_state_key(record);
+                var indicator = update_indicators.get(key);
+                if (pending_update_keys.contains(key) || (indicator != null && indicator.status.dismissing)) {
                     updates.add(record);
                 } else {
                     others.add(record);
@@ -1779,8 +1782,10 @@ namespace AppManager {
             var key = record_state_key(result.record);
             updating_records.unset(key);
             finish_update_indicator(key, result.status, result.message);
-            // Always remove from pending - whether success or failure
-            pending_update_keys.remove(key);
+            // A failed app stays pending (and staged) so it can be retried.
+            if (result.status != UpdateStatus.FAILED) {
+                pending_update_keys.remove(key);
+            }
             if (result.status == UpdateStatus.UPDATED) {
                 failed_update_keys.unset(key);
                 record_size_cache.unset(result.record.id);
@@ -1793,8 +1798,6 @@ namespace AppManager {
                 }
             } else if (result.status == UpdateStatus.FAILED) {
                 failed_update_keys.set(key, result.message ?? _("Update failed"));
-                staged_updates.remove(result.record.id);
-                staged_updates.save();
             }
             refresh_installations();
             sync_details_window_state(result.record);
@@ -1814,8 +1817,10 @@ namespace AppManager {
                     staged_changed = true;
                 } else if (result.status == UpdateStatus.FAILED) {
                     failed_update_keys.set(key, result.message ?? _("Update failed"));
-                    staged_updates.remove(result.record.id);
-                    staged_changed = true;
+                }
+                // A failed app stays pending (and staged) so it can be retried.
+                if (result.status != UpdateStatus.FAILED) {
+                    pending_update_keys.remove(key);
                 }
                 sync_details_window_state(result.record);
             }
@@ -1823,10 +1828,10 @@ namespace AppManager {
                 staged_updates.save();
             }
 
-            // Remove all from pending - failures are no longer "pending"
-            pending_update_keys.clear();
             refresh_installations();
+            // Leave UPDATING first: the helper ignores calls while busy.
             set_update_button_state(UpdateWorkflowState.READY_TO_CHECK);
+            update_global_update_state_from_pending();
         }
 
         private void update_global_update_state_from_pending() {
@@ -2145,8 +2150,10 @@ namespace AppManager {
             if (indicator == null) {
                 return;
             }
+            // An updated app needs no badge: its ring collapses as the row
+            // moves out of the pending group.
             if (status == UpdateStatus.UPDATED) {
-                indicator.show_phase(UpdatePhase.DONE);
+                indicator.status.dismiss();
             } else if (status == UpdateStatus.FAILED) {
                 indicator.show_phase(UpdatePhase.FAILED, 0, 0, message ?? _("Update failed"));
             } else {
@@ -2203,12 +2210,11 @@ namespace AppManager {
                         finish_update_indicator(key, status, reason);
                     }
                     if (!cancelled) {
-                        // A cancelled app stays pending so it can be retried.
-                        pending_update_keys.remove(key);
+                        // Cancelled and failed apps stay pending (and staged) so they can be retried.
                         if (status == UpdateStatus.FAILED) {
                             failed_update_keys.set(key, reason ?? _("Update failed"));
-                            staged_updates.remove(record.id);
-                            staged_updates.save();
+                        } else {
+                            pending_update_keys.remove(key);
                         }
                     }
                 }

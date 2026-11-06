@@ -4,15 +4,12 @@ namespace AppManager.Utils {
         CHECKING,
         DOWNLOADING,
         INSTALLING,
-        DONE,
         FAILED
     }
 
     /** One update's lifecycle, shared by the library and details presentations. */
     public class UpdateIndicatorState : Object {
         public const uint DISMISS_DURATION = 350;
-        private uint hold_source = 0;
-        private uint dismiss_source = 0;
 
         public UpdatePhase phase { get; private set; default = UpdatePhase.WAITING; }
         public int64 received { get; private set; default = 0; }
@@ -21,70 +18,59 @@ namespace AppManager.Utils {
         public bool dismissing { get; private set; default = false; }
         public bool finished { get; private set; default = false; }
         public int64 dismiss_started_at { get; private set; default = 0; }
+        // Failures remain visible until another check/update replaces them.
         public bool terminal {
-            get { return phase == UpdatePhase.DONE || phase == UpdatePhase.FAILED; }
+            get { return phase == UpdatePhase.FAILED || dismissing; }
         }
 
         public signal void changed();
         public signal void dismissed();
 
+        // A success needs no badge: the ring collapses while the row leaves
+        // the pending group.
+        public void dismiss() {
+            if (dismissing) {
+                return;
+            }
+            dismissing = true;
+            dismiss_started_at = get_monotonic_time();
+            changed();
+            Timeout.add(DISMISS_DURATION, () => {
+                finished = true;
+                changed();
+                dismissed();
+                return Source.REMOVE;
+            });
+        }
+
         public void show_phase(UpdatePhase phase, int64 received = 0, int64 total = 0, string? message = null) {
-            // Finalization and registry refreshes must not restart the badge's lifetime.
+            // Finalization and registry refreshes must not replay the failure badge.
             if (this.phase == phase && terminal) {
-                if (phase == UpdatePhase.FAILED && message != null && message != this.message) {
+                if (message != null && message != this.message) {
                     this.message = message;
                     changed();
                 }
                 return;
             }
-            if (hold_source != 0) {
-                Source.remove(hold_source);
-                hold_source = 0;
-            }
-            if (dismiss_source != 0) {
-                Source.remove(dismiss_source);
-                dismiss_source = 0;
-            }
             this.phase = phase;
             this.received = received;
             this.total = total;
             this.message = message;
-            dismissing = false;
-            finished = false;
-            dismiss_started_at = 0;
             changed();
-            // Failures remain visible until another check/update replaces them.
-            if (phase == UpdatePhase.DONE) {
-                hold_source = Timeout.add(3000, () => {
-                    hold_source = 0;
-                    dismissing = true;
-                    dismiss_started_at = get_monotonic_time();
-                    changed();
-                    dismiss_source = Timeout.add(DISMISS_DURATION, () => {
-                        dismiss_source = 0;
-                        finished = true;
-                        changed();
-                        dismissed();
-                        return Source.REMOVE;
-                    });
-                    return Source.REMOVE;
-                });
-            }
         }
     }
 
     /**
      * Per-app update progress, drawn by an animated Gtk.Svg (GTK 4.22).
      * States in update-progress.svg: waiting, checking, downloading,
-     * p1..p20 (rim filled in 5% steps), installing, done, failed.
+     * p1..p20 (rim filled in 5% steps), installing, failed.
      */
     public class UpdateIndicator : Adw.Bin {
         private const string RESOURCE = "/com/github/AppManager/update-progress.svg";
         private const uint STATE_DOWNLOADING = 2;
         private const uint PROGRESS_STEPS = 20;
         private const uint STATE_INSTALLING = 23;
-        private const uint STATE_DONE = 24;
-        private const uint STATE_FAILED = 25;
+        private const uint STATE_FAILED = 24;
 
         private Gtk.Image image;
         private Gtk.Svg? svg = null;
@@ -137,9 +123,6 @@ namespace AppManager.Utils {
                     break;
                 case UpdatePhase.INSTALLING:
                     state = STATE_INSTALLING;
-                    break;
-                case UpdatePhase.DONE:
-                    state = STATE_DONE;
                     break;
                 case UpdatePhase.FAILED:
                     state = STATE_FAILED;

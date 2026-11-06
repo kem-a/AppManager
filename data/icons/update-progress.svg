@@ -1,6 +1,6 @@
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:gpa='https://www.gtk.org/grappa' width='16' height='16' viewBox='0 0 16 16'
      gpa:version='1' gpa:state='0'
-     gpa:state-names='waiting checking downloading p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done failed'>
+     gpa:state-names='waiting checking downloading p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing failed'>
   <!-- App update progress, one state per phase; p1..p20 fill the rim in 5% steps.
        Effects are SMIL only: gpa transitions delay state changes, and GTK 4.22
        drops visibility updates when states change faster than that delay. -->
@@ -23,36 +23,29 @@
         gpa:stroke='accent' gpa:states='downloading p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20'>
     <animateTransform attributeName='transform' type='translate' values='0 -0.8;0 0.8;0 -0.8' dur='1s' repeatCount='indefinite'/>
   </path>
-  <path d='M 8.00 1.50 A 6.5 6.5 0 0 1 10.01 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 10.01 1.82 A 6.5 6.5 0 0 1 11.82 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 11.82 2.74 A 6.5 6.5 0 0 1 13.26 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 13.26 4.18 A 6.5 6.5 0 0 1 14.18 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 14.18 5.99 A 6.5 6.5 0 0 1 14.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 14.50 8.00 A 6.5 6.5 0 0 1 14.18 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 14.18 10.01 A 6.5 6.5 0 0 1 13.26 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 13.26 11.82 A 6.5 6.5 0 0 1 11.82 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 11.82 13.26 A 6.5 6.5 0 0 1 10.01 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 10.01 14.18 A 6.5 6.5 0 0 1 8.00 14.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 8.00 14.50 A 6.5 6.5 0 0 1 5.99 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 5.99 14.18 A 6.5 6.5 0 0 1 4.18 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p12 p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 4.18 13.26 A 6.5 6.5 0 0 1 2.74 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p13 p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 2.74 11.82 A 6.5 6.5 0 0 1 1.82 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p14 p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 1.82 10.01 A 6.5 6.5 0 0 1 1.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p15 p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 1.50 8.00 A 6.5 6.5 0 0 1 1.82 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p16 p17 p18 p19 p20 installing done'/>
-  <path d='M 1.82 5.99 A 6.5 6.5 0 0 1 2.74 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p17 p18 p19 p20 installing done'/>
-  <path d='M 2.74 4.18 A 6.5 6.5 0 0 1 4.18 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p18 p19 p20 installing done'/>
-  <path d='M 4.18 2.74 A 6.5 6.5 0 0 1 5.99 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p19 p20 installing done'/>
-  <path d='M 5.99 1.82 A 6.5 6.5 0 0 1 8.00 1.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p20 installing done'/>
+  <path d='M 8.00 1.50 A 6.5 6.5 0 0 1 10.01 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 10.01 1.82 A 6.5 6.5 0 0 1 11.82 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 11.82 2.74 A 6.5 6.5 0 0 1 13.26 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 13.26 4.18 A 6.5 6.5 0 0 1 14.18 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.18 5.99 A 6.5 6.5 0 0 1 14.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.50 8.00 A 6.5 6.5 0 0 1 14.18 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.18 10.01 A 6.5 6.5 0 0 1 13.26 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 13.26 11.82 A 6.5 6.5 0 0 1 11.82 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 11.82 13.26 A 6.5 6.5 0 0 1 10.01 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 10.01 14.18 A 6.5 6.5 0 0 1 8.00 14.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 8.00 14.50 A 6.5 6.5 0 0 1 5.99 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 5.99 14.18 A 6.5 6.5 0 0 1 4.18 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 4.18 13.26 A 6.5 6.5 0 0 1 2.74 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 2.74 11.82 A 6.5 6.5 0 0 1 1.82 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.82 10.01 A 6.5 6.5 0 0 1 1.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.50 8.00 A 6.5 6.5 0 0 1 1.82 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.82 5.99 A 6.5 6.5 0 0 1 2.74 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p17 p18 p19 p20 installing'/>
+  <path d='M 2.74 4.18 A 6.5 6.5 0 0 1 4.18 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p18 p19 p20 installing'/>
+  <path d='M 4.18 2.74 A 6.5 6.5 0 0 1 5.99 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p19 p20 installing'/>
+  <path d='M 5.99 1.82 A 6.5 6.5 0 0 1 8.00 1.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p20 installing'/>
   <circle cx='8' cy='8' r='2' gpa:fill='accent' gpa:states='installing'>
     <animate attributeName='r' values='1.5;3;1.5' dur='1s' repeatCount='indefinite'/>
   </circle>
-  <circle cx='8' cy='8' r='7.25' gpa:fill='success' gpa:states='done'>
-    <animate attributeName='r' from='2' to='7.25' dur='250ms' begin='gpa:states(done).begin' fill='freeze'/>
-  </circle>
-  <path d='M 4.7 8.3 L 7 10.5 L 11.3 5.8' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'
-        pathLength='1' stroke-dasharray='1' gpa:stroke='#ffffff' gpa:states='done'>
-    <animate attributeName='stroke-dashoffset' values='1;1;0' keyTimes='0;0.4;1' dur='550ms' begin='gpa:states(done).begin' fill='freeze'/>
-  </path>
   <circle cx='8' cy='8' r='7.25' gpa:fill='warning' gpa:states='failed'>
     <animate attributeName='r' from='2' to='7.25' dur='250ms' begin='gpa:states(failed).begin' fill='freeze'/>
   </circle>

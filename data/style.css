@@ -84,9 +84,9 @@
     border-radius: 50%;
     padding: 2px;
 }
-/* The update check sits on the success background, so white stays readable in dark mode */
+/* The failure mark sits on the warning background, so it stays readable in dark mode */
 .update-indicator {
-    -gtk-icon-palette: success @success_bg_color, warning @warning_bg_color;
+    -gtk-icon-palette: warning @warning_bg_color;
 }
 
 /* The details button carries the same persistent failure state as the library. */
