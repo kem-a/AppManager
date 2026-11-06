@@ -35,12 +35,17 @@ namespace AppManager.Core {
     public class GithubSource : ReleaseSource {
         public string owner { get; private set; }
         public string repo { get; private set; }
+        public string? release_tag { get; private set; }
+        public string? asset_pattern { get; private set; }
 
-        public GithubSource(string owner, string repo, string? current_version) {
+        public GithubSource(string owner, string repo, string? current_version,
+                            string? release_tag = null, string? asset_pattern = null) {
             Object();
             this.owner = owner;
             this.repo = repo;
             this.current_version = current_version;
+            this.release_tag = release_tag;
+            this.asset_pattern = asset_pattern;
         }
 
         public static GithubSource? parse(string url, string? record_version) {

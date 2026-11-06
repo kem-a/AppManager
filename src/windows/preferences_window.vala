@@ -226,7 +226,7 @@ namespace AppManager {
             // GitHub authentication group
             var github_group = new Adw.PreferencesGroup();
             github_group.title = _( "GitHub");
-            github_group.description = _( "Authenticate with GitHub to raise the API rate limit from 60 to 5,000 requests per hour");
+            github_group.description = _( "Authenticate with GitHub to increase API limits and update apps from private repositories");
 
             var token_row = new Adw.PasswordEntryRow();
             token_row.title = _( "Personal access token");
@@ -299,7 +299,7 @@ namespace AppManager {
 
             var token_help_row = new Adw.ActionRow();
             token_help_row.title = _( "Create a token on GitHub");
-            token_help_row.subtitle = _( "Fine-grained token with read-only public repo access is sufficient");
+            token_help_row.subtitle = _( "For private repositories, select the repository and grant Contents read access");
             token_help_row.add_prefix(new Gtk.Image.from_icon_name("help-about-symbolic"));
             token_help_row.activatable = true;
             token_help_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));

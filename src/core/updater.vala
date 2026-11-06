@@ -70,10 +70,10 @@ namespace AppManager.Core {
         private const int64 PROGRESS_INTERVAL_US = 250000;
         private static string? _system_arch = null;
 
-        public Updater(InstallationRegistry registry, Installer installer) {
+        public Updater(InstallationRegistry registry, Installer installer, Soup.Session? http_session = null) {
             this.registry = registry;
             this.installer = installer;
-            session = new Soup.Session();
+            session = http_session ?? new Soup.Session();
             user_agent = "AppManager/%s".printf(Core.APPLICATION_VERSION);
             session.user_agent = user_agent;
             session.timeout = 60;
@@ -105,16 +105,27 @@ namespace AppManager.Core {
 
         /**
          * Add GitHub authorization header to a request if the URL
-         * targets api.github.com or github.com and a token is available.
+         * targets GitHub over HTTPS and a token is available.
          */
         private void apply_github_auth(Soup.Message message) {
             var uri = message.get_uri();
             var host = uri.get_host();
             if (host == null) return;
-            if (host == "api.github.com" || host == "github.com" || host.has_suffix(".github.com")) {
+            if (uri.get_scheme() != "https" || (uri.get_port() != -1 && uri.get_port() != 443) ||
+                uri.get_userinfo() != null) return;
+            if (host == "api.github.com" || host == "github.com") {
                 var token = get_github_token();
                 if (token != null) {
                     message.request_headers.replace("Authorization", "Bearer %s".printf(token));
+                    // Signed asset redirects authenticate themselves, not with our token.
+                    unowned Soup.Message request = message;
+                    message.restarted.connect(() => {
+                        var target = request.get_uri();
+                        if (target.get_scheme() != uri.get_scheme() ||
+                            target.get_host() != uri.get_host() || target.get_port() != uri.get_port()) {
+                            request.request_headers.remove("Authorization");
+                        }
+                    });
                 }
             }
         }
@@ -344,10 +355,13 @@ namespace AppManager.Core {
         }
 
         /**
-         * Resolve zsync update info to a ZsyncDirectSource.
-         * Handles both direct zsync URLs and gh-releases-zsync format.
+         * Resolve zsync update info, using full release downloads for private GitHub repositories.
          */
-        private ZsyncDirectSource? resolve_zsync_source(string zsync_info, bool include_prerelease = false, GLib.Cancellable? cancellable = null) {
+        private UpdateSource? resolve_zsync_source(string zsync_info, bool include_prerelease = false,
+                                                  GLib.Cancellable? cancellable = null, string? record_version = null) throws Error {
+            if (!zsync_info.has_prefix("zsync|") && !zsync_info.has_prefix("gh-releases-zsync|")) return null;
+            var full_source = private_github_source(zsync_info, record_version, cancellable);
+            if (full_source != null) return full_source;
             // Direct zsync URL: zsync|https://example.com/app.zsync
             var zsync_direct = ZsyncDirectSource.parse(zsync_info);
             if (zsync_direct != null) {
@@ -363,15 +377,8 @@ namespace AppManager.Core {
         // Update Source Resolution
         // ─────────────────────────────────────────────────────────────────────
 
-        private UpdateSource? resolve_update_source(string update_url, string? record_version, bool include_prerelease = false, GLib.Cancellable? cancellable = null) {
-            // First check for zsync-specific formats from .upd_info
-            var zsync_direct = ZsyncDirectSource.parse(update_url);
-            if (zsync_direct != null) {
-                return zsync_direct;
-            }
-
-            // Handle gh-releases-zsync by resolving to actual zsync URL with version
-            var resolved_zsync_source = resolve_gh_releases_zsync_source(update_url, include_prerelease, cancellable);
+        private UpdateSource? resolve_update_source(string update_url, string? record_version, bool include_prerelease = false, GLib.Cancellable? cancellable = null) throws Error {
+            var resolved_zsync_source = resolve_zsync_source(update_url, include_prerelease, cancellable, record_version);
             if (resolved_zsync_source != null) {
                 return resolved_zsync_source;
             }
@@ -393,6 +400,54 @@ namespace AppManager.Core {
 
             // Fall back to direct URL for non-GitHub/GitLab URLs
             return DirectUrlSource.parse(update_url);
+        }
+
+        private GithubSource? private_github_source(string update_info, string? record_version,
+                                                    GLib.Cancellable? cancellable) throws Error {
+            var source = GithubSource.parse(normalize_update_url(update_info) ?? "", record_version);
+            if (source == null || get_github_token() == null) return null;
+
+            var root = fetch_json("https://api.github.com/repos/%s/%s".printf(source.owner, source.repo),
+                                  "application/vnd.github+json", cancellable);
+            if (root == null || root.get_node_type() != Json.NodeType.OBJECT ||
+                !root.get_object().has_member("private")) {
+                throw new IOError.INVALID_DATA("GitHub repository response has no visibility information");
+            }
+            if (!root.get_object().get_boolean_member("private")) return null;
+
+            // API asset URLs are not relative-file bases. Use release metadata for
+            // the full AppImage instead, preserving the embedded channel and name.
+            string? tag = null;
+            string? pattern = null;
+            if (update_info.has_prefix("gh-releases-zsync|")) {
+                var parts = update_info.split("|");
+                if (parts.length < 5 || parts[3].strip() == "" || !parts[4].strip().has_suffix(".zsync")) {
+                    throw new IOError.INVALID_DATA("Invalid GitHub zsync update information");
+                }
+                tag = parts[3].strip();
+                pattern = parts[4].strip();
+            } else {
+                var uri = Uri.parse(update_info.substring(6), UriFlags.NONE);
+                var segments = tokenize_path(uri.get_path());
+                if (segments.length >= 6 && segments[2] == "releases" && segments[3] == "download") {
+                    tag = Uri.unescape_string(segments[4]);
+                }
+                pattern = Uri.unescape_string(Path.get_basename(uri.get_path()));
+            }
+            if (pattern != null && pattern.has_suffix(".zsync")) {
+                pattern = pattern.substring(0, pattern.length - 6);
+            }
+            return new GithubSource(source.owner, source.repo, source.current_version, tag, pattern);
+        }
+
+        internal UpdateSource? resolve_record_source(InstallationRecord record, GLib.Cancellable? cancellable) throws Error {
+            if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {
+                var source = resolve_zsync_source(record.zsync_update_info, record.prerelease_enabled, cancellable, record.version);
+                if (source != null) return source;
+            }
+            var update_url = read_update_url(record);
+            if (update_url == null || update_url.strip() == "") return null;
+            return resolve_update_source(update_url, record.version, record.prerelease_enabled, cancellable);
         }
 
         /**
@@ -534,37 +589,13 @@ namespace AppManager.Core {
             return null;
         }
 
-        /**
-         * Simple glob pattern matching for zsync filename patterns.
-         */
-        private static bool pattern_matches_zsync(string pattern, string text) {
-            int pi = 0;
-            int ti = 0;
-            int star_pi = -1;
-            int star_ti = -1;
-            
-            while (ti < text.length) {
-                if (pi < pattern.length && (pattern[pi] == text[ti] || pattern[pi] == '?')) {
-                    pi++;
-                    ti++;
-                } else if (pi < pattern.length && pattern[pi] == '*') {
-                    star_pi = pi + 1;
-                    star_ti = ti;
-                    pi++;
-                } else if (star_pi != -1) {
-                    pi = star_pi;
-                    star_ti++;
-                    ti = star_ti;
-                } else {
-                    return false;
-                }
-            }
-            
-            while (pi < pattern.length && pattern[pi] == '*') {
-                pi++;
-            }
-            
-            return pi == pattern.length;
+        [CCode (cname = "fnmatch", cheader_filename = "fnmatch.h")]
+        private static extern int match_filename(string pattern, string text, int flags);
+
+        internal static bool pattern_matches_zsync(string pattern, string text) {
+            // Embedded update patterns use shell globs, including ranges such as
+            // Bilance-*[0-9]-x86_64.AppImage.zsync. A * / ? matcher rejects those.
+            return match_filename(pattern, text, 0) == 0;
         }
 
         private string? read_update_url(InstallationRecord record) {
@@ -663,34 +694,23 @@ namespace AppManager.Core {
 
         private UpdateProbeResult probe_record(InstallationRecord record, GLib.Cancellable? cancellable) {
             installer.refresh_from_file(record);
-            // Check if app uses zsync delta updates
-            if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {
-                var zsync_source = resolve_zsync_source(record.zsync_update_info, record.prerelease_enabled, cancellable);
-                if (zsync_source != null) {
-                    return probe_zsync(record, zsync_source, cancellable);
-                }
-            }
-
-            var update_url = read_update_url(record);
-            if (update_url == null || update_url.strip() == "") {
-                return new UpdateProbeResult(record, false, null, UpdateSkipReason.NO_UPDATE_URL, _("No update address configured"));
-            }
-
-            var source = resolve_update_source(update_url, record.version, record.prerelease_enabled, cancellable);
-            if (source == null) {
-                return new UpdateProbeResult(record, false, null, UpdateSkipReason.UNSUPPORTED_SOURCE, _("Update source not supported"));
-            }
-
-            // Handle zsync sources (legacy path for apps with zsync URL in update_link)
-            if (source is ZsyncDirectSource) {
-                return probe_zsync(record, source, cancellable);
-            }
-
-            if (source is DirectUrlSource) {
-                return probe_direct(record, source as DirectUrlSource, cancellable);
-            }
-
             try {
+                var source = resolve_record_source(record, cancellable);
+                if (source == null) {
+                    if (read_update_url(record) == null) {
+                        return new UpdateProbeResult(record, false, null, UpdateSkipReason.NO_UPDATE_URL, _("No update address configured"));
+                    }
+                    return new UpdateProbeResult(record, false, null, UpdateSkipReason.UNSUPPORTED_SOURCE, _("Update source not supported"));
+                }
+
+                if (source is ZsyncDirectSource) {
+                    return probe_zsync(record, source, cancellable);
+                }
+
+                if (source is DirectUrlSource) {
+                    return probe_direct(record, source as DirectUrlSource, cancellable);
+                }
+
                 var release_source = source as ReleaseSource;
                 var release = fetch_latest_release(release_source, cancellable, record.prerelease_enabled);
                 if (release == null) {
@@ -732,45 +752,30 @@ namespace AppManager.Core {
             record_checking(record);
             installer.refresh_from_file(record);
 
-            // Check if app uses zsync delta updates
-            if (record.zsync_update_info != null && record.zsync_update_info.strip() != "") {
-                var zsync_source = resolve_zsync_source(record.zsync_update_info, record.prerelease_enabled, cancellable);
-                if (zsync_source != null) {
-                    return update_zsync(record, zsync_source, cancellable);
-                }
-            }
-            // A cancelled lookup returns no source, which is not a skip.
-            if (cancellable != null && cancellable.is_cancelled()) {
-                return update_cancelled(record);
-            }
-
-            var update_url = read_update_url(record);
-            if (update_url == null || update_url.strip() == "") {
-                record_skipped(record, UpdateSkipReason.NO_UPDATE_URL);
-                log_update_event(record, "SKIP", "no update url configured");
-                return new UpdateResult(record, UpdateStatus.SKIPPED, _("No update address configured"), null, UpdateSkipReason.NO_UPDATE_URL);
-            }
-
-            var source = resolve_update_source(update_url, record.version, record.prerelease_enabled, cancellable);
-            if (cancellable != null && cancellable.is_cancelled()) {
-                return update_cancelled(record);
-            }
-            if (source == null) {
-                record_skipped(record, UpdateSkipReason.UNSUPPORTED_SOURCE);
-                log_update_event(record, "SKIP", "unsupported update source");
-                return new UpdateResult(record, UpdateStatus.SKIPPED, _("Update source not supported"), null, UpdateSkipReason.UNSUPPORTED_SOURCE);
-            }
-
-            // Handle zsync sources (legacy path for apps with zsync URL in update_link)
-            if (source is ZsyncDirectSource) {
-                return update_zsync(record, source, cancellable);
-            }
-
-            if (source is DirectUrlSource) {
-                return update_direct(record, source as DirectUrlSource, cancellable);
-            }
-
             try {
+                var source = resolve_record_source(record, cancellable);
+                if (cancellable != null && cancellable.is_cancelled()) {
+                    return update_cancelled(record);
+                }
+                if (source == null) {
+                    if (read_update_url(record) == null) {
+                        record_skipped(record, UpdateSkipReason.NO_UPDATE_URL);
+                        log_update_event(record, "SKIP", "no update url configured");
+                        return new UpdateResult(record, UpdateStatus.SKIPPED, _("No update address configured"), null, UpdateSkipReason.NO_UPDATE_URL);
+                    }
+                    record_skipped(record, UpdateSkipReason.UNSUPPORTED_SOURCE);
+                    log_update_event(record, "SKIP", "unsupported update source");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Update source not supported"), null, UpdateSkipReason.UNSUPPORTED_SOURCE);
+                }
+
+                if (source is ZsyncDirectSource) {
+                    return update_zsync(record, source, cancellable);
+                }
+
+                if (source is DirectUrlSource) {
+                    return update_direct(record, source as DirectUrlSource, cancellable);
+                }
+
                 var release_source = source as ReleaseSource;
                 var release = fetch_latest_release(release_source, cancellable, record.prerelease_enabled);
                 if (release == null) {
@@ -813,7 +818,7 @@ namespace AppManager.Core {
                 for (int ci = 0; ci < depth; ci++) {
                     var asset = candidates[ci];
                     record_downloading(record);
-                    var download = download_file(record, asset.download_url, cancellable);
+                    var download = download_release_asset(record, asset, cancellable);
                     record_installing(record);
                     try {
                         var verify_error = verify_appimage_identity(download.file_path, record);
@@ -1221,7 +1226,7 @@ namespace AppManager.Core {
         // Release Fetching
         // ─────────────────────────────────────────────────────────────────────
 
-        private ReleaseInfo? fetch_latest_release(ReleaseSource source, GLib.Cancellable? cancellable, bool include_prerelease = false) throws Error {
+        internal ReleaseInfo? fetch_latest_release(ReleaseSource source, GLib.Cancellable? cancellable, bool include_prerelease = false) throws Error {
             if (source is GithubSource) {
                 return fetch_github_release(source as GithubSource, cancellable, include_prerelease);
             }
@@ -1239,6 +1244,19 @@ namespace AppManager.Core {
             
             var bytes = session.send_and_read(message, cancellable);
             var status = message.get_status();
+            check_github_response(message);
+            if (status < 200 || status >= 300) {
+                throw new GLib.IOError.FAILED("API error (%u)".printf(status));
+            }
+
+            var parser = new Json.Parser();
+            parser.load_from_stream(new MemoryInputStream.from_bytes(bytes), cancellable);
+            return parser.steal_root();
+        }
+
+        private void check_github_response(Soup.Message message) throws Error {
+            if (message.get_uri().get_host() != "api.github.com") return;
+            var status = message.get_status();
             if (status == 401) {
                 throw new GLib.IOError.FAILED(_("GitHub authentication failed (401). Check your token in Preferences → GitHub."));
             }
@@ -1249,13 +1267,9 @@ namespace AppManager.Core {
                 }
                 throw new GLib.IOError.FAILED(_("GitHub access forbidden (403). Your token may lack the required permissions."));
             }
-            if (status < 200 || status >= 300) {
-                throw new GLib.IOError.FAILED("API error (%u)".printf(status));
+            if (status == 404) {
+                throw new GLib.IOError.FAILED(_("GitHub repository or release asset not found (404). Check the address and your token's repository access."));
             }
-
-            var parser = new Json.Parser();
-            parser.load_from_stream(new MemoryInputStream.from_bytes(bytes), cancellable);
-            return parser.steal_root();
         }
 
         private ReleaseInfo? find_release_with_appimage(Json.Array array, ParseReleaseFunc parser, bool include_prerelease = false) {
@@ -1279,12 +1293,26 @@ namespace AppManager.Core {
         private delegate ReleaseInfo? ParseReleaseFunc(Json.Object obj);
 
         private ReleaseInfo? fetch_github_release(GithubSource source, GLib.Cancellable? cancellable, bool include_prerelease = false) throws Error {
+            if (source.release_tag != null && source.release_tag != "latest") {
+                var root = fetch_json("https://api.github.com/repos/%s/%s/releases/tags/%s".printf(
+                    source.owner, source.repo, Uri.escape_string(source.release_tag, null, false)),
+                    "application/vnd.github+json", cancellable);
+                if (root == null || root.get_node_type() != Json.NodeType.OBJECT) return null;
+                return parse_github_release(root.get_object(), source.asset_pattern);
+            }
+            if (source.release_tag == "latest" && !include_prerelease) {
+                var root = fetch_json("https://api.github.com/repos/%s/%s/releases/latest".printf(source.owner, source.repo),
+                    "application/vnd.github+json", cancellable);
+                if (root == null || root.get_node_type() != Json.NodeType.OBJECT) return null;
+                return parse_github_release(root.get_object(), source.asset_pattern);
+            }
             var root = fetch_json(source.releases_api_url(), "application/vnd.github+json", cancellable);
             if (root == null || root.get_node_type() != Json.NodeType.ARRAY) return null;
-            return find_release_with_appimage(root.get_array(), parse_github_release, include_prerelease);
+            return find_release_with_appimage(root.get_array(),
+                (obj) => parse_github_release(obj, source.asset_pattern), include_prerelease);
         }
 
-        private ReleaseInfo? parse_github_release(Json.Object obj) {
+        private ReleaseInfo? parse_github_release(Json.Object obj, string? asset_pattern = null) {
             string? tag = obj.has_member("tag_name") ? obj.get_string_member("tag_name") : null;
             bool is_prerelease = obj.has_member("prerelease") ? obj.get_boolean_member("prerelease") : false;
             bool is_draft = obj.has_member("draft") ? obj.get_boolean_member("draft") : false;
@@ -1302,10 +1330,16 @@ namespace AppManager.Core {
                     
                     var asset_obj = node.get_object();
                     if (!asset_obj.has_member("name") || !asset_obj.has_member("browser_download_url")) continue;
+                    var name = asset_obj.get_string_member("name");
+                    if (asset_pattern != null && !pattern_matches_zsync(asset_pattern, name)) continue;
+                    string? api_url = asset_obj.has_member("url") ? asset_obj.get_string_member("url") : null;
+                    if (api_url != null && !is_github_asset_url(api_url)) {
+                        continue;
+                    }
                     
                     assets.add(new ReleaseAsset(
-                        asset_obj.get_string_member("name"),
-                        asset_obj.get_string_member("browser_download_url")
+                        name,
+                        asset_obj.get_string_member("browser_download_url"), api_url
                     ));
                 }
             }
@@ -1420,9 +1454,34 @@ namespace AppManager.Core {
             return v.length > 0 ? v : null;
         }
 
-        private DownloadArtifact download_file(InstallationRecord record, string url, GLib.Cancellable? cancellable) throws Error {
+        internal static bool is_github_asset_url(string url) {
+            try {
+                var uri = Uri.parse(url, UriFlags.NONE);
+                if (uri.get_scheme() != "https" || uri.get_host() != "api.github.com" ||
+                    (uri.get_port() != -1 && uri.get_port() != 443) || uri.get_userinfo() != null) return false;
+                var parts = tokenize_path(uri.get_path());
+                if (parts.length != 6 || parts[0] != "repos" || parts[3] != "releases" || parts[4] != "assets") return false;
+                for (int i = 0; i < parts[5].length; i++) {
+                    if (!parts[5][i].isdigit()) return false;
+                }
+                return true;
+            } catch (Error e) {
+                return false;
+            }
+        }
+
+        internal DownloadArtifact download_release_asset(InstallationRecord record, ReleaseAsset asset,
+                                                         GLib.Cancellable? cancellable) throws Error {
+            var url = asset.download_url;
+            if (asset.api_url != null && get_github_token() != null) url = asset.api_url;
+            return download_file(record, url, cancellable, asset.name);
+        }
+
+        private DownloadArtifact download_file(InstallationRecord record, string url, GLib.Cancellable? cancellable,
+                                               string? filename = null) throws Error {
             var temp_dir = AppManager.Utils.FileUtils.create_temp_dir("appmgr-update-");
-            var target_name = derive_filename(url);
+            var target_name = filename != null ? Path.get_basename(filename) : derive_filename(url);
+            if (target_name == "" || target_name == "." || target_name == ".." || target_name == "/") target_name = "update.AppImage";
             var dest_path = Path.build_filename(temp_dir, target_name);
 
             try {
@@ -1433,6 +1492,7 @@ namespace AppManager.Core {
                 
                 var input = session.send(message, cancellable);
                 var status = message.get_status();
+                check_github_response(message);
                 if (status < 200 || status >= 300) {
                     throw new GLib.IOError.FAILED("Download failed (%u)".printf(status));
                 }
@@ -2098,18 +2158,20 @@ namespace AppManager.Core {
         // Data Classes
         // ─────────────────────────────────────────────────────────────────────
 
-        private class ReleaseAsset : Object {
+        internal class ReleaseAsset : Object {
             public string name { get; private set; }
             public string download_url { get; private set; }
+            public string? api_url { get; private set; }
 
-            public ReleaseAsset(string name, string download_url) {
+            public ReleaseAsset(string name, string download_url, string? api_url = null) {
                 Object();
                 this.name = name;
                 this.download_url = download_url;
+                this.api_url = api_url;
             }
         }
 
-        private class ReleaseInfo : Object {
+        internal class ReleaseInfo : Object {
             public string? tag_name { get; private set; }
             public string? version { get; private set; }
             public bool prerelease { get; private set; }
@@ -2135,7 +2197,7 @@ namespace AppManager.Core {
             }
         }
 
-        private class DownloadArtifact : Object {
+        internal class DownloadArtifact : Object {
             public string temp_dir { get; private set; }
             public string file_path { get; private set; }
 
