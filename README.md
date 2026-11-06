@@ -47,8 +47,11 @@ and known limitations.
 
 ## Requirements
 
-- `valac`, `meson` (>= 0.64), `ninja`, `gettext`, `glib-compile-schemas`
-- Libraries: `libadwaita-1` (>= 1.6), `gtk4`, `glib-2.0` (>= 2.74), `gio-2.0`, `gio-unix-2.0`, `gmodule-2.0`, `json-glib-1.0`, `gee-0.8`, `libsoup-3.0`, `libsecret-1`, `gnutls` (>= 3.6.13)
+- Build tools: a C compiler, `valac`, `meson` (>= 0.64), `ninja`, `pkg-config`, `gettext`, `glib-compile-resources`, `glib-compile-schemas`
+- Installation tools: `gtk4-update-icon-cache` (or `gtk-update-icon-cache`, depending on the distribution) and `update-desktop-database` (from `desktop-file-utils`)
+- Libraries (with development headers): `libadwaita-1` (>= 1.6), `gtk4` (>= 4.22), `glib-2.0` (>= 2.74), `gio-2.0`, `gio-unix-2.0`, `gmodule-2.0`, `json-glib-1.0`, `gee-0.8`, `libsoup-3.0`, `libsecret-1`, `gnutls` (>= 3.6.13)
+- Default bundled helpers: `curl`, `tar`, `gzip`, `xz`, `make`, Rust (`rustc` and `cargo`), and development headers for zlib, liblzma and zstd. See the build options below to use host tools instead.
+- AppImage packaging with `scripts/make-appimage.sh`: `bash`, `jq` and `appimagetool` (downloaded automatically if missing)
 - Optional, for sandbox hardening: `libseccomp` (syscall filtering), `wayland-client` plus `wayland-scanner` (compositor-side isolation). Both are found automatically and can be turned off with `-Dseccomp=disabled` and `-Dwayland_security_context=disabled`.
 - Runtime tools: `unsquashfs`, `dwarfsextract`; optionally `zsync-rs` (0.2.2 or newer, for its `--json` progress) for delta updates
 - Runtime tools for sandboxing: `bwrap`, `xdg-dbus-proxy`, `fusermount3`, `squashfuse`, `dwarfs`
@@ -83,27 +86,46 @@ inputs.app-manager.packages.x86_64-linux.default
 
 <details> <summary> <H4>Install development dependencies</H4> <b>(click to open)</b> </summary>
 
-Install the development packages required to build AppManager on each distribution:
+Install the packages below for the default build, including bundled helpers and `jq` for AppImage packaging. Your distribution must provide the minimum library versions listed above, especially GTK >= 4.22 and libadwaita >= 1.6. The lists also include the optional sandbox-hardening libraries.
 
 - **Debian / Ubuntu:**
 
 ```bash
-sudo apt install valac meson ninja-build pkg-config gettext libadwaita-1-dev libgtk-4-dev libglib2.0-dev libjson-glib-dev libgee-0.8-dev libsoup-3.0-dev libsecret-1-dev libgnutls28-dev libseccomp-dev libwayland-dev curl zlib1g-dev liblzma-dev libzstd-dev
+sudo apt install build-essential valac meson ninja-build pkg-config gettext \
+  desktop-file-utils libgtk-4-bin libadwaita-1-dev libgtk-4-dev libglib2.0-dev \
+  libjson-glib-dev libgee-0.8-dev libsoup-3.0-dev libsecret-1-dev libgnutls28-dev \
+  libseccomp-dev libwayland-dev curl tar gzip xz-utils rustc cargo jq \
+  zlib1g-dev liblzma-dev libzstd-dev
 ```
 
 - **Fedora:**
 
 ```bash
-sudo dnf install vala meson ninja-build gettext gtk4-devel libadwaita-devel glib2-devel json-glib-devel libgee-devel libsoup3-devel libsecret-devel gnutls-devel libseccomp-devel wayland-devel curl zlib-devel xz-devel libzstd-devel
+sudo dnf install gcc make vala meson ninja-build pkgconf-pkg-config gettext \
+  desktop-file-utils gtk-update-icon-cache gtk4-devel libadwaita-devel glib2-devel \
+  json-glib-devel libgee-devel libsoup3-devel libsecret-devel gnutls-devel \
+  libseccomp-devel wayland-devel curl tar gzip xz rust cargo jq \
+  zlib-devel xz-devel libzstd-devel
 ```
 
 - **Arch Linux / Manjaro:**
 
 ```bash
-sudo pacman -S vala meson ninja gettext gtk4 libadwaita glib2 json-glib libgee libsoup3 libsecret gnutls libseccomp wayland curl zlib xz zstd
+sudo pacman -S --needed base-devel vala meson ninja gettext desktop-file-utils \
+  gtk4 libadwaita glib2 json-glib libgee libsoup3 libsecret gnutls libseccomp \
+  wayland curl tar gzip xz rust jq zlib zstd
 ```
 
-`curl` and the zlib/xz/zstd headers are only needed for the bundled tools described below.
+On Arch Linux / Manjaro, `base-devel` supplies the C compiler, `make` and `pkgconf`, and `rust` supplies both `rustc` and `cargo`.
+
+The helper-specific dependencies are:
+
+- `curl` for downloading DwarFS, squashfuse and the unsquashfs source.
+- `tar` and `xz` (`xz-utils` on Debian / Ubuntu) for extracting the DwarFS `.tar.xz` archive.
+- `make`, `tar`, `gzip`, and the zlib/liblzma/zstd development headers for building `unsquashfs`. XZ support is enabled in `scripts/build-unsquashfs.sh`, so `liblzma-dev` / `xz-devel` / `xz` is still needed. LZ4 and LZO support are disabled and need no development packages.
+- Rust and Cargo for building `zsync-rs`.
+
+`desktop-file-utils` is needed for the desktop database update during installation. `jq` is needed by `scripts/make-appimage.sh`, but not by the Meson build itself.
 
 </details>
 
