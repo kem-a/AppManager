@@ -25,7 +25,7 @@ add_project_arguments(['--target-glib=2.74', '--pkg=posix'], language: 'vala')
 add_project_arguments(
   ['--vapidir', meson.current_source_dir() / 'src' / 'vapi',
    '--pkg', 'crypto-shim', '--pkg', 'seccomp-filter',
-   '--pkg', 'wayland-security-context'],
+   '--pkg', 'wayland-security-context', '--pkg', 'startup-notification'],
   language: 'vala'
 )
 
@@ -167,7 +167,7 @@ seccomp_filter_lib = static_library('seccomp-filter',
 
 # The Wayland security-context helper, and the client code wayland-scanner
 # generates from the vendored protocol description.
-wayland_sc_sources = ['src/core/wayland_security_context.c']
+wayland_sc_sources = ['src/core/wayland_security_context.c', 'src/core/startup_notification.c']
 wayland_sc_args = []
 wayland_sc_deps = [glib_dep]
 if have_wayland_sc

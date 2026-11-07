@@ -38,6 +38,17 @@ namespace AppManager.Core {
          */
         public static int run(string[] args) {
             restore_launch_environment();
+            var status = run_internal(args);
+            // Reopening a background app can hand off to its existing instance and
+            // exit without completing desktop startup feedback (Convey does this).
+            // Finish only once the launched process has exited, never on spawn or a
+            // timer: a cold-starting app still owns its normal readiness notification.
+            StartupNotification.complete(Environment.get_variable("DESKTOP_STARTUP_ID"),
+                                         Environment.get_variable("XDG_ACTIVATION_TOKEN"));
+            return status;
+        }
+
+        private static int run_internal(string[] args) {
             string? record_id = null;
             string? target = null;
             var app_args = new Gee.ArrayList<string>();
