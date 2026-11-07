@@ -573,7 +573,7 @@ namespace AppManager {
         private void prune_size_cache(Gee.Collection<InstallationRecord> records) {
             var valid = new Gee.HashSet<string>();
             foreach (var record in records) {
-                valid.add(record_state_key(record));
+                valid.add(record_size_cache_key(record));
             }
             var to_remove = new Gee.ArrayList<string>();
             foreach (var key in record_size_cache.keys) {
@@ -896,12 +896,21 @@ namespace AppManager {
             return string.joinv(" ･ ", arr);
         }
 
+        private string record_size_cache_key(InstallationRecord record) {
+            // The path and file fingerprint change when the app is upgraded (in-app
+            // or through AppManager), so a cached size from the previous file is
+            // never reused.
+            return "%s|%s|%s".printf(record_state_key(record),
+                record.installed_path ?? "",
+                record.file_fingerprint ?? "");
+        }
+
         private int64 get_record_raw_size(InstallationRecord record) {
             if (record.installed_path == null || record.installed_path.strip() == "") {
                 return -1;
             }
 
-            var cache_key = record_state_key(record);
+            var cache_key = record_size_cache_key(record);
             if (record_size_cache.has_key(cache_key)) {
                 return record_size_cache.get(cache_key);
             }
@@ -1794,7 +1803,7 @@ namespace AppManager {
             }
             if (result.status == UpdateStatus.UPDATED) {
                 failed_update_keys.unset(key);
-                record_size_cache.unset(result.record.id);
+                record_size_cache.unset(record_size_cache_key(result.record));
                 // Remove from staged updates and save
                 staged_updates.remove(result.record.id);
                 staged_updates.save();
@@ -1818,7 +1827,7 @@ namespace AppManager {
                 finish_update_indicator(key, result.status, result.message);
                 if (result.status == UpdateStatus.UPDATED) {
                     failed_update_keys.unset(key);
-                    record_size_cache.unset(result.record.id);
+                    record_size_cache.unset(record_size_cache_key(result.record));
                     staged_updates.remove(result.record.id);
                     staged_changed = true;
                 } else if (result.status == UpdateStatus.FAILED) {

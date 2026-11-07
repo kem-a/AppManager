@@ -115,20 +115,13 @@ namespace AppManager.Utils {
         }
 
         public static string format_size(int64 bytes) {
-            const string[] units = {"B", "KB", "MB", "GB", "TB"};
-            double size = (double)bytes;
-            int unit_index = 0;
-            
-            while (size >= 1024.0 && unit_index < units.length - 1) {
-                size /= 1024.0;
-                unit_index++;
+            if (bytes <= 0) {
+                return "0 B";
             }
-            
-            if (unit_index == 0) {
-                return "%.0f %s".printf(size, units[unit_index]);
-            } else {
-                return "%.1f %s".printf(size, units[unit_index]);
-            }
+            // GLib uses decimal SI units (1000-based), matching Files/Nautilus.
+            // The previous 1024-based loop reported MiB values under "MB", which
+            // made every app look ~5% smaller than its real file size.
+            return GLib.format_size((uint64)bytes);
         }
 
         public static void open_folder(string path, Gtk.Window? parent) {

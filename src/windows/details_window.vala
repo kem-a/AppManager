@@ -2600,28 +2600,19 @@ namespace AppManager {
         }
 
         private int64 calculate_installation_size(InstallationRecord record) {
-            int64 total_size = 0;
-            
+            // Keep this identical to the size shown in the app list: the installed
+            // AppImage/directory only. Desktop files and icons are tiny support
+            // files, and including them here made the two views disagree.
+            if (record.installed_path == null || record.installed_path == "") {
+                return 0;
+            }
+
             try {
-                // Add installed path size (AppImage or extracted directory)
-                if (record.installed_path != null && record.installed_path != "") {
-                    total_size += AppManager.Utils.FileUtils.get_path_size(record.installed_path);
-                }
-                
-                // Add icon size if exists
-                if (record.icon_path != null && record.icon_path != "") {
-                    total_size += AppManager.Utils.FileUtils.get_path_size(record.icon_path);
-                }
-                
-                // Add desktop file size
-                if (record.desktop_file != null && record.desktop_file != "") {
-                    total_size += AppManager.Utils.FileUtils.get_path_size(record.desktop_file);
-                }
+                return AppManager.Utils.FileUtils.get_path_size(record.installed_path);
             } catch (Error e) {
                 warning("Failed to calculate size for %s: %s", record.name, e.message);
+                return 0;
             }
-            
-            return total_size;
         }
 
         private HashTable<string, string> load_desktop_file_properties(string desktop_file_path) {
