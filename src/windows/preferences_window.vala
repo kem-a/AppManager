@@ -636,8 +636,8 @@ namespace AppManager {
 
         private void handle_auto_update_toggle(bool enabled) {
             if (enabled) {
-                BackgroundUpdateService.write_autostart_file();
-                BackgroundUpdateService.spawn_daemon();
+                BackgroundUpdateService.write_autostart_file(registry);
+                BackgroundUpdateService.spawn_daemon(registry);
             } else {
                 BackgroundUpdateService.remove_autostart_file();
                 BackgroundUpdateService.kill_daemon();
@@ -816,7 +816,7 @@ namespace AppManager {
             // Kill background daemon if running - it may interfere with migration
             // by monitoring folders and triggering reconciliation. Awaited (not
             // blocking) so the UI stays responsive while the daemon shuts down.
-            bool daemon_was_running = yield BackgroundUpdateService.kill_daemon_and_wait_async();
+            yield BackgroundUpdateService.kill_daemon_and_wait_async();
 
             migration_service.migration_complete.connect((success, error_message) => {
                 // Clear migration flag first
@@ -827,11 +827,11 @@ namespace AppManager {
                     directory_monitor.start();
                 }
                 
-                // If background daemon was running, update autostart file and respawn
-                if (daemon_was_running) {
-                    // Update autostart Exec path to point to new location
-                    BackgroundUpdateService.update_autostart_file_after_migration(old_path, new_path);
-                    BackgroundUpdateService.spawn_daemon();
+                // Rewrite the autostart entry so it points at the moved install, and make
+                // sure the daemon is running again whenever background checks are enabled.
+                if (settings.get_boolean("auto-check-updates")) {
+                    BackgroundUpdateService.write_autostart_file(registry);
+                    BackgroundUpdateService.spawn_daemon(registry);
                 }
                 
                 progress_dialog.force_close();

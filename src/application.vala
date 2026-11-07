@@ -340,6 +340,13 @@ Examples:
             }
 
             if (main_window == null) {
+                // Repair entries left pointing at a previous self-install location
+                // (e.g. after the install directory was moved) and make sure the
+                // daemon is running when background checks are enabled.
+                if (settings.get_boolean("auto-check-updates")) {
+                    BackgroundUpdateService.write_autostart_file(registry);
+                    BackgroundUpdateService.spawn_daemon(registry);
+                }
                 main_window = new MainWindow(this, registry, installer, settings);
             }
             main_window.present();

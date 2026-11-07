@@ -22,16 +22,45 @@ namespace AppManager.Core {
         }
 
         /**
+         * Resolves the executable the background updater autostart entry should launch.
+         * The running process can still report the pre-self-install or pre-migration
+         * AppImage path through $APPIMAGE, so prefer the registered self-install.
+         */
+        public static string resolve_self_exec_path(InstallationRegistry? registry) {
+            // A distro/package install has no meaningful $APPIMAGE and must keep
+            // launching itself, even if an old self-install record still exists.
+            if (registry != null && AppPaths.is_running_as_appimage) {
+                foreach (var record in registry.list()) {
+                    if (!record.is_self_app()) {
+                        continue;
+                    }
+                    var path = record.installed_path;
+                    if (path == null || path.strip() == "") {
+                        continue;
+                    }
+                    if (File.new_for_path(path).query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
+                        path = Path.build_filename(path, "AppRun");
+                    }
+                    if (FileUtils.test(path, FileTest.EXISTS)) {
+                        return path;
+                    }
+                }
+            }
+            return AppPaths.current_executable_path ?? "app-manager";
+        }
+
+        /**
          * Writes the autostart desktop file to enable background updates.
          * Public so PreferencesDialog can use it when the user enables auto-updates.
          */
-        public static void write_autostart_file() {
+        public static void write_autostart_file(InstallationRegistry? registry = null) {
             try {
                 var autostart_dir = Path.build_filename(Environment.get_user_config_dir(), "autostart");
                 DirUtils.create_with_parents(autostart_dir, 0755);
                 
                 var autostart_file = Path.build_filename(autostart_dir, "com.github.AppManager.desktop");
-                var exec_path = AppPaths.current_executable_path ?? "app-manager";
+                var exec_path = resolve_self_exec_path(registry);
+                var exec_token = Utils.FileUtils.quote_exec_token(exec_path);
                 var content = """[Desktop Entry]
 Type=Application
 Name=AppManager Background Updater
@@ -40,44 +69,11 @@ X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=15
 NoDisplay=true
 X-XDP-Autostart=com.github.AppManager
-""".printf(exec_path);
+""".printf(exec_token);
                 FileUtils.set_contents(autostart_file, content);
                 debug("Autostart file written to %s", autostart_file);
             } catch (Error e) {
                 warning("Failed to write autostart file: %s", e.message);
-            }
-        }
-
-        /**
-         * Updates the autostart desktop file after migration.
-         * The current executable path in memory still points to the old location,
-         * so we need to calculate the new path based on the migration paths.
-         */
-        public static void update_autostart_file_after_migration(string old_base, string new_base) {
-            var autostart_file = Path.build_filename(
-                Environment.get_user_config_dir(),
-                "autostart",
-                "com.github.AppManager.desktop"
-            );
-            
-            // Only update if autostart file exists
-            if (!FileUtils.test(autostart_file, FileTest.EXISTS)) {
-                return;
-            }
-            
-            try {
-                string contents;
-                FileUtils.get_contents(autostart_file, out contents);
-                
-                // Replace old base path with new base path in Exec line
-                var updated = contents.replace(old_base, new_base);
-                
-                if (updated != contents) {
-                    FileUtils.set_contents(autostart_file, updated);
-                    debug("Updated autostart file Exec path: %s -> %s", old_base, new_base);
-                }
-            } catch (Error e) {
-                warning("Failed to update autostart file: %s", e.message);
             }
         }
 
@@ -106,7 +102,7 @@ X-XDP-Autostart=com.github.AppManager
          * Spawns the background daemon process if not already running.
          * Called when user enables auto-updates in preferences.
          */
-        public static void spawn_daemon() {
+        public static void spawn_daemon(InstallationRegistry? registry = null) {
             // Check if daemon is already running
             if (is_daemon_running()) {
                 debug("Background daemon already running, not spawning another");
@@ -114,7 +110,7 @@ X-XDP-Autostart=com.github.AppManager
             }
 
             try {
-                var exec_path = AppPaths.current_executable_path ?? "app-manager";
+                var exec_path = resolve_self_exec_path(registry);
                 string[] argv = { exec_path, "--background-update" };
                 Pid child_pid;
                 Process.spawn_async(
@@ -137,7 +133,16 @@ X-XDP-Autostart=com.github.AppManager
         }
 
         /**
-         * Kills any running background daemon process.
+         * pgrep/pkill match every user by default. Scope them to this process's
+         * effective user so another account's daemon is neither detected as ours
+         * nor blocks starting our own.
+         */
+        private static string current_uid() {
+            return "%u".printf((uint) Posix.geteuid());
+        }
+
+        /**
+         * Kills any running background daemon.
          * Called when user disables auto-updates in preferences.
          */
         public static void kill_daemon() {
@@ -147,7 +152,7 @@ X-XDP-Autostart=com.github.AppManager
                 // its dwarfs mount. SIGKILL (-9) would orphan that mount in /tmp.
                 // Match just "--background-update" to avoid issues with path variations
                 // Use "--" to indicate end of options since pattern starts with "-"
-                string[] argv = { "pkill", "-f", "--", "--background-update" };
+                string[] argv = { "pkill", "-f", "-u", current_uid(), "--", "--background-update" };
                 int exit_status;
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
                 debug("Stopped background daemon (exit status: %d)", exit_status);
@@ -183,7 +188,7 @@ X-XDP-Autostart=com.github.AppManager
             // outweighs a stale /tmp symlink that cleanup_stale() reaps next launch.
             warning("Background daemon did not terminate within 5 seconds; sending SIGKILL");
             try {
-                string[] argv = { "pkill", "-9", "-f", "--", "--background-update" };
+                string[] argv = { "pkill", "-9", "-f", "-u", current_uid(), "--", "--background-update" };
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, null);
             } catch (SpawnError e) {
                 warning("Failed to force-kill background daemon: %s", e.message);
@@ -219,7 +224,7 @@ X-XDP-Autostart=com.github.AppManager
             try {
                 // Match just "--background-update" to avoid issues with path variations
                 // Use "--" to indicate end of options since pattern starts with "-"
-                string[] argv = { "pgrep", "-f", "--", "--background-update" };
+                string[] argv = { "pgrep", "-f", "-u", current_uid(), "--", "--background-update" };
                 int exit_status;
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
                 return exit_status == 0;
