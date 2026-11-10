@@ -411,6 +411,18 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             add2("--ro-bind-data", mimeapps_fd.to_string(), Path.build_filename(dir, "xdg", "mimeapps.list"));
         }
 
+        // The host's GTK 4 settings as a settings.ini, in a config dir of its own.
+        private string? add_gtk_settings() {
+            var ini = SandboxSettings.host_gtk_settings();
+            var fd = ini != null ? data_fd(ini) : -1;
+            if (fd < 0) {
+                return null;
+            }
+            var dir = Path.build_filename(helper_dir(), "gtk");
+            add2("--ro-bind-data", fd.to_string(), Path.build_filename(dir, "gtk-4.0", "settings.ini"));
+            return dir;
+        }
+
         // AppManager's own corner of the sandbox's private runtime dir.
         private string helper_dir() {
             return Path.build_filename(runtime_base, DATA_DIRNAME);
@@ -587,6 +599,9 @@ x-scheme-handler/https=app-manager-open-uri.desktop
                 SandboxSettings.seed(manifest.home);
             }
 
+            // GTK 4 cannot use the Settings portal here; see SandboxSettings.host_gtk_settings.
+            var gtk_settings_dir = manifest.full_session_bus ? null : add_gtk_settings();
+
             // libadwaita takes the color scheme from GSettings only with this set. With
             // a session proxy it uses the Settings portal instead, which follows changes.
             if (!manifest.full_session_bus && !manifest.needs_session_bus()) {
@@ -611,13 +626,23 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             // until it times out, even after the app has shown its window.
             copy_env("DESKTOP_STARTUP_ID");
             copy_env("XDG_ACTIVATION_TOKEN");
+            var config_dirs = Environment.get_variable("XDG_CONFIG_DIRS");
+            if (config_dirs == "") {
+                config_dirs = null;
+            }
             if (link_pipe != null) {
                 // The link opener's GIO handler has to win the default-app lookup.
                 prepend_env("XDG_DATA_DIRS", Path.build_filename(helper_dir(), "share"), "/usr/local/share:/usr/share");
-                prepend_env("XDG_CONFIG_DIRS", Path.build_filename(helper_dir(), "xdg"), "/etc/xdg");
+                config_dirs = Path.build_filename(helper_dir(), "xdg") + ":" + (config_dirs ?? "/etc/xdg");
             } else {
                 copy_env("XDG_DATA_DIRS");
-                copy_env("XDG_CONFIG_DIRS");
+            }
+            if (gtk_settings_dir != null) {
+                // GTK lets a later config dir's settings.ini override an earlier one's.
+                config_dirs = (config_dirs ?? "/etc/xdg") + ":" + gtk_settings_dir;
+            }
+            if (config_dirs != null) {
+                setenv("XDG_CONFIG_DIRS", config_dirs);
             }
             foreach (var name in new string[] { "XCURSOR_THEME", "XCURSOR_SIZE", "GTK_THEME", "QT_QPA_PLATFORMTHEME" }) copy_env(name);
             foreach (var name in Environment.list_variables()) {
