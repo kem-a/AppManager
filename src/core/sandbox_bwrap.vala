@@ -1121,6 +1121,15 @@ x-scheme-handler/https=app-manager-open-uri.desktop
                 if (cache != null) add2("--bind", cache, cache);
                 else setenv("XDG_CACHE_HOME", storage + "/.cache");
             }
+            // Login entries stay private even when the real home or ~/.config is
+            // granted: apps that ignore XDG_CONFIG_HOME would plant an unconfined one.
+            // AppAutostart mirrors them to the host.
+            var autostart = AppAutostart.private_dir(manifest.home);
+            var autostart_inside = Path.build_filename(home, ".config", "autostart");
+            DirUtils.create_with_parents(autostart, 0700);
+            // bwrap cannot create the mount point under a read-only bind.
+            DirUtils.create_with_parents(autostart_inside, 0755);
+            add2("--bind", autostart, autostart_inside);
         }
 
         /**

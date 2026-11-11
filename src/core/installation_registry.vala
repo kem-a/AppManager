@@ -446,7 +446,7 @@ namespace AppManager.Core {
                         debug("Cleaned up desktop file: %s", record.desktop_file);
                     }
                 }
-                Installer.remove_autostart_entry(record);
+                AppAutostart.remove(record.desktop_file);
 
                 // Clean up icon
                 if (record.icon_path != null) {

@@ -108,12 +108,6 @@ namespace AppManager.Core {
         // NAME=VALUE overrides. Null uses bundled defaults; an empty array clears them.
         public string[]? custom_env_vars { get; set; }
 
-        // Login autostart. The switch lives only in the registry (a fresh install starts
-        // without it); the extra args and delay go to custom.json like other customizations.
-        public bool autostart_enabled { get; set; default = false; }
-        public string? custom_autostart_args { get; set; }
-        public int custom_autostart_delay { get; set; default = 0; }
-
         // Whether to include pre-release versions when checking for updates (GitHub only)
         public bool prerelease_enabled { get; set; default = false; }
         public bool updates_enabled { get; set; default = true; }
@@ -354,8 +348,6 @@ namespace AppManager.Core {
                    custom_no_display != null ||
                    custom_add_to_path != null ||
                    custom_env_vars != null ||
-                   custom_autostart_args != null ||
-                   custom_autostart_delay > 0 ||
                    (sandbox_extra_dirs != null && sandbox_extra_dirs.length > 0);
         }
 
@@ -502,7 +494,6 @@ namespace AppManager.Core {
             builder.add_boolean_value(prerelease_enabled);
             builder.set_member_name("updates_enabled");
             builder.add_boolean_value(updates_enabled);
-            put_bool(builder, "autostart_enabled", autostart_enabled);
 
             // Active sandbox state belongs to the registry. Reinstall history
             // keeps only explicitly granted special folders.
@@ -565,11 +556,6 @@ namespace AppManager.Core {
                     builder.add_string_value(env_var);
                 }
                 builder.end_array();
-            }
-            put_string(builder, "custom_autostart_args", custom_autostart_args);
-            if (custom_autostart_delay > 0) {
-                builder.set_member_name("custom_autostart_delay");
-                builder.add_int_value(custom_autostart_delay);
             }
             put_array(builder, "sandbox_extra_dirs", sandbox_extra_dirs);
         }
@@ -788,7 +774,6 @@ namespace AppManager.Core {
             if (obj.has_member("updates_enabled")) {
                 record.updates_enabled = obj.get_boolean_member("updates_enabled");
             }
-            record.autostart_enabled = read_bool(obj, "autostart_enabled", false);
 
             // Zsync update info (if app supports zsync delta updates)
             if (obj.has_member("zsync_update_info")) {
@@ -972,12 +957,6 @@ namespace AppManager.Core {
                     env_list[i] = env_array.get_string_element(i);
                 }
                 custom_env_vars = env_list;
-            }
-            if (custom_autostart_args == null && obj.has_member("custom_autostart_args")) {
-                custom_autostart_args = obj.get_string_member("custom_autostart_args");
-            }
-            if (custom_autostart_delay == 0 && obj.has_member("custom_autostart_delay")) {
-                custom_autostart_delay = (int) obj.get_int_member("custom_autostart_delay");
             }
             // Profiles/toggles from older history must not override fresh defaults
             // or store templates. Only Special permissions folders are restored.

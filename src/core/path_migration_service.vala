@@ -283,7 +283,7 @@ namespace AppManager.Core {
             if (record.desktop_file != null && File.new_for_path(record.desktop_file).query_exists()) {
                 update_desktop_file(record.desktop_file, old_path, new_path, old_base, new_base);
             }
-            var autostart_file = Installer.autostart_path(record);
+            var autostart_file = AppAutostart.entry_path(record.desktop_file);
             if (autostart_file != null && File.new_for_path(autostart_file).query_exists()) {
                 update_desktop_file(autostart_file, old_path, new_path, old_base, new_base);
             }
