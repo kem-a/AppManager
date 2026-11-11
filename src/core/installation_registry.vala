@@ -208,6 +208,59 @@ namespace AppManager.Core {
         }
 
         /**
+         * Drops records that point at the same installed file. Two records cannot
+         * legitimately share installed_path - uninstalling one would delete the
+         * other's file - so such a pair is a leftover from an interrupted or
+         * concurrent upgrade. The most recently updated record is kept. Only the
+         * registry entry is removed; files stay untouched so a launcher or sandbox
+         * manifest owned by the dropped record keeps working.
+         *
+         * Must be called with registry_mutex held.
+         */
+        private int drop_same_path_duplicates_unlocked() {
+            var seen = new HashTable<string, InstallationRecord>(GLib.str_hash, GLib.str_equal);
+            var drops = new Gee.ArrayList<string>();
+
+            foreach (var record in records.get_values()) {
+                var path = record.installed_path;
+                if (path == null || path.strip() == "") {
+                    continue;
+                }
+
+                var keeper = seen.get(path);
+                if (keeper == null) {
+                    seen.insert(path, record);
+                    continue;
+                }
+
+                // Never drop a record while its install/uninstall is in progress.
+                InstallationRecord drop;
+                if (in_flight.contains(keeper.id) && !in_flight.contains(record.id)) {
+                    drop = record;
+                } else if (in_flight.contains(record.id) && !in_flight.contains(keeper.id)) {
+                    drop = keeper;
+                    seen.insert(path, record);
+                } else if (record.updated_at > keeper.updated_at) {
+                    drop = keeper;
+                    seen.insert(path, record);
+                } else {
+                    drop = record;
+                }
+
+                if (!drops.contains(drop.id)) {
+                    drops.add(drop.id);
+                }
+                debug("Dropping duplicate registry record %s (%s); same installed file as %s",
+                    drop.id, drop.name, (drop == keeper ? record.id : keeper.id));
+            }
+
+            foreach (var id in drops) {
+                records.remove(id);
+            }
+            return drops.size;
+        }
+
+        /**
          * Marks an app as "in-flight" (being installed/uninstalled).
          * Reconcile will skip in-flight apps to prevent race conditions.
          */
@@ -239,6 +292,10 @@ namespace AppManager.Core {
         public void register(InstallationRecord record) {
             registry_mutex.lock();
             records.insert(record.id, record);
+            // A new install replaces anything that claims the same installed file.
+            // Without this, a stale record left by an interrupted upgrade would make
+            // the same app appear twice in the library.
+            drop_same_path_duplicates_unlocked();
             // Clear in-flight flag now that registration is complete
             in_flight.remove(record.id);
             save_unlocked();
@@ -584,6 +641,14 @@ namespace AppManager.Core {
                     foreach (var record in records.get_values()) {
                         custom_values_store.apply_to_record(record);
                     }
+                }
+
+                // Heal registries left with two records for one installed file by an
+                // interrupted or concurrent upgrade (see drop_same_path_duplicates_unlocked).
+                int duplicates = drop_same_path_duplicates_unlocked();
+                if (duplicates > 0) {
+                    warning("Removed %d duplicate registry record(s) for the same installed file", duplicates);
+                    save_unlocked();
                 }
             } catch (Error e) {
                 warning("Failed to load registry: %s", e.message);

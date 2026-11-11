@@ -2083,7 +2083,8 @@ namespace AppManager.Core {
 
         /**
          * Symlink <slug> in the user bin dir to the AppImage. Links we own are replaced, so
-         * upgrades keep working once a name is established; anything else is left alone and
+         * upgrades keep working once a name is established; so is a wrapper left by a
+         * previous record for this same executable. Anything else is left alone and
          * `name_taken` is set (issue #175 - this used to delete whatever was there).
          */
         private string? create_bin_symlink(string exec_path, string slug, string? installed_path, out bool name_taken) {
@@ -2092,7 +2093,8 @@ namespace AppManager.Core {
             var symlink_file = File.new_for_path(symlink_path);
 
             try {
-                if (bin_symlink_is_ours(symlink_path, installed_path)) {
+                if (bin_symlink_is_ours(symlink_path, installed_path)
+                    || bin_wrapper_is_for_exec(symlink_path, exec_path)) {
                     symlink_file.delete(null);
                 }
                 // Nothing was deleted for a foreign occupant, so this fails with EXISTS and is the
@@ -2135,6 +2137,40 @@ namespace AppManager.Core {
             }
         }
 
+        /**
+         * Whether <path> is a launcher that targets this exact executable, even if it
+         * carries another record id. An upgrade changes the record id while keeping
+         * the installed path, so the launcher from the previous install is still ours
+         * to replace (otherwise the app silently loses its command on upgrade).
+         */
+        private static bool bin_wrapper_is_for_exec(string path, string? exec_path) {
+            if (exec_path == null || exec_path.strip() == "") {
+                return false;
+            }
+            try {
+                var info = File.new_for_path(path).query_info(
+                    FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_SIZE,
+                    FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+                if (info.get_file_type() != FileType.REGULAR || info.get_size() > 65536) {
+                    return false;
+                }
+                string contents;
+                if (!GLib.FileUtils.get_contents(path, out contents)) {
+                    return false;
+                }
+                var quoted_exec = shell_quote(exec_path);
+                if (contents.has_prefix(BIN_WRAPPER_HEADER)) {
+                    return contents.contains("--target=%s -- \"$@\"\n".printf(quoted_exec));
+                }
+                if (contents.has_prefix(ENV_WRAPPER_HEADER)) {
+                    return contents.has_suffix("%s \"$@\"\n".printf(quoted_exec));
+                }
+                return false;
+            } catch (Error e) {
+                return false;
+            }
+        }
+
         private static bool bin_launcher_is_ours(string path, InstallationRecord record) {
             return bin_symlink_is_ours(path, record.installed_path) || bin_wrapper_is_ours(path, record);
         }
@@ -2147,7 +2183,8 @@ namespace AppManager.Core {
             try {
                 var script_path = Path.build_filename(AppPaths.local_bin_dir, slug);
                 var script_file = File.new_for_path(script_path);
-                if (bin_launcher_is_ours(script_path, record)) {
+                if (bin_launcher_is_ours(script_path, record)
+                    || bin_wrapper_is_for_exec(script_path, exec_path)) {
                     script_file.delete(null);
                 }
 
