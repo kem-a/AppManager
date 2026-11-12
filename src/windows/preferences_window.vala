@@ -225,90 +225,8 @@ namespace AppManager {
 
             thumbnails_group.add(thumbnail_background_row);
 
-            // GitHub authentication group
-            var github_group = new Adw.PreferencesGroup();
-            github_group.title = _( "GitHub");
-            github_group.description = _( "Authenticate with GitHub to increase API limits and update apps from private repositories");
-
-            var token_row = new Adw.PasswordEntryRow();
-            token_row.title = _( "Personal access token");
-            token_row.add_prefix(new Gtk.Image.from_icon_name("dialog-password-symbolic"));
-
-            var current_token = TokenStore.get_token();
-            if (current_token != null && current_token.strip() != "") {
-                token_row.text = current_token;
-            }
-
-            var token_apply_button = new Gtk.Button.from_icon_name("object-select-symbolic");
-            token_apply_button.valign = Gtk.Align.CENTER;
-            token_apply_button.add_css_class("flat");
-            token_apply_button.add_css_class("success");
-            token_apply_button.tooltip_text = _( "Apply token");
-            token_apply_button.clicked.connect(() => {
-                TokenStore.set_token(token_row.text.strip());
-                show_info_toast(_( "GitHub token saved"));
-            });
-
-            var token_clear_button = new Gtk.Button.from_icon_name("edit-clear-symbolic");
-            token_clear_button.valign = Gtk.Align.CENTER;
-            token_clear_button.add_css_class("flat");
-            token_clear_button.tooltip_text = _( "Clear token");
-            token_clear_button.clicked.connect(() => {
-                token_row.text = "";
-                TokenStore.clear_token();
-                show_info_toast(_( "GitHub token cleared"));
-            });
-
-            token_row.add_suffix(token_apply_button);
-            token_row.add_suffix(token_clear_button);
-
-            // Allow Enter key to apply
-            token_row.entry_activated.connect(() => {
-                TokenStore.set_token(token_row.text.strip());
-                show_info_toast(_( "GitHub token saved"));
-            });
-
-            github_group.add(token_row);
-
-            // Test token row
-            var token_test_row = new Adw.ActionRow();
-            token_test_row.title = _( "Test token");
-            token_test_row.subtitle = _( "Verify your token works and check rate limit status");
-            token_test_row.add_prefix(new Gtk.Image.from_icon_name("object-select-symbolic"));
-
-            var test_spinner = new Adw.Spinner();
-            test_spinner.visible = false;
-            var test_button = new Gtk.Button.with_label(_( "Test"));
-            test_button.valign = Gtk.Align.CENTER;
-            test_button.add_css_class("flat");
-            test_button.clicked.connect(() => {
-                // Save the current token first
-                TokenStore.set_token(token_row.text.strip());
-                test_button.sensitive = false;
-                test_spinner.visible = true;
-                token_test_row.subtitle = _( "Testing…");
-                test_github_token.begin(token_row.text.strip(), (obj, res) => {
-                    var result = test_github_token.end(res);
-                    token_test_row.subtitle = result;
-                    test_button.sensitive = true;
-                    test_spinner.visible = false;
-                });
-            });
-
-            token_test_row.add_suffix(test_spinner);
-            token_test_row.add_suffix(test_button);
-            github_group.add(token_test_row);
-
-            var token_help_row = new Adw.ActionRow();
-            token_help_row.title = _( "Create a token on GitHub");
-            token_help_row.subtitle = _( "For private repositories, select the repository and grant Contents read access");
-            token_help_row.add_prefix(new Gtk.Image.from_icon_name("help-about-symbolic"));
-            token_help_row.activatable = true;
-            token_help_row.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
-            token_help_row.activated.connect(() => {
-                UiUtils.open_url("https://github.com/settings/tokens?type=beta");
-            });
-            github_group.add(token_help_row);
+            var github_group = build_github_token_group(false);
+            var apphub_group = build_github_token_group(true);
 
             var security_group = new Adw.PreferencesGroup();
             security_group.add(build_security_action_row());
@@ -316,11 +234,101 @@ namespace AppManager {
             page.add(updates_group);
             page.add(security_group);
             page.add(github_group);
+            page.add(apphub_group);
             page.add(thumbnails_group);
 
             this.add(page);
 
             apply_thumbnail_background_preference(settings.get_boolean("remove-thumbnail-checkerboard"));
+        }
+
+        private Adw.PreferencesGroup build_github_token_group(bool apphub) {
+            var group = new Adw.PreferencesGroup();
+            group.title = apphub ? _("AppHub submissions") : _("GitHub");
+            var expander = new Adw.ExpanderRow();
+            expander.title = apphub ? _("Enable AppImage submission to AppHub") : _("GitHub token settings");
+            expander.subtitle = apphub
+                ? _("A dedicated GitHub token for creating public AppHub pull requests, stored separately from your update token")
+                : _("Authenticate with GitHub to increase API limits and update apps from private repositories");
+            expander.add_prefix(new Gtk.Image.from_icon_name("dialog-password-symbolic"));
+            expander.show_enable_switch = true;
+            var enabled_key = apphub ? "apphub-token-enabled" : "github-token-enabled";
+            settings.bind(enabled_key, expander, "enable-expansion", GLib.SettingsBindFlags.DEFAULT);
+            expander.expanded = expander.enable_expansion;
+            expander.notify["enable-expansion"].connect(() => {
+                expander.expanded = expander.enable_expansion;
+            });
+            group.add(expander);
+            var auth = apphub ? GitHubAuth.get_apphub() : GitHubAuth.get_updates();
+            var token_row = new Adw.PasswordEntryRow();
+            token_row.title = apphub ? _("AppHub personal access token") : _("Personal access token");
+            token_row.add_prefix(new Gtk.Image.from_icon_name("dialog-password-symbolic"));
+            var current_token = apphub ? TokenStore.get_apphub_token() : TokenStore.get_token();
+            token_row.text = current_token ?? "";
+
+            var apply = new Gtk.Button.from_icon_name("object-select-symbolic");
+            apply.valign = Gtk.Align.CENTER;
+            apply.add_css_class("flat");
+            apply.add_css_class("success");
+            apply.tooltip_text = apphub ? _("Apply AppHub token") : _("Apply token");
+            apply.clicked.connect(() => { save_github_token(token_row.text.strip(), apphub); });
+            token_row.add_suffix(apply);
+            token_row.entry_activated.connect(() => { save_github_token(token_row.text.strip(), apphub); });
+
+            var clear = new Gtk.Button.from_icon_name("edit-clear-symbolic");
+            clear.valign = Gtk.Align.CENTER;
+            clear.add_css_class("flat");
+            clear.tooltip_text = apphub ? _("Clear AppHub token") : _("Clear token");
+            clear.clicked.connect(() => {
+                token_row.text = "";
+                if (apphub) TokenStore.clear_apphub_token();
+                else TokenStore.clear_token();
+                show_info_toast(apphub ? _("AppHub token cleared") : _("GitHub token cleared"));
+            });
+            token_row.add_suffix(clear);
+            expander.add_row(token_row);
+
+            var test_row = new Adw.ActionRow();
+            test_row.title = apphub ? _("Test AppHub token") : _("Test token");
+            test_row.subtitle = apphub ? _("Verify your AppHub account and submission permissions")
+                : _("Verify your token works and check rate limit status");
+            test_row.add_prefix(new Gtk.Image.from_icon_name("object-select-symbolic"));
+            var spinner = new Adw.Spinner();
+            spinner.visible = auth.checking;
+            var test = new Gtk.Button.with_label(_("Test"));
+            test.valign = Gtk.Align.CENTER;
+            test.add_css_class("flat");
+            test.sensitive = auth.enabled && !auth.checking;
+            test.clicked.connect(() => {
+                if (save_github_token(token_row.text.strip(), apphub, false)) auth.verify.begin();
+            });
+            test_row.add_suffix(spinner);
+            test_row.add_suffix(test);
+            if (auth.status != "") test_row.subtitle = auth.status;
+            expander.add_row(test_row);
+
+            var auth_handler = auth.changed.connect(() => {
+                test_row.subtitle = auth.status;
+                test.sensitive = auth.enabled && !auth.checking;
+                spinner.visible = auth.checking;
+            });
+            closed.connect(() => auth.disconnect(auth_handler));
+            if (auth.enabled && !auth.ready && !auth.checking && current_token != null) auth.verify.begin();
+
+            var help = new Adw.ActionRow();
+            help.title = apphub ? _("Create an AppHub submission token") : _("Create a token on GitHub");
+            help.subtitle = apphub ? _("Classic token with public_repo scope; private-repository access is not required")
+                : _("For private repositories, select the repository and grant Contents read access");
+            help.add_prefix(new Gtk.Image.from_icon_name("help-about-symbolic"));
+            help.activatable = true;
+            help.add_suffix(new Gtk.Image.from_icon_name("external-link-symbolic"));
+            help.activated.connect(() => {
+                UiUtils.open_url(apphub
+                    ? "https://github.com/settings/tokens/new?scopes=public_repo&description=AppManager%20AppHub"
+                    : "https://github.com/settings/tokens?type=beta");
+            });
+            expander.add_row(help);
+            return group;
         }
 
         private Adw.ActionRow build_security_action_row() {
@@ -870,56 +878,13 @@ namespace AppManager {
             }
         }
 
-        /**
-         * Test a GitHub token by calling the rate_limit API endpoint.
-         * Returns a human-readable result string.
-         */
-        private async string test_github_token(string token) {
-            SourceFunc callback = test_github_token.callback;
-            string result = "";
-
-            new Thread<void>("test-github-token", () => {
-                try {
-                    var session = new Soup.Session();
-                    session.user_agent = "AppManager/%s".printf(Core.APPLICATION_VERSION);
-                    session.timeout = 15;
-
-                    var message = new Soup.Message("GET", "https://api.github.com/rate_limit");
-                    message.request_headers.replace("Accept", "application/vnd.github+json");
-                    if (token != "") {
-                        message.request_headers.replace("Authorization", "Bearer %s".printf(token));
-                    }
-
-                    Core.TlsSession.with_session(() => {
-                        session.send_and_read(message, null);
-                    });
-                    var status = message.get_status();
-
-                    if (status == 401) {
-                        result = _( "Authentication failed — token is invalid or expired");
-                    } else if (status == 403) {
-                        result = _( "Access forbidden — token lacks required permissions");
-                    } else if (status >= 200 && status < 300) {
-                        // Parse rate limit info from response
-                        var remaining = message.response_headers.get_one("X-RateLimit-Remaining");
-                        var limit = message.response_headers.get_one("X-RateLimit-Limit");
-                        if (remaining != null && limit != null) {
-                            result = _( "Token is valid — %s / %s requests remaining").printf(remaining, limit);
-                        } else {
-                            result = _( "Token is valid");
-                        }
-                    } else {
-                        result = _("Unexpected response (%u)").printf(status);
-                    }
-                } catch (Error e) {
-                    result = _( "Connection error: %s").printf(e.message);
-                }
-
-                Idle.add((owned) callback);
-            });
-
-            yield;
-            return result;
+        private bool save_github_token(string token, bool apphub = false, bool toast = true) {
+            if (!(apphub ? TokenStore.set_apphub_token(token) : TokenStore.set_token(token))) {
+                show_info_toast(apphub ? _("Unable to save the AppHub token.") : _("Unable to save the GitHub token."));
+                return false;
+            }
+            if (toast) show_info_toast(apphub ? _("AppHub token saved. Test it to enable submissions.") : _("GitHub token saved"));
+            return true;
         }
 
     }

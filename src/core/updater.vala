@@ -88,26 +88,14 @@ namespace AppManager.Core {
          * variables.
          */
         private string? get_github_token() {
-            var token = TokenStore.get_token();
-            if (token != null && token.strip() != "") {
-                return token.strip();
-            }
-            var env_token = GLib.Environment.get_variable("GITHUB_TOKEN");
-            if (env_token != null && env_token.strip() != "") {
-                return env_token.strip();
-            }
-            env_token = GLib.Environment.get_variable("GH_TOKEN");
-            if (env_token != null && env_token.strip() != "") {
-                return env_token.strip();
-            }
-            return null;
+            return TokenStore.get_update_request_token();
         }
 
         /**
          * Add GitHub authorization header to a request if the URL
          * targets GitHub over HTTPS and a token is available.
          */
-        private void apply_github_auth(Soup.Message message) {
+        internal void apply_github_auth(Soup.Message message) {
             var uri = message.get_uri();
             var host = uri.get_host();
             if (host == null) return;
@@ -119,10 +107,16 @@ namespace AppManager.Core {
                     message.request_headers.replace("Authorization", "Bearer %s".printf(token));
                     // Signed asset redirects authenticate themselves, not with our token.
                     unowned Soup.Message request = message;
+                    message.starting.connect(() => {
+                        // Recheck after queueing: the switch may have been turned off
+                        // between constructing this message and sending its headers.
+                        if (!TokenStore.updates_enabled()) request.request_headers.remove("Authorization");
+                    });
                     message.restarted.connect(() => {
                         var target = request.get_uri();
                         if (target.get_scheme() != uri.get_scheme() ||
-                            target.get_host() != uri.get_host() || target.get_port() != uri.get_port()) {
+                            target.get_host() != uri.get_host() || target.get_port() != uri.get_port() ||
+                            !TokenStore.updates_enabled()) {
                             request.request_headers.remove("Authorization");
                         }
                     });

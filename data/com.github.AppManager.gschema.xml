@@ -91,6 +91,16 @@
       <summary>FUSE warning banner dismissed</summary>
       <description>When enabled, the banner warning about a missing FUSE installation is never shown again.</description>
     </key>
+    <key name="github-token-enabled" type="b">
+      <default>false</default>
+      <summary>Use a GitHub token for updates</summary>
+      <description>Enable authenticated update requests using the stored GitHub token or GITHUB_TOKEN/GH_TOKEN environment fallback. When disabled, updates use no GitHub token.</description>
+    </key>
+    <key name="apphub-token-enabled" type="b">
+      <default>false</default>
+      <summary>Enable AppImage submission to AppHub</summary>
+      <description>Enable AppHub submissions after the dedicated token is verified. When disabled, AppHub authenticated requests and submissions are blocked.</description>
+    </key>
     <key name="github-token" type="s">
       <default>''</default>
       <summary>GitHub personal access token (legacy, no longer written)</summary>
@@ -100,6 +110,11 @@
       <default>''</default>
       <summary>Encrypted GitHub token (tier-2 fallback)</summary>
       <description>Machine+user-bound AES-256-GCM blob holding the GitHub token, used only when no freedesktop Secret Service is available. Prefixed 'AMTC1:'. Useless off its origin machine. See TokenStore / crypto_shim.</description>
+    </key>
+    <key name="apphub-token-cipher" type="s">
+      <default>''</default>
+      <summary>Encrypted AppHub submission token (tier-2 fallback)</summary>
+      <description>Machine+user-bound AES-256-GCM blob for the dedicated AppHub token, used only when no freedesktop Secret Service is available. Stored independently of the GitHub update token. See TokenStore.</description>
     </key>
     <key name="default-sandbox-enabled" type="b">
       <default>false</default>

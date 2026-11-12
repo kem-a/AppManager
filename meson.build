@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '4.0.0-beta5',
+  version: '4.0.0-beta6',
   meson_version: '>=0.64.0'
 )
 
@@ -121,6 +121,8 @@ core_sources = files(
   'src/core/update_sources.vala',
   'src/core/tls_session.vala',
   'src/core/token_store.vala',
+  'src/core/github_client.vala',
+  'src/core/apphub_submission.vala',
   'src/core/updater.vala',
   'src/core/update_log.vala',
   'src/core/background_update_service.vala',
@@ -244,6 +246,17 @@ if local_tests_available
 endif
 
 if get_option('build_tests')
+  apphub_submission_test = executable('apphub-submission-test',
+    core_sources + files('tests/apphub_submission_test.vala'),
+    dependencies: [gio_dep, gio_unix_dep, glib_dep, gmodule_dep, json_glib_dep, gee_dep, libsoup_dep, libsecret_dep],
+    link_with: [crypto_shim_lib, seccomp_filter_lib, wayland_sc_lib],
+    include_directories: crypto_shim_inc
+  )
+  test('apphub-submission', apphub_submission_test,
+    env: ['GSETTINGS_SCHEMA_DIR=' + meson.current_build_dir() / 'data', 'GSETTINGS_BACKEND=memory'])
+endif
+
+if get_option('build_tests') and fs.is_file('tests/github_update_test.vala') and fs.is_file('tests/github_update_test.py')
   github_update_test = executable('github-update-test',
     core_sources + files('tests/github_update_test.vala'),
     dependencies: [gio_dep, gio_unix_dep, glib_dep, gmodule_dep, json_glib_dep, gee_dep, libsoup_dep, libsecret_dep],
@@ -319,6 +332,18 @@ endif
 subdir('data')
 subdir('po')
 subdir('src')
+
+if get_option('build_tests')
+  apphub_ui_test = executable('apphub-ui-test',
+    core_sources + app_ui_sources + app_resources + files('tests/apphub_ui_test.vala'),
+    dependencies: [adw_dep, gtk_dep, gio_dep, gio_unix_dep, glib_dep, gmodule_dep, json_glib_dep, gee_dep, libsoup_dep, libsecret_dep],
+    link_with: [crypto_shim_lib, seccomp_filter_lib, wayland_sc_lib],
+    include_directories: crypto_shim_inc
+  )
+  test('apphub-ui', find_program('python3'),
+    args: [files('tests/apphub_ui_test.py'), apphub_ui_test, meson.project_build_root() / 'data'],
+    timeout: 30)
+endif
 
 if local_tests_available
   test('sandbox-lifecycle', python,
