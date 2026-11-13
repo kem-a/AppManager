@@ -20,6 +20,9 @@ namespace AppManager.Core {
     public class AppImageAssets : Object {
         private const string DIRICON_NAME = ".DirIcon";
         private const int MAX_SYMLINK_ITERATIONS = 5;
+        // The metadata sidecar is a fixed 128 KiB slot after the runtime;
+        // scan at most that far past the SquashFS image for the DwarFS payload.
+        private const int METADATA_SCAN_LIMIT = 128 * 1024;
 
         // ELF magic: 0x7f E L F
         private const uint8[] ELF_MAGIC = { 0x7f, 'E', 'L', 'F' };
@@ -168,12 +171,73 @@ namespace AppManager.Core {
                 }
 
                 stream.close();
-                return shoff + (int64)(shnum * shentsize);
+                return skip_metadata_sidecar(appimage_path, shoff + (int64)(shnum * shentsize));
 
             } catch (Error e) {
                 debug("Failed to get AppImage payload offset: %s", e.message);
                 return -1;
             }
+        }
+
+        /**
+         * Skip a leading SquashFS metadata sidecar when a DwarFS payload
+         * follows it. The sidecar carries .DirIcon, the desktop entry, and a
+         * stub AppRun for SquashFS-only tools. Offset-based DwarFS paths must
+         * use the real payload after it.
+         */
+        private static int64 skip_metadata_sidecar(string appimage_path, int64 offset) {
+            try {
+                var stream = File.new_for_path(appimage_path).read();
+
+                uint8[] magic = new uint8[4];
+                size_t bytes_read;
+                stream.seek(offset, SeekType.SET);
+                stream.read_all(magic, out bytes_read);
+                if (bytes_read < 4 || magic[0] != SQFS_MAGIC[0] || magic[1] != SQFS_MAGIC[1] ||
+                    magic[2] != SQFS_MAGIC[2] || magic[3] != SQFS_MAGIC[3]) {
+                    stream.close();
+                    return offset;
+                }
+
+                // SquashFS superblock bytes_used is a little-endian u64 at +40.
+                uint8[] used = new uint8[8];
+                stream.seek(offset + 40, SeekType.SET);
+                stream.read_all(used, out bytes_read);
+                if (bytes_read < 8) {
+                    stream.close();
+                    return offset;
+                }
+
+                int64 bytes_used =
+                    ((int64)used[7] << 56) | ((int64)used[6] << 48) |
+                    ((int64)used[5] << 40) | ((int64)used[4] << 32) |
+                    ((int64)used[3] << 24) | ((int64)used[2] << 16) |
+                    ((int64)used[1] << 8) | (int64)used[0];
+                if (bytes_used < 96) {
+                    stream.close();
+                    return offset;
+                }
+
+                int64 scan_start = offset + bytes_used;
+                uint8[] window = new uint8[METADATA_SCAN_LIMIT];
+                stream.seek(scan_start, SeekType.SET);
+                stream.read_all(window, out bytes_read);
+                stream.close();
+
+                int limit = (int)bytes_read;
+                for (int i = 0; i + 6 <= limit; i++) {
+                    if (window[i] == DWARFS_MAGIC[0] && window[i + 1] == DWARFS_MAGIC[1] &&
+                        window[i + 2] == DWARFS_MAGIC[2] && window[i + 3] == DWARFS_MAGIC[3] &&
+                        window[i + 4] == DWARFS_MAGIC[4] && window[i + 5] == DWARFS_MAGIC[5]) {
+                        debug("Skipping SquashFS metadata sidecar at %lld; DwarFS payload at %lld",
+                              offset, scan_start + i);
+                        return scan_start + i;
+                    }
+                }
+            } catch (Error e) {
+                debug("Failed to inspect metadata sidecar: %s", e.message);
+            }
+            return offset;
         }
 
         public static DesktopEntry parse_desktop_file(string desktop_path) throws Error {
