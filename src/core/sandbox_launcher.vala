@@ -256,11 +256,16 @@ namespace AppManager.Core {
                 printerr("%s: could not build the sandbox for %s\n", SANDBOX_RUN_VERB, target);
                 status = 3;
             } else {
-                var pid = spawn(argv, builder.preserved_fds());
+                int gate;
+                var pid = spawn(argv, builder.preserved_fds(), out gate);
                 // Everything the child needed by descriptor number is now the child's.
                 // The sync pipe especially: while this process still holds a copy, the
                 // proxy cannot notice the app exiting.
                 builder.close_fds();
+                // The app goes into a scope of its own while bwrap is still held at
+                // the gate, so every process it forks lands there too.
+                var guard = (pid > 0 && gate >= 0) ? SandboxSuspendGuard.start(pid, manifest.app_id) : null;
+                close_fd(ref gate);
                 bool released = true;
                 if (deferred) {
                     close_fd(ref info[1]);
@@ -271,6 +276,9 @@ namespace AppManager.Core {
                     proxy.detach_sync_fd();
                 }
                 status = (pid > 0) ? wait_for(pid) : 3;
+                if (guard != null) {
+                    guard.stop();
+                }
                 if (!released) {
                     printerr("%s: could not start the filtered bus for %s; refusing to launch it with an open bus.\n",
                         SANDBOX_RUN_VERB, target);
@@ -365,16 +373,30 @@ namespace AppManager.Core {
 
         /**
          * Forks and execs `argv` with `keep_fds` surviving the exec. Returns the child
-         * pid, or -1 on failure.
+         * pid, or -1 on failure. The child execs only once the caller closes `gate`
+         * (-1 when there is none).
          */
-        private static Posix.pid_t spawn(string[] argv, int[] keep_fds) {
+        private static Posix.pid_t spawn(string[] argv, int[] keep_fds, out int gate) {
+            int[] gate_pipe = { -1, -1 };
+            bool gated = open_pipe(gate_pipe);
+            gate = gate_pipe[1];
+
             var pid = Posix.fork();
             if (pid < 0) {
                 printerr("%s: fork failed: %s\n", SANDBOX_RUN_VERB, Posix.strerror(Posix.errno));
+                close_fd(ref gate_pipe[0]);
+                close_fd(ref gate);
                 return -1;
             }
 
             if (pid == 0) {
+                if (gated) {
+                    // Our own copy of the write end would keep the read below waiting.
+                    Posix.close(gate_pipe[1]);
+                    uint8 released = 0;
+                    while (Posix.read(gate_pipe[0], &released, 1) < 0 && Posix.errno == Posix.EINTR) {
+                    }
+                }
                 // The generated-content pipes and the sync fd are named by number on
                 // the command line, so they have to survive the exec.
                 foreach (var fd in keep_fds) {
@@ -388,6 +410,7 @@ namespace AppManager.Core {
                 Posix._exit(127);
             }
 
+            close_fd(ref gate_pipe[0]);
             supervised_pid = pid;
             // Pass on the signals a session manager or a shell would send, so that
             // logging out or Ctrl-C in a terminal closes the app rather than orphaning

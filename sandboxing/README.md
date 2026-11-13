@@ -136,6 +136,12 @@ installs** are supported; extracted apps cannot currently be sandboxed.
   Press Ctrl+H in the folder picker to show hidden folders. This lets the app
   install a helper that your browser runs outside the sandbox. Apps that keep
   their connection socket elsewhere may still fail.
+- **Suspend protection covers sandboxed apps only.** A running AppImage can stop
+  the computer from suspending when the suspend catches it reading from its
+  mounted image. AppManager prevents this for sandboxed apps: it pauses the app
+  just before the suspend and resumes it afterwards. This needs systemd and
+  logind; without them the app still runs, unprotected. Apps that are not
+  sandboxed start through their own AppImage runtime and are not protected.
 - **Some apps need compatibility adjustments.** Detected Chromium/Electron and
   WebKitGTK apps run with their internal sandbox disabled because it conflicts
   with this one; AppManager's outer sandbox remains active. Custom themes
