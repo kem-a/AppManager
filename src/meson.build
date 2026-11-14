@@ -1,5 +1,4 @@
-app_sources = files(
-  'main.vala',
+app_ui_sources = files(
   'application.vala',
   'windows/dialog_window.vala',
   'windows/main_window.vala',
@@ -7,10 +6,13 @@ app_sources = files(
   'windows/drop_window.vala',
   'windows/app_image_info_window.vala',
   'windows/details_window.vala',
+  'windows/apphub_submission_page.vala',
   'utils/ui_utils.vala',
   'utils/update_indicator.vala',
   'utils/animated_app_view.vala'
 )
+
+app_sources = files('main.vala') + app_ui_sources
 
 app_resources = gnome.compile_resources('app-manager-resources',
   join_paths(meson.project_source_root(), 'data', 'resources', 'app-manager.gresource.xml'),

@@ -43,6 +43,7 @@ namespace AppManager {
             Object(application_id: Core.APPLICATION_ID,
                 flags: ApplicationFlags.HANDLES_OPEN | ApplicationFlags.HANDLES_COMMAND_LINE);
             settings = new Settings(Core.APPLICATION_ID);
+            if (TokenStore.apphub_enabled()) GitHubAuth.get_apphub().verify.begin();
             registry = new InstallationRegistry();
             installer = new Installer(registry, settings);
             // What a permission implies changes as app compatibility issues are found, and

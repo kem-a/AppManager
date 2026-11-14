@@ -4,6 +4,8 @@ src/application.vala
 src/main.vala
 src/core/appimg_link.vala
 src/core/apphub_policy.vala
+src/core/apphub_submission.vala
+src/core/github_client.vala
 src/core/background_update_service.vala
 src/core/flathub_permissions.vala
 src/core/installer.vala
@@ -11,6 +13,7 @@ src/core/path_migration_service.vala
 src/core/updater.vala
 src/windows/app_image_info_window.vala
 src/windows/details_window.vala
+src/windows/apphub_submission_page.vala
 src/windows/dialog_window.vala
 src/windows/drop_window.vala
 src/windows/main_window.vala

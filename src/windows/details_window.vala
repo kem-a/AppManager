@@ -174,6 +174,9 @@ namespace AppManager {
         private Adw.SwitchRow? path_row;
         private Gtk.Button? delete_button;
         private Gtk.Button web_badge;
+        private Adw.ActionRow? apphub_submission_row;
+        private AppHubMatch? apphub_match;
+        private string? apphub_checked_source;
         private bool shift_held = false;
         
         // Shared state for build_ui sub-methods
@@ -197,6 +200,7 @@ namespace AppManager {
             
             build_ui();
             setup_shift_key_controller();
+            GitHubAuth.get_apphub().changed.connect(refresh_apphub_action);
         }
 
         public bool matches_record(InstallationRecord other) {
@@ -262,6 +266,7 @@ namespace AppManager {
         private void persist_record_and_refresh_desktop() {
             registry.update(record);
             installer.apply_record_customizations_to_desktop(record);
+            refresh_apphub_action();
         }
 
         private void build_ui() {
@@ -288,6 +293,7 @@ namespace AppManager {
 
             var update_group_replacement = new Adw.PreferencesGroup();
             update_group_replacement.add(build_update_info_action_row());
+            update_group_replacement.add(build_apphub_submission_row());
             detail_page.add(update_group_replacement);
             detail_page.add(build_actions_group());
             
@@ -572,6 +578,30 @@ namespace AppManager {
                 var main_win = (MainWindow) this.get_root();
                 main_win.push_page(page);
             });
+            return row;
+        }
+
+        private Adw.ActionRow build_apphub_submission_row() {
+            var row = new Adw.ActionRow();
+            row.title = _("Submit to AppHub");
+            row.add_prefix(new Gtk.Image.from_icon_name("document-send-symbolic"));
+            row.add_suffix(new Gtk.Image.from_icon_name("go-next-symbolic"));
+            row.activatable = true;
+            row.activated.connect(() => {
+                if (!row.visible || !TokenStore.apphub_enabled() || !GitHubAuth.get_apphub().ready) return;
+                var navigation = get_ancestor(typeof(Adw.NavigationView)) as Adw.NavigationView;
+                if (navigation == null) return;
+                var source = record.get_effective_update_link();
+                var page = new AppHubSubmissionPage(record, apphub_match);
+                page.matched.connect((match) => {
+                    apphub_match = match;
+                    apphub_checked_source = source;
+                    refresh_apphub_action();
+                });
+                navigation.push(page);
+            });
+            apphub_submission_row = row;
+            refresh_apphub_action();
             return row;
         }
 
@@ -2419,8 +2449,21 @@ namespace AppManager {
             });
             
             actions_box.append(delete_button);
-            
+
             return actions_group;
+        }
+
+        private void refresh_apphub_action() {
+            if (apphub_submission_row == null) return;
+            if (apphub_checked_source != record.get_effective_update_link()) apphub_match = null;
+            apphub_submission_row.subtitle = apphub_match == null ? _("Submit this app for inclusion in the AppHub catalog")
+                : _("View the existing AppHub listing or submission");
+            bool supported = false;
+            try {
+                AppHubSource.parse(record.get_effective_update_link());
+                supported = true;
+            } catch (Error e) { }
+            apphub_submission_row.visible = TokenStore.apphub_enabled() && GitHubAuth.get_apphub().ready && supported;
         }
 
         private Gtk.Button create_restore_button(bool visible) {

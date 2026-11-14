@@ -85,7 +85,7 @@ namespace AppManager.Core {
             return value;
         }
 
-        private static void validate(Json.Node node) throws Error {
+        private static void validate(Json.Node node, bool installing = true) throws Error {
             if (node.get_node_type() != Json.NodeType.OBJECT) fail("expected policy object");
             var p = node.get_object();
             bool extended = p.has_member("version");
@@ -128,7 +128,7 @@ namespace AppManager.Core {
             choice(p, "display", { "none", "wayland", "x11", "wayland-or-x11" });
             choice(p, "processes", { "isolated", "full" });
             bool_value(p, "ipc");
-            var fs = array_value(p, "filesystem", 10);
+            var fs = array_value(p, "filesystem", 11);
             var seen = new HashSet<string>();
             foreach (var entry in fs.get_elements()) {
                 if (entry.get_node_type() != Json.NodeType.OBJECT) fail("invalid filesystem rule");
@@ -146,7 +146,7 @@ namespace AppManager.Core {
                 if (!seen.add(device)) fail("duplicate device category: " + device);
                 // The engine deliberately blocks mount/userns syscalls. Do not turn
                 // this into a cosmetic /dev/fuse bind that cannot satisfy the grant.
-                if (device == "fuse") throw new AppHubPolicyError.UNSUPPORTED(_("AppHub policy requires FUSE access inside the sandbox, which is not supported."));
+                if (installing && device == "fuse") throw new AppHubPolicyError.UNSUPPORTED(_("AppHub policy requires FUSE access inside the sandbox, which is not supported."));
             }
             validate_bus(object_value(p, "sessionBus"));
             validate_bus(object_value(p, "systemBus"));
@@ -174,6 +174,12 @@ namespace AppManager.Core {
             var parser = new Json.Parser();
             parser.load_from_data(json);
             return new AppHubPolicy(app_id, parser.get_root());
+        }
+
+        public static void validate_listing(Json.Node node) throws Error {
+            if (node.get_node_type() != Json.NodeType.OBJECT || node.get_object().has_member("version"))
+                fail("catalog submissions require sandbox v1");
+            validate(node, false);
         }
 
         public static bool valid_media_name(string name) {
