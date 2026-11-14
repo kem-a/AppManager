@@ -20,9 +20,17 @@ namespace AppManager.Core {
     public class AppImageAssets : Object {
         private const string DIRICON_NAME = ".DirIcon";
         private const int MAX_SYMLINK_ITERATIONS = 5;
-        // The metadata sidecar is a fixed 128 KiB slot after the runtime;
-        // scan at most that far past the SquashFS image for the DwarFS payload.
-        private const int METADATA_SCAN_LIMIT = 128 * 1024;
+        // The metadata sidecar is a fixed 128 KiB slot after the runtime. The
+        // payload offset must not move when the sidecar changes, otherwise
+        // zsync delta updates would treat the whole payload as changed.
+        private const int METADATA_SLOT_SIZE = 128 * 1024;
+        private const int SQUASHFS_SUPERBLOCK_SIZE = 96;
+        private const int SQUASHFS_BYTES_USED_OFFSET = 40;
+        private const int SQUASHFS_BLOCK_SIZE_MIN = 4096;
+        private const int SQUASHFS_BLOCK_SIZE_MAX = 1048576;
+        private const int DWARFS_HEADER_SIZE = 8;
+        private const int DWARFS_MAJOR_VERSION = 2;
+        private const int DWARFS_MINOR_VERSION_MAX = 6;
 
         // ELF magic: 0x7f E L F
         private const uint8[] ELF_MAGIC = { 0x7f, 'E', 'L', 'F' };
@@ -179,61 +187,146 @@ namespace AppManager.Core {
             }
         }
 
+        private static int read_le16(uint8[] bytes, int offset) {
+            return (int)bytes[offset] | ((int)bytes[offset + 1] << 8);
+        }
+
+        private static int read_le32(uint8[] bytes, int offset) {
+            return (int)bytes[offset] |
+                   ((int)bytes[offset + 1] << 8) |
+                   ((int)bytes[offset + 2] << 16) |
+                   ((int)bytes[offset + 3] << 24);
+        }
+
+        private static int64 read_le64(uint8[] bytes, int offset) {
+            int64 value = 0;
+            for (int i = 7; i >= 0; i--) {
+                value = (value << 8) | (int64)bytes[offset + i];
+            }
+            return value;
+        }
+
         /**
-         * Skip a leading SquashFS metadata sidecar when a DwarFS payload
-         * follows it. The sidecar carries .DirIcon, the desktop entry, and a
-         * stub AppRun for SquashFS-only tools. Offset-based DwarFS paths must
-         * use the real payload after it.
+         * Validate a SquashFS 4.0 superblock and return its bytes_used value.
+         * Returns -1 when the superblock is not a valid SquashFS image.
+         */
+        private static int64 squashfs_bytes_used(uint8[] superblock, int64 file_size, int64 offset) {
+            if (superblock.length < SQUASHFS_SUPERBLOCK_SIZE) {
+                return -1;
+            }
+            if (superblock[0] != SQFS_MAGIC[0] || superblock[1] != SQFS_MAGIC[1] ||
+                superblock[2] != SQFS_MAGIC[2] || superblock[3] != SQFS_MAGIC[3]) {
+                return -1;
+            }
+
+            int inodes = read_le32(superblock, 4);
+            int block_size = read_le32(superblock, 12);
+            int compression = read_le16(superblock, 20);
+            int major = read_le16(superblock, 28);
+            int minor = read_le16(superblock, 30);
+            int64 bytes_used = read_le64(superblock, SQUASHFS_BYTES_USED_OFFSET);
+
+            if (major != 4 || minor != 0 || inodes == 0) {
+                return -1;
+            }
+            if (block_size < SQUASHFS_BLOCK_SIZE_MIN || block_size > SQUASHFS_BLOCK_SIZE_MAX) {
+                return -1;
+            }
+            if ((block_size & (block_size - 1)) != 0) {
+                return -1;
+            }
+            if (compression < 1 || compression > 6) {
+                return -1;
+            }
+            if (bytes_used < SQUASHFS_SUPERBLOCK_SIZE) {
+                return -1;
+            }
+            if (offset > file_size || bytes_used > file_size - offset) {
+                return -1;
+            }
+            return bytes_used;
+        }
+
+        private static bool is_valid_dwarfs_header(uint8[] header) {
+            if (header.length < DWARFS_HEADER_SIZE) {
+                return false;
+            }
+            for (int i = 0; i < DWARFS_MAGIC.length; i++) {
+                if (header[i] != DWARFS_MAGIC[i]) {
+                    return false;
+                }
+            }
+            return (int)header[6] == DWARFS_MAJOR_VERSION &&
+                   (int)header[7] <= DWARFS_MINOR_VERSION_MAX;
+        }
+
+        /**
+         * Resolve the payload offset for the fixed metadata-slot layout:
+         *
+         *   offset                                  metadata SquashFS
+         *   offset + bytes_used .. offset + 128 KiB zero padding
+         *   offset + 128 KiB                        DwarFS payload
+         *
+         * The metadata image must be a SquashFS 4.0 filesystem whose
+         * bytes_used value fits in the slot, and the padding must be zero. The
+         * DwarFS payload header is also validated, so arbitrary trailer text
+         * that happens to contain a magic sequence is never selected.
          */
         private static int64 skip_metadata_sidecar(string appimage_path, int64 offset) {
             try {
-                var stream = File.new_for_path(appimage_path).read();
+                var file = File.new_for_path(appimage_path);
+                var stream = file.read();
 
-                uint8[] magic = new uint8[4];
+                uint8[] superblock = new uint8[SQUASHFS_SUPERBLOCK_SIZE];
                 size_t bytes_read;
                 stream.seek(offset, SeekType.SET);
-                stream.read_all(magic, out bytes_read);
-                if (bytes_read < 4 || magic[0] != SQFS_MAGIC[0] || magic[1] != SQFS_MAGIC[1] ||
-                    magic[2] != SQFS_MAGIC[2] || magic[3] != SQFS_MAGIC[3]) {
+                stream.read_all(superblock, out bytes_read);
+                if (bytes_read < SQUASHFS_SUPERBLOCK_SIZE) {
                     stream.close();
                     return offset;
                 }
 
-                // SquashFS superblock bytes_used is a little-endian u64 at +40.
-                uint8[] used = new uint8[8];
-                stream.seek(offset + 40, SeekType.SET);
-                stream.read_all(used, out bytes_read);
-                if (bytes_read < 8) {
+                var info = file.query_info(FileAttribute.STANDARD_SIZE, FileQueryInfoFlags.NONE);
+                int64 file_size = info.get_size();
+                int64 bytes_used = squashfs_bytes_used(superblock, file_size, offset);
+                if (bytes_used < 0 || bytes_used > METADATA_SLOT_SIZE) {
                     stream.close();
                     return offset;
                 }
 
-                int64 bytes_used =
-                    ((int64)used[7] << 56) | ((int64)used[6] << 48) |
-                    ((int64)used[5] << 40) | ((int64)used[4] << 32) |
-                    ((int64)used[3] << 24) | ((int64)used[2] << 16) |
-                    ((int64)used[1] << 8) | (int64)used[0];
-                if (bytes_used < 96) {
+                int64 payload_offset = offset + METADATA_SLOT_SIZE;
+                if (payload_offset > file_size) {
                     stream.close();
                     return offset;
                 }
 
-                int64 scan_start = offset + bytes_used;
-                uint8[] window = new uint8[METADATA_SCAN_LIMIT];
-                stream.seek(scan_start, SeekType.SET);
-                stream.read_all(window, out bytes_read);
-                stream.close();
-
-                int limit = (int)bytes_read;
-                for (int i = 0; i + 6 <= limit; i++) {
-                    if (window[i] == DWARFS_MAGIC[0] && window[i + 1] == DWARFS_MAGIC[1] &&
-                        window[i + 2] == DWARFS_MAGIC[2] && window[i + 3] == DWARFS_MAGIC[3] &&
-                        window[i + 4] == DWARFS_MAGIC[4] && window[i + 5] == DWARFS_MAGIC[5]) {
-                        debug("Skipping SquashFS metadata sidecar at %lld; DwarFS payload at %lld",
-                              offset, scan_start + i);
-                        return scan_start + i;
+                int64 padding_start = offset + bytes_used;
+                int padding_len = (int)(payload_offset - padding_start);
+                uint8[] padding = new uint8[padding_len];
+                stream.seek(padding_start, SeekType.SET);
+                stream.read_all(padding, out bytes_read);
+                if (bytes_read < padding_len) {
+                    stream.close();
+                    return offset;
+                }
+                for (int i = 0; i < padding_len; i++) {
+                    if (padding[i] != 0) {
+                        stream.close();
+                        return offset;
                     }
                 }
+
+                uint8[] header = new uint8[DWARFS_HEADER_SIZE];
+                stream.seek(payload_offset, SeekType.SET);
+                stream.read_all(header, out bytes_read);
+                stream.close();
+                if (bytes_read < DWARFS_HEADER_SIZE || !is_valid_dwarfs_header(header)) {
+                    return offset;
+                }
+
+                debug("Skipping SquashFS metadata sidecar at %lld; DwarFS payload at %lld",
+                      offset, payload_offset);
+                return payload_offset;
             } catch (Error e) {
                 debug("Failed to inspect metadata sidecar: %s", e.message);
             }
