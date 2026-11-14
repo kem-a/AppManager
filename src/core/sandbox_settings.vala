@@ -36,6 +36,82 @@ namespace AppManager.Core {
             }
         }
 
+        // Settings portal keys GTK 4 reads on Wayland, with their settings.ini names.
+        // Only settings every GTK 4 knows, since an unknown key warns on each start.
+        // The input method is left out: the host's may be unreachable from inside.
+        private const string[] GTK_KEYS = {
+            "org.gnome.desktop.wm.preferences", "button-layout", "gtk-decoration-layout",
+            "org.gnome.desktop.wm.preferences", "action-double-click-titlebar", "gtk-titlebar-double-click",
+            "org.gnome.desktop.wm.preferences", "action-middle-click-titlebar", "gtk-titlebar-middle-click",
+            "org.gnome.desktop.wm.preferences", "action-right-click-titlebar", "gtk-titlebar-right-click",
+            "org.gnome.desktop.interface", "gtk-theme", "gtk-theme-name",
+            "org.gnome.desktop.interface", "icon-theme", "gtk-icon-theme-name",
+            "org.gnome.desktop.interface", "cursor-theme", "gtk-cursor-theme-name",
+            "org.gnome.desktop.interface", "cursor-size", "gtk-cursor-theme-size",
+            "org.gnome.desktop.interface", "font-name", "gtk-font-name",
+            "org.gnome.desktop.interface", "text-scaling-factor", "gtk-xft-dpi",
+            "org.gnome.desktop.interface", "cursor-blink", "gtk-cursor-blink",
+            "org.gnome.desktop.interface", "cursor-blink-time", "gtk-cursor-blink-time",
+            "org.gnome.desktop.interface", "cursor-blink-timeout", "gtk-cursor-blink-timeout",
+            "org.gnome.desktop.interface", "enable-animations", "gtk-enable-animations",
+            "org.gnome.desktop.interface", "gtk-enable-primary-paste", "gtk-enable-primary-paste",
+            "org.gnome.desktop.interface", "overlay-scrolling", "gtk-overlay-scrolling",
+            "org.gnome.desktop.peripherals.mouse", "double-click", "gtk-double-click-time",
+            "org.gnome.desktop.peripherals.mouse", "drag-threshold", "gtk-dnd-drag-threshold",
+            "org.gnome.desktop.sound", "theme-name", "gtk-sound-theme-name",
+            "org.gnome.desktop.sound", "event-sounds", "gtk-enable-event-sounds",
+            "org.gnome.desktop.sound", "input-feedback-sounds", "gtk-enable-input-feedback-sounds",
+            "org.gnome.desktop.privacy", "recent-files-max-age", "gtk-recent-files-max-age",
+            "org.gnome.desktop.privacy", "remember-recent-files", "gtk-recent-files-enabled",
+            "org.gnome.desktop.a11y", "always-show-text-caret", "gtk-keynav-use-caret"
+        };
+
+        /**
+         * GTK 4 on Wayland takes these settings only from the Settings portal, and
+         * uses the portal only after reading its version property, which the filtered
+         * bus refuses (properties would also enable portals the proxy blocks). It then
+         * falls back to built-in defaults: window buttons on the right, the default
+         * icon theme, "Sans 10". So the host portal's values go in as a settings.ini,
+         * read at startup: later changes reach the app on its next launch.
+         */
+        public static string? host_gtk_settings() {
+            try {
+                var reply = Bus.get_sync(BusType.SESSION).call_sync(
+                    "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+                    "org.freedesktop.portal.Settings", "ReadAll",
+                    new Variant.tuple({ new Variant.strv({ "org.gnome.desktop.*" }) }),
+                    new VariantType("(a{sa{sv}})"), DBusCallFlags.NONE, 2000);
+                return gtk_settings_ini(reply.get_child_value(0));
+            } catch (Error e) {
+                debug("Sandbox: no host Settings portal for GTK settings: %s", e.message);
+                return null;
+            }
+        }
+
+        /** A portal ReadAll result as GTK 4 settings.ini contents, null if empty. */
+        public static string? gtk_settings_ini(Variant namespaces) {
+            var ini = new KeyFile();
+            for (int i = 0; i + 2 < GTK_KEYS.length; i += 3) {
+                var group = namespaces.lookup_value(GTK_KEYS[i], VariantType.VARDICT);
+                var value = group != null ? group.lookup_value(GTK_KEYS[i + 1], null) : null;
+                if (value == null) {
+                    continue;
+                }
+                var name = GTK_KEYS[i + 2];
+                if (value.is_of_type(VariantType.STRING)) {
+                    ini.set_string("Settings", name, value.get_string());
+                } else if (value.is_of_type(VariantType.INT32)) {
+                    ini.set_integer("Settings", name, value.get_int32());
+                } else if (value.is_of_type(VariantType.BOOLEAN)) {
+                    ini.set_boolean("Settings", name, value.get_boolean());
+                } else if (value.is_of_type(VariantType.DOUBLE)) {
+                    // text-scaling-factor: Xft counts 1/1024ths of a 96 dpi inch.
+                    ini.set_integer("Settings", name, (int) (value.get_double() * 96 * 1024));
+                }
+            }
+            return ini.has_group("Settings") ? ini.to_data() : null;
+        }
+
         public static bool apply(string home, string host) throws KeyFileError {
             int dir = open_settings_dir(home);
             if (dir < 0) {

@@ -550,55 +550,8 @@ namespace AppManager {
             exec_row.add_controller(exec_focus);
             exec_row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
             props_group.add(exec_row);
-            if (!record.is_self_app()) {
-                props_group.add(build_autostart_row());
-            }
 
             return props_group;
-        }
-
-        private Adw.ExpanderRow build_autostart_row() {
-            var row = new Adw.ExpanderRow();
-            row.title = _("Start on login");
-            row.subtitle = _("Run this app automatically when you log in");
-            row.add_prefix(new Gtk.Image.from_icon_name("system-run-symbolic"));
-            row.show_enable_switch = true;
-            row.enable_expansion = record.autostart_enabled;
-            row.expanded = false;
-
-            // No list refresh needed, and a refresh per spin click would rebuild this page.
-            UpdateFunc flush = () => {
-                registry.update(record, false);
-                installer.sync_autostart_entry(record);
-            };
-            row.notify["enable-expansion"].connect(() => {
-                record.autostart_enabled = row.enable_expansion;
-                flush();
-            });
-
-            var args_row = new Adw.EntryRow();
-            args_row.title = _("Extra arguments at login");
-            args_row.text = record.custom_autostart_args ?? "";
-            args_row.changed.connect(() => {
-                var value = args_row.text.strip();
-                record.custom_autostart_args = value == "" ? null : value;
-            });
-            var args_focus = new Gtk.EventControllerFocus();
-            args_focus.leave.connect(() => { flush(); });
-            args_row.add_controller(args_focus);
-            args_row.entry_activated.connect(() => { flush(); });
-            row.add_row(args_row);
-
-            var delay_row = new Adw.SpinRow.with_range(0, 300, 1);
-            delay_row.title = _("Delay in seconds");
-            delay_row.value = record.custom_autostart_delay;
-            delay_row.notify["value"].connect(() => {
-                record.custom_autostart_delay = (int) delay_row.value;
-                flush();
-            });
-            row.add_row(delay_row);
-
-            return row;
         }
 
         private Adw.ActionRow build_update_info_action_row() {

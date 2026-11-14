@@ -54,6 +54,7 @@ namespace AppManager {
             if (Core.SandboxConfig.refresh_all(registry.list())) {
                 registry.persist(false);
             }
+            Core.AppAutostart.refresh(registry.list());
 
             add_main_option_entries(options);
             set_option_context_parameter_string("[FILE...]");

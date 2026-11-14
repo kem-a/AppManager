@@ -117,6 +117,7 @@ core_sources = files(
   'src/core/sandbox_bwrap.vala',
   'src/core/sandbox_dbus_proxy.vala',
   'src/core/sandbox_settings.vala',
+  'src/core/app_autostart.vala',
   'src/core/sandbox_wayland.vala',
   'src/core/sandbox_launcher.vala',
   'src/core/update_sources.vala',

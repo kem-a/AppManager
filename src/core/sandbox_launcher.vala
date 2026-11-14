@@ -126,7 +126,16 @@ namespace AppManager.Core {
             merged_env.add_all_array(manifest.env);
             merged_env.add_all(env_vars);
             manifest.env = merged_env.to_array();
-            return launch(manifest, id, target, app_args);
+            // Before too, for an entry no watch saw (an older build, a power loss), and
+            // after, for events still queued when the watch stops.
+            AppAutostart.sync(id, manifest.home, manifest.desktop_file);
+            var watch = AppAutostart.watch(id, manifest.home, manifest.desktop_file);
+            var status = launch(manifest, id, target, app_args);
+            if (watch != null) {
+                watch.quit();
+            }
+            AppAutostart.sync(id, manifest.home, manifest.desktop_file);
+            return status;
         }
 
         private static void restore_launch_environment() {

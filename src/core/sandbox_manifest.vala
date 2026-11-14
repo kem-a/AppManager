@@ -31,6 +31,8 @@ namespace AppManager.Core {
         public string appimage = "";
         // Persistent per-app home, bound over the real $HOME path inside the sandbox.
         public string home = "";
+        // The installed desktop entry, whose Exec line a mirrored login entry reuses.
+        public string desktop_file = "";
         // Terminal apps skip --new-session, which would break job control for them.
         public bool terminal = false;
 
@@ -82,6 +84,7 @@ namespace AppManager.Core {
             m.profile = record.sandbox_profile ?? SANDBOX_PROFILE_CUSTOM;
             m.appimage = record.installed_path ?? "";
             m.home = SandboxConfig.sandbox_home_path(record);
+            m.desktop_file = record.desktop_file ?? "";
             m.terminal = record.is_terminal;
 
             m.network = record.sandbox_allow_network;
@@ -218,6 +221,7 @@ namespace AppManager.Core {
                 kf.set_string(GROUP_SANDBOX, "profile", profile);
                 kf.set_string(GROUP_SANDBOX, "appimage", appimage);
                 kf.set_string(GROUP_SANDBOX, "home", home);
+                kf.set_string(GROUP_SANDBOX, "desktop-file", desktop_file);
                 kf.set_boolean(GROUP_SANDBOX, "terminal", terminal);
                 kf.set_boolean(GROUP_SANDBOX, "imported-policy", imported_policy);
                 kf.set_string(GROUP_PERMISSIONS, "display", display);
@@ -298,6 +302,7 @@ namespace AppManager.Core {
             m.profile = read_string(kf, GROUP_SANDBOX, "profile", SANDBOX_PROFILE_CUSTOM);
             m.appimage = read_string(kf, GROUP_SANDBOX, "appimage", "");
             m.home = read_string(kf, GROUP_SANDBOX, "home", "");
+            m.desktop_file = read_string(kf, GROUP_SANDBOX, "desktop-file", "");
             m.terminal = read_bool(kf, GROUP_SANDBOX, "terminal", false);
             m.imported_policy = read_bool(kf, GROUP_SANDBOX, "imported-policy", false);
             m.display = read_string(kf, GROUP_PERMISSIONS, "display", "legacy");
