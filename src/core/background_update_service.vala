@@ -314,8 +314,20 @@ X-XDP-Autostart=com.github.AppManager
             int updates_available = 0;
             var app_names = new Gee.ArrayList<string>();
 
+            // A check that failed for an app keeps the update staged for it before.
+            var unknown = new Gee.ArrayList<StagedUpdate>();
+            foreach (var result in probe_results) {
+                var staged = result.failed ? staged_updates.get_for_record(result.record.id) : null;
+                if (staged != null) {
+                    unknown.add(staged);
+                }
+            }
+
             // Clear previous staged updates and add newly discovered ones
             staged_updates.clear();
+            foreach (var staged in unknown) {
+                staged_updates.add(staged.record_id, staged.record_name, staged.available_version);
+            }
 
             foreach (var result in probe_results) {
                 if (result.has_update) {

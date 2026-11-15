@@ -198,7 +198,10 @@ namespace AppManager.Core {
 
         // Names no app gets to claim through us, whatever its desktop entry is called.
         // Owning one of these on the real session bus would let a sandboxed app
-        // impersonate the service and read what other apps send it.
+        // impersonate the service and read what other apps send it. And in
+        // xdg-dbus-proxy an own rule also lets the app call the name and everything
+        // below it, so a name the AppImage picked for itself must not cover a host
+        // service that runs commands, changes settings or reads files for its callers.
         private const string[] RESERVED_NAME_PREFIXES = {
             "org.freedesktop.DBus",
             "org.freedesktop.portal",
@@ -206,20 +209,40 @@ namespace AppManager.Core {
             "org.freedesktop.Notifications",
             "org.freedesktop.secrets",
             "org.freedesktop.systemd1",
+            "org.freedesktop.Flatpak",
             "org.kde.StatusNotifierWatcher",
-            "org.a11y."
+            "org.a11y.",
+            "org.gnome.Shell",
+            "org.gnome.Mutter",
+            "org.gnome.SessionManager",
+            "org.gnome.SettingsDaemon",
+            "org.gnome.Terminal",
+            "org.gnome.keyring",
+            "org.gnome.OnlineAccounts",
+            "org.gnome.evolution.dataserver",
+            "org.gtk.vfs",
+            "org.kde.KWin",
+            "org.kde.plasmashell",
+            "org.kde.krunner",
+            "org.kde.konsole",
+            "org.kde.kded",
+            "org.kde.klauncher",
+            "org.kde.kwalletd",
+            "ca.desrt.dconf"
         };
 
         /**
          * Whether `name` is a well-known bus name an app may be allowed to own: valid
-         * D-Bus syntax, at least two elements, and not one of the desktop services.
+         * D-Bus syntax, at least three elements (flatpak's rule for app ids, so the
+         * "name.*" grant never spans a whole vendor namespace), and neither one of
+         * the reserved services nor a parent namespace of one.
          */
         public static bool is_ownable_bus_name(string name) {
             if (name.length == 0 || name.length > 255 || name.has_prefix(".") || name.has_suffix(".")) {
                 return false;
             }
             var elements = name.split(".");
-            if (elements.length < 2) {
+            if (elements.length < 3) {
                 return false;
             }
             foreach (var element in elements) {
@@ -236,7 +259,9 @@ namespace AppManager.Core {
                 }
             }
             foreach (var reserved in RESERVED_NAME_PREFIXES) {
-                if (name == reserved || name.has_prefix(reserved)) {
+                // Both ways: "name.*" is granted too, so a parent of a reserved name
+                // would cover it just the same.
+                if (name == reserved || name.has_prefix(reserved) || reserved.has_prefix(name + ".")) {
                     return false;
                 }
             }

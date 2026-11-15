@@ -363,6 +363,15 @@ namespace AppManager.Core {
             return null;
         }
 
+        /**
+         * Registers a portable AppImage again with the settings of a record that is
+         * already gone: a file put back after it was deleted by hand, or the
+         * original after a failed extraction. Unlike upgrade() nothing is uninstalled.
+         */
+        public InstallationRecord restore(string file_path, InstallationRecord old_record) throws Error {
+            return install_sync(file_path, InstallMode.PORTABLE, old_record);
+        }
+
         public InstallationRecord reinstall(string file_path, InstallationRecord old_record, InstallMode mode, AppHubPolicy? policy = null) throws Error {
             // Validate new AppImage before touching the old installation.
             // Uses the same desktop/icon extraction that install does - if the
@@ -491,6 +500,7 @@ namespace AppManager.Core {
                 record.custom_add_to_path = old_record.custom_add_to_path;
                 record.custom_env_vars = old_record.custom_env_vars;
                 record.prerelease_enabled = old_record.prerelease_enabled;
+                record.updates_enabled = old_record.updates_enabled;
                 record.copy_sandbox_from(old_record);
                 // First catalog recognition must not replace existing non-store
                 // permissions, including configurations made by older builds.
@@ -526,8 +536,9 @@ namespace AppManager.Core {
                     install_extracted(metadata, record, is_upgrade);
                 }
 
-                // Only delete source after successful installation
-                if (File.new_for_path(file_path).query_exists()) {
+                // Only delete source after successful installation. A portable install
+                // moved it; a file restored in place is the installation itself.
+                if (file_path != record.installed_path && File.new_for_path(file_path).query_exists()) {
                     File.new_for_path(file_path).delete();
                 }
                 if (mode == InstallMode.PORTABLE) {
@@ -1318,6 +1329,10 @@ namespace AppManager.Core {
                     if (installed_file.query_exists()) {
                         if (installed_file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
                             Utils.FileUtils.remove_dir_recursive(record.installed_path);
+                        } else if (record.source_path != null && !File.new_for_path(record.source_path).query_exists()) {
+                            // A portable install moved its input here. Give it back
+                            // rather than deleting the only copy.
+                            installed_file.move(File.new_for_path(record.source_path), FileCopyFlags.NONE, null, null);
                         } else {
                             installed_file.delete(null);
                         }
@@ -1940,6 +1955,11 @@ namespace AppManager.Core {
         private string move_portable_to_applications(string source_path, string app_name) throws Error {
             var apps_dir = AppPaths.ensure_applications_dir();
             var desired = Path.build_filename(apps_dir, app_name);
+            if (source_path == desired) {
+                // Restoring a file that is already in its place: nothing to move.
+                Utils.FileUtils.ensure_executable(desired);
+                return desired;
+            }
             var final_path = Utils.FileUtils.unique_path(desired);
             var source = File.new_for_path(source_path);
             var dest = File.new_for_path(final_path);

@@ -675,7 +675,11 @@ namespace AppManager {
             install_completed = true;
             set_drag_spinner_install_active(false);
             cleanup_staging_dir(staging_dir);
-            remove_source_appimage();
+            // Replacing an AppImage that was opened from its installed place puts the
+            // new file at that same path: it is then the installation, not a source.
+            if (!Utils.FileUtils.same_file(appimage_path, record.installed_path)) {
+                remove_source_appimage();
+            }
             if (!upgraded) {
                 FlathubPermissions.check_new_install(registry, record);
             }

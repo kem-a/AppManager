@@ -801,9 +801,9 @@ namespace AppManager {
             }
 
             // Create progress dialog
+            // No Cancel: it was never connected, and a half-done move has no way back.
             var progress_dialog = new Adw.AlertDialog(_("Moving Apps…"), _("Please wait while your apps are being moved."));
-            progress_dialog.add_response("cancel", _("Cancel"));
-            progress_dialog.close_response = "cancel";
+            progress_dialog.can_close = false;
             
             var progress_bar = new Gtk.ProgressBar();
             progress_bar.show_text = true;
@@ -853,7 +853,21 @@ namespace AppManager {
             });
 
             // Pass explicit old and new paths to avoid GSettings caching issues
-            migration_service.migrate.begin(old_path, new_path, new_setting);
+            migration_service.migrate.begin(old_path, new_path, new_setting, (obj, res) => {
+                try {
+                    migration_service.migrate.end(res);
+                } catch (Error e) {
+                    // Thrown before anything moved: no migration_complete follows.
+                    if (directory_monitor != null) {
+                        directory_monitor.start();
+                    }
+                    if (settings.get_boolean("auto-check-updates")) {
+                        BackgroundUpdateService.spawn_daemon(registry);
+                    }
+                    progress_dialog.force_close();
+                    show_error_dialog(_("Migration Failed"), e.message);
+                }
+            });
         }
 
         private void update_reset_button_visibility(string new_setting) {

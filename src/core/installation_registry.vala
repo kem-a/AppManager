@@ -478,11 +478,20 @@ namespace AppManager.Core {
             
             var orphaned = new Gee.ArrayList<InstallationRecord>();
             var records_to_remove = new Gee.ArrayList<string>();
+            // A missing applications folder (unmounted disk, NAS) means its apps are
+            // out of reach, not deleted.
+            var apps_dir = AppPaths.applications_dir;
+            var apps_dir_missing = !AppPaths.applications_dir_available();
             
             foreach (var record in records.get_values()) {
                 // Skip apps that are currently being installed/uninstalled
                 if (in_flight.contains(record.id)) {
                     debug("Skipping in-flight app during reconcile: %s", record.name);
+                    continue;
+                }
+                if (apps_dir_missing && record.installed_path != null
+                    && record.installed_path.has_prefix(apps_dir + "/")) {
+                    debug("Applications folder %s is unavailable, keeping %s", apps_dir, record.name);
                     continue;
                 }
                 

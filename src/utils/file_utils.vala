@@ -66,6 +66,14 @@ namespace AppManager.Utils {
             src.copy(dest, FileCopyFlags.OVERWRITE, null, null);
         }
 
+        /** Whether two paths name the same file once links are resolved. */
+        public static bool same_file(string? a, string? b) {
+            if (a == null || b == null) {
+                return false;
+            }
+            return (Posix.realpath(a) ?? a) == (Posix.realpath(b) ?? b);
+        }
+
         public static void remove_dir_recursive(string path) {
             try {
                 var file = File.new_for_path(path);

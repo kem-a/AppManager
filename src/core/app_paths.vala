@@ -98,15 +98,30 @@ namespace AppManager.Core {
          * AppImages).
          */
         public static bool is_inside_applications_dir(string path) {
-            var src = File.new_for_path(path);
-            var apps = File.new_for_path(applications_dir);
+            // Resolved on both sides: the install folder may be reached through a link.
+            var src = File.new_for_path(Posix.realpath(path) ?? path);
+            var apps = File.new_for_path(Posix.realpath(applications_dir) ?? applications_dir);
             return apps.equal(src) || src.has_prefix(apps);
+        }
+
+        /**
+         * False when the configured applications folder is not there, typically a
+         * custom folder on storage that is not mounted. Its apps are then not
+         * deleted, only out of reach, and must not be reconciled away.
+         */
+        public static bool applications_dir_available() {
+            return FileUtils.test(applications_dir, FileTest.IS_DIR);
         }
 
         public static string extracted_root {
             owned get {
-                var dir = Path.build_filename(applications_dir, EXTRACTED_DIRNAME);
-                DirUtils.create_with_parents(dir, 0755);
+                var apps = applications_dir;
+                var dir = Path.build_filename(apps, EXTRACTED_DIRNAME);
+                // The default folder is created on demand. A missing custom one may be
+                // an unmounted disk: creating it would hide that from reconcile.
+                if (apps == default_applications_dir || FileUtils.test(apps, FileTest.IS_DIR)) {
+                    DirUtils.create_with_parents(dir, 0755);
+                }
                 return dir;
             }
         }

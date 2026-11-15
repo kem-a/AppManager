@@ -719,8 +719,10 @@ namespace AppManager.Core {
         public Json.Node to_custom_values_json() {
             var builder = new Json.Builder();
             builder.begin_object();
+            // The store keys entries by this member. The installed name, not the
+            // display name: a custom name is one of the values stored here.
             builder.set_member_name("name");
-            builder.add_string_value(name);
+            builder.add_string_value((original_name != null && original_name.strip() != "") ? original_name : name);
             serialize_custom_values(builder);
             builder.end_object();
             return builder.get_root();

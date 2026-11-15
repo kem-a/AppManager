@@ -234,7 +234,7 @@ namespace AppManager.Core {
                         if (FileUtils.test(path, FileTest.IS_DIR)) continue;
 
                         var file = File.new_for_path(path);
-                        var type = file.query_file_type(FileQueryInfoFlags.NONE);
+                        var type = file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
                         if (type == FileType.SYMBOLIC_LINK) {
                             try {
                                 results.add(resolve_symlink(path, appimage_path, extra_root));
@@ -443,6 +443,12 @@ namespace AppManager.Core {
                 if (!FileUtils.test(path, FileTest.IS_REGULAR)) {
                     return false;
                 }
+                // A directory link on the way could still lead out of the extracted tree.
+                var resolved = Posix.realpath(path);
+                var parent = Posix.realpath(Path.get_dirname(path));
+                if (resolved == null || parent == null || !resolved.has_prefix(parent + "/")) {
+                    return false;
+                }
                 uint8[] data;
                 GLib.FileUtils.get_data(path, out data);
                 File.new_for_path(path).delete(null);
@@ -625,7 +631,10 @@ namespace AppManager.Core {
             }
 
             if (format == AppImageFormat.DWARFS) {
-                return run_dwarfs_extract(appimage_path, output_dir, "*");
+                // '**' walks the whole tree; a single '*' stops at the top level in the
+                // dwarfs glob dialect and would leave an AppDir without usr/.
+                return run_dwarfs_extract(appimage_path, output_dir, "**")
+                    || run_dwarfs_extract(appimage_path, output_dir, "*");
             }
 
             return false;
@@ -909,7 +918,9 @@ namespace AppManager.Core {
                 throw new AppImageAssetsError.EXTRACTION_FAILED("File does not exist: %s".printf(file_path));
             }
 
-            var type = file.query_file_type(FileQueryInfoFlags.NONE);
+            // NOFOLLOW: a link whose target happens to exist on the host must not pass
+            // as a regular file, or the caller would copy that host file.
+            var type = file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
             if (type != FileType.SYMBOLIC_LINK) {
                 return file_path;
             }
@@ -948,7 +959,7 @@ namespace AppManager.Core {
                     throw new AppImageAssetsError.EXTRACTION_FAILED("Symlink target not found: %s".printf(normalized));
                 }
 
-                var current_type = current_file.query_file_type(FileQueryInfoFlags.NONE);
+                var current_type = current_file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
                 if (current_type != FileType.SYMBOLIC_LINK) {
                     return current_path;
                 }

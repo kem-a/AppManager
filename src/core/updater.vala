@@ -42,6 +42,14 @@ namespace AppManager.Core {
         public UpdateSkipReason? skip_reason;
         public string? message { get; private set; }
 
+        /**
+         * The check got no answer for this app (no network, rate limit, bad reply).
+         * That says nothing about updates, so earlier findings must not be dropped.
+         */
+        public bool failed {
+            get { return !has_update && (skip_reason == null || skip_reason == UpdateSkipReason.API_UNAVAILABLE); }
+        }
+
         public UpdateProbeResult(InstallationRecord record, bool has_update, string? available_version = null, UpdateSkipReason? skip_reason = null, string? message = null) {
             Object();
             this.record = record;

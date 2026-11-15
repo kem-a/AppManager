@@ -27,6 +27,8 @@ namespace AppManager.Core {
         private const uint DELETION_GRACE_PERIOD_MS = 2000;
         
         public signal void changes_detected();
+        /** A file was created in or moved into the applications folder. */
+        public signal void file_appeared(string path);
         
         public DirectoryMonitor(InstallationRegistry registry) {
             this.registry = registry;
@@ -116,6 +118,7 @@ namespace AppManager.Core {
                 event_type == FileMonitorEvent.MOVED_IN ||
                 event_type == FileMonitorEvent.CHANGES_DONE_HINT) {
                 cancel_pending_deletion(path);
+                file_appeared(path);
                 return;
             }
             

@@ -21,6 +21,15 @@ namespace AppManager.Core {
             load();
         }
 
+        // The name the app was installed under (bundled name, plus " N" for a copy).
+        // A custom name is itself one of the stored values, so it cannot be the key.
+        private static string key_for(InstallationRecord record) {
+            if (record.original_name != null && record.original_name.strip() != "") {
+                return record.original_name.down();
+            }
+            return record.name.down();
+        }
+
         /**
          * Applies custom values from the store to a record, matched by name.
          * Only sets values that are currently null on the record
@@ -28,7 +37,19 @@ namespace AppManager.Core {
          */
         public void apply_to_record(InstallationRecord record) {
             store_mutex.lock();
-            var obj = entries.get(record.name.down());
+            var key = key_for(record);
+            Json.Object? obj = entries.get(key);
+            var legacy_key = record.name.down();
+            if (obj == null && legacy_key != key) {
+                // Older entries are keyed by the display name. Move this one over.
+                obj = entries.get(legacy_key);
+                if (obj != null) {
+                    obj.set_string_member("name", record.original_name);
+                    entries.insert(key, obj);
+                    entries.remove(legacy_key);
+                    save_unlocked();
+                }
+            }
             store_mutex.unlock();
             if (obj != null) {
                 record.apply_history(obj);
@@ -44,9 +65,9 @@ namespace AppManager.Core {
             store_mutex.lock();
             if (record.has_custom_values()) {
                 var node = record.to_custom_values_json();
-                entries.insert(record.name.down(), node.get_object());
+                entries.insert(key_for(record), node.get_object());
             } else {
-                entries.remove(record.name.down());
+                entries.remove(key_for(record));
             }
             save_unlocked();
             store_mutex.unlock();
@@ -97,7 +118,7 @@ namespace AppManager.Core {
             bool changed = false;
             foreach (var record in records) {
                 if (record.has_custom_values()) {
-                    var key = record.name.down();
+                    var key = key_for(record);
                     if (!entries.contains(key)) {
                         var node = record.to_custom_values_json();
                         entries.insert(key, node.get_object());

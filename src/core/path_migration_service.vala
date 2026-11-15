@@ -258,8 +258,12 @@ namespace AppManager.Core {
             // Use move for same filesystem, copy+delete for cross-filesystem
             try {
                 old_file.move(new_file, FileCopyFlags.OVERWRITE | FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
-            } catch (IOError.NOT_SUPPORTED e) {
-                // Cross-filesystem move, need to copy and delete
+            } catch (IOError e) {
+                // Cross-filesystem move, need to copy and delete. GIO reports it as
+                // WOULD_RECURSE for a directory and NOT_SUPPORTED otherwise.
+                if (!(e is IOError.WOULD_RECURSE) && !(e is IOError.NOT_SUPPORTED)) {
+                    throw e;
+                }
                 if (old_file.query_file_type(FileQueryInfoFlags.NONE) == FileType.DIRECTORY) {
                     yield copy_directory_recursive(old_path, new_path);
                     Utils.FileUtils.remove_dir_recursive(old_path);
@@ -269,10 +273,12 @@ namespace AppManager.Core {
                 }
             }
 
-            // Move the sandboxed home along with the app it belongs to, before the record
-            // path changes — otherwise the app comes back to an empty home at the new
-            // location and its settings look lost.
-            move_sibling_folder(old_path + ".sandbox", new_path + ".sandbox");
+            // Move the sandboxed home and the portable folders along with the app they
+            // belong to, before the record path changes — otherwise the app comes back
+            // to an empty home at the new location and its settings look lost.
+            foreach (var suffix in new string[] { ".sandbox", ".home", ".config" }) {
+                yield move_sibling_folder(old_path + suffix, new_path + suffix);
+            }
 
             // Update record path
             record.installed_path = new_path;
@@ -421,14 +427,23 @@ namespace AppManager.Core {
          * Moves a folder that lives beside the AppImage to sit beside its new location.
          * Silently does nothing when the source is absent.
          */
-        private void move_sibling_folder(string old_path, string new_path) {
+        private async void move_sibling_folder(string old_path, string new_path) {
             var source = File.new_for_path(old_path);
             if (!source.query_exists()) {
                 return;
             }
             try {
-                source.move(File.new_for_path(new_path),
-                    FileCopyFlags.OVERWRITE | FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
+                try {
+                    source.move(File.new_for_path(new_path),
+                        FileCopyFlags.OVERWRITE | FileCopyFlags.NOFOLLOW_SYMLINKS, null, null);
+                } catch (IOError e) {
+                    // Another filesystem: a directory cannot be moved across, copy it.
+                    if (!(e is IOError.WOULD_RECURSE) && !(e is IOError.NOT_SUPPORTED)) {
+                        throw e;
+                    }
+                    yield copy_directory_recursive(old_path, new_path);
+                    Utils.FileUtils.remove_dir_recursive(old_path);
+                }
                 debug("Moved %s to %s", old_path, new_path);
             } catch (Error e) {
                 warning("Failed to move %s to %s: %s", old_path, new_path, e.message);

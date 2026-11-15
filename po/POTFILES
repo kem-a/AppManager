@@ -18,4 +18,5 @@ src/windows/dialog_window.vala
 src/windows/drop_window.vala
 src/windows/main_window.vala
 src/windows/preferences_window.vala
+src/utils/ui_utils.vala
 data/com.github.AppManager.metainfo.xml

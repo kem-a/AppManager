@@ -84,7 +84,49 @@ namespace AppManager.Core {
                     return lv > rv ? 1 : -1;
                 }
             }
+            // Same numbers: a pre-release ("2.0.0-beta1") is older than the release
+            // ("2.0.0"), and beta1 is older than beta2. Any other suffix is ignored.
+            int left_stage, left_number, right_stage, right_number;
+            prerelease(left, out left_stage, out left_number);
+            prerelease(right, out right_stage, out right_number);
+            if (left_stage != right_stage) {
+                return left_stage > right_stage ? 1 : -1;
+            }
+            if (left_number != right_number) {
+                return left_number > right_number ? 1 : -1;
+            }
             return 0;
+        }
+
+        private const string[] PRERELEASE_MARKERS = { "dev", "nightly", "snapshot", "alpha", "a", "beta", "b", "pre", "rc" };
+        private const int[] PRERELEASE_STAGES = { 1, 1, 1, 2, 2, 3, 3, 4, 4 };
+        private const int RELEASE_STAGE = 5;
+
+        /**
+         * What follows the numeric part of a version: the pre-release stage (dev <
+         * alpha < beta < rc < release) and its number. A marker only counts when a
+         * digit, a separator or the end follows, so "amd64" or "appimage" is no alpha.
+         */
+        private static void prerelease(string? value, out int stage, out int number) {
+            stage = RELEASE_STAGE;
+            number = 0;
+            if (value == null) return;
+            var text = value.strip().down();
+            int i = 0;
+            while (i < text.length && !(text[i] >= '0' && text[i] <= '9')) i++;
+            while (i < text.length && ((text[i] >= '0' && text[i] <= '9') || text[i] == '.')) i++;
+            while (i < text.length && (text[i] == '-' || text[i] == '_' || text[i] == '+' || text[i] == '~' || text[i] == '.')) i++;
+            var rest = text.substring(i);
+            for (int m = 0; m < PRERELEASE_MARKERS.length; m++) {
+                var marker = PRERELEASE_MARKERS[m];
+                if (!rest.has_prefix(marker)) continue;
+                var after = rest.substring(marker.length);
+                while (after.length > 0 && (after[0] == '-' || after[0] == '_' || after[0] == '.')) after = after.substring(1);
+                if (after.length > 0 && !(after[0] >= '0' && after[0] <= '9')) continue;
+                stage = PRERELEASE_STAGES[m];
+                number = int.parse(after);
+                return;
+            }
         }
     }
 }

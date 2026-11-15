@@ -258,7 +258,9 @@ namespace AppManager.Core {
                 builder.wayland_socket = wayland.socket_path;
             }
 
-            var link_pipe = start_link_opener(instance_id);
+            // Opening a link in the host browser sends data out. An app without
+            // network access does not get that channel either.
+            var link_pipe = manifest.network ? start_link_opener(instance_id) : null;
             builder.link_pipe = link_pipe;
 
             // A deferred proxy needs bwrap to report the app's pid, then wait.

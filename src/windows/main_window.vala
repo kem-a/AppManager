@@ -1663,16 +1663,26 @@ namespace AppManager {
         }
 
         private void handle_probe_results(Gee.ArrayList<UpdateProbeResult> probes) {
+            // A check that failed for an app keeps the update staged for it before.
+            var unknown = new Gee.HashMap<string, StagedUpdate>();
+            foreach (var result in probes) {
+                var staged = result.failed ? staged_updates.get_for_record(result.record.id) : null;
+                if (staged != null) {
+                    unknown.set(result.record.id, staged);
+                }
+            }
             pending_update_keys.clear();
             // Clear staged updates since we're doing a fresh check
             staged_updates.clear();
             
             int available = 0;
             foreach (var result in probes) {
-                if (result.has_update) {
+                var kept = unknown.get(result.record.id);
+                if (result.has_update || kept != null) {
                     pending_update_keys.add(record_state_key(result.record));
                     // Stage the update so it persists across app restarts
-                    staged_updates.add(result.record.id, result.record.name, result.available_version);
+                    staged_updates.add(result.record.id, result.record.name,
+                        result.has_update ? result.available_version : kept.available_version);
                     available++;
                 }
                 sync_details_window_state(result.record);
@@ -1702,7 +1712,12 @@ namespace AppManager {
             // Only the apps the check found, not every update-enabled app.
             var records = new Gee.ArrayList<InstallationRecord>();
             foreach (var record in registry.list()) {
-                if (pending_update_keys.contains(record_state_key(record))) {
+                var key = record_state_key(record);
+                // Switched off since the check found it, or already updating on its own.
+                if (!record.updates_enabled || updating_records.has_key(key)) {
+                    continue;
+                }
+                if (pending_update_keys.contains(key)) {
                     records.add(record);
                     begin_update_indicator(record);
                 }
@@ -2557,16 +2572,11 @@ namespace AppManager {
                 string staged_path;
                 string staged_dir;
                 try {
+                    // Always a copy: the installer consumes its input, and a file that
+                    // fails to install (wrong architecture, broken) must stay where it was.
                     staged_dir = Utils.FileUtils.create_temp_dir("appmgr-import-");
-                    if (move) {
-                        staged_path = Path.build_filename(staged_dir, Path.get_basename(path));
-                        var src = GLib.File.new_for_path(path);
-                        var dest = GLib.File.new_for_path(staged_path);
-                        src.move(dest, FileCopyFlags.OVERWRITE, null, null);
-                    } else {
-                        staged_path = Path.build_filename(staged_dir, Path.get_basename(path));
-                        Utils.FileUtils.file_copy(path, staged_path);
-                    }
+                    staged_path = Path.build_filename(staged_dir, Path.get_basename(path));
+                    Utils.FileUtils.file_copy(path, staged_path);
                 } catch (Error e) {
                     warning("Failed to stage %s: %s", path, e.message);
                     failed++;
@@ -2597,6 +2607,13 @@ namespace AppManager {
                     }
                 } else {
                     imported++;
+                    if (move) {
+                        try {
+                            GLib.File.new_for_path(path).delete(null);
+                        } catch (Error e) {
+                            warning("Failed to remove imported %s: %s", path, e.message);
+                        }
+                    }
                     if (!upgraded && record != null) {
                         FlathubPermissions.check_new_install(registry, record);
                     }
@@ -2646,6 +2663,11 @@ namespace AppManager {
                 details_window.set_update_failed(failed_update_keys.get(key));
             }
             details_window.uninstall_requested.connect((r, permanently, preserve_portable) => {
+                if (updating_records.has_key(record_state_key(r))) {
+                    // The update would install it again right after.
+                    add_toast(_("Updates already running"));
+                    return;
+                }
                 navigation_view.pop();
                 if (active_details_window == details_window) {
                     active_details_window = null;
@@ -2662,6 +2684,10 @@ namespace AppManager {
                 start_single_probe(r, details_window);
             });
             details_window.extract_requested.connect((r) => {
+                if (updating_records.has_key(record_state_key(r))) {
+                    add_toast(_("Updates already running"));
+                    return;
+                }
                 navigation_view.pop();
                 if (active_details_window == details_window) {
                     active_details_window = null;

@@ -65,8 +65,9 @@ int main(string[] args) {
     // of failing. Happens on minimal desktops where the env var is set by a
     // display manager but no session bus is actually running.
     var dbus_addr = GLib.Environment.get_variable("DBUS_SESSION_BUS_ADDRESS");
-    if (dbus_addr != null && dbus_addr.has_prefix("unix:path=")) {
-        var socket_path = dbus_addr.substring("unix:path=".length);
+    if (dbus_addr != null && dbus_addr.has_prefix("unix:path=") && !dbus_addr.contains(";")) {
+        // Only the path: "unix:path=/run/x,guid=..." is a valid address too.
+        var socket_path = dbus_addr.substring("unix:path=".length).split(",")[0];
         if (!GLib.FileUtils.test(socket_path, GLib.FileTest.EXISTS)) {
             GLib.Environment.unset_variable("DBUS_SESSION_BUS_ADDRESS");
         }

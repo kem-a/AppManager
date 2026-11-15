@@ -7,6 +7,9 @@ namespace AppManager {
     public class Application : Adw.Application {
         private MainWindow? main_window;
         private int running_jobs = 0;
+        // Portable apps that reconcile dropped because their file went missing, by path.
+        private HashTable<string, InstallationRecord> removed_records =
+            new HashTable<string, InstallationRecord>(str_hash, str_equal);
         private InstallationRegistry registry;
         private Installer installer;
         private Settings settings;
@@ -247,10 +250,12 @@ Examples:
                     return;
                 }
                 var orphaned = registry.reconcile_with_filesystem();
+                remember_removed(orphaned);
                 if (orphaned.size > 0) {
                     debug("Reconciled %d orphaned installation(s)", orphaned.size);
                 }
             });
+            directory_monitor.file_appeared.connect(on_file_appeared);
             directory_monitor.start();
             backfill_appstream_metadata.begin();
             // Catch AppImages replaced by their own updater while AppManager was closed.
@@ -337,6 +342,7 @@ Examples:
             // Skip during migration to prevent false uninstallation
             if (!registry.is_migration_in_progress()) {
                 var orphaned = registry.reconcile_with_filesystem();
+                remember_removed(orphaned);
                 if (orphaned.size > 0) {
                     debug("Found %d orphaned installation(s) on launch", orphaned.size);
                 }
@@ -860,8 +866,8 @@ Examples:
 
             Utils.FileUtils.remove_dir_recursive(staged_dir);
 
-            // Delete source AppImage on success
-            if (error == null) {
+            // Delete source AppImage on success, unless it is the installation itself
+            if (error == null && !(record != null && Utils.FileUtils.same_file(appimage_path, record.installed_path))) {
                 try {
                     var source = File.new_for_path(appimage_path);
                     if (source.query_exists()) {
@@ -1180,6 +1186,13 @@ Examples:
             }
 
             if (cmd_install != null) {
+                if (AppPaths.is_inside_applications_dir(cmd_install)) {
+                    // Installing moves its input: from here that would be the installation itself.
+                    command_line.printerr("Install failed: %s is already inside the install folder (%s)\n",
+                        cmd_install, AppPaths.applications_dir);
+                    command_line.set_exit_status(2);
+                    return 2;
+                }
                 try {
                     bool is_upgrade;
                     bool keep_both = opts.contains("keep-both");
@@ -1271,6 +1284,60 @@ Examples:
 
             this.activate();
             return 0;
+        }
+
+        private void remember_removed(Gee.ArrayList<InstallationRecord> orphaned) {
+            foreach (var record in orphaned) {
+                if (record.mode == InstallMode.PORTABLE && record.installed_path != null) {
+                    removed_records.insert(record.installed_path, record);
+                }
+            }
+        }
+
+        /**
+         * Undo in the file manager puts a deleted AppImage back after reconcile has
+         * already dropped it. The same file at the same path gets its record back.
+         */
+        private void on_file_appeared(string path) {
+            var old_record = removed_records.get(path);
+            if (old_record == null) {
+                return;
+            }
+            removed_records.remove(path);
+            // An install of its own is already bringing this file in.
+            if (registry.is_in_flight(old_record.id) || registry.lookup_by_installed_path(path) != null) {
+                return;
+            }
+            restore_removed_async.begin(path, old_record);
+        }
+
+        private async void restore_removed_async(string path, InstallationRecord old_record) {
+            SourceFunc callback = restore_removed_async.callback;
+            bool restored = false;
+
+            begin_job();
+            new Thread<void>("appmgr-readopt", () => {
+                try {
+                    // A copy that is still being written does not match yet; it is
+                    // tried again on its next event.
+                    if (Utils.FileUtils.compute_checksum(path) == old_record.source_checksum) {
+                        installer.restore(path, old_record);
+                        restored = true;
+                    }
+                } catch (Error e) {
+                    warning("Could not restore %s: %s", path, e.message);
+                }
+                Idle.add((owned) callback);
+            });
+
+            yield;
+            end_job();
+
+            if (!restored) {
+                removed_records.insert(path, old_record);
+            } else if (main_window != null && main_window.visible) {
+                main_window.add_toast(_("Restored"));
+            }
         }
 
         /**
@@ -1447,6 +1514,19 @@ Examples:
                     new_record = installer.reinstall(staged_path, record, InstallMode.EXTRACTED);
                 } catch (Error e) {
                     error = e;
+                    // reinstall() uninstalls first. When the extraction failed after
+                    // that, put the portable app back from the staged copy.
+                    if (staged_path != "" && File.new_for_path(staged_path).query_exists()
+                        && !File.new_for_path(source_path).query_exists()) {
+                        try {
+                            var restored_path = installer.restore(staged_path, record).installed_path;
+                            restore_trashed_portable_folder("%s.home".printf(restored_path));
+                            restore_trashed_portable_folder("%s.config".printf(restored_path));
+                            restore_trashed_portable_folder("%s.sandbox".printf(restored_path));
+                        } catch (Error restore_error) {
+                            warning("Could not put %s back after the failed extraction: %s", record.name, restore_error.message);
+                        }
+                    }
                 } finally {
                     if (staging_dir != null) {
                         Utils.FileUtils.remove_dir_recursive(staging_dir);

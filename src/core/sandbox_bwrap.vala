@@ -130,7 +130,11 @@ namespace AppManager.Core {
                 add("--block-fd", block_fd.to_string());
             }
 
-            add("--argv0", argv0);
+            // bubblewrap 0.9.0 added --argv0. Older ones still launch, with AppRun as
+            // argv[0]: a multi-component sub-entry then starts the main component.
+            if (supports_flag("--argv0")) {
+                add("--argv0", argv0);
+            }
             args.add("--");
             args.add(Path.build_filename(mount_dir, "AppRun"));
             // Before the app's own arguments: a Chromium command line takes switches
@@ -1126,10 +1130,23 @@ x-scheme-handler/https=app-manager-open-uri.desktop
             // AppAutostart mirrors them to the host.
             var autostart = AppAutostart.private_dir(manifest.home);
             var autostart_inside = Path.build_filename(home, ".config", "autostart");
+            // The app owns its private home and may have swapped this folder for a
+            // link to a host folder, which bwrap would follow and bind writable.
+            // It is the app's own entry: drop the link and start from an empty folder.
+            if (GLib.FileUtils.test(autostart, FileTest.IS_SYMLINK)) {
+                GLib.FileUtils.unlink(autostart);
+            }
             DirUtils.create_with_parents(autostart, 0700);
             // bwrap cannot create the mount point under a read-only bind.
             DirUtils.create_with_parents(autostart_inside, 0755);
-            add2("--bind", autostart, autostart_inside);
+            // Still reached through a link (.config itself): never bind what it points to.
+            var expected = Path.build_filename(SandboxConfig.canonicalize(manifest.home), ".config", "autostart");
+            if (SandboxConfig.canonicalize(autostart) == expected) {
+                add2("--bind", autostart, autostart_inside);
+            } else {
+                printerr("%s: %s is reached through a link, using an empty login-entry folder instead\n", SANDBOX_RUN_VERB, autostart);
+                add("--tmpfs", autostart_inside);
+            }
         }
 
         /**
