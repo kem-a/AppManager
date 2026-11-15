@@ -17,6 +17,7 @@ namespace AppManager.Core {
     public class AppAutostart {
         private const string MARKER = "X-AppManager-Autostart";
         private const string PREFIX = "appmanager-";
+        private const string PORTAL_ENTRY = "appmanager-portal.desktop";
         // Meaningless at login; systemd's autostart generator drops them too.
         private const string[] FIELD_CODES = { "%f", "%F", "%u", "%U", "%d", "%D", "%n", "%N", "%i", "%c", "%k", "%v", "%m" };
         private const string[] SHELLS = { "sh", "bash", "dash", "zsh" };
@@ -169,29 +170,98 @@ namespace AppManager.Core {
             return loop;
         }
 
-        public static void sync(string record_id, string sandbox_home, string? desktop_file) {
+        // The watch and the portal sync from their own threads.
+        private static Mutex sync_lock;
+
+        /** Returns whether a host entry is in place afterwards. */
+        public static bool sync(string record_id, string sandbox_home, string? desktop_file) {
+            sync_lock.lock();
+            try {
+                return write_host_entry(record_id, sandbox_home, desktop_file);
+            } finally {
+                sync_lock.unlock();
+            }
+        }
+
+        private static bool write_host_entry(string record_id, string sandbox_home, string? desktop_file) {
             var path = entry_path(desktop_file);
             if (path == null || sandbox_home.strip() == "") {
-                return;
+                return false;
             }
             var args = requested_args(private_dir(sandbox_home));
             var contents = (args != null) ? build_entry(record_id, desktop_file, args) : null;
             if (contents == null) {
                 remove(desktop_file);
-                return;
+                return false;
             }
             try {
                 string current = "";
                 // Apps that recreate their entry on every launch must not churn it.
                 if (GLib.FileUtils.test(path, FileTest.EXISTS)
                     && GLib.FileUtils.get_contents(path, out current) && current == contents) {
-                    return;
+                    return true;
                 }
                 DirUtils.create_with_parents(Path.get_dirname(path), 0755);
                 GLib.FileUtils.set_contents(path, contents);
+                return true;
             } catch (FileError e) {
                 warning("Failed to write autostart entry %s: %s", path, e.message);
+                return false;
             }
+        }
+
+        /**
+         * The entry of an app that asked the Background portal (SandboxPortal) instead
+         * of writing one. It goes into the app's private folder like one the app wrote,
+         * so the mirror treats both alike. Null removes it.
+         *
+         * The app owns that folder and can swap any part of the path for a link to a
+         * host folder while it runs, so every component is opened without following
+         * links. The file appears by rename: the watch never reads a partial entry.
+         */
+        public static bool set_portal_entry(string sandbox_home, string[]? commandline) {
+            int dir = Posix.open(sandbox_home, Posix.O_RDONLY | Posix.O_DIRECTORY | Posix.O_CLOEXEC);
+            foreach (var name in new string[] { ".config", "autostart" }) {
+                if (dir < 0) {
+                    return false;
+                }
+                Posix.mkdirat(dir, name, 0700);
+                int next = Posix.openat(dir, name, Posix.O_RDONLY | Posix.O_DIRECTORY | Posix.O_NOFOLLOW | Posix.O_CLOEXEC);
+                Posix.close(dir);
+                dir = next;
+            }
+            if (dir < 0) {
+                return false;
+            }
+            bool done;
+            if (commandline == null) {
+                done = Posix.unlinkat(dir, PORTAL_ENTRY, 0) == 0 || Posix.errno == Posix.ENOENT;
+            } else {
+                var line = new StringBuilder();
+                foreach (var arg in commandline) {
+                    line.append(line.len > 0 ? " " : "").append(Shell.quote(arg));
+                }
+                var entry = new KeyFile();
+                entry.set_string(KeyFileDesktop.GROUP, "Type", "Application");
+                entry.set_string(KeyFileDesktop.GROUP, "Name", "Autostart");
+                // Only the arguments are mirrored; a request without a command still
+                // needs a program for the entry to be one.
+                entry.set_string(KeyFileDesktop.GROUP, "Exec", line.len > 0 ? line.str : "app");
+                var contents = entry.to_data();
+                var temporary = PORTAL_ENTRY + ".new";
+                int fd = Posix.openat(dir, temporary,
+                    Posix.O_WRONLY | Posix.O_CREAT | Posix.O_TRUNC | Posix.O_NOFOLLOW | Posix.O_CLOEXEC, 0644);
+                done = fd >= 0 && Posix.write(fd, contents, contents.length) == contents.length;
+                if (fd >= 0) {
+                    Posix.close(fd);
+                }
+                done = done && Posix.renameat(dir, temporary, dir, PORTAL_ENTRY) == 0;
+                if (!done) {
+                    Posix.unlinkat(dir, temporary, 0);
+                }
+            }
+            Posix.close(dir);
+            return done;
         }
 
         public static void remove(string? desktop_file) {

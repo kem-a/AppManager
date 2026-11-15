@@ -116,6 +116,7 @@ core_sources = files(
   'src/core/sandbox_suspend_guard.vala',
   'src/core/sandbox_bwrap.vala',
   'src/core/sandbox_dbus_proxy.vala',
+  'src/core/sandbox_portal.vala',
   'src/core/sandbox_settings.vala',
   'src/core/app_autostart.vala',
   'src/core/sandbox_wayland.vala',
@@ -209,6 +210,7 @@ if get_option('build_tests')
     'tests/sandbox_workflow_driver.vala',
     'tests/network_info_proxy_test.py',
     'tests/sandbox_lifecycle_test.py',
+    'tests/sandbox_portal_test.py',
     'tests/sandbox_suspend_guard_test.py',
   ]
     if not fs.is_file(test_file)
@@ -354,4 +356,6 @@ if local_tests_available
     env: ['APP_MANAGER_TEST_SECCOMP=' + (seccomp_dep.found() ? '1' : '0')])
   test('sandbox-suspend-guard', python,
     args: [files('tests/sandbox_suspend_guard_test.py'), app_executable], timeout: 60)
+  test('sandbox-portal', python,
+    args: [files('tests/sandbox_portal_test.py'), app_executable], timeout: 60)
 endif

@@ -221,9 +221,14 @@ namespace AppManager.Core {
                 }
             }
 
+            // The app's session socket is the portal's when there is one, with the
+            // proxy behind it.
+            var portal = (proxy != null && proxy.session_socket != null)
+                ? SandboxPortal.start(proxy.session_socket, record_id, manifest) : null;
+
             var builder = new SandboxBwrap(manifest, mount.mount_dir);
             if (proxy != null) {
-                builder.session_bus_socket = proxy.session_socket;
+                builder.session_bus_socket = (portal != null) ? portal.socket_path : proxy.session_socket;
                 builder.system_bus_socket = proxy.system_socket;
                 builder.a11y_bus_socket = proxy.a11y_socket;
                 // Deferred: --sync-fd makes bwrap fork a holder after --block-fd, so its
@@ -249,6 +254,9 @@ namespace AppManager.Core {
                     printerr("%s: the compositor offers to sandbox this app's display connection, but setting that up failed; refusing to hand it an unrestricted one.\n",
                         SANDBOX_RUN_VERB);
                     wayland.cleanup();
+                    if (portal != null) {
+                        portal.stop();
+                    }
                     if (proxy != null) {
                         proxy.stop();
                     }
@@ -312,6 +320,10 @@ namespace AppManager.Core {
                 }
             }
 
+            // Before the proxy, which removes the directory both sockets may be in.
+            if (portal != null) {
+                portal.stop();
+            }
             if (proxy != null) {
                 proxy.stop();
             }
