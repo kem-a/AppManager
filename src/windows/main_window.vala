@@ -70,6 +70,7 @@ namespace AppManager {
         private string pre_fullscreen_view_mode = "list";
         private Gtk.Widget? import_hint_widget;
         private bool import_in_progress = false;
+        private bool close_requested = false;
         private bool import_cancel_requested = false;
 
         public void push_page(Adw.NavigationPage page) {
@@ -159,6 +160,9 @@ namespace AppManager {
                 return;
             }
             refresh_installations();
+            if (active_details_window != null) {
+                active_details_window.resync_with_registry();
+            }
         }
 
         private void build_ui() {
@@ -276,10 +280,32 @@ namespace AppManager {
                 if (import_in_progress) {
                     return true;
                 }
-                settings.set_int("window-width", this.get_width());
-                settings.set_int("window-height", this.get_height());
+                if (this.visible) {
+                    settings.set_int("window-width", this.get_width());
+                    settings.set_int("window-height", this.get_height());
+                }
+                if (app_ref.has_running_jobs()) {
+                    // Closing the last window quits the app, which would kill an
+                    // upgrade between its uninstall and install. Hide, finish, then close.
+                    debug("MainWindow: close requested while a job runs, hiding until it ends");
+                    close_requested = true;
+                    this.visible = false;
+                    return true;
+                }
                 return false;
             });
+        }
+
+        // Called when the last job ends. A window shown again in the meantime stays.
+        public void close_if_requested() {
+            if (!close_requested || app_ref.has_running_jobs()) {
+                return;
+            }
+            close_requested = false;
+            if (!this.visible) {
+                debug("MainWindow: jobs done, closing the hidden window");
+                this.close();
+            }
         }
 
         /**
@@ -1690,12 +1716,14 @@ namespace AppManager {
             Gee.ArrayList<UpdateResult>? results = null;
             var cancellable = update_cancellable;
 
+            app_ref.begin_job();
             new Thread<void>("appmgr-update", () => {
                 results = updater.update_records(records.to_array(), cancellable);
                 Idle.add((owned) callback);
             });
 
             yield;
+            app_ref.end_job();
 
             if (cancellable != null && cancellable.is_cancelled()) {
                 add_toast(_("Canceled"));
@@ -1758,12 +1786,14 @@ namespace AppManager {
             UpdateResult? result = null;
             var key = record_state_key(record);
 
+            app_ref.begin_job();
             new Thread<void>("appmgr-update-single", () => {
                 result = updater.update_single(record, cancellable);
                 Idle.add((owned) callback);
             });
 
             yield;
+            app_ref.end_job();
 
             if (single_update_cancellables.get(key) == cancellable) {
                 single_update_cancellables.unset(key);
@@ -2495,6 +2525,7 @@ namespace AppManager {
 
             import_in_progress = true;
             import_cancel_requested = false;
+            app_ref.begin_job();
 
             progress_dialog.response.connect((response_id) => {
                 if (response_id == "cancel") {
@@ -2596,6 +2627,7 @@ namespace AppManager {
             // as true and get suppressed by on_registry_changed().
             Idle.add(() => {
                 import_in_progress = false;
+                app_ref.end_job();
                 return Source.REMOVE;
             });
         }

@@ -263,6 +263,17 @@ namespace AppManager {
             build_ui();
         }
 
+        /**
+         * An upgrade gives the app a new record (the id is its checksum). Follow the
+         * app, or edits made here would write the old id into its launcher and manifest.
+         */
+        public void resync_with_registry() {
+            var current = registry.lookup_by_installed_path(record.installed_path);
+            if (current != null && current.id != record.id) {
+                refresh_with_record(current);
+            }
+        }
+
         private void persist_record_and_refresh_desktop() {
             registry.update(record);
             installer.apply_record_customizations_to_desktop(record);

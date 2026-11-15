@@ -93,6 +93,16 @@ namespace AppManager.Core {
                 return 2;
             }
 
+            // The id is the file's checksum and changes with every update. A launcher
+            // copied before one (a desktop shortcut, a panel entry) still names the old
+            // id, so follow the file: it is sandboxed if a manifest covers the target.
+            if (id != "" && !SandboxManifest.exists(id)) {
+                var current_id = SandboxManifest.find_id_for_target(target);
+                if (current_id != null) {
+                    id = current_id;
+                }
+            }
+
             var manifest = (id != "") ? SandboxManifest.read(id) : null;
 
             // No manifest on disk means this app is not sandboxed any more and only its

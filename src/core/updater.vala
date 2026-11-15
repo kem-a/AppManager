@@ -1188,16 +1188,18 @@ namespace AppManager.Core {
                 return null; // Match - verification passed
             }
 
-            // Secondary copies carry a " N" suffix that the candidate's bundled
+            // A custom name replaces record.name; the bundled one stays in original_name.
+            // Secondary copies carry a " N" suffix there that the candidate's bundled
             // .desktop Name won't have - compare against the base name instead.
+            var bundled_name = record.original_name ?? record_name;
             if (record.copy_index >= 2) {
-                var base_name = InstallationRegistry.base_name_of(record.original_name ?? record_name);
-                if (normalize_app_name(desktop_name) == normalize_app_name(base_name)) {
-                    return null;
-                }
+                bundled_name = InstallationRegistry.base_name_of(bundled_name);
+            }
+            if (normalize_app_name(desktop_name) == normalize_app_name(bundled_name)) {
+                return null;
             }
 
-            return _("App identity mismatch: expected '%s' but got '%s'").printf(record_name, desktop_name.strip());
+            return _("App identity mismatch: expected '%s' but got '%s'").printf(bundled_name, desktop_name.strip());
         }
 
         /**

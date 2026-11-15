@@ -6,6 +6,7 @@ using Gee;
 namespace AppManager {
     public class Application : Adw.Application {
         private MainWindow? main_window;
+        private int running_jobs = 0;
         private InstallationRegistry registry;
         private Installer installer;
         private Settings settings;
@@ -259,7 +260,17 @@ Examples:
             });
             
             var quit_action = new GLib.SimpleAction("quit", null);
-            quit_action.activate.connect(() => this.quit());
+            quit_action.activate.connect(() => {
+                if (!has_running_jobs()) {
+                    this.quit();
+                    return;
+                }
+                // Close the windows instead, so each can finish or refuse first.
+                debug("Quit requested while %d job(s) run, closing %u window(s)", running_jobs, this.get_windows().length());
+                foreach (var window in this.get_windows().copy()) {
+                    window.close();
+                }
+            });
             this.add_action(quit_action);
             string[] quit_accels = { "<Primary>q" };
             this.set_accels_for_action("app.quit", quit_accels);
@@ -821,6 +832,7 @@ Examples:
             // zero windows, causing GtkApplication to quit before the thread finishes.
             // For reinstalls this is catastrophic: uninstall completes but install never does.
             this.hold();
+            begin_job();
             quick_install_run_async.begin(appimage_path, staged_path, staged_dir, mode, existing);
         }
 
@@ -872,6 +884,7 @@ Examples:
             }
 
             // Allow normal shutdown now that result dialog is presented
+            end_job();
             this.release();
         }
 
@@ -1260,6 +1273,30 @@ Examples:
             return 0;
         }
 
+        /**
+         * A job is work that quitting must not cut off: an upgrade is not atomic, and
+         * exiting between its uninstall and install leaves the app gone. While one
+         * runs, MainWindow hides instead of closing and closes when the last one ends.
+         */
+        public void begin_job() {
+            running_jobs++;
+        }
+
+        public void end_job() {
+            running_jobs--;
+            if (running_jobs == 0 && main_window != null) {
+                // From idle: the caller still has results to show in the window.
+                Idle.add(() => {
+                    main_window.close_if_requested();
+                    return Source.REMOVE;
+                });
+            }
+        }
+
+        public bool has_running_jobs() {
+            return running_jobs > 0;
+        }
+
         public void uninstall_record(InstallationRecord record, Gtk.Window? parent_window, bool permanently = false, bool preserve_portable = false) {
             uninstall_record_async.begin(record, parent_window, permanently, preserve_portable);
         }
@@ -1272,6 +1309,7 @@ Examples:
             var installed_path = record.installed_path;
             var app_name = record.name ?? Path.get_basename(installed_path);
 
+            begin_job();
             new Thread<void>("appmgr-uninstall", () => {
                 try {
                     installer.uninstall(record, permanently, preserve_portable);
@@ -1290,6 +1328,7 @@ Examples:
             });
 
             yield;
+            end_job();
 
             if (trash_failed) {
                 // Offer to delete permanently as fallback
@@ -1341,6 +1380,7 @@ Examples:
             SourceFunc callback = restore_from_trash_async.callback;
             Error? error = null;
 
+            begin_job();
             new Thread<void>("appmgr-restore", () => {
                 try {
                     var restored = installer.install(trash_path);
@@ -1357,6 +1397,7 @@ Examples:
             });
 
             yield;
+            end_job();
 
             if (parent_window != null && parent_window is MainWindow) {
                 if (error != null) {
@@ -1396,6 +1437,7 @@ Examples:
             Error? error = null;
             string? staging_dir = null;
 
+            begin_job();
             new Thread<void>("appmgr-extract", () => {
                 string staged_path = "";
                 try {
@@ -1414,6 +1456,7 @@ Examples:
             });
 
             yield;
+            end_job();
 
             if (error != null) {
                 present_extract_error(parent_window, record, error.message);

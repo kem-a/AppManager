@@ -112,12 +112,24 @@ namespace AppManager.Core {
             return result;
         }
 
+        /**
+         * The name the app was installed under: the bundled Name, plus " N" for a
+         * side-by-side copy. A custom name replaces record.name but not this one.
+         */
+        private static string? installed_name(InstallationRecord record) {
+            if (record.original_name != null && record.original_name.strip() != "") {
+                return record.original_name;
+            }
+            return record.name;
+        }
+
         public InstallationRecord? lookup_by_name(string name) {
             registry_mutex.lock();
             var target = name.down();
             InstallationRecord? result = null;
             foreach (var record in records.get_values()) {
-                if (record.name != null && record.name.strip().down() == target) {
+                var installed = installed_name(record);
+                if (installed != null && installed.strip().down() == target) {
                     result = record;
                     break;
                 }
@@ -184,10 +196,11 @@ namespace AppManager.Core {
             var used = new Gee.HashSet<int>();
             int base_count = 0;
             foreach (var record in records.get_values()) {
-                if (record.name == null) {
+                var installed = installed_name(record);
+                if (installed == null) {
                     continue;
                 }
-                if (base_name_of(record.name).down() != target) {
+                if (base_name_of(installed).down() != target) {
                     continue;
                 }
                 base_count++;
@@ -313,6 +326,16 @@ namespace AppManager.Core {
          */
         public void update(InstallationRecord record, bool notify = true) {
             registry_mutex.lock();
+            // An upgrade replaces the record a caller may still hold (an open details
+            // page). Saving that copy would bring the old id back beside the new one.
+            foreach (var other in records.get_values()) {
+                if (other.id != record.id && other.installed_path == record.installed_path
+                    && other.updated_at > record.updated_at) {
+                    registry_mutex.unlock();
+                    warning("Ignoring update of superseded record %s (%s)", record.id, record.name);
+                    return;
+                }
+            }
             records.insert(record.id, record);
             save_unlocked();
             registry_mutex.unlock();

@@ -388,6 +388,40 @@ namespace AppManager.Core {
         }
 
         /**
+         * The id of the manifest that covers `target`: the AppImage itself or a link
+         * to it (a sub-entry's ~/.local/bin name). A record id changes with every
+         * update, so a launcher copied before one names an id that has no manifest
+         * any more. Reads only the path, so a manifest this build cannot use still
+         * counts and the launch fails closed.
+         */
+        public static string? find_id_for_target(string target) {
+            var wanted = SandboxConfig.canonicalize(target);
+            var sandbox_dir = AppPaths.sandbox_dir;
+            try {
+                var dir = Dir.open(sandbox_dir);
+                string? name;
+                while ((name = dir.read_name()) != null) {
+                    if (!name.has_suffix(SANDBOX_MANIFEST_SUFFIX)) {
+                        continue;
+                    }
+                    var kf = new KeyFile();
+                    try {
+                        kf.load_from_file(Path.build_filename(sandbox_dir, name), KeyFileFlags.NONE);
+                    } catch (Error e) {
+                        continue;
+                    }
+                    var appimage = read_string(kf, GROUP_SANDBOX, "appimage", "").strip();
+                    if (appimage != "" && SandboxConfig.canonicalize(appimage) == wanted) {
+                        return name.substring(0, name.length - SANDBOX_MANIFEST_SUFFIX.length);
+                    }
+                }
+            } catch (FileError e) {
+                debug("Cannot scan sandbox manifests: %s", e.message);
+            }
+            return null;
+        }
+
+        /**
          * Removes a record's manifest. Safe to call when it never existed.
          */
         public static void remove(string record_id) {

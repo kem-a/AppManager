@@ -213,6 +213,10 @@ namespace AppManager {
             // Revert a temporary executable bit and drop the scratch .home folder
             // when the user closes the window.
             this.close_request.connect(() => {
+                if (installing) {
+                    // A replace is not atomic: the old version is already uninstalled.
+                    return true;
+                }
                 if (downloading) {
                     download_cancel_requested();
                 }
@@ -642,6 +646,7 @@ namespace AppManager {
             Error? error = null;
             var sandbox = sandbox_choice();
 
+            app_ref.begin_job();
             new Thread<void>("appmgr-install", () => {
                 try {
                     if (existing_target != null) {
@@ -656,6 +661,7 @@ namespace AppManager {
             });
 
             yield;
+            app_ref.end_job();
 
             if (error != null) {
                 handle_install_failure(error.message, staged_dir_capture);
