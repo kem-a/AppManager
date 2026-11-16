@@ -291,6 +291,7 @@ namespace AppManager.Core {
             }
             rules.add_all(settings_portal_rules());
             rules.add_all(screen_lock_rules());
+            rules.add_all(idle_inhibit_rules());
             rules.add_all(app_menu_rules());
             rules.add_all(file_manager_rules());
 
@@ -317,7 +318,7 @@ namespace AppManager.Core {
          * Screen-lock state for every app: password managers such as Bitwarden lock
          * their vault when the screen locks. Reading the state and hearing it change,
          * plus GNOME's WakeUpScreen notice (Planify refreshes its day on it), never
-         * Lock, SetActive or idle inhibition.
+         * Lock or SetActive.
          */
         public static Gee.ArrayList<string> screen_lock_rules() {
             var rules = new Gee.ArrayList<string>();
@@ -327,6 +328,25 @@ namespace AppManager.Core {
                 rules.add("--broadcast=%s=%s.ActiveChanged@%s".printf(name, name, path));
             }
             rules.add("--broadcast=org.gnome.ScreenSaver=org.gnome.ScreenSaver.WakeUpScreen@/org/gnome/ScreenSaver");
+            return rules;
+        }
+
+        /**
+         * Idle inhibition for every app: without it the screen blanks and the laptop
+         * suspends during video playback (Plex tries both). Flatpak opens the Inhibit
+         * portal to every app as well. A portal lock ends with Request.Close on its
+         * handle or when the app leaves the bus.
+         */
+        public static Gee.ArrayList<string> idle_inhibit_rules() {
+            var rules = new Gee.ArrayList<string>();
+            const string screensaver = "org.freedesktop.ScreenSaver";
+            foreach (var member in new string[] { "Inhibit", "UnInhibit" }) {
+                rules.add("--call=%s=%s.%s@/org/freedesktop/ScreenSaver".printf(screensaver, screensaver, member));
+            }
+            const string portal = "org.freedesktop.portal.Desktop";
+            const string path = "/org/freedesktop/portal/desktop";
+            rules.add("--call=%s=org.freedesktop.portal.Inhibit.Inhibit@%s".printf(portal, path));
+            rules.add("--call=%s=org.freedesktop.portal.Request.Close@%s/request/*".printf(portal, path));
             return rules;
         }
 

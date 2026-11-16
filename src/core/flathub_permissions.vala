@@ -348,11 +348,9 @@ namespace AppManager.Core {
         }
 
         // Reached by every app through narrower --call rules that cover what apps use.
-        // org.freedesktop.ScreenSaver is not here: apps want it for Inhibit, which
-        // stays refused.
         private const string[] CALL_ONLY_NAMES = {
             "com.canonical.AppMenu.Registrar", "com.canonical.AppMenu.Registrar.*", "org.freedesktop.login1",
-            "org.gnome.ScreenSaver", "org.freedesktop.FileManager1"
+            "org.gnome.ScreenSaver", "org.freedesktop.ScreenSaver", "org.freedesktop.FileManager1"
         };
 
         // Desktop screenshot APIs that refuse third-party callers since 2021. Apps
