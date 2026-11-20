@@ -15,7 +15,6 @@
 set -eu
 
 CONTAINER_IMAGE="ghcr.io/pkgforge-dev/archlinux:latest"
-CONTAINER_NAME="appmanager-anylinux-build"
 
 # ── Container bootstrap ─────────────────────────────────────────────
 # If not running inside the Arch container, re-exec inside one.
@@ -43,20 +42,13 @@ if ! _inside_arch; then
         podman pull "$CONTAINER_IMAGE"
     fi
 
-    # Reuse an existing container if available, otherwise create one.
-    # This avoids re-downloading packages on every build.
-    if podman container exists "$CONTAINER_NAME" 2>/dev/null; then
-        echo "=== Reusing existing Arch container ($CONTAINER_NAME) ==="
-        exec podman start -ai "$CONTAINER_NAME"
-    else
-        echo "=== Creating Arch Linux container ($CONTAINER_NAME) ==="
-        exec podman run \
-            -v "$PWD":/src:Z \
-            -w /src \
-            --name "$CONTAINER_NAME" \
-            "$CONTAINER_IMAGE" \
-            sh scripts/make-anyimage.sh
-    fi
+    # Throwaway container, removed after the build so nothing is left behind.
+    echo "=== Building in a temporary Arch Linux container ==="
+    exec podman run --rm \
+        -v "$PWD":/src:Z \
+        -w /src \
+        "$CONTAINER_IMAGE" \
+        sh scripts/make-anyimage.sh
 fi
 
 # ── From here on we are inside Arch Linux ────────────────────────────
