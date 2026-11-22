@@ -281,7 +281,9 @@ namespace AppManager.Core {
                 size_t bytes_read;
                 stream.seek(offset, SeekType.SET);
                 stream.read_all(superblock, out bytes_read);
-                if (bytes_read < SQUASHFS_SUPERBLOCK_SIZE) {
+                if (bytes_read < SQUASHFS_SUPERBLOCK_SIZE ||
+                    superblock[0] != SQFS_MAGIC[0] || superblock[1] != SQFS_MAGIC[1] ||
+                    superblock[2] != SQFS_MAGIC[2] || superblock[3] != SQFS_MAGIC[3]) {
                     stream.close();
                     return offset;
                 }
@@ -302,17 +304,19 @@ namespace AppManager.Core {
 
                 int64 padding_start = offset + bytes_used;
                 int padding_len = (int)(payload_offset - padding_start);
-                uint8[] padding = new uint8[padding_len];
-                stream.seek(padding_start, SeekType.SET);
-                stream.read_all(padding, out bytes_read);
-                if (bytes_read < padding_len) {
-                    stream.close();
-                    return offset;
-                }
-                for (int i = 0; i < padding_len; i++) {
-                    if (padding[i] != 0) {
+                if (padding_len > 0) {
+                    uint8[] padding = new uint8[padding_len];
+                    stream.seek(padding_start, SeekType.SET);
+                    stream.read_all(padding, out bytes_read);
+                    if (bytes_read < padding_len) {
                         stream.close();
                         return offset;
+                    }
+                    for (int i = 0; i < padding_len; i++) {
+                        if (padding[i] != 0) {
+                            stream.close();
+                            return offset;
+                        }
                     }
                 }
 
