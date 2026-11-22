@@ -964,6 +964,11 @@ x-scheme-handler/https=app-manager-open-uri.desktop
                     dev_bind_try(node, node);
                 }
             }
+            // NVIDIA 560+ treats its kernel module as not loaded unless
+            // /sys/module/<name>/initstate is readable. Likely cause of #217.
+            foreach (var module in list_dev_nodes("nvidia", "/sys/module")) {
+                ro_bind_try(module, module);
+            }
         }
 
         private void add_camera() {
@@ -1389,21 +1394,22 @@ x-scheme-handler/https=app-manager-open-uri.desktop
         }
 
         /**
-         * Existing /dev nodes whose name starts with `prefix`. Enumerated rather than
-         * guessed at so the command line only names hardware that is actually present.
+         * Existing entries of `parent` (/dev unless given) whose name starts with
+         * `prefix`. Enumerated rather than guessed at so the command line only names
+         * hardware that is actually present.
          */
-        private static Gee.ArrayList<string> list_dev_nodes(string prefix) {
+        private static Gee.ArrayList<string> list_dev_nodes(string prefix, string parent = "/dev") {
             var found = new Gee.ArrayList<string>();
             try {
-                var dir = Dir.open("/dev");
+                var dir = Dir.open(parent);
                 string? name;
                 while ((name = dir.read_name()) != null) {
                     if (name.has_prefix(prefix)) {
-                        found.add(Path.build_filename("/dev", name));
+                        found.add(Path.build_filename(parent, name));
                     }
                 }
             } catch (Error e) {
-                debug("Sandbox: cannot scan /dev: %s", e.message);
+                debug("Sandbox: cannot scan %s: %s", parent, e.message);
             }
             return found;
         }
