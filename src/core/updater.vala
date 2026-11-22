@@ -947,6 +947,20 @@ namespace AppManager.Core {
             record.content_length = message.response_headers.get_content_length();
         }
 
+        // No baseline yet (issue #234): a server file whose size differs from the
+        // installed AppImage is newer. Extracted installs have no file to compare.
+        private bool direct_size_differs(InstallationRecord record, Soup.Message message) {
+            var remote_size = message.response_headers.get_content_length();
+            if (remote_size <= 0 || record.installed_path == null) return false;
+            try {
+                var info = File.new_for_path(record.installed_path).query_info(
+                    "standard::type,standard::size", FileQueryInfoFlags.NONE);
+                return info.get_file_type() == FileType.REGULAR && info.get_size() != remote_size;
+            } catch (Error e) {
+                return false;
+            }
+        }
+
         private UpdateProbeResult probe_direct(InstallationRecord record, DirectUrlSource source, GLib.Cancellable? cancellable) {
             try {
                 var message = send_head(source.url, cancellable);
@@ -958,6 +972,9 @@ namespace AppManager.Core {
 
                 var stored_fingerprint = get_stored_fingerprint(record);
                 if (stored_fingerprint == null) {
+                    if (direct_size_differs(record, message)) {
+                        return new UpdateProbeResult(record, true, current_fingerprint);
+                    }
                     // First time: record baseline
                     store_fingerprint(record, message);
                     registry.persist(false);
@@ -989,6 +1006,14 @@ namespace AppManager.Core {
                 }
 
                 var stored_fingerprint = get_stored_fingerprint(record);
+                if (stored_fingerprint == null && !direct_size_differs(record, message)) {
+                    // Same rule as probe_direct, so a check and an update agree.
+                    store_fingerprint(record, message);
+                    registry.persist(false);
+                    record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                    log_update_event(record, "SKIP", "baseline recorded");
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), current_fingerprint, UpdateSkipReason.ALREADY_CURRENT);
+                }
                 if (stored_fingerprint != null && stored_fingerprint == current_fingerprint) {
                     record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
                     log_update_event(record, "SKIP", "fingerprint unchanged");

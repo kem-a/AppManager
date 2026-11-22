@@ -748,7 +748,9 @@ namespace AppManager {
             
             var restore_update_button = create_restore_button(record.custom_update_link != null);
             restore_update_button.clicked.connect(() => {
+                var old_link = record.get_effective_update_link();
                 record.custom_update_link = null;
+                forget_direct_baseline(old_link);
                 update_row.text = record.original_update_link ?? "";
                 persist_record_and_refresh_desktop();
                 restore_update_button.set_visible(false);
@@ -785,6 +787,7 @@ namespace AppManager {
                 row.text = new_val;
             }
             
+            var old_link = record.get_effective_update_link();
             var original_val = record.original_update_link ?? "";
             if (new_val == original_val) {
                 record.custom_update_link = null;
@@ -793,8 +796,16 @@ namespace AppManager {
             } else {
                 record.custom_update_link = new_val;
             }
+            forget_direct_baseline(old_link);
             persist_record_and_refresh_desktop();
             restore_button.set_visible(record.custom_update_link != null);
+        }
+
+        // The stored Last-Modified/Content-Length describe the old address (issue #234).
+        private void forget_direct_baseline(string? old_link) {
+            if (record.get_effective_update_link() == old_link) return;
+            record.last_modified = null;
+            record.content_length = 0;
         }
 
         private Adw.EntryRow build_webpage_row() {
