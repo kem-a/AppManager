@@ -1781,6 +1781,7 @@ namespace AppManager {
             advanced_group.title = _("App Settings");
             advanced_group.add(build_name_row());
             advanced_group.add(build_keywords_row());
+            advanced_group.add(build_categories_row());
             advanced_group.add(build_icon_row());
             advanced_group.add(build_wmclass_row());
             advanced_group.add(build_version_row());
@@ -2249,6 +2250,21 @@ namespace AppManager {
                 () => record.original_keywords,
                 () => record.custom_keywords,
                 (v) => { record.custom_keywords = v; }
+            );
+        }
+
+        private Adw.EntryRow build_categories_row() {
+            // Installed before Categories were tracked: the file still holds the bundled value.
+            if (record.original_categories == null && record.custom_categories == null) {
+                record.original_categories = new DesktopEntry(record.desktop_file).categories ?? "";
+            }
+            return build_customizable_entry_row(
+                _("Categories"),
+                "view-grid-symbolic",
+                () => record.get_effective_categories(),
+                () => record.original_categories,
+                () => record.custom_categories,
+                (v) => { record.custom_categories = v; }
             );
         }
 

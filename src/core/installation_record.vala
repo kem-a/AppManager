@@ -73,6 +73,8 @@ namespace AppManager.Core {
         public string? original_commandline_args { get; set; }
         public string[]? original_env_vars { get; set; }
         public string? original_keywords { get; set; }
+        // Null: installed before Categories were tracked, "": the bundle ships none.
+        public string? original_categories { get; set; }
         public string? original_icon_name { get; set; }
         public string? original_startup_wm_class { get; set; }
         public string? original_update_link { get; set; }
@@ -94,6 +96,7 @@ namespace AppManager.Core {
         public string? custom_name { get; set; }
         public string? custom_commandline_args { get; set; }
         public string? custom_keywords { get; set; }
+        public string? custom_categories { get; set; }
         public string? custom_icon_name { get; set; }
         public string? custom_startup_wm_class { get; set; }
         public string? custom_update_link { get; set; }
@@ -316,6 +319,10 @@ namespace AppManager.Core {
             return get_effective(custom_keywords, original_keywords);
         }
 
+        public string? get_effective_categories() {
+            return get_effective(custom_categories, original_categories);
+        }
+
         public string? get_effective_icon_name() {
             return get_effective(custom_icon_name, original_icon_name);
         }
@@ -341,6 +348,7 @@ namespace AppManager.Core {
                    custom_name != null ||
                    custom_commandline_args != null ||
                    custom_keywords != null ||
+                   custom_categories != null ||
                    custom_icon_name != null ||
                    custom_startup_wm_class != null ||
                    custom_update_link != null ||
@@ -429,6 +437,10 @@ namespace AppManager.Core {
             put_array(builder, "original_sub_env_vars", original_sub_env_vars);
             builder.set_member_name("original_keywords");
             builder.add_string_value(original_keywords ?? "");
+            if (original_categories != null) {
+                builder.set_member_name("original_categories");
+                builder.add_string_value(original_categories);
+            }
             builder.set_member_name("original_icon_name");
             builder.add_string_value(original_icon_name ?? "");
             builder.set_member_name("original_startup_wm_class");
@@ -524,6 +536,10 @@ namespace AppManager.Core {
             if (custom_keywords != null) {
                 builder.set_member_name("custom_keywords");
                 builder.add_string_value(custom_keywords);
+            }
+            if (custom_categories != null) {
+                builder.set_member_name("custom_categories");
+                builder.add_string_value(custom_categories);
             }
             if (custom_icon_name != null) {
                 builder.set_member_name("custom_icon_name");
@@ -803,6 +819,9 @@ namespace AppManager.Core {
             record.original_sub_env_vars = read_array(obj, "original_sub_env_vars");
             var original_keywords = obj.get_string_member_with_default("original_keywords", "");
             record.original_keywords = original_keywords == "" ? null : original_keywords;
+            if (obj.has_member("original_categories")) {
+                record.original_categories = obj.get_string_member("original_categories");
+            }
             var original_icon_name = obj.get_string_member_with_default("original_icon_name", "");
             record.original_icon_name = original_icon_name == "" ? null : original_icon_name;
             var original_startup_wm_class = obj.get_string_member_with_default("original_startup_wm_class", "");
@@ -883,6 +902,9 @@ namespace AppManager.Core {
             if (obj.has_member("custom_keywords")) {
                 record.custom_keywords = obj.get_string_member("custom_keywords");
             }
+            if (obj.has_member("custom_categories")) {
+                record.custom_categories = obj.get_string_member("custom_categories");
+            }
             if (obj.has_member("custom_icon_name")) {
                 record.custom_icon_name = obj.get_string_member("custom_icon_name");
             }
@@ -933,6 +955,9 @@ namespace AppManager.Core {
             }
             if (custom_keywords == null && obj.has_member("custom_keywords")) {
                 custom_keywords = obj.get_string_member("custom_keywords");
+            }
+            if (custom_categories == null && obj.has_member("custom_categories")) {
+                custom_categories = obj.get_string_member("custom_categories");
             }
             if (custom_icon_name == null && obj.has_member("custom_icon_name")) {
                 custom_icon_name = obj.get_string_member("custom_icon_name");

@@ -492,6 +492,7 @@ namespace AppManager.Core {
                 record.custom_name = old_record.custom_name;
                 record.custom_commandline_args = old_record.custom_commandline_args;
                 record.custom_keywords = old_record.custom_keywords;
+                record.custom_categories = old_record.custom_categories;
                 record.custom_icon_name = old_record.custom_icon_name;
                 record.custom_startup_wm_class = old_record.custom_startup_wm_class;
                 record.custom_update_link = old_record.custom_update_link;
@@ -1044,6 +1045,7 @@ namespace AppManager.Core {
                 // Extract original values from desktop entry
                 var original_icon_name = desktop_entry.icon;
                 var original_keywords = desktop_entry.keywords;
+                var original_categories = desktop_entry.categories;
                 var original_startup_wm_class = desktop_entry.startup_wm_class;
                 var original_homepage = desktop_entry.appimage_homepage;
                 var original_update_url = desktop_entry.appimage_update_url;
@@ -1105,6 +1107,7 @@ namespace AppManager.Core {
                 // Store original values temporarily in record for get_effective_* methods to work
                 record.original_icon_name = icon_name_for_desktop;
                 record.original_keywords = original_keywords;
+                record.original_categories = original_categories ?? "";
                 record.original_startup_wm_class = original_startup_wm_class ?? fallback_startup_wm_class;
                 record.original_commandline_args = original_exec_args;
                 record.original_update_link = original_update_url;
@@ -1539,6 +1542,11 @@ namespace AppManager.Core {
             
             // Update Keywords
             entry.keywords = (effective_keywords != null && effective_keywords.strip() != "") ? effective_keywords : null;
+
+            // Unknown original (installed before Categories were tracked): keep the file's value.
+            if (record.custom_categories != null || record.original_categories != null) {
+                entry.categories = record.get_effective_categories();
+            }
             
             // Update NoDisplay: terminal apps are always hidden; otherwise honor user override
             // (custom_no_display) or fall back to whatever the bundled .desktop ships with.
