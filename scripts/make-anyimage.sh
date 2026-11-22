@@ -228,7 +228,9 @@ for domain in gtk40 glib20 libadwaita; do
 done
 
 # ── Create AppImage ─────────────────────────────────────────────────
-"$QS" --make-appimage
+# Metadata sidecar lets SquashFS-only tools like libappimage read the
+# desktop entry and icon (issue #233). Needs appimagetool >= 0.6.
+SQUASHFS_METADATA_SIDECAR=1 "$QS" --make-appimage
 
 # ── Clean up intermediate artifacts ─────────────────────────────────
 rm -rf "$APPDIR"
