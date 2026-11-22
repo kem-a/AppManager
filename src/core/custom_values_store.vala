@@ -243,7 +243,7 @@ namespace AppManager.Core {
                 generator.set_root(builder.get_root());
                 generator.set_pretty(true);
                 var json = generator.to_data(null);
-                FileUtils.set_contents(store_file.get_path(), json);
+                AppManager.Utils.FileUtils.write_json_file(store_file.get_path(), json);
             } catch (Error e) {
                 warning("Failed to save custom values: %s", e.message);
             }

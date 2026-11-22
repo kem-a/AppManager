@@ -183,6 +183,14 @@ namespace AppManager.Utils {
             GLib.FileUtils.set_contents(path, content);
         }
 
+        // Json.Parser rejects a whole file over one invalid UTF-8 byte, so keep the last good one.
+        public static void write_json_file(string path, string json) throws Error {
+            if (!json.validate()) {
+                throw new FileError.INVAL("Refusing to write invalid UTF-8 to %s".printf(path));
+            }
+            GLib.FileUtils.set_contents(path, json);
+        }
+
         public static string read_text_file_or_empty(string path) {
             string data = "";
             size_t length = 0;

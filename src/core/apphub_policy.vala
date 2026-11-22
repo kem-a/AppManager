@@ -416,7 +416,7 @@ namespace AppManager.Core {
                         node.set_object(object);
                         var generator = new Json.Generator();
                         generator.set_root(node);
-                        GLib.FileUtils.set_contents(cache_path, generator.to_data(null));
+                        AppManager.Utils.FileUtils.write_json_file(cache_path, generator.to_data(null));
                     } catch (Error e) {
                         debug("Could not cache AppHub discovery: %s", e.message);
                     }

@@ -2256,7 +2256,9 @@ namespace AppManager {
         private Adw.EntryRow build_categories_row() {
             // Installed before Categories were tracked: the file still holds the bundled value.
             if (record.original_categories == null && record.custom_categories == null) {
-                record.original_categories = new DesktopEntry(record.desktop_file).categories ?? "";
+                // Keep the entry alive: on a temporary, Vala frees it before `??` copies the value.
+                var entry = new DesktopEntry(record.desktop_file);
+                record.original_categories = entry.categories ?? "";
             }
             return build_customizable_entry_row(
                 _("Categories"),

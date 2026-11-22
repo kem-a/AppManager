@@ -712,7 +712,7 @@ namespace AppManager.Core {
                 generator.set_root(builder.get_root());
                 generator.set_pretty(true);
                 var json = generator.to_data(null);
-                FileUtils.set_contents(registry_file.get_path(), json);
+                AppManager.Utils.FileUtils.write_json_file(registry_file.get_path(), json);
             } catch (Error e) {
                 warning("Failed to save registry: %s", e.message);
             }

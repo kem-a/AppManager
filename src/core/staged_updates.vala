@@ -116,7 +116,7 @@ namespace AppManager.Core {
                 var generator = new Json.Generator();
                 generator.set_root(builder.get_root());
                 generator.set_pretty(true);
-                generator.to_file(file_path);
+                AppManager.Utils.FileUtils.write_json_file(file_path, generator.to_data(null));
                 debug("Saved %d staged update(s) to %s", staged.size, file_path);
             } catch (Error e) {
                 warning("Failed to save staged updates: %s", e.message);
