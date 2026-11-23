@@ -1,3 +1,5 @@
+# <img width="48" height="48" alt="com github AppManager" src="https://github.com/user-attachments/assets/879952cc-d0b3-48c8-aa35-1132c7423fe0" /> AppManager
+
 <!-- Core project info -->
 [![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/kem-a/AppManager/releases/latest)
 [![Release](https://img.shields.io/github/v/release/kem-a/AppManager?semver)](https://github.com/kem-a/AppManager/releases/latest)
@@ -6,8 +8,6 @@
 ![GTK 4](https://img.shields.io/badge/GTK-4-blue?logo=gtk)
 ![Vala](https://img.shields.io/badge/Vala-compiler-blue?logo=vala)
 [![Stars](https://img.shields.io/github/stars/kem-a/AppManager?style=social)](https://github.com/kem-a/AppManager/stargazers)
-
-# <img width="48" height="48" alt="com github AppManager" src="https://github.com/user-attachments/assets/879952cc-d0b3-48c8-aa35-1132c7423fe0" /> AppManager
 
 **AppManager** is a GTK/Libadwaita developed desktop utility in **Vala** that makes installing and uninstalling AppImages on Linux desktop painless. It supports both SquashFS and DwarFS AppImage formats, features a seamless background **auto-update** process, and leverages **zsync** delta updates for efficient bandwidth usage. Double-click any `.AppImage` to open a macOS-style drag-and-drop window, just drag to install and AppManager will move the app, wire up desktop entries, and copy icons.
 
@@ -28,23 +28,17 @@ AppManager doesn't require FUSE to run, thanks to the [uruntime](https://github.
 - **Desktop integration**: Extracts the bundled `.desktop` file via `unsquashfs` or `dwarfsextract`, rewrites `Exec` and `Icon`, and stores it in `~/.local/share/applications`.
 - **Simple uninstall**: Right click in app drawer and choose `Move to Trash`, can uninstall in AppManager or simply delete from `~/Applications` folder.
 - **One-click installs from the web**: Registers the `x-scheme-handler/appimg` handler, so an `appimg://install?url=…&sha256=…` link downloads the AppImage over HTTPS and verifies the supplied SHA-256 and size. Downloads matching [AppHub](https://xlc-dev.github.io/apphub/)'s catalog receive the app's sandbox template; other downloads use your normal installation defaults.
-- **App library**: The main window lists installed apps with search, sorting and list or grid views. Changing the install folder in Preferences moves the installed apps along.
-- **Update sources**: zsync delta updates from the AppImage's embedded update info, GitHub and GitLab releases (optionally including pre-releases), or a plain download link checked for changes.
-- **Update progress**: Apps update in parallel, each with its own progress ring that follows the download, delta downloads included. A running check or update can be cancelled.
-- **Background app updates**: Optional automatic update checks with configurable interval (daily, weekly, monthly), notifications when updates are found, and optional automatic installs. Each run is written to an update log.
+- **App updates**: Update apps directly from source, GitHub, GitLab or direct links. Zsync delta updates are supported. Set to update automatically per schedule: Daily/Weekly/Monthly.
 - **Per-app customization**: Rename an app, change its icon, keywords or `StartupWMClass`, add launch arguments and environment variables, hide it from the app drawer, or add it to `$PATH`. These settings survive updates.
-- **GitHub authentication**: Enable **Preferences → GitHub → GitHub token settings** and optionally store a GitHub personal access token to raise the API rate limit from 60 to 5,000 requests per hour and update apps from private repositories. **Test** displays the original rate-limit format: **Token is valid — remaining / limit requests remaining**. The expander's enable switch is persistent: turning it off prevents use of both the saved token and the `GITHUB_TOKEN` / `GH_TOKEN` environment fallback, while retaining the credential for later. Public updates can continue without authentication. For private repositories, use a fine-grained token with repository access and Contents (read) permission, or a classic token with the `repo` scope; organization SSO authorization may also be required. Private updates use full release-asset downloads, including when the AppImage embeds zsync update information; public delta updates are unchanged. The token is kept in the system keyring (GNOME Keyring, KWallet, KeePassXC) when a Secret Service is available, and otherwise in an AES-256-GCM blob bound to the machine and user account, so a synced or copied config file is useless elsewhere.
-- **Submit apps to AppHub**: In **Preferences → AppHub submissions**, turn on **Enable AppImage submission to AppHub** (off by default), then save and test a dedicated classic GitHub token with `public_repo` scope. This single switch controls submission functionality; actions become available once the token is verified. Turning it off disables authenticated AppHub requests, cancels pending verification/submission work, and hides submission actions; re-enabling requires token verification again. This token is stored separately using the same keyring/encrypted fallback mechanism; it is used only for the AppHub workflow. Updates continue using the existing GitHub token, which can remain a read-only fine-grained token for your private repositories. Saving, clearing, or testing either token does not change the other, and an update token is never automatically copied or used as an AppHub fallback. Apps with a supported HTTPS update URL gain a **Submit to AppHub** navigation row directly below **App Updates** in app details. The row opens the submission form in the same window, with Back navigation to return to app details. Review the AppStream identity, metadata source, origin, sandbox v1 requirements, and optional architecture filename patterns. The sandbox policy is prefilled from the app's AppManager permissions (network, audio, display, files, devices, and proxied D-Bus services); grants AppHub sandbox v1 cannot express, such as AT-SPI accessibility, dynamic tray names, security keys, and custom folders, are listed for review. AppManager checks public release availability, existing AppHub manifests, and open pull requests before creating a single-manifest PR through your fork. Matching identities from another publisher require AppHub maintainer review. Submission history is discovered on GitHub, so duplicate checks also work after a reinstall without a local history file. A direct AppImage or zsync URL alone is insufficient; supported sources are GitHub, GitLab.com, Codeberg, and public AppHub JSON release feeds with `.json` URLs. AppHub CI performs the complete catalog validation and maintainers decide whether to accept the listing. Manifests are committed in AppHub's Prettier layout (2-space indentation, print width 100, trailing newline) so its format check passes.
+- **GitHub authentication**: Optionally store a GitHub personal access token to raise the API rate limit from 60 to 5,000 requests per hour and update apps from private repositories.
+- **Submit apps to AppHub**: Allows to submit apps to [AppHub](https://xlc-dev.github.io/apphub/) (off by default, enable in preferences. Requires classic GitHub token with `public_repo` scope).
 - **Per-app sandboxing**: Give each app a private home and control its access to personal files, network, sound, devices and desktop services. Choose a preset, customize permissions, or use an AppHub template. See the [sandboxing guide](sandboxing/README.md).
 
 ## Sandboxing
 
-Run portable AppImages with a private home and configurable access to your files,
-network, devices and desktop services. Choose **Standard** or **Strict** in an
-app's **Privacy & Security** settings, or use its AppHub template.
+Run portable AppImages with a private home and configurable access to your files, network, devices and desktop services. Choose **Standard** or **Strict** in an app's **Privacy & Security** settings, or use its AppHub template.
 
-See the [sandboxing guide](sandboxing/README.md) for setup, profiles, requirements
-and known limitations.
+See the [sandboxing guide](sandboxing/README.md) for setup, profiles, requirements and known limitations.
 
 ## Requirements
 
