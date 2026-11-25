@@ -1222,6 +1222,12 @@ x-scheme-handler/https=app-manager-open-uri.desktop
                     add2("--ro-bind", socket, dest);
                     setenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=%s".printf(dest));
                 }
+                // GSettings uses dconf here. dconf flags a rewritten database in
+                // $XDG_RUNTIME_DIR/dconf; behind the private runtime dir the app never
+                // sees the flag and keeps reading the copy it opened at start, so even
+                // its own writes revert. Nothing new: the full bus reaches dconf anyway.
+                var dconf = Path.build_filename(runtime_base, "dconf");
+                add2("--bind-try", dconf, dconf);
             } else if (session_bus_socket != null) {
                 var dest = Path.build_filename(runtime_base, "bus");
                 bind_bus_socket(session_bus_socket, dest);
