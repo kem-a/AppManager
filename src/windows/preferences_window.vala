@@ -198,6 +198,13 @@ namespace AppManager {
 
             updates_group.add(auto_check_expander);
 
+            var default_updates_row = new Adw.SwitchRow();
+            default_updates_row.title = _("Enable updates by default");
+            default_updates_row.subtitle = _("Newly installed apps start with app updates on");
+            default_updates_row.add_prefix(new Gtk.Image.from_icon_name("emblem-ok-symbolic"));
+            settings.bind("default-updates-enabled", default_updates_row, "active", GLib.SettingsBindFlags.DEFAULT);
+            updates_group.add(default_updates_row);
+
             // Thumbnails group
             var thumbnails_group = new Adw.PreferencesGroup();
             thumbnails_group.title = _("Thumbnails");

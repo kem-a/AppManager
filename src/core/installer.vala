@@ -509,6 +509,9 @@ namespace AppManager.Core {
                     record.apphub_policy_customized = true;
                 }
                 // Note: original_* values will be updated from the new AppImage's .desktop
+            } else {
+                // Issue #239. A saved choice from history overrides this later.
+                record.updates_enabled = settings.get_boolean("default-updates-enabled");
             }
             // Note: For fresh installs, history is applied in finalize_desktop_and_icon()
             // after the app name is resolved from the .desktop file

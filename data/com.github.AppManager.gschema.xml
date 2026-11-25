@@ -121,6 +121,11 @@
       <summary>Sandbox newly installed apps by default</summary>
       <description>When enabled, new installations outside AppHub start on the Standard sandbox profile. AppHub downloads use their verified store template. Existing apps are never changed by this setting.</description>
     </key>
+    <key name="default-updates-enabled" type="b">
+      <default>false</default>
+      <summary>Enable app updates for newly installed apps</summary>
+      <description>When enabled, new installations start with app updates on. When disabled, they start off and are never checked or updated until enabled per app. Upgrades and reinstalls keep their saved choice. Existing apps are never changed by this setting.</description>
+    </key>
     <key name="sandbox-global-dirs" type="as">
       <default>[]</default>
       <summary>Folders granted to every sandboxed app</summary>
