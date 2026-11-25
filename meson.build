@@ -1,5 +1,5 @@
 project('app-manager', ['vala', 'c'],
-  version: '4.0.0-beta6',
+  version: '4.0.0-beta7',
   meson_version: '>=0.64.0'
 )
 

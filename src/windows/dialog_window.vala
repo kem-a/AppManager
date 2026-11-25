@@ -85,7 +85,7 @@ namespace AppManager {
             }
         }
 
-        public Gtk.Button add_option(string response_id, string label, bool is_default = false) {
+        public Gtk.Button add_option(string response_id, string label, bool is_default = false, bool close_on_click = true) {
             if (!actions_initialized) {
                 body_box.append(action_box);
                 actions_initialized = true;
@@ -101,7 +101,9 @@ namespace AppManager {
             action_box.append(button);
             button.clicked.connect(() => {
                 option_selected(response_id);
-                this.close();
+                if (close_on_click) {
+                    this.close();
+                }
             });
             return button;
         }

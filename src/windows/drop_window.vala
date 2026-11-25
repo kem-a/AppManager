@@ -47,13 +47,8 @@ namespace AppManager {
         private bool installing = false;
         private bool install_prompt_visible = false;
         private bool install_completed = false;
-        // Tracks a temporary executable bit set by a standalone "run without installing"
-        // launch, so it can be reverted if the user closes the window without installing.
-        private bool exec_bit_added = false;
-        private uint32 original_file_mode = 0;
-        // True when the standalone launch created the .home folder, so closing the
-        // window can remove it again. A pre-existing folder is never touched.
-        private bool portable_home_created = false;
+        // Set by a "run without installing" launch, reverted when the window closes.
+        private StandaloneRun? standalone_run = null;
         private string resolved_app_name;
         private string? resolved_app_version = null;
         private bool is_terminal_app = false;
@@ -220,8 +215,9 @@ namespace AppManager {
                 if (downloading) {
                     download_cancel_requested();
                 }
-                restore_original_exec_state();
-                cleanup_portable_home();
+                if (standalone_run != null) {
+                    standalone_run.revert(install_completed);
+                }
                 if (context_popover != null) {
                     context_popover.unparent();
                     context_popover = null;
@@ -943,61 +939,10 @@ namespace AppManager {
             if (downloading || installing) {
                 return;
             }
-            try {
-                // Remember the original mode so we can revert if the user closes
-                // the window without installing (only if it was not already executable).
-                if (!exec_bit_added) {
-                    original_file_mode = Utils.FileUtils.get_file_mode(appimage_path);
-                    if ((original_file_mode & 0111) == 0) {
-                        exec_bit_added = true;
-                    }
-                }
-                Utils.FileUtils.ensure_executable(appimage_path);
-                ensure_portable_home();
-                string[] argv = { appimage_path };
-                Pid child_pid;
-                Process.spawn_async(null, argv, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out child_pid);
-                ChildWatch.add(child_pid, (pid, status) => {
-                    Process.close_pid(pid);
-                });
-            } catch (Error e) {
-                warning("Failed to run AppImage: %s", e.message);
+            if (standalone_run == null) {
+                standalone_run = new StandaloneRun(appimage_path);
             }
-        }
-
-        /**
-         * Creates the portable home folder next to the AppImage so a standalone
-         * launch writes there instead of the user's real $HOME. Removed again
-         * by cleanup_portable_home() when the window closes.
-         */
-        private void ensure_portable_home() {
-            var home_path = "%s.home".printf(appimage_path);
-            if (File.new_for_path(home_path).query_exists()) {
-                return;
-            }
-            if (DirUtils.create_with_parents(home_path, 0755) != 0) {
-                warning("Failed to create portable home %s", home_path);
-                return;
-            }
-            portable_home_created = true;
-        }
-
-        private void cleanup_portable_home() {
-            if (!portable_home_created) {
-                return;
-            }
-            portable_home_created = false;
-            Utils.FileUtils.remove_dir_recursive("%s.home".printf(appimage_path));
-        }
-
-        private void restore_original_exec_state() {
-            if (!exec_bit_added || install_completed) {
-                return;
-            }
-            if (!File.new_for_path(appimage_path).query_exists()) {
-                return;
-            }
-            Utils.FileUtils.set_file_mode(appimage_path, original_file_mode);
+            standalone_run.launch();
         }
 
         private string compute_window_title() {
@@ -1530,5 +1475,70 @@ namespace AppManager {
             return overlay;
         }
 
+    }
+
+    /**
+     * Runs an AppImage without installing it. revert() undoes the temporary
+     * executable bit and the scratch .home folder that launch() added.
+     */
+    public class StandaloneRun : Object {
+        private string path;
+        private bool exec_bit_added = false;
+        private uint32 original_file_mode = 0;
+        // A pre-existing .home folder is never touched.
+        private bool portable_home_created = false;
+
+        public StandaloneRun(string path) {
+            this.path = path;
+        }
+
+        public void launch() {
+            try {
+                if (!exec_bit_added) {
+                    original_file_mode = Utils.FileUtils.get_file_mode(path);
+                    if ((original_file_mode & 0111) == 0) {
+                        exec_bit_added = true;
+                    }
+                }
+                Utils.FileUtils.ensure_executable(path);
+                ensure_portable_home();
+                string[] argv = { path };
+                Pid child_pid;
+                Process.spawn_async(null, argv, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out child_pid);
+                ChildWatch.add(child_pid, (pid, status) => {
+                    Process.close_pid(pid);
+                });
+            } catch (Error e) {
+                warning("Failed to run AppImage: %s", e.message);
+            }
+        }
+
+        // keep_file_mode: the file became the installed app and must stay executable.
+        public void revert(bool keep_file_mode = false) {
+            if (portable_home_created) {
+                portable_home_created = false;
+                Utils.FileUtils.remove_dir_recursive("%s.home".printf(path));
+            }
+            if (!exec_bit_added || keep_file_mode) {
+                return;
+            }
+            if (!File.new_for_path(path).query_exists()) {
+                return;
+            }
+            Utils.FileUtils.set_file_mode(path, original_file_mode);
+        }
+
+        // Makes the launch write here instead of the user's real $HOME.
+        private void ensure_portable_home() {
+            var home_path = "%s.home".printf(path);
+            if (File.new_for_path(home_path).query_exists()) {
+                return;
+            }
+            if (DirUtils.create_with_parents(home_path, 0755) != 0) {
+                warning("Failed to create portable home %s", home_path);
+                return;
+            }
+            portable_home_created = true;
+        }
     }
 }

@@ -466,6 +466,8 @@ Examples:
             dialog.append_body(UiUtils.create_wrapped_label(name_markup, true));
 
             // Same buttons as the install prompt that follows, so the shape stays put.
+            var run_button = dialog.add_option("run", _("Run"), false, false);
+            run_button.set_sensitive(false);
             var install_button = dialog.add_option("install", _("Install"));
             install_button.set_sensitive(false);
             dialog.add_option("cancel", _("Cancel"), true);
@@ -757,10 +759,17 @@ Examples:
             dialog.append_body(UiUtils.create_wrapped_label(warning_markup, true));
             dialog.append_body(UiUtils.create_wrapped_label(_("Install the AppImage to add it to your applications."), false, true));
 
+            // Run keeps the dialog open so the app can still be installed afterwards.
+            dialog.add_option("run", _("Run"), false, false);
             dialog.add_option("install", _("Install"));
             dialog.add_option("cancel", _("Cancel"), true);
 
+            StandaloneRun? standalone_run = null;
             dialog.close_request.connect(() => {
+                // Install has already staged its copy, so reverting is safe here.
+                if (standalone_run != null) {
+                    standalone_run.revert();
+                }
                 release_drop_window_lock(appimage_path);
                 return false;
             });
@@ -768,6 +777,11 @@ Examples:
             dialog.option_selected.connect((response) => {
                 if (response == "install") {
                     quick_install_run(appimage_path, InstallMode.PORTABLE, null);
+                } else if (response == "run") {
+                    if (standalone_run == null) {
+                        standalone_run = new StandaloneRun(appimage_path);
+                    }
+                    standalone_run.launch();
                 }
             });
 
