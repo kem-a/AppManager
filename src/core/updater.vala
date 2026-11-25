@@ -76,6 +76,7 @@ namespace AppManager.Core {
         private const int MAX_PARALLEL_JOBS = 5;
         private const int MAX_ASSET_VERIFY_DEPTH = 3;
         private const int64 PROGRESS_INTERVAL_US = 250000;
+        private const int DIRECT_SLICE_SIZE = 64 * 1024;
         private static string? _system_arch = null;
 
         public Updater(InstallationRegistry registry, Installer installer, Soup.Session? http_session = null) {
@@ -947,17 +948,75 @@ namespace AppManager.Core {
             record.content_length = message.response_headers.get_content_length();
         }
 
-        // No baseline yet (issue #234): a server file whose size differs from the
-        // installed AppImage is newer. Extracted installs have no file to compare.
-        private bool direct_size_differs(InstallationRecord record, Soup.Message message) {
-            var remote_size = message.response_headers.get_content_length();
+        // No baseline yet (issue #234): a server file that differs from the installed
+        // AppImage is newer. Same-size files are compared by two Range slices: the
+        // payload start (SquashFS build time) and the tail (DwarFS metadata).
+        // Extracted installs have no file to compare.
+        private bool direct_file_differs(InstallationRecord record, string url, Soup.Message head,
+                                         GLib.Cancellable? cancellable) throws Error {
+            var remote_size = head.response_headers.get_content_length();
             if (remote_size <= 0 || record.installed_path == null) return false;
+            int64 size;
             try {
                 var info = File.new_for_path(record.installed_path).query_info(
                     "standard::type,standard::size", FileQueryInfoFlags.NONE);
-                return info.get_file_type() == FileType.REGULAR && info.get_size() != remote_size;
+                if (info.get_file_type() != FileType.REGULAR) return false;
+                size = info.get_size();
             } catch (Error e) {
                 return false;
+            }
+            if (size != remote_size) return true;
+
+            var payload = AppImageAssets.get_payload_offset(record.installed_path);
+            if (payload < 0 || payload >= size) payload = 0;
+            foreach (var start in new int64[] { payload, int64.max(0, size - DIRECT_SLICE_SIZE) }) {
+                var length = (int) int64.min(DIRECT_SLICE_SIZE, size - start);
+                var remote = fetch_direct_range(url, start, length, cancellable);
+                // No Range support: keep the baseline rule.
+                if (remote == null) return false;
+                var local = new uint8[length];
+                size_t read;
+                var stream = File.new_for_path(record.installed_path).read(cancellable);
+                stream.seek(start, SeekType.SET, cancellable);
+                stream.read_all(local, out read, cancellable);
+                stream.close(cancellable);
+                if (read != length || Memory.cmp(local, remote, length) != 0) return true;
+            }
+            return false;
+        }
+
+        // Returns null when the server ignores Range. Closing the stream early ends
+        // the transfer (HTTP/1 drops the connection, HTTP/2 resets the stream).
+        private uint8[]? fetch_direct_range(string url, int64 start, int length,
+                                            GLib.Cancellable? cancellable) throws Error {
+            var message = new Soup.Message("GET", url);
+            message.request_headers.set_range(start, start + length - 1);
+            // Ranges count encoded bytes, so ask for the file as stored.
+            message.request_headers.replace("Accept-Encoding", "identity");
+            message.request_headers.replace("User-Agent", user_agent);
+            var input = session.send(message, cancellable);
+            try {
+                var status = message.get_status();
+                if (status < 200 || status >= 300) {
+                    throw new GLib.IOError.FAILED("Range request failed (%u)".printf(status));
+                }
+                int64 first = -1, last = -1, total;
+                if (status != Soup.Status.PARTIAL_CONTENT
+                    || !message.response_headers.get_content_range(out first, out last, out total)
+                    || first != start || last != start + length - 1) {
+                    return null;
+                }
+                var data = new uint8[length];
+                size_t read;
+                input.read_all(data, out read, cancellable);
+                if (read != length) throw new GLib.IOError.FAILED("Range response was truncated");
+                return data;
+            } finally {
+                try {
+                    input.close(null);
+                } catch (Error e) {
+                    debug("Closing range response failed: %s", e.message);
+                }
             }
         }
 
@@ -972,7 +1031,7 @@ namespace AppManager.Core {
 
                 var stored_fingerprint = get_stored_fingerprint(record);
                 if (stored_fingerprint == null) {
-                    if (direct_size_differs(record, message)) {
+                    if (direct_file_differs(record, source.url, message, cancellable)) {
                         return new UpdateProbeResult(record, true, current_fingerprint);
                     }
                     // First time: record baseline
@@ -1006,7 +1065,7 @@ namespace AppManager.Core {
                 }
 
                 var stored_fingerprint = get_stored_fingerprint(record);
-                if (stored_fingerprint == null && !direct_size_differs(record, message)) {
+                if (stored_fingerprint == null && !direct_file_differs(record, source.url, message, cancellable)) {
                     // Same rule as probe_direct, so a check and an update agree.
                     store_fingerprint(record, message);
                     registry.persist(false);
@@ -1023,9 +1082,17 @@ namespace AppManager.Core {
                 record_downloading(record);
 
                 var download = download_file(record, source.url, cancellable);
-                record_installing(record);
                 InstallationRecord? new_record = null;
                 try {
+                    // The server still has the installed build (issue #234): keep it as the baseline.
+                    if (Utils.FileUtils.compute_checksum(download.file_path) == record.source_checksum) {
+                        store_fingerprint(record, message);
+                        registry.persist(false);
+                        record_skipped(record, UpdateSkipReason.ALREADY_CURRENT);
+                        log_update_event(record, "SKIP", "download matches installed file");
+                        return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), current_fingerprint, UpdateSkipReason.ALREADY_CURRENT);
+                    }
+                    record_installing(record);
                     // Verify identity before installing
                     var verify_error = verify_appimage_identity(download.file_path, record);
                     if (verify_error != null) {
