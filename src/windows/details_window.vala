@@ -488,13 +488,11 @@ namespace AppManager {
 
             open_box.append(open_button);
             open_box.append(launch_spinner);
-            info_box.append(open_box);
 
-            header_box.append(info_box);
-
-            // AppHub page in the card's top-right corner. Its own column, so a long
-            // name wraps before it. Records from before the page URL was stored link
-            // to AppHub's front page.
+            // AppHub page at the card's bottom-right, on the Open line: beside the
+            // title it would cost a long name its single line (the page is width
+            // capped). Records from before the page URL was stored link to AppHub's
+            // front page.
             if (record.apphub_id != null) {
                 var page = record.apphub_page_url ?? Core.AppHubPolicy.SITE_URL;
                 var apphub_content = new Adw.ButtonContent();
@@ -503,13 +501,18 @@ namespace AppManager {
                 var apphub_button = new Gtk.Button();
                 apphub_button.child = apphub_content;
                 apphub_button.tooltip_text = page;
-                apphub_button.valign = Gtk.Align.START;
+                apphub_button.hexpand = true;
+                apphub_button.halign = Gtk.Align.END;
                 apphub_button.margin_end = 12;
                 apphub_button.clicked.connect(() => UiUtils.open_url(page));
+                open_box.append(apphub_button);
+                open_box.set_halign(Gtk.Align.FILL);
                 header_box.set_halign(Gtk.Align.FILL);
                 info_box.set_hexpand(true);
-                header_box.append(apphub_button);
             }
+            info_box.append(open_box);
+
+            header_box.append(info_box);
 
             var header_row = new Adw.PreferencesRow();
             header_row.set_activatable(false);
@@ -1863,6 +1866,9 @@ namespace AppManager {
             row.activated.connect(() => {
                 var page = build_advanced_settings_page();
                 var main_win = (MainWindow) this.get_root();
+                // A pushed page takes the focus the old page held, which lands a click
+                // in the first entry (App Name). Keyboard users keep that.
+                if (!main_win.focus_visible) main_win.set_focus(null);
                 main_win.push_page(page);
             });
             return row;
@@ -1891,13 +1897,6 @@ namespace AppManager {
 
             var nav_page = new Adw.NavigationPage(toolbar, _("Advanced Settings"));
             drop_focus_on_empty_click(nav_page);
-            nav_page.shown.connect(() => {
-                GLib.Idle.add(() => {
-                    var win = nav_page.get_root() as Gtk.Window;
-                    if (win != null) win.set_focus(null);
-                    return GLib.Source.REMOVE;
-                });
-            });
             return nav_page;
         }
 
