@@ -1444,7 +1444,7 @@ Examples:
                         var trash_msg = _("%s moved to Trash").printf(app_name);
                         var toast = ((MainWindow)parent_window).add_toast_with_button(trash_msg, _("Undo"));
                         toast.button_clicked.connect(() => {
-                            restore_from_trash(trash_path, parent_window);
+                            restore_from_trash(trash_path, record, parent_window);
                         });
                     } else {
                         ((MainWindow)parent_window).add_toast(_("%s moved to Trash").printf(app_name));
@@ -1453,18 +1453,22 @@ Examples:
             }
         }
 
-        private void restore_from_trash(string trash_path, Gtk.Window? parent_window) {
-            restore_from_trash_async.begin(trash_path, parent_window);
+        private void restore_from_trash(string trash_path, InstallationRecord record, Gtk.Window? parent_window) {
+            restore_from_trash_async.begin(trash_path, record, parent_window);
         }
 
-        private async void restore_from_trash_async(string trash_path, Gtk.Window? parent_window) {
+        private async void restore_from_trash_async(string trash_path, InstallationRecord record, Gtk.Window? parent_window) {
             SourceFunc callback = restore_from_trash_async.callback;
             Error? error = null;
 
             begin_job();
             new Thread<void>("appmgr-restore", () => {
                 try {
-                    var restored = installer.install(trash_path);
+                    // The same file gets its old record back, AppHub template and badge
+                    // included. A fresh install would apply only the defaults.
+                    bool same_file = record.mode == InstallMode.PORTABLE
+                        && Utils.FileUtils.compute_checksum(trash_path) == record.source_checksum;
+                    var restored = same_file ? installer.restore(trash_path, record) : installer.install(trash_path);
                     var restored_path = restored.installed_path;
                     if (restored_path != null && restored_path.strip() != "") {
                         restore_trashed_portable_folder("%s.home".printf(restored_path));
