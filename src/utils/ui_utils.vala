@@ -25,6 +25,17 @@ namespace AppManager.Utils {
             return image;
         }
 
+        // Checkmark for the bottom-right corner of an app icon: installed from AppHub.
+        public static Gtk.Image apphub_badge(int pixel_size) {
+            var image = new Gtk.Image.from_icon_name("verify-ok");
+            image.pixel_size = pixel_size;
+            image.halign = Gtk.Align.END;
+            image.valign = Gtk.Align.END;
+            image.tooltip_text = _("From AppHub");
+            image.update_property(Gtk.AccessibleProperty.LABEL, _("From AppHub"), -1);
+            return image;
+        }
+
         private static Gee.HashMap<string, Gdk.Paintable> get_texture_cache() {
             if (texture_cache == null) {
                 texture_cache = new Gee.HashMap<string, Gdk.Paintable>();

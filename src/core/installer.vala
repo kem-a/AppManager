@@ -518,6 +518,9 @@ namespace AppManager.Core {
             if (policy != null) {
                 record.apphub_id = policy.app_id;
                 record.apphub_policy = policy.json;
+                record.apphub_developer = policy.developer;
+                record.apphub_developer_url = policy.developer_url;
+                record.apphub_page_url = policy.page_url;
             }
 
             bool is_upgrade = (old_record != null);

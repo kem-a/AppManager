@@ -45,6 +45,10 @@ namespace AppManager.Core {
         public string? apphub_id { get; set; }
         public string? apphub_policy { get; set; }
         public bool apphub_policy_customized { get; set; default = false; }
+        // AppHub's developer name and link, and the app's AppHub page, shown on the details page.
+        public string? apphub_developer { get; set; }
+        public string? apphub_developer_url { get; set; }
+        public string? apphub_page_url { get; set; }
         // The Flathub app matching this one, once looked up; the Flathub profile needs it.
         public string? flathub_id { get; set; }
         public bool flathub_checked { get; set; default = false; }
@@ -267,6 +271,9 @@ namespace AppManager.Core {
             apphub_id                   = other.apphub_id;
             apphub_policy               = other.apphub_policy;
             apphub_policy_customized    = other.apphub_policy_customized;
+            apphub_developer            = other.apphub_developer;
+            apphub_developer_url        = other.apphub_developer_url;
+            apphub_page_url             = other.apphub_page_url;
             flathub_id                  = other.flathub_id;
             flathub_checked             = other.flathub_checked;
             flathub_notice              = other.flathub_notice;
@@ -401,6 +408,12 @@ namespace AppManager.Core {
             builder.set_member_name("apphub_policy");
             builder.add_string_value(apphub_policy ?? "");
             put_bool(builder, "apphub_policy_customized", apphub_policy_customized);
+            builder.set_member_name("apphub_developer");
+            builder.add_string_value(apphub_developer ?? "");
+            builder.set_member_name("apphub_developer_url");
+            builder.add_string_value(apphub_developer_url ?? "");
+            builder.set_member_name("apphub_page_url");
+            builder.add_string_value(apphub_page_url ?? "");
             builder.set_member_name("flathub_id");
             builder.add_string_value(flathub_id ?? "");
             put_bool(builder, "flathub_checked", flathub_checked);
@@ -779,6 +792,12 @@ namespace AppManager.Core {
             var apphub_policy = obj.get_string_member_with_default("apphub_policy", "");
             record.apphub_policy = apphub_policy == "" ? null : apphub_policy;
             record.apphub_policy_customized = read_bool(obj, "apphub_policy_customized", false);
+            var apphub_developer = obj.get_string_member_with_default("apphub_developer", "");
+            record.apphub_developer = apphub_developer == "" ? null : apphub_developer;
+            var apphub_developer_url = obj.get_string_member_with_default("apphub_developer_url", "");
+            record.apphub_developer_url = apphub_developer_url == "" ? null : apphub_developer_url;
+            var apphub_page_url = obj.get_string_member_with_default("apphub_page_url", "");
+            record.apphub_page_url = apphub_page_url == "" ? null : apphub_page_url;
             var flathub_id = obj.get_string_member_with_default("flathub_id", "");
             record.flathub_id = flathub_id == "" ? null : flathub_id;
             record.flathub_checked = read_bool(obj, "flathub_checked", false);

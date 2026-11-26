@@ -715,8 +715,11 @@ namespace AppManager {
                     row.update_property(Gtk.AccessibleProperty.DESCRIPTION, subtitle, -1);
                 }
                 row.add_prefix(text_box);
+                var icon_overlay = new Gtk.Overlay();
+                icon_overlay.set_child(icon_image);
+                if (record.apphub_id != null) icon_overlay.add_overlay(UiUtils.apphub_badge(16));
                 // add_prefix prepends, so add the icon last to keep it first.
-                row.add_prefix(icon_image);
+                row.add_prefix(icon_overlay);
 
                 // Make row activatable to show detail page
                 row.activatable = true;
@@ -813,6 +816,9 @@ namespace AppManager {
                 update_dot.set_valign(Gtk.Align.END);
                 update_dot.set_tooltip_text(_("Update available"));
                 overlay.add_overlay(update_dot);
+            } else if (record.apphub_id != null) {
+                // Same corner as the update state, which takes precedence while shown.
+                overlay.add_overlay(UiUtils.apphub_badge(24));
             }
             cell_box.tooltip_text = failed_update_keys.get(state_key);
 

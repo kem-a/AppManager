@@ -13,9 +13,13 @@ namespace AppManager.Core {
     /** A validated AppHub template bound to a catalog application and artifact. */
     public class AppHubPolicy : Object {
         public const string API_BASE = "https://xlc-dev.github.io/apphub/api/v1/";
+        public const string SITE_URL = "https://xlc-dev.github.io/apphub/";
         public string app_id { get; private set; }
         public string json { get; private set; }
         public string? sha256 { get; private set; }
+        public string? developer { get; private set; }
+        public string? developer_url { get; private set; }
+        public string? page_url { get; private set; }
         private Json.Object policy;
 
         private AppHubPolicy(string app_id, Json.Node? node) throws Error {
@@ -297,9 +301,37 @@ namespace AppManager.Core {
                 object_value(app, "sandbox");
                 var result = new AppHubPolicy(string_value(app, "id"), app.get_member("sandbox"));
                 result.sha256 = sha256;
+                read_developer(app, result);
+                result.page_url = read_page_url(app);
                 return result;
             }
             return null;
+        }
+
+        // Display only, so a missing or malformed entry never fails an install.
+        private static void read_developer(Json.Object app, AppHubPolicy result) {
+            try {
+                var developer = object_value(app, "developer");
+                var name = string_value(developer, "name").strip();
+                if (name == "") return;
+                result.developer = name;
+                var url = string_value(developer, "url").strip();
+                var scheme = Uri.peek_scheme(url);
+                if (scheme == "https" || scheme == "http") result.developer_url = url;
+            } catch (Error e) {
+                // Keeps whatever was read before the bad field.
+            }
+        }
+
+        // webUrl is site-relative ("/apphub/apps/pinta/"). Only a page on AppHub's
+        // own site is kept; resolving removes any "../" first.
+        private static string? read_page_url(Json.Object app) {
+            try {
+                var url = Uri.resolve_relative(API_BASE, string_value(app, "webUrl"), UriFlags.NONE);
+                return url.has_prefix(SITE_URL + "apps/") ? url : null;
+            } catch (Error e) {
+                return null;
+            }
         }
 
         private static string fetch_https(Soup.Session session, string resource, Cancellable? cancellable) throws Error {
