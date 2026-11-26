@@ -923,9 +923,22 @@ namespace AppManager {
             }
             // A download sits in a temp dir, so show where it came from instead.
             var location = download_policy != null ? _("AppHub") : (download_url ?? Path.get_dirname(appimage_path));
-            var info_window = new AppImageInfoWindow(app_ref, this, appimage_path, location,
+            var info_window = new AppImageInfoWindow(app_ref, this, appimage_path, location, compute_origin(),
                 resolved_app_name, resolved_app_version, metadata, app_icon.get_paintable());
             info_window.present();
+        }
+
+        // Where the AppImage is published, as its update info declares it, else the
+        // download link when it reduces to a GitHub/GitLab project.
+        private string? compute_origin() {
+            var origin = Updater.normalize_update_url(metadata.update_info);
+            // normalize_update_url returns input it cannot reduce unchanged.
+            var scheme = origin != null ? Uri.peek_scheme(origin) : null;
+            if (scheme == "https" || scheme == "http") {
+                return origin;
+            }
+            origin = Updater.normalize_update_url(download_url);
+            return origin != download_url ? origin : null;
         }
 
         private void copy_appimage_to_clipboard() {

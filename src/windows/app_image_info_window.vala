@@ -11,8 +11,9 @@ namespace AppManager {
         private AppImageMetadata metadata;
 
         // location: where the AppImage came from (folder, download URL or "AppHub").
+        // origin: where it is published (project or site), null when unknown.
         public AppImageInfoWindow(Application app, Gtk.Window parent, string appimage_path,
-                                  string location, string app_name, string? app_version,
+                                  string location, string? origin, string app_name, string? app_version,
                                   AppImageMetadata metadata, Gdk.Paintable? icon) {
             Object(application: app,
                 transient_for: parent,
@@ -23,10 +24,10 @@ namespace AppManager {
                 destroy_with_parent: true);
             this.appimage_path = appimage_path;
             this.metadata = metadata;
-            build_ui(location, app_name, app_version, icon);
+            build_ui(location, origin, app_name, app_version, icon);
         }
 
-        private void build_ui(string location, string app_name, string? app_version, Gdk.Paintable? icon) {
+        private void build_ui(string location, string? origin, string app_name, string? app_version, Gdk.Paintable? icon) {
             var toolbar_view = new Adw.ToolbarView();
             content = toolbar_view;
 
@@ -81,6 +82,7 @@ namespace AppManager {
             general.margin_top = 12;
             general.add(make_row(_("File"), Path.get_basename(appimage_path)));
             general.add(make_row(_("Location"), location));
+            general.add(make_row(_("Origin"), origin ?? _("Unknown")));
             general.add(make_row(_("Size"), UiUtils.format_size(query_file_size())));
             general.add(make_row(_("Type"), format_label()));
             general.add(make_row(_("Architecture"), metadata.architecture ?? _("Unknown")));
