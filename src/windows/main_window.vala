@@ -1587,6 +1587,33 @@ namespace AppManager {
             add_toast(_("Pending updates cleared"));
         }
 
+        // Per-app clear from the details page. A failed update stays pending,
+        // so its failure badge goes too.
+        private void clear_pending_update(InstallationRecord record) {
+            var key = record_state_key(record);
+            if (update_state == UpdateWorkflowState.CHECKING
+                || update_state == UpdateWorkflowState.UPDATING
+                || updating_records.has_key(key)
+                || single_update_cancellables.has_key(key)) {
+                add_toast(_("Updates already running"));
+                return;
+            }
+            if (!pending_update_keys.contains(key)) {
+                return;
+            }
+
+            pending_update_keys.remove(key);
+            failed_update_keys.unset(key);
+            update_indicators.unset(key);
+            staged_updates.remove(record.id);
+            staged_updates.save();
+
+            update_global_update_state_from_pending();
+            refresh_installations();
+            sync_details_window_state(record);
+            add_toast(_("Pending updates cleared"));
+        }
+
         private void setup_escape_controller() {
             if (root_page == null) {
                 return;
@@ -2679,6 +2706,9 @@ namespace AppManager {
             });
             details_window.update_cancel_requested.connect((r) => {
                 cancel_app_update(r);
+            });
+            details_window.clear_update_requested.connect((r) => {
+                clear_pending_update(r);
             });
             details_window.check_update_requested.connect((r) => {
                 start_single_probe(r, details_window);

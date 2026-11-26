@@ -167,6 +167,7 @@ namespace AppManager {
         private ulong update_progress_changed_id = 0;
         private Gtk.Overlay? update_wrapper;
         private Gtk.Button? cancel_update_button;
+        private Gtk.Button? clear_update_button;
         private LeadingActionRow? actions_row;
         private bool cancel_pressed = false;
         private Gtk.Button? extract_button;
@@ -187,6 +188,7 @@ namespace AppManager {
         public signal void uninstall_requested(InstallationRecord record, bool permanently, bool preserve_portable);
         public signal void update_requested(InstallationRecord record);
         public signal void update_cancel_requested(InstallationRecord record);
+        public signal void clear_update_requested(InstallationRecord record);
         public signal void check_update_requested(InstallationRecord record);
         public signal void extract_requested(InstallationRecord record);
 
@@ -2427,6 +2429,22 @@ namespace AppManager {
                 request_cancel_update();
             });
 
+            // Same control as the main window's clear button, for this app only.
+            clear_update_button = new Gtk.Button.from_icon_name("edit-clear-all-symbolic");
+            clear_update_button.add_css_class("clear-updates-button");
+            clear_update_button.set_valign(Gtk.Align.CENTER);
+            clear_update_button.set_tooltip_text(_("Clear pending updates"));
+            clear_update_button.visible = false;
+            clear_update_button.clicked.connect(() => {
+                clear_update_requested(record);
+            });
+
+            // Stop and clear never show together, so they share the leading slot.
+            var leading_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            leading_box.set_valign(Gtk.Align.CENTER);
+            leading_box.append(cancel_update_button);
+            leading_box.append(clear_update_button);
+            leading_box.visible = false;
 
             // The same animated phase/progress badge used in the library.
             update_wrapper = new Gtk.Overlay();
@@ -2463,7 +2481,7 @@ namespace AppManager {
             row1.append(extract_button);
 
             actions_row = new LeadingActionRow(row1, update_button);
-            actions_row.set_leading(cancel_update_button);
+            actions_row.set_leading(leading_box);
             actions_box.append(actions_row);
             refresh_update_button();
 
@@ -2546,10 +2564,15 @@ namespace AppManager {
             if (!updating) {
                 cancel_pressed = false;
             }
+            bool show_clear = !loading && !updating && update_available;
             if (actions_row != null) {
-                actions_row.set_leading_visible(updating);
+                actions_row.set_leading_visible(updating || show_clear);
+            }
+            if (clear_update_button != null) {
+                clear_update_button.visible = show_clear;
             }
             if (cancel_update_button != null) {
+                cancel_update_button.visible = updating;
                 cancel_update_button.sensitive = updating && !installing && !cancel_pressed;
                 cancel_update_button.set_tooltip_text(installing ? _("Installation cannot be cancelled") : _("Cancel update"));
             }
