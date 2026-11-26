@@ -186,7 +186,10 @@ namespace AppManager {
         private string exec_path;
         private HashTable<string, string> desktop_props;
         private Gtk.Widget? header_icon = null;
-        
+        private Gtk.Image header_shield;
+        // Typed text not yet saved. Focus passing through a row is not an edit.
+        private bool unsaved_edits = false;
+
         public signal void uninstall_requested(InstallationRecord record, bool permanently, bool preserve_portable);
         public signal void update_requested(InstallationRecord record);
         public signal void update_cancel_requested(InstallationRecord record);
@@ -285,9 +288,29 @@ namespace AppManager {
         }
 
         private void persist_record_and_refresh_desktop() {
+            unsaved_edits = false;
             registry.update(record);
             installer.apply_record_customizations_to_desktop(record);
             refresh_apphub_action();
+            // Sandbox edits on this page save through here.
+            header_shield.visible = record.sandbox_enabled();
+        }
+
+        // Focus-leave / Enter of a text row. Rewrites nothing unless something was typed.
+        private void persist_unsaved_edits() {
+            if (unsaved_edits) persist_record_and_refresh_desktop();
+        }
+
+        private Gtk.Label header_link_label(string markup) {
+            var label = new Gtk.Label(null);
+            label.set_markup(markup);
+            label.set_xalign(0);
+            label.set_ellipsize(Pango.EllipsizeMode.END);
+            label.activate_link.connect((uri) => {
+                UiUtils.open_url(uri);
+                return true;
+            });
+            return label;
         }
 
         private void build_ui() {
@@ -357,8 +380,11 @@ namespace AppManager {
                 if (icon_image != null) {
                     icon_image.set_pixel_size(128);
                     header_icon = icon_image;
-                    icon_image.set_valign(Gtk.Align.START);
-                    header_box.append(icon_image);
+                    var icon_overlay = new Gtk.Overlay();
+                    icon_overlay.set_valign(Gtk.Align.START);
+                    icon_overlay.set_child(icon_image);
+                    if (record.apphub_id != null) icon_overlay.add_overlay(UiUtils.apphub_badge(32));
+                    header_box.append(icon_overlay);
                 }
             }
             
@@ -374,8 +400,24 @@ namespace AppManager {
             name_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR);
             name_label.set_xalign(0);
             name_label.set_valign(Gtk.Align.START);
-            info_box.append(name_label);
-            
+            // Sandbox shield before the name, as in the app list.
+            header_shield = UiUtils.sandbox_indicator();
+            header_shield.pixel_size = 24;
+            header_shield.visible = record.sandbox_enabled();
+            var name_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
+            name_box.append(header_shield);
+            name_box.append(name_label);
+            info_box.append(name_box);
+
+            // AppHub's developer, linked to their site as on AppHub's own page.
+            if (record.apphub_developer != null) {
+                var developer = Markup.escape_text(record.apphub_developer);
+                if (record.apphub_developer_url != null) {
+                    developer = "<a href=\"%s\">%s</a>".printf(Markup.escape_text(record.apphub_developer_url), developer);
+                }
+                info_box.append(header_link_label(Markup.escape_text(_("By %s")).printf(developer)));
+            }
+
             // App description: from record (metainfo/desktop), fallback to desktop Comment
             var app_description = desktop_props.get("Comment");
             if (app_description == null || app_description.strip() == "") {
@@ -435,9 +477,28 @@ namespace AppManager {
             open_box.append(open_button);
             open_box.append(launch_spinner);
             info_box.append(open_box);
-            
+
             header_box.append(info_box);
-            
+
+            // AppHub page in the card's top-right corner. Its own column, so a long
+            // name wraps before it. Records from before the page URL was stored link
+            // to AppHub's front page.
+            if (record.apphub_id != null) {
+                var page = record.apphub_page_url ?? Core.AppHubPolicy.SITE_URL;
+                var apphub_content = new Adw.ButtonContent();
+                apphub_content.label = _("AppHub");
+                apphub_content.icon_name = "external-link-symbolic";
+                var apphub_button = new Gtk.Button();
+                apphub_button.child = apphub_content;
+                apphub_button.tooltip_text = page;
+                apphub_button.valign = Gtk.Align.START;
+                apphub_button.margin_end = 12;
+                apphub_button.clicked.connect(() => UiUtils.open_url(page));
+                header_box.set_halign(Gtk.Align.FILL);
+                info_box.set_hexpand(true);
+                header_box.append(apphub_button);
+            }
+
             var header_row = new Adw.PreferencesRow();
             header_row.set_activatable(false);
             header_row.set_child(header_box);
@@ -571,11 +632,12 @@ namespace AppManager {
                     record.custom_commandline_args = new_val;
                 }
                 restore_exec_button.set_visible(record.custom_commandline_args != null);
+                unsaved_edits = true;
             });
             var exec_focus = new Gtk.EventControllerFocus();
-            exec_focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            exec_focus.leave.connect(() => { persist_unsaved_edits(); });
             exec_row.add_controller(exec_focus);
-            exec_row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
+            exec_row.entry_activated.connect(() => { persist_unsaved_edits(); });
             props_group.add(exec_row);
 
             return props_group;
@@ -755,7 +817,10 @@ namespace AppManager {
             update_row.title = _("Update Link");
             update_row.add_prefix(new Gtk.Image.from_icon_name("insert-link-symbolic"));
             update_row.text = record.get_effective_update_link() ?? "";
-            
+            // Own flag: the record only takes this text on commit, so a save from
+            // another row must not drop it.
+            bool link_edited = false;
+
             var restore_update_button = create_restore_button(record.custom_update_link != null);
             restore_update_button.clicked.connect(() => {
                 var old_link = record.get_effective_update_link();
@@ -763,26 +828,30 @@ namespace AppManager {
                 forget_direct_baseline(old_link);
                 update_row.text = record.original_update_link ?? "";
                 persist_record_and_refresh_desktop();
+                link_edited = false;
                 restore_update_button.set_visible(false);
                 sync_prerelease_visibility(prerelease_row, update_row.text);
             });
             update_row.add_suffix(restore_update_button);
-            
+
             // React to text changes in real-time for pre-release visibility
             update_row.changed.connect(() => {
+                link_edited = true;
                 sync_prerelease_visibility(prerelease_row, update_row.text);
             });
-            
+
             // Normalize URL when user leaves the entry or presses Enter
+            UpdateFunc commit_link = () => {
+                if (!link_edited) return;
+                apply_update_link_value(update_row, restore_update_button);
+                // Normalizing the text fires changed again.
+                link_edited = false;
+            };
             var focus_controller = new Gtk.EventControllerFocus();
-            focus_controller.leave.connect(() => {
-                apply_update_link_value(update_row, restore_update_button);
-            });
+            focus_controller.leave.connect(() => { commit_link(); });
             update_row.add_controller(focus_controller);
-            
-            update_row.entry_activated.connect(() => {
-                apply_update_link_value(update_row, restore_update_button);
-            });
+
+            update_row.entry_activated.connect(() => { commit_link(); });
             
             return update_row;
         }
@@ -847,11 +916,12 @@ namespace AppManager {
                 }
                 restore_webpage_button.set_visible(record.custom_web_page != null);
                 refresh_web_badge();
+                unsaved_edits = true;
             });
             var webpage_focus = new Gtk.EventControllerFocus();
-            webpage_focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            webpage_focus.leave.connect(() => { persist_unsaved_edits(); });
             webpage_row.add_controller(webpage_focus);
-            webpage_row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
+            webpage_row.entry_activated.connect(() => { persist_unsaved_edits(); });
             
             var open_web_button = new Gtk.Button.from_icon_name("external-link-symbolic");
             open_web_button.add_css_class("flat");
@@ -2057,12 +2127,13 @@ namespace AppManager {
                     }
                 }
                 record.custom_env_vars = new_env_vars.to_array();
+                unsaved_edits = true;
             };
 
             // Flush the current record to disk. Reads only the record (never the row widgets),
             // so it is safe to call from focus-leave even during window teardown.
             UpdateFunc flush_env_vars = () => {
-                persist_record_and_refresh_desktop();
+                persist_unsaved_edits();
             };
 
             // Create a row for a single env var
@@ -2228,11 +2299,12 @@ namespace AppManager {
                     set_custom(new_val);
                 }
                 restore_button.set_visible(get_custom() != null);
+                unsaved_edits = true;
             });
             var focus = new Gtk.EventControllerFocus();
-            focus.leave.connect(() => { persist_record_and_refresh_desktop(); });
+            focus.leave.connect(() => { persist_unsaved_edits(); });
             row.add_controller(focus);
-            row.entry_activated.connect(() => { persist_record_and_refresh_desktop(); });
+            row.entry_activated.connect(() => { persist_unsaved_edits(); });
 
             return row;
         }
@@ -2309,10 +2381,15 @@ namespace AppManager {
             version_row.text = record.version ?? "";
             // Update the record on each keystroke (in-memory), defer the .desktop file write to
             // focus-leave / Enter. The flush reads only the record, so it is safe during teardown.
+            // Own flag: a full save from another row does not write X-AppImage-Version.
+            bool version_edited = false;
             version_row.changed.connect(() => {
                 record.version = version_row.text.strip() == "" ? null : version_row.text;
+                version_edited = true;
             });
             UpdateFunc flush_version = () => {
+                if (!version_edited) return;
+                version_edited = false;
                 registry.update(record);
                 installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
             };
