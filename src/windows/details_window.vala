@@ -207,6 +207,7 @@ namespace AppManager {
             
             build_ui();
             setup_shift_key_controller();
+            drop_focus_on_empty_click(this);
             GitHubAuth.get_apphub().changed.connect(refresh_apphub_action);
         }
 
@@ -299,6 +300,17 @@ namespace AppManager {
         // Focus-leave / Enter of a text row. Rewrites nothing unless something was typed.
         private void persist_unsaved_edits() {
             if (unsaved_edits) persist_record_and_refresh_desktop();
+        }
+
+        // GTK keeps an entry focused when a click lands on empty space. Drop it there,
+        // so the click ends the edit (and saves it). Clicks on widgets claim the event first.
+        private static void drop_focus_on_empty_click(Gtk.Widget page) {
+            var click = new Gtk.GestureClick();
+            click.pressed.connect(() => {
+                var win = page.get_root() as Gtk.Window;
+                if (win != null) win.set_focus(null);
+            });
+            page.add_controller(click);
         }
 
         private Gtk.Label header_link_label(string markup) {
@@ -724,7 +736,9 @@ namespace AppManager {
             toolbar.add_top_bar(new Adw.HeaderBar());
             toolbar.set_content(prefs_page);
 
-            return new Adw.NavigationPage(toolbar, _("App Updates"));
+            var nav_page = new Adw.NavigationPage(toolbar, _("App Updates"));
+            drop_focus_on_empty_click(nav_page);
+            return nav_page;
         }
         private Adw.PreferencesGroup build_update_info_group(Adw.SwitchRow enable_updates_row) {
             var update_group = new Adw.PreferencesGroup();
@@ -1876,6 +1890,7 @@ namespace AppManager {
             toolbar.set_content(prefs_page);
 
             var nav_page = new Adw.NavigationPage(toolbar, _("Advanced Settings"));
+            drop_focus_on_empty_click(nav_page);
             nav_page.shown.connect(() => {
                 GLib.Idle.add(() => {
                     var win = nav_page.get_root() as Gtk.Window;
