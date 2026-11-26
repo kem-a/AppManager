@@ -707,6 +707,13 @@ namespace AppManager {
                 var subtitle = build_row_subtitle(record);
                 if (subtitle != "") {
                     var subtitle_label = new Gtk.Label(subtitle);
+                    // The trailing "extracted" is bold: the details badge for it is plain.
+                    var extracted = _("extracted");
+                    if (record.mode == InstallMode.EXTRACTED && subtitle.has_suffix(extracted)) {
+                        subtitle_label.set_markup("%s<b>%s</b>".printf(
+                            Markup.escape_text(subtitle.substring(0, subtitle.length - extracted.length)),
+                            Markup.escape_text(extracted)));
+                    }
                     subtitle_label.xalign = 0;
                     subtitle_label.ellipsize = Pango.EllipsizeMode.END;
                     subtitle_label.add_css_class("subtitle");

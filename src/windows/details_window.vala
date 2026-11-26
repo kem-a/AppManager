@@ -488,28 +488,6 @@ namespace AppManager {
 
             open_box.append(open_button);
             open_box.append(launch_spinner);
-
-            // AppHub page at the card's bottom-right, on the Open line: beside the
-            // title it would cost a long name its single line (the page is width
-            // capped). Records from before the page URL was stored link to AppHub's
-            // front page.
-            if (record.apphub_id != null) {
-                var page = record.apphub_page_url ?? Core.AppHubPolicy.SITE_URL;
-                var apphub_content = new Adw.ButtonContent();
-                apphub_content.label = _("AppHub");
-                apphub_content.icon_name = "external-link-symbolic";
-                var apphub_button = new Gtk.Button();
-                apphub_button.child = apphub_content;
-                apphub_button.tooltip_text = page;
-                apphub_button.hexpand = true;
-                apphub_button.halign = Gtk.Align.END;
-                apphub_button.margin_end = 12;
-                apphub_button.clicked.connect(() => UiUtils.open_url(page));
-                open_box.append(apphub_button);
-                open_box.set_halign(Gtk.Align.FILL);
-                header_box.set_halign(Gtk.Align.FILL);
-                info_box.set_hexpand(true);
-            }
             info_box.append(open_box);
 
             header_box.append(info_box);
@@ -527,13 +505,30 @@ namespace AppManager {
             
             var cards_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             cards_box.set_halign(Gtk.Align.CENTER);
-            
+
+            // AppHub page badge, clickable like the Web one. Records from before the
+            // page URL was stored link to AppHub's front page.
+            if (record.apphub_id != null) {
+                var page = record.apphub_page_url ?? Core.AppHubPolicy.SITE_URL;
+                var apphub_badge = new Gtk.Button();
+                apphub_badge.add_css_class("card");
+                apphub_badge.add_css_class("accent");
+                apphub_badge.set_valign(Gtk.Align.CENTER);
+                apphub_badge.set_tooltip_text(page);
+                var apphub_label = new Gtk.Label(_("AppHub"));
+                apphub_label.add_css_class("caption");
+                apphub_label.set_margin_start(8);
+                apphub_label.set_margin_end(8);
+                apphub_label.set_margin_top(6);
+                apphub_label.set_margin_bottom(6);
+                apphub_badge.set_child(apphub_label);
+                apphub_badge.clicked.connect(() => UiUtils.open_url(page));
+                cards_box.append(apphub_badge);
+            }
+
             // Install mode card
             var mode_button = new Gtk.Button();
             mode_button.add_css_class("card");
-            if (record.mode == InstallMode.EXTRACTED) {
-                mode_button.add_css_class("accent");
-            }
             mode_button.set_valign(Gtk.Align.CENTER);
             mode_button.set_tooltip_text(_("Show in Files"));
 
