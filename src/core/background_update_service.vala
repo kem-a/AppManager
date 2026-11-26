@@ -141,6 +141,12 @@ X-XDP-Autostart=com.github.AppManager
             return "%u".printf((uint) Posix.geteuid());
         }
 
+        // The daemon always runs as "<program path> --background-update": the
+        // AppImage (its runtime keeps that argv), the app-manager binary inside
+        // it, AppRun or a native install. A bare "--background-update" also
+        // matched any process mentioning it, such as a grep or an editor.
+        private const string DAEMON_PATTERN = "(^|/)[^/ ]+ --background-update$";
+
         /**
          * Kills any running background daemon.
          * Called when user disables auto-updates in preferences.
@@ -150,9 +156,7 @@ X-XDP-Autostart=com.github.AppManager
                 // Send SIGTERM (pkill's default) so the daemon runs its shutdown
                 // handler and exits cleanly, letting the AppImage runtime unmount
                 // its dwarfs mount. SIGKILL (-9) would orphan that mount in /tmp.
-                // Match just "--background-update" to avoid issues with path variations
-                // Use "--" to indicate end of options since pattern starts with "-"
-                string[] argv = { "pkill", "-f", "-u", current_uid(), "--", "--background-update" };
+                string[] argv = { "pkill", "-f", "-u", current_uid(), "--", DAEMON_PATTERN };
                 int exit_status;
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
                 debug("Stopped background daemon (exit status: %d)", exit_status);
@@ -188,7 +192,7 @@ X-XDP-Autostart=com.github.AppManager
             // outweighs a stale /tmp symlink that cleanup_stale() reaps next launch.
             warning("Background daemon did not terminate within 5 seconds; sending SIGKILL");
             try {
-                string[] argv = { "pkill", "-9", "-f", "-u", current_uid(), "--", "--background-update" };
+                string[] argv = { "pkill", "-9", "-f", "-u", current_uid(), "--", DAEMON_PATTERN };
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, null);
             } catch (SpawnError e) {
                 warning("Failed to force-kill background daemon: %s", e.message);
@@ -222,9 +226,7 @@ X-XDP-Autostart=com.github.AppManager
          */
         public static bool is_daemon_running() {
             try {
-                // Match just "--background-update" to avoid issues with path variations
-                // Use "--" to indicate end of options since pattern starts with "-"
-                string[] argv = { "pgrep", "-f", "-u", current_uid(), "--", "--background-update" };
+                string[] argv = { "pgrep", "-f", "-u", current_uid(), "--", DAEMON_PATTERN };
                 int exit_status;
                 Process.spawn_sync(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, out exit_status);
                 return exit_status == 0;
