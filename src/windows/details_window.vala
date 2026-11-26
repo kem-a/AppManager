@@ -1284,7 +1284,7 @@ namespace AppManager {
             UpdateFunc sync_imported_permissions = () => {
                 foreach (var row in imported_rows) imported_group.remove(row);
                 imported_rows.clear();
-                foreach (var rule in record.sandbox_session_rules ?? new string[0]) {
+                foreach (var rule in Core.SandboxConfig.additional_session_rules(record)) {
                     var row = new Adw.ActionRow();
                     row.title = rule;
                     row.subtitle = _("Session bus");
@@ -1422,7 +1422,7 @@ namespace AppManager {
                     record.sandbox_share_processes || record.sandbox_share_ipc || record.sandbox_system_bus == "full"
                     || (record.sandbox_allow_media_controls && record.sandbox_media_names != null && record.sandbox_media_names.length > 0)
                     || (record.sandbox_other_dirs != null && record.sandbox_other_dirs.length > 0)
-                    || (record.sandbox_session_rules != null && record.sandbox_session_rules.length > 0)
+                    || Core.SandboxConfig.additional_session_rules(record).length > 0
                     || (record.sandbox_system_rules != null && record.sandbox_system_rules.length > 0)
                     || (record.sandbox_extra_devices != null && record.sandbox_extra_devices.length > 0));
                 global_group.visible = show_permissions && global_dirs.length > 0;

@@ -295,6 +295,27 @@ namespace AppManager.Core {
             return false;
         }
 
+        /**
+         * Imported session rules worth listing as additional access. A legacy v1
+         * template spells the desktop baseline out as exact rules; those that the
+         * Notifications switch or the automatic tray and MPRIS grants already give
+         * are left out. Display only: the runtime grant is the same either way.
+         */
+        public static string[] additional_session_rules(InstallationRecord r) {
+            var list = new Gee.ArrayList<string>();
+            var media_names = SandboxIdentity.media_names_for(r);
+            foreach (var rule in r.sandbox_session_rules ?? new string[0]) {
+                int colon = rule.index_of_char(':');
+                var name = rule.substring(colon + 1);
+                bool talk = rule.has_prefix("see:") || rule.has_prefix("talk:");
+                if (talk && name == "org.freedesktop.Notifications" && service_enabled(r, "notifications")) continue;
+                if (talk && name == "org.kde.StatusNotifierWatcher" && r.sandbox_allow_tray) continue;
+                if (r.sandbox_allow_media_controls && name in media_names) continue;
+                list.add(rule);
+            }
+            return list.to_array();
+        }
+
         public static void set_service_access(InstallationRecord r, string service, bool allowed) {
             if (service == "media-controls" && (r.sandbox_media_names == null || r.sandbox_media_names.length == 0)) {
                 var names = new Gee.ArrayList<string>();
