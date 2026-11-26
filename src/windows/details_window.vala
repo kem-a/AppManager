@@ -2521,7 +2521,9 @@ namespace AppManager {
                 AppHubSource.parse(record.get_effective_update_link());
                 supported = true;
             } catch (Error e) { }
-            apphub_submission_row.visible = TokenStore.apphub_enabled() && GitHubAuth.get_apphub().ready && supported;
+            // Downloaded from AppHub (catalog-verified appimg:// install): already listed.
+            apphub_submission_row.visible = TokenStore.apphub_enabled() && GitHubAuth.get_apphub().ready && supported
+                && record.apphub_id == null;
         }
 
         private Gtk.Button create_restore_button(bool visible) {
