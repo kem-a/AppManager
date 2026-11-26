@@ -11,16 +11,19 @@ namespace AppManager.Core {
         public string record_id { get; set; }
         public string record_name { get; set; }
         public string? available_version { get; set; }
+        // Only a release version is shown to users; entries without the member are not.
+        public bool version_is_release { get; set; }
         public int64 discovered_at { get; set; }
         // Why the last attempt to install this update failed, shown as the
         // library's failure badge; null while the update is untried.
         public string? failure { get; set; }
 
-        public StagedUpdate(string record_id, string record_name, string? available_version) {
+        public StagedUpdate(string record_id, string record_name, string? available_version, bool version_is_release = false) {
             Object();
             this.record_id = record_id;
             this.record_name = record_name;
             this.available_version = available_version;
+            this.version_is_release = version_is_release;
             this.discovered_at = new GLib.DateTime.now_utc().to_unix();
         }
 
@@ -30,6 +33,7 @@ namespace AppManager.Core {
             this.record_name = obj.get_string_member_with_default("record_name", "");
             var version = obj.get_string_member_with_default("available_version", "");
             this.available_version = version.length > 0 ? version : null;
+            this.version_is_release = obj.get_boolean_member_with_default("version_is_release", false);
             this.discovered_at = obj.get_int_member_with_default("discovered_at", 0);
             var failure = obj.get_string_member_with_default("failure", "");
             this.failure = failure.length > 0 ? failure : null;
@@ -44,6 +48,8 @@ namespace AppManager.Core {
             builder.add_string_value(record_name);
             builder.set_member_name("available_version");
             builder.add_string_value(available_version ?? "");
+            builder.set_member_name("version_is_release");
+            builder.add_boolean_value(version_is_release);
             builder.set_member_name("discovered_at");
             builder.add_int_value(discovered_at);
             if (failure != null) {
@@ -126,8 +132,8 @@ namespace AppManager.Core {
         /**
          * Adds or updates a staged update for a record.
          */
-        public void add(string record_id, string record_name, string? available_version) {
-            staged.set(record_id, new StagedUpdate(record_id, record_name, available_version));
+        public void add(string record_id, string record_name, string? available_version, bool version_is_release = false) {
+            staged.set(record_id, new StagedUpdate(record_id, record_name, available_version, version_is_release));
         }
 
         /**

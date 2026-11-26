@@ -161,6 +161,8 @@ namespace AppManager {
         private bool update_loading = false;
         private bool update_updating = false;  // true when actually updating (vs just checking)
         private string? update_failure_message = null;  // non-null when last update failed
+        private string? incoming_version = null;  // release version of a pending update
+        private Gtk.Box? version_card;
         private Gtk.Button? update_button;
         private UpdateIndicator? update_indicator;
         private UpdateIndicatorState? update_progress_state;
@@ -221,6 +223,12 @@ namespace AppManager {
         public void set_update_available(bool available) {
             update_available = available;
             refresh_update_button();
+            refresh_version_card();
+        }
+
+        public void set_incoming_version(string? version) {
+            incoming_version = version;
+            refresh_version_card();
         }
 
         public void set_update_loading(bool loading) {
@@ -468,13 +476,13 @@ namespace AppManager {
             });
             cards_box.append(mode_button);
             
-            // Version card (only show if version is known)
-            if (record.version != null && record.version.strip() != "") {
-                var version_text = record.version.strip();
-                var version_card = create_info_card(version_text.get_char(0).isdigit() ? "v%s".printf(version_text) : version_text);
-                version_card.set_tooltip_text(_("App version"));
-                cards_box.append(version_card);
-            }
+            // Version card, with the incoming version while an update is pending
+            version_card = create_info_card("");
+            version_card.set_tooltip_text(_("App version"));
+            // Long tags on both sides must not widen the window.
+            ((Gtk.Label) version_card.get_first_child()).ellipsize = Pango.EllipsizeMode.MIDDLE;
+            cards_box.append(version_card);
+            refresh_version_card();
             
             // Size on disk card
             var size = calculate_installation_size(record);
@@ -2643,6 +2651,29 @@ namespace AppManager {
             }
 
             return Path.get_dirname(installed_path);
+        }
+
+        private void refresh_version_card() {
+            if (version_card == null) {
+                return;
+            }
+            var current = (record.version ?? "").strip();
+            var incoming = (incoming_version ?? "").strip();
+            var text = format_version(current);
+            if (update_available && incoming != "") {
+                // A tag left of the arrow matches a tag on the right (date-tagged weeklies).
+                var installed_tag = (record.zsync_release_tag ?? "").strip();
+                var left = installed_tag != "" ? installed_tag : current;
+                if (incoming != left) {
+                    text = "%s → %s".printf(format_version(left), format_version(incoming)).strip();
+                }
+            }
+            ((Gtk.Label) version_card.get_first_child()).label = text;
+            version_card.visible = text != "";
+        }
+
+        private static string format_version(string version) {
+            return version != "" && version.get_char(0).isdigit() ? "v%s".printf(version) : version;
         }
 
         private Gtk.Box create_info_card(string text) {

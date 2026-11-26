@@ -61,6 +61,9 @@ namespace AppManager.Core {
         // SHA-1 checksum from zsync file header - used for reliable update detection
         // when app filename has no version (e.g., zen-x86_64.AppImage)
         public string? zsync_sha1 { get; set; }
+
+        // Release tag a zsync update installed. Display only: no update check reads it.
+        public string? zsync_release_tag { get; set; }
         
         // size:mtime:inode of the portable AppImage when last read. A change means the
         // file was replaced outside AppManager, e.g. by the app's own updater (issue #219).
@@ -423,6 +426,10 @@ namespace AppManager.Core {
             if (zsync_sha1 != null && zsync_sha1.strip() != "") {
                 builder.set_member_name("zsync_sha1");
                 builder.add_string_value(zsync_sha1);
+            }
+            if (zsync_release_tag != null && zsync_release_tag.strip() != "") {
+                builder.set_member_name("zsync_release_tag");
+                builder.add_string_value(zsync_release_tag);
             }
             builder.set_member_name("file_fingerprint");
             builder.add_string_value(file_fingerprint ?? "");
@@ -804,6 +811,8 @@ namespace AppManager.Core {
                 var sha1 = obj.get_string_member("zsync_sha1");
                 record.zsync_sha1 = (sha1 != null && sha1.strip() != "") ? sha1 : null;
             }
+            var zsync_release_tag = obj.get_string_member_with_default("zsync_release_tag", "");
+            record.zsync_release_tag = zsync_release_tag == "" ? null : zsync_release_tag;
             var file_fingerprint = obj.get_string_member_with_default("file_fingerprint", "");
             record.file_fingerprint = file_fingerprint == "" ? null : file_fingerprint;
             

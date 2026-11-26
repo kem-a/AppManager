@@ -1709,7 +1709,8 @@ namespace AppManager {
                     pending_update_keys.add(record_state_key(result.record));
                     // Stage the update so it persists across app restarts
                     staged_updates.add(result.record.id, result.record.name,
-                        result.has_update ? result.available_version : kept.available_version);
+                        result.has_update ? result.available_version : kept.available_version,
+                        result.has_update ? result.version_is_release : kept.version_is_release);
                     available++;
                 }
                 sync_details_window_state(result.record);
@@ -2123,7 +2124,7 @@ namespace AppManager {
             if (result.has_update) {
                 pending_update_keys.add(key);
                 // Stage the update so it persists across app restarts
-                staged_updates.add(result.record.id, result.record.name, result.available_version);
+                staged_updates.add(result.record.id, result.record.name, result.available_version, result.version_is_release);
                 staged_updates.save();
             } else {
                 pending_update_keys.remove(key);
@@ -2157,6 +2158,7 @@ namespace AppManager {
             var key = record_state_key(record);
             var has_update = pending_update_keys.contains(key);
             active_details_window.set_update_available(has_update);
+            active_details_window.set_incoming_version(staged_release_version(record));
             if (failed_update_keys.has_key(key)) {
                 active_details_window.set_update_failed(failed_update_keys.get(key));
             } else {
@@ -2164,6 +2166,12 @@ namespace AppManager {
             }
             var indicator = update_indicators.get(key);
             active_details_window.set_update_progress(indicator != null ? indicator.status : null);
+        }
+
+        // The staged version for the details chip; null for fingerprints and checksums.
+        private string? staged_release_version(InstallationRecord record) {
+            var staged = staged_updates.get_for_record(record.id);
+            return staged != null && staged.version_is_release ? staged.available_version : null;
         }
 
         private enum UpdateWorkflowState {
@@ -2681,6 +2689,7 @@ namespace AppManager {
             var has_update = pending_update_keys.contains(key);
             var is_updating = updating_records.has_key(key);
             var details_window = new DetailsWindow(record, registry, installer, has_update);
+            details_window.set_incoming_version(staged_release_version(record));
             var indicator = update_indicators.get(key);
             details_window.set_update_progress(indicator != null ? indicator.status : null);
             if (is_updating) {

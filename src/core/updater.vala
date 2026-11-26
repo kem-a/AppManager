@@ -41,6 +41,8 @@ namespace AppManager.Core {
         public string? available_version { get; private set; }
         public UpdateSkipReason? skip_reason;
         public string? message { get; private set; }
+        // False when available_version is a fingerprint or checksum, not a release.
+        public bool version_is_release { get; set; default = true; }
 
         /**
          * The check got no answer for this app (no network, rate limit, bad reply).
@@ -1032,7 +1034,7 @@ namespace AppManager.Core {
                 var stored_fingerprint = get_stored_fingerprint(record);
                 if (stored_fingerprint == null) {
                     if (direct_file_differs(record, source.url, message, cancellable)) {
-                        return new UpdateProbeResult(record, true, current_fingerprint);
+                        return new UpdateProbeResult(record, true, current_fingerprint) { version_is_release = false };
                     }
                     // First time: record baseline
                     store_fingerprint(record, message);
@@ -1044,7 +1046,7 @@ namespace AppManager.Core {
                     return new UpdateProbeResult(record, false, current_fingerprint, UpdateSkipReason.ALREADY_CURRENT, _("Already up to date"));
                 }
 
-                return new UpdateProbeResult(record, true, current_fingerprint);
+                return new UpdateProbeResult(record, true, current_fingerprint) { version_is_release = false };
             } catch (Error e) {
                 if (!(e is IOError.CANCELLED)) {
                     warning("Failed to check direct update for %s: %s", record.name, e.message);
@@ -1816,7 +1818,9 @@ namespace AppManager.Core {
             }
 
             debug("probe_zsync[%s]: SHA-1 changed and versions not equal, update available", record.name ?? record.id);
-            return new UpdateProbeResult(record, true, remote_version ?? remote_sha1.substring(0, 8));
+            return new UpdateProbeResult(record, true, remote_version ?? remote_sha1.substring(0, 8)) {
+                version_is_release = remote_version != null && remote_version.strip() != ""
+            };
         }
 
         /**
@@ -1968,6 +1972,9 @@ namespace AppManager.Core {
                     if (new_record != null && remote_sha1 != null) {
                         new_record.zsync_sha1 = remote_sha1;
                     }
+                    if (new_record != null && new_version != null && new_version.strip() != "") {
+                        new_record.zsync_release_tag = new_version;
+                    }
                     
                     // Store version from GitHub API if installer didn't detect one
                     if (new_record != null && (new_record.version == null || new_record.version.strip() == "") &&
@@ -2065,6 +2072,9 @@ namespace AppManager.Core {
                 // Store SHA-1 from zsync header for future update checks
                 if (new_record != null && remote_sha1 != null) {
                     new_record.zsync_sha1 = remote_sha1;
+                }
+                if (new_record != null && new_version != null && new_version.strip() != "") {
+                    new_record.zsync_release_tag = new_version;
                 }
                 
                 // Store version from GitHub API if installer didn't detect one

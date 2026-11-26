@@ -328,7 +328,7 @@ X-XDP-Autostart=com.github.AppManager
             // Clear previous staged updates and add newly discovered ones
             staged_updates.clear();
             foreach (var staged in unknown) {
-                staged_updates.add(staged.record_id, staged.record_name, staged.available_version);
+                staged_updates.add(staged.record_id, staged.record_name, staged.available_version, staged.version_is_release);
             }
 
             foreach (var result in probe_results) {
@@ -338,7 +338,7 @@ X-XDP-Autostart=com.github.AppManager
                     app_names.add(app_name);
                     
                     // Stage the update so UI can display it
-                    staged_updates.add(result.record.id, app_name, result.available_version);
+                    staged_updates.add(result.record.id, app_name, result.available_version, result.version_is_release);
                     
                     log_debug("background update: update available for %s (version: %s)".printf(
                         app_name, result.available_version ?? "unknown"));

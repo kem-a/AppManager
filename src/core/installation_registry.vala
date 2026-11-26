@@ -394,6 +394,7 @@ namespace AppManager.Core {
                     // These describe the previous file.
                     record.last_release_tag = null;
                     record.zsync_sha1 = null;
+                    record.zsync_release_tag = null;
                     record.last_modified = null;
                     record.content_length = 0;
                 }
