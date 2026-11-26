@@ -552,7 +552,7 @@ Examples:
             } else {
                 if (link.sandbox_policy != null) appimg_policies.set(downloaded_path, link.sandbox_policy);
                 if (window != null) {
-                    window.download_completed(downloaded_path, link.sha256 != null || link.sandbox_policy != null, link.sandbox_policy);
+                    window.download_completed(downloaded_path, link.url, link.sha256 != null || link.sandbox_policy != null, link.sandbox_policy);
                 } else {
                     show_quick_install_dialog(downloaded_path, dialog);
                 }

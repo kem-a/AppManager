@@ -60,6 +60,7 @@ namespace AppManager {
         // Pending appimg:// download: progress on the icon, nothing installable yet.
         private bool downloading = false;
         private AppHubPolicy? download_policy;
+        private string? download_url = null;
         private Gtk.ProgressBar? download_progress = null;
         
         // Verification state tracking
@@ -154,9 +155,10 @@ namespace AppManager {
          * normal installer. A checksum matched during the download counts as
          * a successful verification.
          */
-        public void download_completed(string path, bool checksum_verified, AppHubPolicy? policy = null) {
+        public void download_completed(string path, string url, bool checksum_verified, AppHubPolicy? policy = null) {
             downloading = false;
             download_policy = policy;
+            download_url = url;
             appimage_path = path;
             clear_download_progress();
 
@@ -919,7 +921,9 @@ namespace AppManager {
             if (metadata == null) {
                 return;
             }
-            var info_window = new AppImageInfoWindow(app_ref, this, appimage_path,
+            // A download sits in a temp dir, so show where it came from instead.
+            var location = download_policy != null ? _("AppHub") : (download_url ?? Path.get_dirname(appimage_path));
+            var info_window = new AppImageInfoWindow(app_ref, this, appimage_path, location,
                 resolved_app_name, resolved_app_version, metadata, app_icon.get_paintable());
             info_window.present();
         }

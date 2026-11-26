@@ -10,8 +10,9 @@ namespace AppManager {
         private string appimage_path;
         private AppImageMetadata metadata;
 
+        // location: where the AppImage came from (folder, download URL or "AppHub").
         public AppImageInfoWindow(Application app, Gtk.Window parent, string appimage_path,
-                                  string app_name, string? app_version,
+                                  string location, string app_name, string? app_version,
                                   AppImageMetadata metadata, Gdk.Paintable? icon) {
             Object(application: app,
                 transient_for: parent,
@@ -22,10 +23,10 @@ namespace AppManager {
                 destroy_with_parent: true);
             this.appimage_path = appimage_path;
             this.metadata = metadata;
-            build_ui(app_name, app_version, icon);
+            build_ui(location, app_name, app_version, icon);
         }
 
-        private void build_ui(string app_name, string? app_version, Gdk.Paintable? icon) {
+        private void build_ui(string location, string app_name, string? app_version, Gdk.Paintable? icon) {
             var toolbar_view = new Adw.ToolbarView();
             content = toolbar_view;
 
@@ -79,7 +80,7 @@ namespace AppManager {
             general.title = _("General");
             general.margin_top = 12;
             general.add(make_row(_("File"), Path.get_basename(appimage_path)));
-            general.add(make_row(_("Location"), Path.get_dirname(appimage_path)));
+            general.add(make_row(_("Location"), location));
             general.add(make_row(_("Size"), UiUtils.format_size(query_file_size())));
             general.add(make_row(_("Type"), format_label()));
             general.add(make_row(_("Architecture"), metadata.architecture ?? _("Unknown")));
@@ -129,6 +130,8 @@ namespace AppManager {
         private Adw.ActionRow make_row(string title, string value) {
             var row = new Adw.ActionRow();
             row.title = title;
+            // Plain text: a URL query string carries '&'.
+            row.use_markup = false;
             row.subtitle = value;
             row.subtitle_selectable = true;
             row.add_css_class("property");
