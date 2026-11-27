@@ -1241,29 +1241,13 @@ namespace AppManager {
                 prefs_page.add(notice_group);
             }
 
-            // A separate mechanism from the sandbox, and listed first for that reason.
-            // It is an alternative rather than an addition: only the AppImage runtime
-            // reads these folders, and a sandboxed launch never runs it.
-            var portable_group = new Adw.PreferencesGroup();
-            portable_group.title = _("Portable folders");
-            portable_group.visible = supported;
-
-            var portable_home_row = new Adw.SwitchRow();
-            portable_home_row.title = _("Portable .home folder");
-            portable_home_row.subtitle = _("Store the app's home directory in a .home folder next to the AppImage");
-            portable_home_row.add_prefix(new Gtk.Image.from_icon_name("user-home-symbolic"));
-            portable_group.add(portable_home_row);
-
-            var portable_config_row = new Adw.SwitchRow();
-            portable_config_row.title = _("Portable .config folder");
-            portable_config_row.subtitle = _("Store the app's config in a .config folder next to the AppImage");
-            portable_config_row.add_prefix(new Gtk.Image.from_icon_name("emblem-system-symbolic"));
-            portable_group.add(portable_config_row);
-            prefs_page.add(portable_group);
-
             var profile_group = new Adw.PreferencesGroup();
             profile_group.title = _("Sandbox");
             profile_group.description = _("A sandboxed app gets its own home folder and cannot read the rest of yours. Standard keeps the network and sound working; Strict takes both away. Apps that need something you have not granted may fail to start or silently misbehave.");
+            // A separate string keeps the translations of the paragraph above.
+            if (supported) {
+                profile_group.description += " " + _("Portable .home and .config folders are available only while the sandbox is off. Turning it on moves their contents into the sandbox's home folder.");
+            }
 
             var profile_order = new Gee.ArrayList<string>();
             foreach (var profile in SANDBOX_PROFILE_ORDER) profile_order.add(profile);
@@ -1358,6 +1342,26 @@ namespace AppManager {
                 profile_group.add(source_row);
             }
             prefs_page.add(profile_group);
+
+            // An alternative to the sandbox, not an addition: only the AppImage runtime
+            // reads these folders and a sandboxed launch never runs it. Shown only with
+            // the sandbox off.
+            var portable_group = new Adw.PreferencesGroup();
+            portable_group.title = _("Portable folders");
+            portable_group.description = _("The AppImage runtime redirects the app's home and config into folders next to the AppImage, so its data travels with the file. A sandboxed app never runs that runtime, so this and the sandbox are alternatives.");
+
+            var portable_home_row = new Adw.SwitchRow();
+            portable_home_row.title = _("Portable .home folder");
+            portable_home_row.subtitle = _("Store the app's home directory in a .home folder next to the AppImage");
+            portable_home_row.add_prefix(new Gtk.Image.from_icon_name("user-home-symbolic"));
+            portable_group.add(portable_home_row);
+
+            var portable_config_row = new Adw.SwitchRow();
+            portable_config_row.title = _("Portable .config folder");
+            portable_config_row.subtitle = _("Store the app's config in a .config folder next to the AppImage");
+            portable_config_row.add_prefix(new Gtk.Image.from_icon_name("emblem-system-symbolic"));
+            portable_group.add(portable_config_row);
+            prefs_page.add(portable_group);
 
             var access_group = new Adw.PreferencesGroup();
             access_group.title = _("Access");
@@ -1667,14 +1671,7 @@ namespace AppManager {
                     || (record.sandbox_system_rules != null && record.sandbox_system_rules.length > 0)
                     || (record.sandbox_extra_devices != null && record.sandbox_extra_devices.length > 0));
                 global_group.visible = show_permissions && global_dirs.length > 0;
-
-                // Greyed rather than hidden while sandboxed, so the description can say
-                // where the data went.
-                bool sandboxed = record.sandbox_enabled();
-                portable_group.sensitive = !sandboxed;
-                portable_group.description = sandboxed
-                    ? _("Off while this app is sandboxed. The sandbox gives it a home folder of its own, and anything these folders held has been moved into that.")
-                    : _("The AppImage runtime redirects the app's home and config into folders next to the AppImage, so its data travels with the file. A sandboxed app never runs that runtime, so this and the sandbox are alternatives.");
+                portable_group.visible = supported && !record.sandbox_enabled();
             };
 
             CommitFunc commit = (permission_edit) => {
