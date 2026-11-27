@@ -107,6 +107,8 @@ namespace AppManager.Core {
         public string? custom_icon_name { get; set; }
         public string? custom_startup_wm_class { get; set; }
         public string? custom_update_link { get; set; }
+        // Filename glob for release sources that publish several AppImages per architecture.
+        public string? update_asset_pattern { get; set; }
         public string? custom_web_page { get; set; }
         // Boolean toggle overrides. Only set when the user deviates from the default,
         // so they survive updates. Stored as "true"/"false"; null means "use default".
@@ -362,6 +364,7 @@ namespace AppManager.Core {
                    custom_icon_name != null ||
                    custom_startup_wm_class != null ||
                    custom_update_link != null ||
+                   update_asset_pattern != null ||
                    custom_web_page != null ||
                    custom_no_display != null ||
                    custom_add_to_path != null ||
@@ -572,6 +575,10 @@ namespace AppManager.Core {
             if (custom_update_link != null) {
                 builder.set_member_name("custom_update_link");
                 builder.add_string_value(custom_update_link);
+            }
+            if (update_asset_pattern != null) {
+                builder.set_member_name("update_asset_pattern");
+                builder.add_string_value(update_asset_pattern);
             }
             if (custom_web_page != null) {
                 builder.set_member_name("custom_web_page");
@@ -995,6 +1002,9 @@ namespace AppManager.Core {
             }
             if (custom_update_link == null && obj.has_member("custom_update_link")) {
                 custom_update_link = obj.get_string_member("custom_update_link");
+            }
+            if (update_asset_pattern == null && obj.has_member("update_asset_pattern")) {
+                update_asset_pattern = obj.get_string_member("update_asset_pattern");
             }
             if (custom_web_page == null && obj.has_member("custom_web_page")) {
                 custom_web_page = obj.get_string_member("custom_web_page");

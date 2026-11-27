@@ -161,7 +161,7 @@ namespace AppManager.Core {
             UpdateProbeResult? result = null;
             try {
                 TlsSession.with_session(() => {
-                    result = probe_record(record, cancellable);
+                    result = probe_record(record, cancellable, true);
                 });
             } catch (Error e) {
                 warning("probe_single: TLS session error: %s", e.message);
@@ -215,7 +215,7 @@ namespace AppManager.Core {
          * Get system architecture (cached).
          * Returns: x86_64, aarch64, armv7l, etc.
          */
-        private static string get_system_arch() {
+        public static string get_system_arch() {
             if (_system_arch == null) {
                 try {
                     string stdout_buf;
@@ -250,11 +250,11 @@ namespace AppManager.Core {
         }
 
         /**
-         * Check if an asset name matches the system architecture.
+         * Check if an asset name matches the given architecture.
          */
-        private static bool matches_system_arch(string asset_name) {
+        private static bool matches_arch(string asset_name, string arch) {
             var name_lower = asset_name.down();
-            var patterns = get_arch_patterns(get_system_arch());
+            var patterns = get_arch_patterns(arch);
             
             foreach (var pattern in patterns) {
                 // Check for pattern with common separators: App-x86_64.AppImage, App_amd64.AppImage
@@ -382,7 +382,8 @@ namespace AppManager.Core {
         // Update Source Resolution
         // ─────────────────────────────────────────────────────────────────────
 
-        private UpdateSource? resolve_update_source(string update_url, string? record_version, bool include_prerelease = false, GLib.Cancellable? cancellable = null) throws Error {
+        private UpdateSource? resolve_update_source(string update_url, string? record_version, bool include_prerelease = false,
+                                                    GLib.Cancellable? cancellable = null, string? asset_pattern = null) throws Error {
             var resolved_zsync_source = resolve_zsync_source(update_url, include_prerelease, cancellable, record_version);
             if (resolved_zsync_source != null) {
                 return resolved_zsync_source;
@@ -393,12 +394,12 @@ namespace AppManager.Core {
                 return null;
             }
 
-            var github = GithubSource.parse(normalized, record_version);
+            var github = GithubSource.parse(normalized, record_version, asset_pattern);
             if (github != null) {
                 return github;
             }
 
-            var gitlab = GitlabSource.parse(normalized, record_version);
+            var gitlab = GitlabSource.parse(normalized, record_version, asset_pattern);
             if (gitlab != null) {
                 return gitlab;
             }
@@ -452,7 +453,7 @@ namespace AppManager.Core {
             }
             var update_url = read_update_url(record);
             if (update_url == null || update_url.strip() == "") return null;
-            return resolve_update_source(update_url, record.version, record.prerelease_enabled, cancellable);
+            return resolve_update_source(update_url, record.version, record.prerelease_enabled, cancellable, record.update_asset_pattern);
         }
 
         /**
@@ -697,7 +698,7 @@ namespace AppManager.Core {
         // Probe & Update Logic
         // ─────────────────────────────────────────────────────────────────────
 
-        private UpdateProbeResult probe_record(InstallationRecord record, GLib.Cancellable? cancellable) {
+        private UpdateProbeResult probe_record(InstallationRecord record, GLib.Cancellable? cancellable, bool strict = false) {
             installer.refresh_from_file(record);
             try {
                 var source = resolve_record_source(record, cancellable);
@@ -724,7 +725,13 @@ namespace AppManager.Core {
 
                 var asset = select_appimage_asset(release.assets);
                 if (asset == null) {
-                    return new UpdateProbeResult(record, false, release.version, UpdateSkipReason.MISSING_ASSET, _("No matching AppImage found for %s").printf(get_system_arch()));
+                    return new UpdateProbeResult(record, false, release.version, UpdateSkipReason.MISSING_ASSET, missing_asset_message(release_source));
+                }
+                // Only the Test button reports this here. Scheduled checks still find the
+                // update, and the update itself then fails with the reason and a badge.
+                var ambiguity = strict ? asset_ambiguity(release, release_source.asset_pattern, get_system_arch()) : null;
+                if (ambiguity != null) {
+                    return new UpdateProbeResult(record, false, release.version, null, ambiguity);
                 }
 
                 var latest = release.version;
@@ -810,11 +817,20 @@ namespace AppManager.Core {
                     return new UpdateResult(record, UpdateStatus.SKIPPED, _("Already up to date"), latest, UpdateSkipReason.ALREADY_CURRENT);
                 }
 
-                var candidates = select_appimage_assets(release.assets);
+                int top;
+                var candidates = select_appimage_assets(release.assets, get_system_arch(), out top);
                 if (candidates.size == 0) {
                     record_skipped(record, UpdateSkipReason.MISSING_ASSET);
                     log_update_event(record, "SKIP", "no matching AppImage for " + get_system_arch());
-                    return new UpdateResult(record, UpdateStatus.SKIPPED, _("No matching AppImage found for %s").printf(get_system_arch()), latest, UpdateSkipReason.MISSING_ASSET);
+                    return new UpdateResult(record, UpdateStatus.SKIPPED, missing_asset_message(release_source), latest, UpdateSkipReason.MISSING_ASSET);
+                }
+                // Builds of the same app pass the identity check alike, so the first one
+                // would be installed silently (Bitwarden bit- and oss-).
+                var ambiguity = asset_ambiguity(release, release_source.asset_pattern, get_system_arch());
+                if (ambiguity != null) {
+                    record_failed(record, ambiguity);
+                    log_update_event(record, "FAILED", ambiguity);
+                    return new UpdateResult(record, UpdateStatus.FAILED, ambiguity, latest);
                 }
 
                 // Try candidates up to MAX_ASSET_VERIFY_DEPTH, verifying identity
@@ -1144,7 +1160,8 @@ namespace AppManager.Core {
          *   3. Single AppImage (if only one exists)
          */
         private ReleaseAsset? select_appimage_asset(ArrayList<ReleaseAsset> assets) {
-            var ranked = select_appimage_assets(assets);
+            int top;
+            var ranked = select_appimage_assets(assets, get_system_arch(), out top);
             return ranked.size > 0 ? ranked[0] : null;
         }
 
@@ -1156,8 +1173,9 @@ namespace AppManager.Core {
          *   1. AppImage with explicit system architecture match
          *   2. AppImage with no architecture (assumes x86_64 default)
          *   3. Remaining AppImages
+         * `top` counts the candidates in the first group that has any (0 for wrong-arch only).
          */
-        private ArrayList<ReleaseAsset> select_appimage_assets(ArrayList<ReleaseAsset> assets) {
+        internal static ArrayList<ReleaseAsset> select_appimage_assets(ArrayList<ReleaseAsset> assets, string arch, out int top) {
             var arch_matches = new ArrayList<ReleaseAsset>();
             var no_arch_assets = new ArrayList<ReleaseAsset>();
             var others = new ArrayList<ReleaseAsset>();
@@ -1171,7 +1189,7 @@ namespace AppManager.Core {
                 }
                 
                 // Check explicit architecture match (against both name and URL)
-                if (matches_system_arch(asset.name) || matches_system_arch(asset.download_url)) {
+                if (matches_arch(asset.name, arch) || matches_arch(asset.download_url, arch)) {
                     arch_matches.add(asset);
                 } else if (!has_any_arch_in_name(asset.name)) {
                     // No architecture in filename (common for x86_64 default)
@@ -1187,7 +1205,7 @@ namespace AppManager.Core {
             ranked.add_all(arch_matches);
 
             // On x86_64, no-arch assets next (many projects assume x86_64 is default)
-            if (get_system_arch() == "x86_64") {
+            if (arch == "x86_64") {
                 ranked.add_all(no_arch_assets);
             }
 
@@ -1196,7 +1214,30 @@ namespace AppManager.Core {
                 ranked.add_all(others);
             }
 
+            // Wrong-architecture fallbacks fail the identity check anyway; they are never "several builds".
+            top = arch_matches.size > 0 ? arch_matches.size : arch == "x86_64" ? no_arch_assets.size : 0;
             return ranked;
+        }
+
+        /** Names the AppImages when more than one is the best match for this architecture. */
+        internal static string? asset_ambiguity(ReleaseInfo release, string? pattern, string arch) {
+            int top;
+            var ranked = select_appimage_assets(release.assets, arch, out top);
+            if (top < 2) return null;
+            string[] names = {};
+            for (int i = 0; i < top; i++) names += ranked[i].name;
+            var listed = string.joinv(", ", names);
+            if (pattern != null) {
+                return _("The asset pattern %s matches %d AppImages in release %s: %s").printf(pattern, top, release.tag_name ?? "", listed);
+            }
+            return _("Release %s has %d AppImages for %s: %s. Enter an asset pattern in App Updates.").printf(release.tag_name ?? "", top, arch, listed);
+        }
+
+        private static string missing_asset_message(ReleaseSource source) {
+            if (source.asset_pattern != null) {
+                return _("No AppImage in the recent releases matches the asset pattern %s").printf(source.asset_pattern);
+            }
+            return _("No matching AppImage found for %s").printf(get_system_arch());
         }
         
         /**
@@ -1450,14 +1491,14 @@ namespace AppManager.Core {
             if (root == null) return null;
             
             if (root.get_node_type() == Json.NodeType.ARRAY) {
-                return find_release_with_appimage(root.get_array(), parse_gitlab_release, true);
+                return find_release_with_appimage(root.get_array(), (obj) => parse_gitlab_release(obj, source.asset_pattern), true);
             } else if (root.get_node_type() == Json.NodeType.OBJECT) {
-                return parse_gitlab_release(root.get_object());
+                return parse_gitlab_release(root.get_object(), source.asset_pattern);
             }
             return null;
         }
 
-        private ReleaseInfo? parse_gitlab_release(Json.Object obj) {
+        private ReleaseInfo? parse_gitlab_release(Json.Object obj, string? asset_pattern = null) {
             string? tag = obj.has_member("tag_name") ? obj.get_string_member("tag_name") : null;
             string? name = obj.has_member("name") ? obj.get_string_member("name") : null;
             var assets = new ArrayList<ReleaseAsset>();
@@ -1487,6 +1528,7 @@ namespace AppManager.Core {
                         if (download_url != null && download_url.strip() != "") {
                             // Use link name or derive from URL
                             var final_name = asset_name ?? derive_filename(download_url);
+                            if (asset_pattern != null && !pattern_matches_zsync(asset_pattern, final_name)) continue;
                             assets.add(new ReleaseAsset(final_name, download_url));
                         }
                     }

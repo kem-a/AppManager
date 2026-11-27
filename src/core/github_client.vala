@@ -93,7 +93,7 @@ namespace AppManager.Core {
          */
         public static string pretty_json(Json.Node node) {
             var builder = new StringBuilder();
-            pretty_write(builder, node, 0, 0);
+            pretty_write(builder, node, 0, 0, 0);
             return builder.str;
         }
 
@@ -112,8 +112,11 @@ namespace AppManager.Core {
             return node == null || node.is_null() || node.get_node_type() == Json.NodeType.VALUE;
         }
 
-        /** `column` is the number of characters already written on the current line. */
-        private static void pretty_write(StringBuilder builder, Json.Node? node, int depth, int column) {
+        /**
+         * `column` is the number of characters already written on the current line.
+         * `trailing` counts what follows on it (a comma); Prettier includes it in its fit check.
+         */
+        private static void pretty_write(StringBuilder builder, Json.Node? node, int depth, int column, int trailing) {
             if (node == null || node.is_null()) {
                 builder.append("null");
                 return;
@@ -137,7 +140,7 @@ namespace AppManager.Core {
                         builder.append(key_text.str);
                         builder.append(": ");
                         int value_column = (depth + 1) * 2 + key_text.str.char_count() + 2;
-                        pretty_write(builder, obj.get_member(members[i]), depth + 1, value_column);
+                        pretty_write(builder, obj.get_member(members[i]), depth + 1, value_column, i + 1 < members.size ? 1 : 0);
                         if (i + 1 < members.size) builder.append_c(',');
                         builder.append_c('\n');
                     }
@@ -168,7 +171,7 @@ namespace AppManager.Core {
                             else pretty_scalar(flat, element);
                         }
                         flat.append_c(']');
-                        if (column + flat.str.char_count() <= APPHUB_JSON_WIDTH) {
+                        if (column + flat.str.char_count() + trailing <= APPHUB_JSON_WIDTH) {
                             builder.append(flat.str);
                             return;
                         }
@@ -177,7 +180,7 @@ namespace AppManager.Core {
                     int index = 0;
                     foreach (var element in array.get_elements()) {
                         pretty_indent(builder, depth + 1);
-                        pretty_write(builder, element, depth + 1, (depth + 1) * 2);
+                        pretty_write(builder, element, depth + 1, (depth + 1) * 2, index + 1 < length ? 1 : 0);
                         if (++index < length) builder.append_c(',');
                         builder.append_c('\n');
                     }

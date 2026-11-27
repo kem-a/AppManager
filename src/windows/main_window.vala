@@ -2137,6 +2137,11 @@ namespace AppManager {
             single_probe_count = int.max(0, single_probe_count - 1);
             if (result != null) {
                 handle_single_probe_result(result, source);
+                // The Test passed when the source answered, with or without an update.
+                if (source != null && source.matches_record(result.record)) {
+                    bool passed = result.has_update || result.skip_reason == UpdateSkipReason.ALREADY_CURRENT;
+                    source.set_test_result(passed, result.message);
+                }
             }
             update_clear_button_visibility();
         }

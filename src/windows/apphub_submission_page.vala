@@ -11,6 +11,7 @@ namespace AppManager {
         private Adw.SwitchRow upstream_row;
         private Adw.EntryRow evidence_row;
         private Gtk.TextView manual_editor;
+        private Gtk.TextView media_editor;
         private Gtk.TextView policy_editor;
         private Gtk.TextView assets_editor;
         private Gtk.Button action;
@@ -66,6 +67,14 @@ namespace AppManager {
             manual_group.visible = false;
             page.add(manual_group);
 
+            var media_group = new Adw.PreferencesGroup();
+            media_group.title = _("MetaInfo media overrides (optional JSON)");
+            media_group.description = _("Leave {} when the MetaInfo lists a remote HTTPS icon and screenshots. Otherwise add an icon URL, screenshots, or both, in the media format of the catalog guide.");
+            media_editor = editor("{}");
+            media_group.add(scroll_editor(media_editor, 80));
+            media_group.visible = false;
+            page.add(media_group);
+
             var policy_group = new Adw.PreferencesGroup();
             policy_group.title = _("Required sandbox access (AppHub v1 JSON)");
             policy_group.description = _("Prefilled from this app's AppManager sandbox permissions. AppHub enforces these for every installation, so review them before submitting.");
@@ -83,7 +92,7 @@ namespace AppManager {
             var assets_group = new Adw.PreferencesGroup();
             assets_group.title = _("Architecture filename patterns (optional JSON)");
             assets_group.description = _("Leave {} for automatic detection. For ambiguous filenames, use architecture keys and filename patterns ending in .AppImage.");
-            assets_editor = editor("{}");
+            assets_editor = editor(assets_prefill(record.update_asset_pattern));
             assets_group.add(scroll_editor(assets_editor, 80));
             page.add(assets_group);
 
@@ -136,9 +145,11 @@ namespace AppManager {
             policy_editor.buffer.changed.connect(reset_review);
             assets_editor.buffer.changed.connect(reset_review);
             manual_editor.buffer.changed.connect(reset_review);
+            media_editor.buffer.changed.connect(reset_review);
             metadata_kind.notify["selected"].connect(() => {
                 metadata_row.visible = metadata_kind.selected == 1;
                 manual_group.visible = metadata_kind.selected == 2;
+                media_group.visible = metadata_kind.selected == 1;
                 reset_review();
             });
             upstream_row.notify["active"].connect(() => {
@@ -216,7 +227,17 @@ namespace AppManager {
             return scroll;
         }
 
-        private static string make_slug(string name) {
+        // The App Updates asset pattern names this machine's AppImage.
+        private static string assets_prefill(string? pattern) {
+            if (pattern == null) return "{}";
+            var assets = new Json.Object();
+            assets.set_string_member(Updater.get_system_arch(), pattern);
+            var node = new Json.Node(Json.NodeType.OBJECT);
+            node.set_object(assets);
+            return GitHubClient.pretty_json(node);
+        }
+
+                private static string make_slug(string name) {
             try {
                 var slug = new Regex("[^a-z0-9]+").replace(name.down(), -1, 0, "-");
                 return new Regex("^-|-$").replace(slug, -1, 0, "");
@@ -239,7 +260,8 @@ namespace AppManager {
                 throw new IOError.INVALID_ARGUMENT(_("Use a lowercase listing slug with hyphens."));
             var manifest = AppHubSubmission.build_manifest(id_row.text.strip(), metadata_kind.selected == 1 ? metadata_row.text.strip() : "", source, policy_editor.buffer.text);
             AppHubSubmission.complete_manifest(manifest, metadata_kind.selected == 2 ? manual_editor.buffer.text : null,
-                upstream_row.active ? evidence_row.text.strip() : null, assets_editor.buffer.text);
+                upstream_row.active ? evidence_row.text.strip() : null, assets_editor.buffer.text,
+                metadata_kind.selected == 1 ? media_editor.buffer.text : null);
             return manifest;
         }
 
@@ -254,7 +276,7 @@ namespace AppManager {
             busy = true;
             action.sensitive = false;
             // Freeze input, while retaining scrolling and back navigation.
-            foreach (var row in new Gtk.Widget[] { id_row, slug_row, metadata_row, metadata_kind, upstream_row, evidence_row, policy_editor, assets_editor, manual_editor }) row.sensitive = false;
+            foreach (var row in new Gtk.Widget[] { id_row, slug_row, metadata_row, metadata_kind, upstream_row, evidence_row, policy_editor, assets_editor, manual_editor, media_editor }) row.sensitive = false;
             spinner.visible = true;
             AppHubMatch? found = null;
             string? failure = null;
@@ -277,7 +299,7 @@ namespace AppManager {
             yield;
             busy = false;
             spinner.visible = false;
-            foreach (var row in new Gtk.Widget[] { id_row, slug_row, metadata_row, metadata_kind, upstream_row, evidence_row, policy_editor, assets_editor, manual_editor }) row.sensitive = true;
+            foreach (var row in new Gtk.Widget[] { id_row, slug_row, metadata_row, metadata_kind, upstream_row, evidence_row, policy_editor, assets_editor, manual_editor, media_editor }) row.sensitive = true;
             if (cancel.is_cancelled()) { check_access(); return; }
             action.sensitive = true;
             if (failure != null) {

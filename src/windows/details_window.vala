@@ -32,9 +32,13 @@ namespace AppManager {
         private ulong update_progress_changed_id = 0;
         private Gtk.Overlay? update_wrapper;
         private bool cancel_pressed = false;
-        // Manual Updates on the App Updates page.
+        // Manual Update Link test on the App Updates page.
         private Adw.ActionRow? check_row;
         private Adw.Spinner? check_spinner;
+        private Gtk.Image? check_passed;
+        private bool test_passed = false;
+        // Toasts cut long messages short, so the test row keeps the whole reason.
+        private string? test_error = null;
         private Gtk.Button? check_button;
         private Adw.Banner? path_banner;
         private Adw.SwitchRow? path_row;
@@ -780,47 +784,25 @@ namespace AppManager {
             info_group.description = body_text;
             prefs_page.add(info_group);
 
-            // Enable / disable updates toggle; it expands to the manual check.
+            // Enable / disable updates toggle, with the pre-release channel below it.
             var toggle_group = new Adw.PreferencesGroup();
-            var enable_updates_row = new Adw.ExpanderRow();
+            var enable_updates_row = new Adw.SwitchRow();
             enable_updates_row.title = _("Enable app updates");
-            enable_updates_row.show_enable_switch = true;
             enable_updates_row.add_prefix(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
-            check_row = new Adw.ActionRow();
-            check_spinner = new Adw.Spinner();
-            check_row.add_suffix(check_spinner);
-            // Check, or Clear once an update is pending.
-            check_button = new Gtk.Button();
-            check_button.add_css_class("pill");
-            // Same size as the Open button.
-            check_button.add_css_class("open-button");
-            pill_widths.add_widget(check_button);
-            check_button.valign = Gtk.Align.CENTER;
-            check_button.clicked.connect(() => {
-                if (update_available) {
-                    clear_update_requested(record);
-                } else {
-                    check_update_requested(record);
-                }
-            });
-            check_row.add_suffix(check_button);
-            enable_updates_row.add_row(check_row);
             toggle_group.add(enable_updates_row);
             prefs_page.add(toggle_group);
 
-            // Update link / web page rows
-            var update_group = build_update_info_group(enable_updates_row);
+            // Update link, asset pattern and the link test
+            var update_group = build_update_info_group(enable_updates_row, toggle_group);
             prefs_page.add(update_group);
-            // Only a switch change expands it; open with the check showing.
-            enable_updates_row.expanded = enable_updates_row.enable_expansion;
             refresh_update_button();
 
             // Sync logic
-            enable_updates_row.notify["enable-expansion"].connect(() => {
-                status_label.set_label(enable_updates_row.enable_expansion ? _("On") : _("Off"));
+            enable_updates_row.notify["active"].connect(() => {
+                status_label.set_label(enable_updates_row.active ? _("On") : _("Off"));
                 // Locked "Off" only reflects a missing link; keep the stored preference.
                 if (!enable_updates_row.sensitive) return;
-                record.updates_enabled = enable_updates_row.enable_expansion;
+                record.updates_enabled = enable_updates_row.active;
                 registry.update(record);
             });
 
@@ -832,7 +814,7 @@ namespace AppManager {
             drop_focus_on_empty_click(nav_page);
             return nav_page;
         }
-        private Adw.PreferencesGroup build_update_info_group(Adw.ExpanderRow enable_updates_row) {
+        private Adw.PreferencesGroup build_update_info_group(Adw.SwitchRow enable_updates_row, Adw.PreferencesGroup toggle_group) {
             var update_group = new Adw.PreferencesGroup();
             update_group.title = _("Update details");
             
@@ -870,22 +852,113 @@ namespace AppManager {
             }
             update_group.add(update_row);
 
-            // The switch needs a usable link; pre-release follows the switch.
+            // Picks one AppImage from GitHub or GitLab releases; zsync and direct links name one file.
+            var asset_row = build_asset_pattern_row();
+            asset_row.visible = !has_zsync && is_release_link(update_row.text);
+            update_group.add(asset_row);
+            update_group.add(build_check_row());
+
+            // The switch needs a usable link; pre-release and the test follow the switch.
             sync_updates_switch(enable_updates_row, update_row.text);
-            update_row.changed.connect(() => sync_updates_switch(enable_updates_row, update_row.text));
-            prerelease_row.sensitive = enable_updates_row.enable_expansion;
-            enable_updates_row.notify["enable-expansion"].connect(() => {
-                prerelease_row.sensitive = enable_updates_row.enable_expansion;
+            update_row.changed.connect(() => {
+                sync_updates_switch(enable_updates_row, update_row.text);
+                asset_row.visible = !has_zsync && is_release_link(update_row.text);
+                clear_test_result();
+            });
+            prerelease_row.sensitive = enable_updates_row.active;
+            check_row.sensitive = enable_updates_row.active;
+            enable_updates_row.notify["active"].connect(() => {
+                prerelease_row.sensitive = enable_updates_row.active;
+                check_row.sensitive = enable_updates_row.active;
             });
 
-            // Web page row
-            var webpage_row = build_webpage_row();
-            update_group.add(webpage_row);
-
-            // Add pre-release row after web page
-            update_group.add(prerelease_row);
+            toggle_group.add(prerelease_row);
             
             return update_group;
+        }
+
+        private Adw.ActionRow build_check_row() {
+            // A reopened page starts without the previous result.
+            test_passed = false;
+            test_error = null;
+            check_row = new Adw.ActionRow();
+            // Aligns the title with the other rows of the group.
+            check_row.add_prefix(new Gtk.Image.from_icon_name("view-refresh-symbolic"));
+            check_spinner = new Adw.Spinner();
+            check_row.add_suffix(check_spinner);
+            check_passed = new Gtk.Image();
+            check_passed.pixel_size = 20;
+            check_passed.valign = Gtk.Align.CENTER;
+            check_passed.visible = false;
+            check_row.add_suffix(check_passed);
+            // Test, or Clear once an update is pending.
+            check_button = new Gtk.Button();
+            check_button.add_css_class("pill");
+            // Same size as the Open button.
+            check_button.add_css_class("open-button");
+            pill_widths.add_widget(check_button);
+            check_button.valign = Gtk.Align.CENTER;
+            check_button.clicked.connect(() => {
+                if (update_available) {
+                    clear_update_requested(record);
+                } else {
+                    check_update_requested(record);
+                }
+            });
+            check_row.add_suffix(check_button);
+            return check_row;
+        }
+
+        private static bool is_release_link(string link) {
+            var normalized = Updater.normalize_update_url(link.strip());
+            return normalized != null && (GithubSource.parse(normalized, null) != null || GitlabSource.parse(normalized, null) != null);
+        }
+
+        private Adw.EntryRow build_asset_pattern_row() {
+            var row = new Adw.EntryRow();
+            row.title = _("Optional glob, ex. %s").printf("oss-Bitwarden-*-x86_64.AppImage");
+            row.tooltip_text = _("Optional filename pattern that picks one AppImage when a release has several");
+            row.add_prefix(new Gtk.Image.from_icon_name("edit-find-symbolic"));
+            row.text = record.update_asset_pattern ?? "";
+            // Kept in the record while typing, so Test uses the typed pattern; saved on leave or Enter.
+            row.changed.connect(() => {
+                var value = row.text.strip();
+                record.update_asset_pattern = value == "" ? null : value;
+                unsaved_edits = true;
+                clear_test_result();
+            });
+            var focus = new Gtk.EventControllerFocus();
+            focus.leave.connect(() => { persist_unsaved_edits(); });
+            row.add_controller(focus);
+            row.entry_activated.connect(() => { persist_unsaved_edits(); });
+            return row;
+        }
+
+        /** Shows the animated checkmark after a Test that reached the release source, else the reason. */
+        public void set_test_result(bool passed, string? error = null) {
+            test_passed = passed;
+            test_error = passed ? null : error;
+            if (check_passed == null) return;
+            Gtk.Svg? svg = null;
+            if (passed) {
+                try {
+                    // A fresh paintable replays the animation from the start.
+                    svg = new Gtk.Svg.from_bytes(GLib.resources_lookup_data("/com/github/AppManager/test-passed.svg", GLib.ResourceLookupFlags.NONE));
+                    check_passed.paintable = svg;
+                } catch (Error e) {
+                    warning("Failed to load test checkmark: %s", e.message);
+                }
+            }
+            refresh_update_button();
+            // Shown by the refresh, so it is mapped while the page is on screen.
+            if (svg != null && check_passed.get_mapped()) {
+                svg.set_frame_clock(check_passed.get_frame_clock());
+                svg.play();
+            }
+        }
+
+        private void clear_test_result() {
+            if (test_passed || test_error != null) set_test_result(false);
         }
 
         private bool has_update_source(string? link) {
@@ -893,12 +966,12 @@ namespace AppManager {
             return link != null && DirectUrlSource.parse(link.strip()) != null;
         }
 
-        private void sync_updates_switch(Adw.ExpanderRow row, string? link) {
+        private void sync_updates_switch(Adw.SwitchRow row, string? link) {
             var available = has_update_source(link);
             // Sensitivity first: the notify handler skips saving while locked.
             row.sensitive = available;
             row.tooltip_text = available ? null : _("Enter valid update link below");
-            row.enable_expansion = available && record.updates_enabled;
+            row.active = available && record.updates_enabled;
         }
 
         /**
@@ -1962,6 +2035,7 @@ namespace AppManager {
             advanced_group.add(build_categories_row());
             advanced_group.add(build_icon_row());
             advanced_group.add(build_wmclass_row());
+            advanced_group.add(build_webpage_row());
             
             prefs_page.add(advanced_group);
             prefs_page.add(build_env_vars_group());
@@ -2629,10 +2703,12 @@ namespace AppManager {
                 // A check during an update would reset its progress.
                 check_button.sensitive = !loading;
                 check_spinner.visible = loading;
-                check_button.label = update_available ? _("Clear") : _("Check");
-                check_row.title = update_available ? _("Update Available") : _("Manual Updates");
+                check_passed.visible = test_passed && !loading;
+                check_button.label = update_available ? _("Clear") : _("Test");
+                check_row.title = update_available ? _("Update Available") : _("Manual Update Link");
                 var incoming = (incoming_version ?? "").strip();
-                check_row.subtitle = update_available && incoming != "" ? format_version(incoming) : "";
+                check_row.subtitle = update_available && incoming != "" ? format_version(incoming)
+                    : !loading && test_error != null ? Markup.escape_text(test_error) : "";
             }
         }
 

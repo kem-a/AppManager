@@ -1,0 +1,12 @@
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:gpa='https://www.gtk.org/grappa' width='16' height='16' viewBox='0 0 16 16'
+     gpa:version='1'>
+  <!-- Update link test passed: the former "done" state of update-progress.svg.
+       SMIL only, started by play(); no gpa transitions. -->
+  <circle cx='8' cy='8' r='7.25' gpa:fill='success'>
+    <animate attributeName='r' from='2' to='7.25' dur='250ms' fill='freeze'/>
+  </circle>
+  <path d='M 4.7 8.3 L 7 10.5 L 11.3 5.8' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'
+        pathLength='1' stroke-dasharray='1' gpa:stroke='#ffffff'>
+    <animate attributeName='stroke-dashoffset' values='1;1;0' keyTimes='0;0.4;1' dur='550ms' fill='freeze'/>
+  </path>
+</svg>

@@ -70,6 +70,8 @@ namespace AppManager.Core {
         private string? cached_tree;
         private HashMap<string, Json.Node> manifests = new HashMap<string, Json.Node>();
         public string? source_warning { get; private set; }
+        // AppHub's limit for one page of forge releases (scripts/releases/http.ts).
+        private const size_t RELEASE_LIST_LIMIT = 16 * 1024 * 1024;
         public AppHubSubmission(GitHubClient github, owned AppHubPublicFetch? public_fetch = null) {
             this.github = github;
             this.public_fetch = (owned) public_fetch;
@@ -82,7 +84,7 @@ namespace AppManager.Core {
         }
 
         /** Public-source checks never carry the GitHub token, including on redirects. */
-        private string fetch(string url, Cancellable? cancel) throws Error {
+        private string fetch(string url, Cancellable? cancel, size_t limit = 2 * 1024 * 1024) throws Error {
             if (public_fetch != null) return public_fetch(url, cancel);
             var session = new Soup.Session();
             session.timeout = 30;
@@ -115,7 +117,7 @@ namespace AppManager.Core {
                     uint8[] buffer = new uint8[16384];
                     ssize_t count;
                     while ((count = input.read(buffer, cancel)) > 0) {
-                        if (text.len + count > 2 * 1024 * 1024) throw new IOError.FAILED(_("Public source response is too large."));
+                        if (text.len + count > limit) throw new IOError.FAILED(_("Public source response is too large."));
                         text.append_len((string) buffer, count);
                     }
                     input.close(cancel);
@@ -148,6 +150,14 @@ namespace AppManager.Core {
                 var identity = new AppStreamIdentity(id.has_suffix(".desktop") ? id : id + ".desktop", null);
                 identity.add_xml(xml);
                 if (identity.matched_id() != id) throw new IOError.INVALID_DATA(_("The MetaInfo XML does not identify this application."));
+                // AppHub takes media from remote MetaInfo entries unless the manifest overrides them.
+                var media = metadata.has_member("media") ? metadata.get_object_member("media") : null;
+                if ((media == null || !media.has_member("icon"))
+                    && !Regex.match_simple("<icon\\b[^>]*\\btype=[\"']remote[\"'][^>]*>\\s*https://", xml))
+                    throw new IOError.INVALID_DATA(_("The MetaInfo has no remote HTTPS icon. Add one under media overrides."));
+                if ((media == null || !media.has_member("screenshots"))
+                    && !Regex.match_simple("<image\\b[^>]*\\btype=[\"']source[\"'][^>]*>\\s*https://", xml))
+                    throw new IOError.INVALID_DATA(_("The MetaInfo has no remote HTTPS screenshots. Add them under media overrides."));
             }
             var src = obj.get_object_member("releaseSource");
             var provider = src.get_string_member("type");
@@ -158,41 +168,126 @@ namespace AppManager.Core {
                 if (SubmissionJson.boolean(info, "private", true)) throw new IOError.INVALID_ARGUMENT(_("AppHub cannot list a private release repository."));
                 releases = github.require("GET", repo + "/releases?per_page=100", null, cancel);
             } else if (provider == "gitlab") {
-                releases = parse_json(fetch("https://gitlab.com/api/v4/projects/" + Uri.escape_string(src.get_string_member("repository"), null, false) + "/releases?per_page=100", cancel));
+                releases = parse_json(fetch("https://gitlab.com/api/v4/projects/" + Uri.escape_string(src.get_string_member("repository"), null, false) + "/releases?per_page=100", cancel, RELEASE_LIST_LIMIT));
             } else if (provider == "codeberg") {
-                releases = parse_json(fetch("https://codeberg.org/api/v1/repos/" + src.get_string_member("repository") + "/releases?limit=100", cancel));
+                releases = parse_json(fetch("https://codeberg.org/api/v1/repos/" + src.get_string_member("repository") + "/releases?limit=100", cancel, RELEASE_LIST_LIMIT));
             } else {
                 var feed = parse_json(fetch(src.get_string_member("url"), cancel));
                 releases = SubmissionJson.member(SubmissionJson.object(feed), "releases");
             }
             if (releases == null || releases.get_node_type() != Json.NodeType.ARRAY)
                 throw new IOError.INVALID_DATA(_("The source did not return a release list."));
+            // AppHub uses only the newest stable release. Forges are ordered by publication date, not API order.
+            Json.Object? latest = null;
+            string latest_date = "";
             foreach (var release_node in releases.get_array().get_elements()) {
                 var release = SubmissionJson.object(release_node);
-                if (SubmissionJson.boolean(release, "draft") || SubmissionJson.boolean(release, "prerelease")) continue;
-                Json.Array? assets = null;
                 if (provider == "feed") {
                     if (release.get_string_member_with_default("version", "") == "" || release.get_string_member_with_default("publishedAt", "") == "") continue;
-                    https_url(SubmissionJson.text(release, "page"));
-                    assets = SubmissionJson.array(SubmissionJson.member(release, "artifacts"));
-                } else if (provider == "gitlab") assets = SubmissionJson.array(SubmissionJson.member(SubmissionJson.child(release, "assets"), "links"));
-                else assets = SubmissionJson.array(SubmissionJson.member(release, "assets"));
-                foreach (var node in assets.get_elements()) {
-                    var asset = SubmissionJson.object(node);
-                    if (!SubmissionJson.text(asset, "name").has_suffix(".AppImage")) continue;
-                    if (provider == "feed") {
-                        if (asset.get_string_member_with_default("architecture", "") == "" || asset.get_int_member_with_default("size", 0) <= 0) continue;
-                        https_url(SubmissionJson.text(asset, "url"));
-                    }
-                    return;
+                    latest = release;
+                    break;
                 }
-                // AppHub uses the newest stable release, not an arbitrary old release with assets.
-                break;
+                if (SubmissionJson.boolean(release, "draft") || SubmissionJson.boolean(release, "prerelease")
+                    || SubmissionJson.boolean(release, "upcoming_release")) continue;
+                var date = release.get_string_member_with_default(provider == "gitlab" ? "released_at" : "published_at", "");
+                if (date != null && date > latest_date) {
+                    latest = release;
+                    latest_date = date;
+                }
             }
-            throw new IOError.INVALID_DATA(_("The latest stable release does not publish an AppImage. Check the update source."));
+            if (latest == null) throw new IOError.INVALID_DATA(_("The release source has no stable release."));
+            var tag = SubmissionJson.text(latest, provider == "feed" ? "version" : "tag_name");
+            if (provider != "feed") {
+                var assets = provider == "gitlab" ? SubmissionJson.member(SubmissionJson.child(latest, "assets"), "links") : SubmissionJson.member(latest, "assets");
+                string[] names = {};
+                foreach (var node in SubmissionJson.array(assets).get_elements()) names += SubmissionJson.text(SubmissionJson.object(node), "name");
+                select_assets(obj.has_member("assets") ? obj.get_object_member("assets") : null, names, tag);
+                return;
+            }
+            https_url(SubmissionJson.text(latest, "page"));
+            foreach (var node in SubmissionJson.array(SubmissionJson.member(latest, "artifacts")).get_elements()) {
+                var asset = SubmissionJson.object(node);
+                if (!SubmissionJson.text(asset, "name").has_suffix(".AppImage")) continue;
+                if (asset.get_string_member_with_default("architecture", "") == "" || asset.get_int_member_with_default("size", 0) <= 0) continue;
+                https_url(SubmissionJson.text(asset, "url"));
+                return;
+            }
+            throw new IOError.INVALID_DATA(_("The latest stable release %s does not publish an AppImage. AppHub uses only the newest stable release of a source.").printf(tag));
         }
 
-        public static void complete_manifest(Json.Node manifest, string? manual, string? evidence, string assets_json) throws Error {
+        private const string[] ARCHITECTURES = { "x86_64", "i686", "aarch64", "armv7l", "riscv64", "ppc64le", "s390x" };
+        private const string[] ARCHITECTURE_NAMES = { "x86[_-]?64|amd64|x64", "i[3-6]86|x86[_-]?32", "aarch64|arm64", "armv7l?|armhf", "riscv64", "ppc64le", "s390x" };
+
+        private static bool names_architecture(string name, string names) {
+            return Regex.match_simple("(?:^|[^a-z0-9])(?:" + names + ")(?:[^a-z0-9]|$)", name, RegexCompileFlags.CASELESS);
+        }
+
+        private static bool glob_match(string pattern, string name) {
+            var expression = new StringBuilder("^");
+            for (int i = 0; i < pattern.length; i++) {
+                char c = pattern[i];
+                if (c == '*') expression.append(".*");
+                else if (c == '?') expression.append_c('.');
+                else {
+                    if (".+^${}()|[]\\".index_of_char(c) >= 0) expression.append_c('\\');
+                    expression.append_c(c);
+                }
+            }
+            expression.append_c('$');
+            return Regex.match_simple(expression.str, name);
+        }
+
+        /** Mirrors AppHub's selectAssets (catalog/artifacts.ts): exactly one AppImage per architecture rule. */
+        public static void select_assets(Json.Object? patterns, string[] names, string release) throws Error {
+            var rules = new Gee.ArrayList<string>();
+            if (patterns != null) {
+                foreach (var key in patterns.get_members()) rules.add(key);
+                rules.sort();
+            } else {
+                foreach (var architecture in ARCHITECTURES) rules.add(architecture);
+            }
+            var selected = new Gee.HashSet<string>();
+            for (int i = 0; i < rules.size; i++) {
+                var architecture = rules[i];
+                var pattern = patterns != null ? patterns.get_string_member(architecture) : null;
+                var matches = new Gee.ArrayList<string>();
+                foreach (var name in names) {
+                    // Without patterns the rules are ARCHITECTURES, in order.
+                    if (pattern != null ? glob_match(pattern, name)
+                        : name.down().has_suffix(".appimage") && names_architecture(name, ARCHITECTURE_NAMES[i]))
+                        matches.add(name);
+                }
+                // Untagged AppImages count as x86_64; AppHub's ELF check rejects a wrong guess.
+                if (pattern == null && architecture == "x86_64" && matches.size == 0) {
+                    foreach (var name in names) {
+                        if (!name.down().has_suffix(".appimage") || names_architecture(name, "ia32|arm32")) continue;
+                        bool tagged = false;
+                        foreach (var names_pattern in ARCHITECTURE_NAMES) tagged = tagged || names_architecture(name, names_pattern);
+                        if (!tagged) matches.add(name);
+                    }
+                }
+                if (pattern == null && matches.size == 0) continue;
+                if (matches.size != 1) {
+                    if (pattern != null)
+                        throw new IOError.INVALID_DATA(_("The %s pattern %s matches %d files in the latest stable release %s. It must match exactly one.").printf(architecture, pattern, matches.size, release));
+                    throw new IOError.INVALID_DATA(_("The latest stable release %s has %d AppImages for %s: %s. Add an architecture filename pattern that selects one.").printf(release, matches.size, architecture, string.joinv(", ", matches.to_array())));
+                }
+                if (!selected.add(matches[0])) throw new IOError.INVALID_DATA(_("Two architecture patterns select %s.").printf(matches[0]));
+            }
+            if (selected.size == 0)
+                throw new IOError.INVALID_DATA(_("The latest stable release %s does not publish an AppImage. AppHub uses only the newest stable release of a source.").printf(release));
+        }
+
+        private static void check_screenshots(Json.Object media) throws Error {
+            var screenshots = SubmissionJson.array(SubmissionJson.member(media, "screenshots"));
+            if (screenshots.get_length() < 1 || screenshots.get_length() > 5) throw new IOError.INVALID_ARGUMENT(_("Provide one to five public screenshots."));
+            foreach (var item in screenshots.get_elements()) {
+                https_url(SubmissionJson.text(SubmissionJson.object(item), "source"));
+                if (SubmissionJson.text(SubmissionJson.object(item), "caption") == "") throw new IOError.INVALID_ARGUMENT(_("Screenshot captions are required."));
+            }
+        }
+
+        public static void complete_manifest(Json.Node manifest, string? manual, string? evidence, string assets_json, string? media_json = null) throws Error {
             var obj = manifest.get_object();
             var id = manifest_id(obj);
             if (manual != null) {
@@ -211,13 +306,22 @@ namespace AppManager.Core {
                 https_url(SubmissionJson.text(metadata, "homepage"));
                 var media = SubmissionJson.child(source, "media");
                 https_url(SubmissionJson.text(media, "icon"));
-                var screenshots = SubmissionJson.array(SubmissionJson.member(media, "screenshots"));
-                if (screenshots.get_length() < 1 || screenshots.get_length() > 5) throw new IOError.INVALID_ARGUMENT(_("Provide one to five public screenshots."));
-                foreach (var item in screenshots.get_elements()) {
-                    https_url(SubmissionJson.text(SubmissionJson.object(item), "source"));
-                    if (SubmissionJson.text(SubmissionJson.object(item), "caption") == "") throw new IOError.INVALID_ARGUMENT(_("Screenshot captions are required."));
-                }
+                check_screenshots(media);
                 obj.set_member("appstream", node);
+            }
+            if (media_json != null) {
+                var node = parse_json(media_json);
+                if (node.get_node_type() != Json.NodeType.OBJECT) throw new IOError.INVALID_ARGUMENT(_("Media overrides must be a JSON object."));
+                var media = node.get_object();
+                if (media.get_size() > 0) {
+                    var appstream = SubmissionJson.child(obj, "appstream");
+                    if (SubmissionJson.text(appstream, "type") != "url") throw new IOError.INVALID_ARGUMENT(_("Media overrides need a public MetaInfo URL."));
+                    foreach (var key in media.get_members()) if (!(key in new string[] { "icon", "screenshots" }))
+                        throw new IOError.INVALID_ARGUMENT(_("Unknown media field: %s").printf(key));
+                    if (media.has_member("icon")) https_url(SubmissionJson.text(media, "icon"));
+                    if (media.has_member("screenshots")) check_screenshots(media);
+                    appstream.set_object_member("media", media);
+                }
             }
             if (evidence != null) {
                 https_url(evidence);

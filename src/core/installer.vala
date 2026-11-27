@@ -496,6 +496,7 @@ namespace AppManager.Core {
                 record.custom_icon_name = old_record.custom_icon_name;
                 record.custom_startup_wm_class = old_record.custom_startup_wm_class;
                 record.custom_update_link = old_record.custom_update_link;
+                record.update_asset_pattern = old_record.update_asset_pattern;
                 record.custom_web_page = old_record.custom_web_page;
                 record.custom_no_display = old_record.custom_no_display;
                 record.custom_add_to_path = old_record.custom_add_to_path;

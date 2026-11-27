@@ -6,6 +6,7 @@
     <file alias="style.css">../style.css</file>
     <file compressed="true" alias="update-progress.svg">../icons/update-progress.svg</file>
     <file compressed="true" alias="update-ring.svg">../icons/update-ring.svg</file>
+    <file compressed="true" alias="test-passed.svg">../icons/test-passed.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/status/software-update-available-symbolic.svg">../icons/software-update-available-symbolic.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/status/verify-ok.svg">../icons/verify-ok.svg</file>
     <file compressed="true" alias="icons/hicolor/scalable/status/verify-failed.svg">../icons/verify-failed.svg</file>

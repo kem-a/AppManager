@@ -5,6 +5,8 @@ namespace AppManager.Core {
 
     public abstract class ReleaseSource : UpdateSource {
         public string? current_version { get; protected set; }
+        // Filename glob that picks one AppImage when a release has several.
+        public string? asset_pattern { get; protected set; }
     }
 
     public class DirectUrlSource : UpdateSource {
@@ -36,7 +38,6 @@ namespace AppManager.Core {
         public string owner { get; private set; }
         public string repo { get; private set; }
         public string? release_tag { get; private set; }
-        public string? asset_pattern { get; private set; }
 
         public GithubSource(string owner, string repo, string? current_version,
                             string? release_tag = null, string? asset_pattern = null) {
@@ -48,7 +49,7 @@ namespace AppManager.Core {
             this.asset_pattern = asset_pattern;
         }
 
-        public static GithubSource? parse(string url, string? record_version) {
+        public static GithubSource? parse(string url, string? record_version, string? asset_pattern = null) {
             try {
                 var uri = GLib.Uri.parse(url, GLib.UriFlags.NONE);
                 var host = uri.get_host();
@@ -62,7 +63,7 @@ namespace AppManager.Core {
                 var segments = tokenize_path(path);
                 if (segments.length < 2) return null;
 
-                return new GithubSource(segments[0], segments[1], VersionUtils.sanitize(record_version));
+                return new GithubSource(segments[0], segments[1], VersionUtils.sanitize(record_version), null, asset_pattern);
             } catch (Error e) {
                 return null;
             }
@@ -79,16 +80,18 @@ namespace AppManager.Core {
         private int port;
         private string project_path;
 
-        public GitlabSource(string scheme, string host, int port, string project_path, string? current_version) {
+        public GitlabSource(string scheme, string host, int port, string project_path, string? current_version,
+                            string? asset_pattern = null) {
             Object();
             this.scheme = scheme;
             this.host = host;
             this.port = port;
             this.project_path = project_path;
             this.current_version = current_version;
+            this.asset_pattern = asset_pattern;
         }
 
-        public static GitlabSource? parse(string url, string? record_version) {
+        public static GitlabSource? parse(string url, string? record_version, string? asset_pattern = null) {
             try {
                 var uri = GLib.Uri.parse(url, GLib.UriFlags.NONE);
                 var host = uri.get_host();
@@ -114,7 +117,7 @@ namespace AppManager.Core {
                     project_builder.append(segments[i]);
                 }
 
-                return new GitlabSource(scheme, host, port, project_builder.str, VersionUtils.sanitize(record_version));
+                return new GitlabSource(scheme, host, port, project_builder.str, VersionUtils.sanitize(record_version), asset_pattern);
             } catch (Error e) {
                 return null;
             }
