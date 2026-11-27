@@ -74,6 +74,9 @@ namespace AppManager {
         private bool import_cancel_requested = false;
 
         public void push_page(Adw.NavigationPage page) {
+            // A pushed page takes the focus the old page held, so a clicked row hands it to
+            // the new page's first focusable widget (header card, first entry). Keyboard users keep that.
+            if (!this.focus_visible) this.set_focus(null);
             navigation_view.push(page);
         }
 
@@ -1646,6 +1649,12 @@ namespace AppManager {
                 // Otherwise a pushed details page keeps its normal Escape
                 // behavior and the navigation view pops it.
                 if (navigation_view.visible_page != root_page) {
+                    // push_page clears focus, and with nothing focused the key
+                    // never reaches the navigation view.
+                    if (get_focus() == null) {
+                        navigation_view.pop();
+                        return true;
+                    }
                     return false;
                 }
                 if (update_state == UpdateWorkflowState.UPDATING
@@ -2740,7 +2749,8 @@ namespace AppManager {
                     add_toast(_("Updates already running"));
                     return;
                 }
-                navigation_view.pop();
+                // Extract is on the Advanced Settings page, above the details page.
+                navigation_view.pop_to_page(root_page);
                 if (active_details_window == details_window) {
                     active_details_window = null;
                 }
@@ -2754,7 +2764,7 @@ namespace AppManager {
             active_details_window = details_window;
             bottom_sheet.open = false;
             bottom_bar_widget.visible = false;
-            navigation_view.push(details_window);
+            push_page(details_window);
         }
     }
 }
