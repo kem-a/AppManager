@@ -37,7 +37,8 @@ namespace AppManager {
             this.registry = registry;
             this.directory_monitor = directory_monitor;
             this.set_title(_("Preferences"));
-            this.content_height = 700;
+            this.content_height = 900;
+            this.search_enabled = true;
             build_ui();
             
             // Remove focus from entry row when dialog is shown
@@ -531,10 +532,10 @@ namespace AppManager {
             toolbar.add_top_bar(new Adw.HeaderBar());
             toolbar.content = scrolled;
             var page = new Adw.NavigationPage(toolbar, _("About app sandboxing"));
-            // Clear the selectable label's automatic focus after navigation.
+            // Clear the selection the label gets with its automatic focus. Keep the
+            // focus: with none, Escape never reaches the dialog.
             page.map.connect(() => {
                 Idle.add(() => {
-                    this.set_focus(null);
                     paths.select_region(0, 0);
                     return Source.REMOVE;
                 });
