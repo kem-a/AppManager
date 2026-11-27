@@ -1,0 +1,31 @@
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:gpa='https://www.gtk.org/grappa' width='16' height='16' viewBox='0 0 16 16'
+     gpa:version='1' gpa:state='0'
+     gpa:state-names='waiting checking downloading p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing failed'>
+  <!-- Ring-only variant of update-progress.svg for the details page stop button,
+       whose stop icon takes the center. Same states in the same order. SMIL only. -->
+  <circle cx='8' cy='8' r='6.5' fill='none' stroke-width='1.5' stroke-opacity='0.25' gpa:stroke='foreground'/>
+  <path d='M 8 1.5 A 6.5 6.5 0 0 1 14.5 8' fill='none' stroke-width='1.5' stroke-linecap='round'
+        gpa:stroke='accent' gpa:states='waiting checking downloading'>
+    <animateTransform attributeName='transform' type='rotate' values='0 8 8;360 8 8' dur='1s' repeatCount='indefinite'/>
+  </path>
+  <path d='M 8.00 1.50 A 6.5 6.5 0 0 1 10.01 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 10.01 1.82 A 6.5 6.5 0 0 1 11.82 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 11.82 2.74 A 6.5 6.5 0 0 1 13.26 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 13.26 4.18 A 6.5 6.5 0 0 1 14.18 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.18 5.99 A 6.5 6.5 0 0 1 14.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.50 8.00 A 6.5 6.5 0 0 1 14.18 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 14.18 10.01 A 6.5 6.5 0 0 1 13.26 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 13.26 11.82 A 6.5 6.5 0 0 1 11.82 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 11.82 13.26 A 6.5 6.5 0 0 1 10.01 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 10.01 14.18 A 6.5 6.5 0 0 1 8.00 14.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 8.00 14.50 A 6.5 6.5 0 0 1 5.99 14.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 5.99 14.18 A 6.5 6.5 0 0 1 4.18 13.26' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p12 p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 4.18 13.26 A 6.5 6.5 0 0 1 2.74 11.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p13 p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 2.74 11.82 A 6.5 6.5 0 0 1 1.82 10.01' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p14 p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.82 10.01 A 6.5 6.5 0 0 1 1.50 8.00' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p15 p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.50 8.00 A 6.5 6.5 0 0 1 1.82 5.99' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p16 p17 p18 p19 p20 installing'/>
+  <path d='M 1.82 5.99 A 6.5 6.5 0 0 1 2.74 4.18' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p17 p18 p19 p20 installing'/>
+  <path d='M 2.74 4.18 A 6.5 6.5 0 0 1 4.18 2.74' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p18 p19 p20 installing'/>
+  <path d='M 4.18 2.74 A 6.5 6.5 0 0 1 5.99 1.82' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p19 p20 installing'/>
+  <path d='M 5.99 1.82 A 6.5 6.5 0 0 1 8.00 1.50' fill='none' stroke-width='1.5' gpa:stroke='accent' gpa:states='p20 installing'/>
+</svg>

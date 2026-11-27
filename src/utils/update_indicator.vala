@@ -64,9 +64,11 @@ namespace AppManager.Utils {
      * Per-app update progress, drawn by an animated Gtk.Svg (GTK 4.22).
      * States in update-progress.svg: waiting, checking, downloading,
      * p1..p20 (rim filled in 5% steps), installing, failed.
+     * update-ring.svg has the same states without the center glyphs.
      */
     public class UpdateIndicator : Adw.Bin {
         private const string RESOURCE = "/com/github/AppManager/update-progress.svg";
+        private const string RING_RESOURCE = "/com/github/AppManager/update-ring.svg";
         private const uint STATE_DOWNLOADING = 2;
         private const uint PROGRESS_STEPS = 20;
         private const uint STATE_INSTALLING = 23;
@@ -78,6 +80,7 @@ namespace AppManager.Utils {
         private Adw.TimedAnimation dismiss_animation;
         private double display_scale = 1;
         private bool dismissal_started = false;
+        private bool ring_only;
 
         public UpdateIndicatorState status { get; private set; }
         public UpdatePhase phase { get { return status.phase; } }
@@ -87,8 +90,9 @@ namespace AppManager.Utils {
             set { image.pixel_size = value; }
         }
 
-        public UpdateIndicator(UpdateIndicatorState? status = null) {
+        public UpdateIndicator(UpdateIndicatorState? status = null, bool ring_only = false) {
             this.status = status ?? new UpdateIndicatorState();
+            this.ring_only = ring_only;
             image = new Gtk.Image();
             image.add_css_class("update-indicator");
             child = image;
@@ -176,7 +180,7 @@ namespace AppManager.Utils {
         private void start_playing() {
             if (svg == null) {
                 try {
-                    var bytes = GLib.resources_lookup_data(RESOURCE, GLib.ResourceLookupFlags.NONE);
+                    var bytes = GLib.resources_lookup_data(ring_only ? RING_RESOURCE : RESOURCE, GLib.ResourceLookupFlags.NONE);
                     // Resource data is always NUL-terminated.
                     var text = ((string) bytes.get_data()).replace("gpa:state='0'", "gpa:state='%u'".printf(state));
                     svg = new Gtk.Svg.from_bytes(new Bytes(text.data));

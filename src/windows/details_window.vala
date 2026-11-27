@@ -3,156 +3,6 @@ using AppManager.Utils;
 using Gee;
 
 namespace AppManager {
-    /**
-     * Centers a two-button row and draws an optional leading action in the
-     * side space. The leading action is deliberately excluded from measure()
-     * so showing it never changes the row's minimum width or the window size.
-     * When the side space is too small, only the content's left edge gives
-     * way; its right edge and the trailing button stay in place.
-     */
-    private class LeadingActionRow : Gtk.Widget {
-        private const int GAP = 8;
-        private Gtk.Widget content;
-        private Gtk.Widget? leading;
-        private Gtk.Widget? shrink_target;
-        private int base_content_width;
-        private int base_target_width;
-        private int last_target;
-        private Adw.TimedAnimation shrink_animation;
-
-        public LeadingActionRow(Gtk.Widget content, Gtk.Widget shrink_target) {
-            this.content = content;
-            this.shrink_target = shrink_target;
-            content.set_parent(this);
-            halign = Gtk.Align.FILL;
-            hexpand = true;
-
-            base_target_width = shrink_target.width_request;
-            Gtk.Requisition min_size, natural_size;
-            content.get_preferred_size(out min_size, out natural_size);
-            base_content_width = natural_size.width;
-            last_target = base_target_width;
-
-            var target = new Adw.CallbackAnimationTarget((value) => {
-                shrink_target.width_request = (int) Math.round(value);
-                queue_allocate();
-            });
-            shrink_animation = new Adw.TimedAnimation(this, base_target_width, base_target_width, 220, target);
-            shrink_animation.easing = Adw.Easing.EASE_OUT_CUBIC;
-            map.connect(() => {
-                last_target = -1;
-                queue_allocate();
-            });
-        }
-
-        public void set_leading(Gtk.Widget widget) {
-            leading = widget;
-            widget.set_parent(this);
-        }
-
-        public void set_leading_visible(bool visible) {
-            if (leading == null || leading.visible == visible) {
-                return;
-            }
-            leading.visible = visible;
-            last_target = -1;
-            queue_allocate();
-        }
-
-        private int leading_reserve() {
-            if (leading == null) {
-                return 0;
-            }
-            Gtk.Requisition min_size, natural_size;
-            leading.get_preferred_size(out min_size, out natural_size);
-            return natural_size.width + GAP;
-        }
-
-        public override Gtk.SizeRequestMode get_request_mode() {
-            return content.get_request_mode();
-        }
-
-        public override void measure(Gtk.Orientation orientation, int for_size,
-                                     out int minimum, out int natural,
-                                     out int minimum_baseline, out int natural_baseline) {
-            content.measure(orientation, for_size, out minimum, out natural,
-                out minimum_baseline, out natural_baseline);
-            if (orientation == Gtk.Orientation.HORIZONTAL) {
-                // The leading action never changes the row's required width.
-                minimum = int.max(minimum, base_content_width);
-                natural = int.max(natural, base_content_width);
-            }
-        }
-
-        public override void size_allocate(int width, int height, int baseline) {
-            int reserve = leading != null ? leading_reserve() : 0;
-            int base_left = (width - base_content_width) / 2;
-            int target = base_target_width;
-            if (leading != null && leading.visible) {
-                // Only the Update button's left edge gives way, and only by the
-                // amount the side space is short of the leading action's width.
-                int needed = int.max(0, reserve - base_left);
-                target = base_target_width - int.min(needed, reserve);
-            }
-
-            if (target != last_target) {
-                last_target = target;
-                if (target != shrink_target.width_request) {
-                    if (Adw.get_enable_animations(this)) {
-                        shrink_animation.value_from = shrink_target.width_request;
-                        shrink_animation.value_to = target;
-                        shrink_animation.play();
-                    } else {
-                        shrink_target.width_request = target;
-                        queue_allocate();
-                    }
-                }
-            }
-
-            Gtk.Requisition content_min, content_natural;
-            content.get_preferred_size(out content_min, out content_natural);
-            int content_width = int.min(content_natural.width, width);
-            // Keep the content row's right edge fixed: shrinking moves only the
-            // Update button's left edge, leaving Update's right edge and the
-            // Extract button in place.
-            int content_x = int.max(0, base_left + base_content_width - content_width);
-            var content_transform = new Gsk.Transform().translate(Graphene.Point() {
-                x = content_x,
-                y = 0
-            });
-            content.allocate(content_width, height, -1, content_transform);
-
-            if (leading != null && leading.visible) {
-                Gtk.Requisition leading_min, leading_natural;
-                leading.get_preferred_size(out leading_min, out leading_natural);
-                int leading_x = content_x - reserve;
-                int leading_y = (height - leading_natural.height) / 2;
-                var leading_transform = new Gsk.Transform().translate(Graphene.Point() {
-                    x = leading_x,
-                    y = leading_y
-                });
-                leading.allocate(leading_natural.width, leading_natural.height, -1, leading_transform);
-            }
-        }
-
-        public override void snapshot(Gtk.Snapshot snapshot) {
-            snapshot_child(content, snapshot);
-            if (leading != null && leading.get_visible()) {
-                snapshot_child(leading, snapshot);
-            }
-        }
-
-        protected override void dispose() {
-            if (content != null && content.get_parent() == this) {
-                content.unparent();
-            }
-            if (leading != null && leading.get_parent() == this) {
-                leading.unparent();
-            }
-            base.dispose();
-        }
-    }
-
     public class DetailsWindow : Adw.NavigationPage {
         private InstallationRecord record;
         private InstallationRegistry registry;
@@ -163,19 +13,31 @@ namespace AppManager {
         private string? update_failure_message = null;  // non-null when last update failed
         private string? incoming_version = null;  // release version of a pending update
         private Gtk.Box? version_card;
-        private Gtk.Button? update_button;
+        private Gtk.Box? hidden_card;
+        // Open, or Update while one is pending. The slot holds it and the round
+        // stop control it turns into while updating.
+        private Gtk.Stack? action_slot;
+        private Gtk.Button? action_button;
+        // Open and Check are the same width whatever their labels say.
+        private Gtk.SizeGroup pill_widths = new Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL);
+        private Gtk.Stack? action_labels;
+        private Gtk.Button? stop_button;
+        private Adw.TimedAnimation? morph_animation;
+        private bool morph_round = false;
+        private Adw.Spinner? launch_spinner;
+        private bool launching = false;
+        private bool cannot_mount = false;
         private UpdateIndicator? update_indicator;
         private UpdateIndicatorState? update_progress_state;
         private ulong update_progress_changed_id = 0;
         private Gtk.Overlay? update_wrapper;
-        private Gtk.Button? cancel_update_button;
-        private Gtk.Button? clear_update_button;
-        private LeadingActionRow? actions_row;
         private bool cancel_pressed = false;
-        private Gtk.Button? extract_button;
+        // Manual Updates on the App Updates page.
+        private Adw.ActionRow? check_row;
+        private Adw.Spinner? check_spinner;
+        private Gtk.Button? check_button;
         private Adw.Banner? path_banner;
         private Adw.SwitchRow? path_row;
-        private Gtk.Button? delete_button;
         private Gtk.Button web_badge;
         private Adw.ActionRow? apphub_submission_row;
         private AppHubMatch? apphub_match;
@@ -221,6 +83,8 @@ namespace AppManager {
                 update_progress_state.disconnect(update_progress_changed_id);
                 update_progress_changed_id = 0;
             }
+            // Its callbacks hold this page.
+            morph_animation = null;
             base.dispose();
         }
 
@@ -233,6 +97,7 @@ namespace AppManager {
         public void set_incoming_version(string? version) {
             incoming_version = version;
             refresh_version_card();
+            refresh_update_button();
         }
 
         public void set_update_loading(bool loading) {
@@ -338,8 +203,9 @@ namespace AppManager {
             
             var props_group = build_properties_group();
             // update_group will be handled inside build_app_updates_page()
-            var advanced_row = build_advanced_action_row();
-            props_group.add(advanced_row);
+            props_group.add(build_path_row());
+            props_group.add(build_nodisplay_row());
+            props_group.add(build_advanced_action_row());
             
             detail_page.add(props_group);
 
@@ -351,7 +217,6 @@ namespace AppManager {
             update_group_replacement.add(build_update_info_action_row());
             update_group_replacement.add(build_apphub_submission_row());
             detail_page.add(update_group_replacement);
-            detail_page.add(build_actions_group());
             
             // Assemble final layout
             var toolbar = new Adw.ToolbarView();
@@ -452,52 +317,260 @@ namespace AppManager {
             spacer.set_vexpand(true);
             info_box.append(spacer);
             
-            // Open button with launch spinner
+            // Open/Update button and launch spinner
             var open_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             open_box.set_halign(Gtk.Align.START);
             open_box.set_valign(Gtk.Align.END);
 
-            var open_button = new Gtk.Button.with_label(_("Open"));
-            open_button.add_css_class("pill");
-            open_button.add_css_class("suggested-action");
-            open_button.add_css_class("open-button");
-            open_button.sensitive = !FuseSupport.record_cannot_mount(record);
+            cannot_mount = FuseSupport.record_cannot_mount(record);
+            open_box.append(build_action_slot());
 
-            var launch_spinner = new Adw.Spinner();
+            launch_spinner = new Adw.Spinner();
             launch_spinner.set_visible(false);
-
-            open_button.clicked.connect(() => {
-                try {
-                    var app_info = new DesktopAppInfo.from_filename(record.desktop_file);
-                    if (app_info != null) {
-                        app_info.launch(null, null);
-
-                        // Show spinner for 3 seconds as launch feedback
-                        launch_spinner.set_visible(true);
-                        open_button.sensitive = false;
-                        Timeout.add(3000, () => {
-                            launch_spinner.set_visible(false);
-                            open_button.sensitive = true;
-                            return Source.REMOVE;
-                        });
-                    }
-                } catch (Error e) {
-                    warning("Failed to launch %s: %s", record.name, e.message);
-                }
-            });
-
-            open_box.append(open_button);
             open_box.append(launch_spinner);
             info_box.append(open_box);
 
             header_box.append(info_box);
 
+            // Delete menu, bottom right of the card, level with the Open button.
+            var trash_action = new SimpleAction("trash", null);
+            // Extracted installs and files outside home have no Trash to go to.
+            trash_action.set_enabled(record.mode != InstallMode.EXTRACTED && is_path_trashable());
+            trash_action.activate.connect(() => request_uninstall(false));
+            var delete_action = new SimpleAction("delete", null);
+            delete_action.activate.connect(() => request_uninstall(true));
+            var info_action = new SimpleAction("info", null);
+            // Extracted installs have no AppImage file left to inspect.
+            info_action.set_enabled(record.mode != InstallMode.EXTRACTED);
+            info_action.activate.connect(() => show_info_window.begin());
+            var delete_actions = new SimpleActionGroup();
+            delete_actions.add_action(info_action);
+            delete_actions.add_action(trash_action);
+            delete_actions.add_action(delete_action);
+
+            var delete_menu = new GLib.Menu();
+            var info_section = new GLib.Menu();
+            info_section.append(_("Get Info"), "details.info");
+            delete_menu.append_section(null, info_section);
+            var delete_section = new GLib.Menu();
+            delete_section.append(_("Move to Trash"), "details.trash");
+            delete_section.append(_("Delete Permanently"), "details.delete");
+            delete_menu.append_section(null, delete_section);
+            var delete_popover = new Gtk.PopoverMenu.from_model(delete_menu);
+            // Colors the last item (style.css).
+            delete_popover.add_css_class("details-delete-menu");
+            delete_popover.closed.connect(sync_shift_held);
+
+            var menu_button = new Gtk.MenuButton();
+            menu_button.icon_name = "open-menu-symbolic";
+            menu_button.tooltip_text = _("More actions");
+            menu_button.popover = delete_popover;
+            menu_button.insert_action_group("details", delete_actions);
+            menu_button.add_css_class("details-round-button");
+            menu_button.add_css_class("flat");
+            menu_button.set_halign(Gtk.Align.END);
+            menu_button.set_valign(Gtk.Align.END);
+            menu_button.margin_end = 12;
+            menu_button.margin_bottom = 20;
+
+            // An overlay, so the name and description keep the full width.
+            var header_overlay = new Gtk.Overlay();
+            header_overlay.set_child(header_box);
+            header_overlay.add_overlay(menu_button);
+
             var header_row = new Adw.PreferencesRow();
             header_row.set_activatable(false);
-            header_row.set_child(header_box);
+            header_row.set_child(header_overlay);
             header_group.add(header_row);
-            
+
             return header_group;
+        }
+
+        // The drop window's Get Info dialog, for the installed AppImage.
+        private async void show_info_window() {
+            var path = record.installed_path;
+            AppImageMetadata? metadata = null;
+            // Hashing a large AppImage would stall the UI.
+            SourceFunc callback = show_info_window.callback;
+            new Thread<void>("appmgr-info", () => {
+                try {
+                    metadata = new AppImageMetadata(File.new_for_path(path));
+                } catch (Error e) {
+                    warning("Get Info failed for %s: %s", path, e.message);
+                }
+                Idle.add((owned) callback);
+            });
+            yield;
+            var window = get_root() as Gtk.Window;
+            if (metadata == null || window == null) {
+                return;
+            }
+            // Origin as the file declares it, like the drop window.
+            var origin = Updater.normalize_update_url(metadata.update_info);
+            var scheme = origin != null ? Uri.peek_scheme(origin) : null;
+            if (scheme != "https" && scheme != "http") {
+                origin = null;
+            }
+            Gdk.Paintable? icon = null;
+            var image = header_icon as Gtk.Image;
+            if (image != null) {
+                icon = image.get_paintable();
+                // Theme icons have no paintable of their own.
+                if (icon == null && image.icon_name != null) {
+                    icon = Gtk.IconTheme.get_for_display(image.get_display()).lookup_icon(
+                        image.icon_name, null, 96, image.scale_factor, Gtk.TextDirection.NONE, 0);
+                }
+            }
+            new AppImageInfoWindow((Application) window.application, window, path, Path.get_dirname(path),
+                origin, record.name, record.version, metadata, icon).present();
+        }
+
+        private void request_uninstall(bool permanently) {
+            // The sandboxed home counts too: for a sandboxed app it is all of the
+            // user data there is, so removing it silently is the worst option.
+            if (Installer.has_portable_folders(record) || Installer.has_sandbox_home(record)) {
+                present_portable_delete_dialog(permanently);
+            } else if (permanently) {
+                present_permanent_delete_warning();
+            } else {
+                uninstall_requested(record, false, false);
+            }
+        }
+
+        /**
+         * Open, Update while one is pending, or Clear with Shift held. While the app
+         * updates it shrinks into a round stop control with the progress ring. The
+         * stack keeps the pill's size, so the buttons beside it never move.
+         */
+        private Gtk.Widget build_action_slot() {
+            action_labels = new Gtk.Stack();
+            action_labels.hhomogeneous = true;
+            action_labels.add_named(new Gtk.Label(_("Open")), "open");
+            action_labels.add_named(new Gtk.Label(_("Update")), "update");
+            action_labels.add_named(new Gtk.Label(_("Clear")), "clear");
+
+            action_button = new Gtk.Button();
+            action_button.add_css_class("pill");
+            action_button.add_css_class("open-button");
+            action_button.set_child(action_labels);
+            pill_widths.add_widget(action_button);
+            action_button.clicked.connect(on_action_clicked);
+
+            // A plain square: some themes draw the stop icon inside a circle,
+            // which would double the ring.
+            var stop_mark = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            stop_mark.add_css_class("details-stop-mark");
+            stop_mark.set_halign(Gtk.Align.CENTER);
+            stop_mark.set_valign(Gtk.Align.CENTER);
+            update_wrapper = new Gtk.Overlay();
+            update_wrapper.set_child(stop_mark);
+            stop_button = new Gtk.Button();
+            stop_button.add_css_class("details-round-button");
+            // Shrinks into the middle of the pill's place.
+            stop_button.set_halign(Gtk.Align.CENTER);
+            stop_button.set_valign(Gtk.Align.CENTER);
+            stop_button.set_child(update_wrapper);
+            stop_button.clicked.connect(() => {
+                // A double click on Update must not land here.
+                if (morph_animation.state != Adw.AnimationState.PLAYING) {
+                    request_cancel_update();
+                }
+            });
+
+            action_slot = new Gtk.Stack();
+            action_slot.hhomogeneous = true;
+            action_slot.vhomogeneous = true;
+            action_slot.transition_type = Gtk.StackTransitionType.CROSSFADE;
+            action_slot.add_child(action_button);
+            action_slot.add_child(stop_button);
+            morph_round = false;
+
+            var slot = action_slot;
+            var pill = action_button;
+            var stop = stop_button;
+            var target = new Adw.CallbackAnimationTarget((value) => {
+                stop.width_request = (int) Math.round(value);
+            });
+            morph_animation = new Adw.TimedAnimation(slot, 0, 0, 250, target);
+            morph_animation.easing = Adw.Easing.EASE_OUT_CUBIC;
+            morph_animation.done.connect(() => {
+                if (morph_round) {
+                    stop.width_request = -1;
+                } else {
+                    // The crossfade draws the stop button live, so it keeps its pill
+                    // shape and empty face. set_round() resets both.
+                    slot.visible_child = pill;
+                }
+            });
+
+            rebuild_update_indicator();
+            refresh_update_button();
+            return action_slot;
+        }
+
+        private void on_action_clicked() {
+            if (update_available && shift_held) {
+                clear_update_requested(record);
+            } else if (update_available) {
+                update_requested(record);
+            } else {
+                launch_app();
+            }
+        }
+
+        private void launch_app() {
+            try {
+                var app_info = new DesktopAppInfo.from_filename(record.desktop_file);
+                if (app_info != null) {
+                    app_info.launch(null, null);
+
+                    // Show spinner for 3 seconds as launch feedback
+                    var spinner = launch_spinner;
+                    spinner.set_visible(true);
+                    launching = true;
+                    refresh_update_button();
+                    Timeout.add(3000, () => {
+                        spinner.set_visible(false);
+                        launching = false;
+                        refresh_update_button();
+                        return Source.REMOVE;
+                    });
+                }
+            } catch (Error e) {
+                warning("Failed to launch %s: %s", record.name, e.message);
+            }
+        }
+
+        // Only on the edge: progress refreshes arrive many times per second.
+        private void set_round(bool round) {
+            if (round == morph_round) {
+                return;
+            }
+            morph_round = round;
+            int current = stop_button.width_request > 0 ? stop_button.width_request : stop_button.get_width();
+            morph_animation.pause();
+            stop_button.width_request = -1;
+            int pill_width = action_slot.get_width();
+            if (!action_slot.get_mapped() || pill_width <= 0) {
+                // A page built mid-update (or a rebuild) starts in place.
+                update_wrapper.opacity = 1;
+                action_slot.visible_child = round ? stop_button : action_button;
+                return;
+            }
+
+            int minimum, round_width, min_baseline, natural_baseline;
+            stop_button.measure(Gtk.Orientation.HORIZONTAL, -1, out minimum, out round_width,
+                out min_baseline, out natural_baseline);
+            // The ring and stop icon have no place in the growing pill.
+            update_wrapper.opacity = round ? 1 : 0;
+            if (round && action_slot.visible_child != stop_button) {
+                current = pill_width;
+                stop_button.width_request = current;
+                action_slot.visible_child = stop_button;
+            }
+            morph_animation.value_from = current;
+            morph_animation.value_to = round ? round_width : pill_width;
+            morph_animation.play();
         }
 
         private Adw.PreferencesGroup build_cards_group() {
@@ -576,10 +649,9 @@ namespace AppManager {
             
             // Hidden from app drawer card (only show if NoDisplay=true)
             var nodisplay_value = desktop_props.get("NoDisplay") ?? "false";
-            if (nodisplay_value.down() == "true") {
-                var hidden_card = create_info_card(_("Hidden"));
-                cards_box.append(hidden_card);
-            }
+            hidden_card = create_info_card(_("Hidden"));
+            hidden_card.visible = nodisplay_value.down() == "true";
+            cards_box.append(hidden_card);
 
             // Web page badge - clickable, shown only when a URL is set
             web_badge = new Gtk.Button();
@@ -610,8 +682,7 @@ namespace AppManager {
 
         private Adw.PreferencesGroup build_properties_group() {
             var props_group = new Adw.PreferencesGroup();
-            props_group.title = _("Properties");
-            
+
             // Command line arguments
             var current_args = record.get_effective_commandline_args() ?? "";
             var exec_row = new Adw.EntryRow();
@@ -709,24 +780,47 @@ namespace AppManager {
             info_group.description = body_text;
             prefs_page.add(info_group);
 
-            // Enable / disable updates toggle
+            // Enable / disable updates toggle; it expands to the manual check.
             var toggle_group = new Adw.PreferencesGroup();
-            var enable_updates_row = new Adw.SwitchRow();
+            var enable_updates_row = new Adw.ExpanderRow();
             enable_updates_row.title = _("Enable app updates");
+            enable_updates_row.show_enable_switch = true;
             enable_updates_row.add_prefix(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
+            check_row = new Adw.ActionRow();
+            check_spinner = new Adw.Spinner();
+            check_row.add_suffix(check_spinner);
+            // Check, or Clear once an update is pending.
+            check_button = new Gtk.Button();
+            check_button.add_css_class("pill");
+            // Same size as the Open button.
+            check_button.add_css_class("open-button");
+            pill_widths.add_widget(check_button);
+            check_button.valign = Gtk.Align.CENTER;
+            check_button.clicked.connect(() => {
+                if (update_available) {
+                    clear_update_requested(record);
+                } else {
+                    check_update_requested(record);
+                }
+            });
+            check_row.add_suffix(check_button);
+            enable_updates_row.add_row(check_row);
             toggle_group.add(enable_updates_row);
             prefs_page.add(toggle_group);
 
             // Update link / web page rows
             var update_group = build_update_info_group(enable_updates_row);
             prefs_page.add(update_group);
+            // Only a switch change expands it; open with the check showing.
+            enable_updates_row.expanded = enable_updates_row.enable_expansion;
+            refresh_update_button();
 
             // Sync logic
-            enable_updates_row.notify["active"].connect(() => {
-                status_label.set_label(enable_updates_row.active ? _("On") : _("Off"));
+            enable_updates_row.notify["enable-expansion"].connect(() => {
+                status_label.set_label(enable_updates_row.enable_expansion ? _("On") : _("Off"));
                 // Locked "Off" only reflects a missing link; keep the stored preference.
                 if (!enable_updates_row.sensitive) return;
-                record.updates_enabled = enable_updates_row.active;
+                record.updates_enabled = enable_updates_row.enable_expansion;
                 registry.update(record);
             });
 
@@ -738,7 +832,7 @@ namespace AppManager {
             drop_focus_on_empty_click(nav_page);
             return nav_page;
         }
-        private Adw.PreferencesGroup build_update_info_group(Adw.SwitchRow enable_updates_row) {
+        private Adw.PreferencesGroup build_update_info_group(Adw.ExpanderRow enable_updates_row) {
             var update_group = new Adw.PreferencesGroup();
             update_group.title = _("Update details");
             
@@ -779,9 +873,9 @@ namespace AppManager {
             // The switch needs a usable link; pre-release follows the switch.
             sync_updates_switch(enable_updates_row, update_row.text);
             update_row.changed.connect(() => sync_updates_switch(enable_updates_row, update_row.text));
-            prerelease_row.sensitive = enable_updates_row.active;
-            enable_updates_row.notify["active"].connect(() => {
-                prerelease_row.sensitive = enable_updates_row.active;
+            prerelease_row.sensitive = enable_updates_row.enable_expansion;
+            enable_updates_row.notify["enable-expansion"].connect(() => {
+                prerelease_row.sensitive = enable_updates_row.enable_expansion;
             });
 
             // Web page row
@@ -799,11 +893,12 @@ namespace AppManager {
             return link != null && DirectUrlSource.parse(link.strip()) != null;
         }
 
-        private void sync_updates_switch(Adw.SwitchRow row, string? link) {
+        private void sync_updates_switch(Adw.ExpanderRow row, string? link) {
             var available = has_update_source(link);
             // Sensitivity first: the notify handler skips saving while locked.
             row.sensitive = available;
-            row.active = available && record.updates_enabled;
+            row.tooltip_text = available ? null : _("Enter valid update link below");
+            row.enable_expansion = available && record.updates_enabled;
         }
 
         /**
@@ -1323,18 +1418,9 @@ namespace AppManager {
             // The "manual override" of issue #37, as a list rather than a single slot:
             // anything outside the XDG set the app still needs - including the real target
             // of a symlink, which a bind of the link alone leaves dangling.
-            var add_folder_button = new Gtk.Button();
-            add_folder_button.child = new Adw.ButtonContent() {
-                icon_name = "list-add-symbolic",
-                label = _("Add folder")
-            };
-            add_folder_button.add_css_class("flat");
-            add_folder_button.halign = Gtk.Align.CENTER;
-            add_folder_button.margin_top = 8;
-            add_folder_button.margin_bottom = 8;
-            var add_folder_row = new Adw.ActionRow();
-            add_folder_row.activatable = false;
-            add_folder_row.child = add_folder_button;
+            var add_folder_row = new Adw.ButtonRow();
+            add_folder_row.title = _("Add Folder");
+            add_folder_row.start_icon_name = "list-add-symbolic";
             var extra_rows = new Gee.ArrayList<Adw.ComboRow>();
 
             var downloads_row = build_folder_permission_row(
@@ -1821,7 +1907,7 @@ namespace AppManager {
             videos_row.notify["selected"].connect(() => on_permission_toggled());
             music_row.notify["selected"].connect(() => on_permission_toggled());
 
-            add_folder_button.clicked.connect(() => {
+            add_folder_row.activated.connect(() => {
                 var dialog = new Gtk.FileDialog();
                 dialog.title = _("Select Folder to Share");
                 dialog.modal = true;
@@ -1861,9 +1947,6 @@ namespace AppManager {
             row.activated.connect(() => {
                 var page = build_advanced_settings_page();
                 var main_win = (MainWindow) this.get_root();
-                // A pushed page takes the focus the old page held, which lands a click
-                // in the first entry (App Name). Keyboard users keep that.
-                if (!main_win.focus_visible) main_win.set_focus(null);
                 main_win.push_page(page);
             });
             return row;
@@ -1879,12 +1962,19 @@ namespace AppManager {
             advanced_group.add(build_categories_row());
             advanced_group.add(build_icon_row());
             advanced_group.add(build_wmclass_row());
-            advanced_group.add(build_version_row());
-            advanced_group.add(build_nodisplay_row());
-            advanced_group.add(build_path_row());
             
             prefs_page.add(advanced_group);
             prefs_page.add(build_env_vars_group());
+
+            var extract_group = new Adw.PreferencesGroup();
+            var extract_row = new Adw.ButtonRow();
+            extract_row.title = _("Extract AppImage…");
+            extract_row.sensitive = record.mode == InstallMode.PORTABLE && !record.is_terminal;
+            extract_row.activated.connect(() => {
+                present_extract_warning();
+            });
+            extract_group.add(extract_row);
+            prefs_page.add(extract_group);
             
             var toolbar = new Adw.ToolbarView();
             toolbar.add_top_bar(new Adw.HeaderBar());
@@ -1903,7 +1993,7 @@ namespace AppManager {
         private delegate void CommitFunc(bool permission_edit);
         private delegate void StringUpdateFunc(string value);
         private delegate void ChangeRowFunc(string title, string before, string after);
-        private delegate Adw.ActionRow EnvRowFunc(string? name, string? value, Gtk.Button add_button);
+        private delegate Adw.ActionRow EnvRowFunc(string? name, string? value, Adw.ButtonRow add_row);
 
         /**
          * Asked when the portable folders and the sandboxed home both hold data, which
@@ -2146,7 +2236,7 @@ namespace AppManager {
             };
 
             // Create a row for a single env var
-            EnvRowFunc create_env_var_row = (initial_name, initial_value, add_button) => {
+            EnvRowFunc create_env_var_row = (initial_name, initial_value, add_row) => {
                 var row = new Adw.ActionRow();
                 
                 var content_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
@@ -2192,10 +2282,7 @@ namespace AppManager {
                     env_expander.remove(row);
                     save_env_vars_from_rows();
                     flush_env_vars();
-                    // Re-enable add button if under limit
-                    if (env_rows.size < MAX_ENV_VARS) {
-                        add_button.sensitive = true;
-                    }
+                    add_row.visible = env_rows.size < MAX_ENV_VARS;
                 });
                 content_box.append(delete_button);
                 
@@ -2205,16 +2292,10 @@ namespace AppManager {
                 return row;
             };
 
-            // Add button row
-            var add_row = new Adw.ActionRow();
-            add_row.set_activatable(false);
-            
-            var add_button = new Gtk.Button.from_icon_name("list-add-symbolic");
-            add_button.add_css_class("flat");
-            add_button.set_halign(Gtk.Align.CENTER);
-            add_button.set_margin_top(8);
-            add_button.set_margin_bottom(8);
-            
+            var add_row = new Adw.ButtonRow();
+            add_row.title = _("Add Environment Variable");
+            add_row.start_icon_name = "list-add-symbolic";
+
             // Populate existing env vars
             foreach (var env_var in env_vars) {
                 if (env_var == null || env_var.strip() == "") continue;
@@ -2227,36 +2308,27 @@ namespace AppManager {
                 } else {
                     name_part = env_var;
                 }
-                var row = create_env_var_row(name_part, value_part, add_button);
+                var row = create_env_var_row(name_part, value_part, add_row);
                 env_rows.add(row);
                 env_expander.add(row);
             }
 
-            // Update add button sensitivity
-            add_button.sensitive = env_rows.size < MAX_ENV_VARS;
-            
-            add_button.clicked.connect(() => {
+            // No add row once the limit is reached.
+            add_row.visible = env_rows.size < MAX_ENV_VARS;
+
+            add_row.activated.connect(() => {
                 if (env_rows.size >= MAX_ENV_VARS) {
                     return;
                 }
-                var row = create_env_var_row(null, null, add_button);
+                var row = create_env_var_row(null, null, add_row);
                 env_rows.add(row);
                 // Remove add_row, add new row, re-add add_row to keep button at bottom
                 env_expander.remove(add_row);
                 env_expander.add(row);
                 env_expander.add(add_row);
-                // Disable add button if at limit
-                if (env_rows.size >= MAX_ENV_VARS) {
-                    add_button.sensitive = false;
-                }
+                add_row.visible = env_rows.size < MAX_ENV_VARS;
             });
-            
-            var add_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            add_box.set_halign(Gtk.Align.CENTER);
-            add_box.set_hexpand(true);
-            add_box.append(add_button);
-            add_row.set_child(add_box);
-            
+
             env_expander.add(add_row);
             
             return env_expander;
@@ -2383,32 +2455,6 @@ namespace AppManager {
             );
         }
 
-        private Adw.EntryRow build_version_row() {
-            var version_row = new Adw.EntryRow();
-            version_row.title = _("Version");
-            version_row.add_prefix(new Gtk.Image.from_icon_name("package-x-generic-symbolic"));
-            version_row.text = record.version ?? "";
-            // Update the record on each keystroke (in-memory), defer the .desktop file write to
-            // focus-leave / Enter. The flush reads only the record, so it is safe during teardown.
-            // Own flag: a full save from another row does not write X-AppImage-Version.
-            bool version_edited = false;
-            version_row.changed.connect(() => {
-                record.version = version_row.text.strip() == "" ? null : version_row.text;
-                version_edited = true;
-            });
-            UpdateFunc flush_version = () => {
-                if (!version_edited) return;
-                version_edited = false;
-                registry.update(record);
-                installer.set_desktop_entry_property(record.desktop_file, "X-AppImage-Version", record.version ?? "");
-            };
-            var version_focus = new Gtk.EventControllerFocus();
-            version_focus.leave.connect(() => { flush_version(); });
-            version_row.add_controller(version_focus);
-            version_row.entry_activated.connect(() => { flush_version(); });
-            return version_row;
-        }
-
         private Adw.SwitchRow build_nodisplay_row() {
             var nodisplay_row = new Adw.SwitchRow();
             nodisplay_row.title = _("Hide from app drawer");
@@ -2420,6 +2466,7 @@ namespace AppManager {
                 record.custom_no_display = nodisplay_row.active ? "true" : "false";
                 registry.update(record);
                 installer.set_desktop_entry_property(record.desktop_file, "NoDisplay", nodisplay_row.active ? "true" : "false");
+                hidden_card.visible = nodisplay_row.active;
             });
             return nodisplay_row;
         }
@@ -2498,113 +2545,6 @@ namespace AppManager {
             return path_row;
         }
 
-        private Adw.PreferencesGroup build_actions_group() {
-            var actions_group = new Adw.PreferencesGroup();
-            actions_group.title = _("Actions");
-            
-            var actions_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 8);
-            actions_box.set_halign(Gtk.Align.FILL);
-            actions_box.set_hexpand(true);
-            actions_group.add(actions_box);
-
-            // The stop control uses the empty space to the left of the
-            // Update/Extract pair. When space is tight, only Update's left
-            // edge gives way so the pair's right side stays put.
-            var row1 = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
-            row1.set_halign(Gtk.Align.CENTER);
-
-            // Same round stop control as the main window's update header.
-            cancel_update_button = new Gtk.Button.from_icon_name("process-stop-symbolic");
-            cancel_update_button.add_css_class("cancel-update-button");
-            cancel_update_button.set_valign(Gtk.Align.CENTER);
-            cancel_update_button.set_tooltip_text(_("Cancel update"));
-            cancel_update_button.visible = false;
-            cancel_update_button.clicked.connect(() => {
-                request_cancel_update();
-            });
-
-            // Same control as the main window's clear button, for this app only.
-            clear_update_button = new Gtk.Button.from_icon_name("edit-clear-all-symbolic");
-            clear_update_button.add_css_class("clear-updates-button");
-            clear_update_button.set_valign(Gtk.Align.CENTER);
-            clear_update_button.set_tooltip_text(_("Clear pending updates"));
-            clear_update_button.visible = false;
-            clear_update_button.clicked.connect(() => {
-                clear_update_requested(record);
-            });
-
-            // Stop and clear never show together, so they share the leading slot.
-            var leading_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            leading_box.set_valign(Gtk.Align.CENTER);
-            leading_box.append(cancel_update_button);
-            leading_box.append(clear_update_button);
-            leading_box.visible = false;
-
-            // The same animated phase/progress badge used in the library.
-            update_wrapper = new Gtk.Overlay();
-            update_button = new Gtk.Button();
-            update_button.add_css_class("pill");
-            update_button.width_request = 200;
-            update_button.hexpand = false;
-            update_button.clicked.connect(() => {
-                if (update_loading) {
-                    return;
-                }
-                if (update_available) {
-                    update_requested(record);
-                } else {
-                    check_update_requested(record);
-                }
-            });
-            update_wrapper.set_child(update_button);
-            
-            rebuild_update_indicator();
-            
-            row1.append(update_wrapper);
-
-            // Extract button
-            extract_button = new Gtk.Button.with_label(_("Extract AppImage"));
-            extract_button.add_css_class("pill");
-            extract_button.width_request = 200;
-            extract_button.hexpand = false;
-            var can_extract = record.mode == InstallMode.PORTABLE && !record.is_terminal;
-            extract_button.sensitive = can_extract;
-            extract_button.clicked.connect(() => {
-                present_extract_warning();
-            });
-            row1.append(extract_button);
-
-            actions_row = new LeadingActionRow(row1, update_button);
-            actions_row.set_leading(leading_box);
-            actions_box.append(actions_row);
-            refresh_update_button();
-
-            // Second row: Delete button
-            delete_button = new Gtk.Button();
-            delete_button.add_css_class("pill");
-            delete_button.width_request = 200;
-            delete_button.hexpand = false;
-            delete_button.set_halign(Gtk.Align.CENTER);
-            update_delete_button_label();
-            delete_button.add_css_class("destructive-action");
-            delete_button.clicked.connect(() => {
-                bool will_be_permanent = shift_held || record.mode == InstallMode.EXTRACTED || !is_path_trashable();
-                // The sandboxed home counts too: for a sandboxed app it is all of the
-                // user data there is, so removing it silently is the worst option.
-                if (Installer.has_portable_folders(record) || Installer.has_sandbox_home(record)) {
-                    present_portable_delete_dialog(will_be_permanent);
-                } else if (will_be_permanent) {
-                    present_permanent_delete_warning();
-                } else {
-                    uninstall_requested(record, false, false);
-                }
-            });
-            
-            actions_box.append(delete_button);
-
-            return actions_group;
-        }
-
         private void refresh_apphub_action() {
             if (apphub_submission_row == null) return;
             if (apphub_checked_source != record.get_effective_update_link()) apphub_match = null;
@@ -2636,17 +2576,16 @@ namespace AppManager {
             if (update_indicator != null && update_indicator.get_parent() is Gtk.Overlay) {
                 ((Gtk.Overlay) update_indicator.get_parent()).remove_overlay(update_indicator);
             }
-            update_indicator = new UpdateIndicator(update_progress_state);
-            update_indicator.pixel_size = 20;
+            // Ring only: the stop icon takes the center.
+            update_indicator = new UpdateIndicator(update_progress_state, true);
+            update_indicator.pixel_size = 32;
             update_indicator.valign = Gtk.Align.CENTER;
-            update_indicator.halign = Gtk.Align.START;
-            update_indicator.margin_start = 12;
-            update_indicator.visible = false;
+            update_indicator.halign = Gtk.Align.CENTER;
             update_wrapper.add_overlay(update_indicator);
         }
 
         private void refresh_update_button() {
-            if (update_button == null || update_indicator == null) {
+            if (action_button == null || update_indicator == null) {
                 return;
             }
 
@@ -2656,66 +2595,44 @@ namespace AppManager {
             bool installing = progress != null && progress.phase == UpdatePhase.INSTALLING;
             var failure_message = update_failure_message
                 ?? (progress != null && progress.phase == UpdatePhase.FAILED ? progress.message : null);
+            // Round from the first phase until the ring has collapsed. A check stays a pill.
+            bool round = progress != null ? !progress.finished && progress.phase != UpdatePhase.FAILED
+                : loading && update_updating;
             update_loading = loading;
             if (!updating) {
                 cancel_pressed = false;
             }
-            bool show_clear = !loading && !updating && update_available;
-            if (actions_row != null) {
-                actions_row.set_leading_visible(updating || show_clear);
-            }
-            if (clear_update_button != null) {
-                clear_update_button.visible = show_clear;
-            }
-            if (cancel_update_button != null) {
-                cancel_update_button.visible = updating;
-                cancel_update_button.sensitive = updating && !installing && !cancel_pressed;
-                cancel_update_button.set_tooltip_text(installing ? _("Installation cannot be cancelled") : _("Cancel update"));
-            }
-            update_button.set_tooltip_text(null);
-            update_indicator.visible = progress != null ? !progress.finished : loading || failure_message != null;
-            if (progress == null && loading) {
-                update_indicator.show_phase(update_updating ? UpdatePhase.INSTALLING : UpdatePhase.CHECKING);
-            } else if (progress == null && failure_message != null) {
-                update_indicator.show_phase(UpdatePhase.FAILED, 0, 0, failure_message);
+            if (!loading) {
+                update_updating = false;
             }
 
-            if (loading) {
-                if (progress != null || update_updating) {
-                    update_button.set_label(_("Updating..."));
-                } else {
-                    update_button.set_label(_("Checking..."));
-                }
-                update_button.sensitive = false;
-                update_button.remove_css_class("suggested-action");
-                update_button.remove_css_class("update-failed-button");
-                return;
+            set_round(round);
+            stop_button.sensitive = updating && !installing && !cancel_pressed;
+            stop_button.set_tooltip_text(installing ? _("Installation cannot be cancelled") : _("Cancel update"));
+
+            bool clear = update_available && shift_held;
+            action_labels.visible_child_name = clear ? "clear" : update_available ? "update" : "open";
+            action_button.remove_css_class("suggested-action");
+            action_button.remove_css_class("update-failed-button");
+            action_button.set_tooltip_text(null);
+            // Clear stays plain.
+            if (!clear && update_available && failure_message != null) {
+                action_button.add_css_class("update-failed-button");
+                action_button.set_tooltip_text(failure_message);
+            } else if (!clear) {
+                action_button.add_css_class("suggested-action");
             }
+            // FUSE and the launch feedback only hold back Open.
+            action_button.sensitive = update_available ? !loading : !launching && !cannot_mount;
 
-            update_button.sensitive = true;
-            update_updating = false;  // Reset updating state
-            update_button.remove_css_class("update-failed-button");
-
-            if (failure_message != null) {
-                var warn_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-                warn_box.set_halign(Gtk.Align.CENTER);
-                warn_box.append(new Gtk.Label(_("Update Failed")));
-                update_button.set_child(warn_box);
-                update_button.remove_css_class("suggested-action");
-                update_button.add_css_class("update-failed-button");
-                update_button.set_tooltip_text(failure_message);
-            } else if (update_available) {
-                var update_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-                update_box.set_halign(Gtk.Align.CENTER);
-                update_box.append(new Gtk.Image.from_icon_name("software-update-available-symbolic"));
-                update_box.append(new Gtk.Label(_("Update")));
-                update_button.set_child(update_box);
-                update_button.add_css_class("suggested-action");
-            } else {
-                update_button.set_child(null);
-                update_button.set_label(_("Check Update"));
-                update_button.remove_css_class("suggested-action");
-                update_button.set_tooltip_text(null);
+            if (check_row != null) {
+                // A check during an update would reset its progress.
+                check_button.sensitive = !loading;
+                check_spinner.visible = loading;
+                check_button.label = update_available ? _("Clear") : _("Check");
+                check_row.title = update_available ? _("Update Available") : _("Manual Updates");
+                var incoming = (incoming_version ?? "").strip();
+                check_row.subtitle = update_available && incoming != "" ? format_version(incoming) : "";
             }
         }
 
@@ -2813,14 +2730,14 @@ namespace AppManager {
             key_controller.key_pressed.connect((keyval, keycode, state) => {
                 if (keyval == Gdk.Key.Shift_L || keyval == Gdk.Key.Shift_R) {
                     shift_held = true;
-                    update_delete_button_label();
+                    refresh_update_button();
                 }
                 return false;
             });
             key_controller.key_released.connect((keyval, keycode, state) => {
                 if (keyval == Gdk.Key.Shift_L || keyval == Gdk.Key.Shift_R) {
                     shift_held = false;
-                    update_delete_button_label();
+                    refresh_update_button();
                 }
             });
             // Attach to the toplevel window once it's realized
@@ -2862,21 +2779,6 @@ namespace AppManager {
             return record.installed_path.has_prefix(home + "/");
         }
 
-        private void update_delete_button_label() {
-            if (delete_button == null) return;
-            var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-            box.set_halign(Gtk.Align.CENTER);
-            if (shift_held || record.mode == InstallMode.EXTRACTED || !is_path_trashable()) {
-                box.append(new Gtk.Label(_("Delete Permanently")));
-                delete_button.tooltip_text = null;
-            } else {
-                box.append(new Gtk.Image.from_icon_name("user-trash-symbolic"));
-                box.append(new Gtk.Label(_("Move to Trash")));
-                delete_button.tooltip_text = _("Hold Shift to delete permanently");
-            }
-            delete_button.set_child(box);
-        }
-
         private void present_permanent_delete_warning() {
             var app_name = record.name ?? Path.get_basename(record.installed_path);
             var body = _("<b>%s</b> will be permanently deleted. This action cannot be undone.").printf(GLib.Markup.escape_text(app_name));
@@ -2893,7 +2795,20 @@ namespace AppManager {
                     uninstall_requested(record, true, false);
                 }
             });
+            dialog.closed.connect(sync_shift_held);
             dialog.present(this);
+        }
+
+        // A dialog or popover open while Shift is let go takes the release, which
+        // would leave Clear armed. Ask the keyboard instead.
+        private void sync_shift_held() {
+            var keyboard = get_display().get_default_seat()?.get_keyboard();
+            bool held = keyboard != null && (keyboard.modifier_state & Gdk.ModifierType.SHIFT_MASK) != 0;
+            if (held == shift_held) {
+                return;
+            }
+            shift_held = held;
+            refresh_update_button();
         }
 
         private void present_portable_delete_dialog(bool permanently) {
@@ -2961,6 +2876,7 @@ namespace AppManager {
                     uninstall_requested(record, permanently, preserve);
                 }
             });
+            dialog.closed.connect(sync_shift_held);
             dialog.present(this);
         }
 
@@ -2992,11 +2908,31 @@ namespace AppManager {
             if (path_banner == null || path_row == null) {
                 return;
             }
+            if (!path_row.active) {
+                path_banner.set_revealed(false);
+                return;
+            }
+            if (local_bin_on_path < 0) {
+                probe_local_bin_async.begin();
+                return;
+            }
+            path_banner.set_revealed(local_bin_on_path == 0);
+        }
 
-            bool needs_path = path_row.active;
-            bool path_missing = !path_contains_local_bin();
+        // The row now sits on the first page, and the shell probe blocks for a moment
+        // (0.3 s with zsh), so it runs off the UI thread once per session.
+        private static int local_bin_on_path = -1;
 
-            path_banner.set_revealed(needs_path && path_missing);
+        private async void probe_local_bin_async() {
+            SourceFunc callback = probe_local_bin_async.callback;
+            bool found = false;
+            new Thread<void>("appmgr-path-probe", () => {
+                found = path_contains_local_bin();
+                Idle.add((owned) callback);
+            });
+            yield;
+            local_bin_on_path = found ? 1 : 0;
+            update_path_banner_visibility();
         }
 
         private bool path_contains_local_bin() {
